@@ -25,6 +25,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.discipolat.modules.tenants.domain.SaasPlan;
+import com.discipolat.modules.tenants.domain.TenantSubscription;
+
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -57,6 +61,15 @@ class PeopleCriticalPathIntegrationTest {
 
     private static final UUID DEFAULT_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
+    /** Limites d'un plan reseau : meme jeu de cles que V177 (canonical). */
+    private static final String LIMITS_JSON = "{\"members\":2000,\"max_users\":2000,"
+            + "\"max_churches\":100,\"max_departments\":100,\"max_campuses\":50,\"max_groups\":50,"
+            + "\"spaces\":100,\"storage_mb\":100000,\"max_storage_mb\":100000,\"events\":1000,"
+            + "\"ai_credits\":5000,\"max_ai_requests_month\":5000,\"max_courses\":1000,"
+            + "\"max_messages_month\":1000000}";
+
+    private static final String FEATURES_JSON = "{\"people\":true,\"events\":true,\"ai\":true}";
+
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtTokenProvider jwtTokenProvider;
     @Autowired private SoulRepository soulRepository;
@@ -65,6 +78,8 @@ class PeopleCriticalPathIntegrationTest {
     @Autowired private RoleRepository roleRepository;
     @Autowired private OrganizationNodeRepository orgNodeRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private com.discipolat.modules.tenants.domain.SaasPlanRepository planRepository;
+    @Autowired private com.discipolat.modules.tenants.domain.TenantSubscriptionRepository subscriptionRepository;
 
     private UUID tenantOwnerId;
     private UUID pasteurId;
@@ -88,6 +103,7 @@ class PeopleCriticalPathIntegrationTest {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
 
         ensureActiveTenant(DEFAULT_TENANT_ID);
+        ensurePlanAndSubscription();
 
         // Create roles needed for tests (tenant-specific since Flyway is disabled in tests)
         if (!rolesCreated) {
@@ -435,6 +451,66 @@ class PeopleCriticalPathIntegrationTest {
                 "fr",
                 java.sql.Timestamp.from(java.time.Instant.now()),
                 java.sql.Timestamp.from(java.time.Instant.now()));
+    }
+
+
+    /**
+     * Constat M3 — la creation d'un espace (et d'un evenement) est desormais
+     * soumise au quota du plan, en fail-closed : sans plan de catalogue et sans
+     * abonnement actif, la creation est refusee en
+     * {@code QUOTA_CONFIGURATION_INVALID}.
+     *
+     * <p>Cette fixture reproduit ce que la production garantit deja par
+     * V177 (plans canoniques seedes) et {@code TenantService.create}
+     * (abonnement initial).
+     *
+     * <p>Insertion via les <b>repositories</b> et non en SQL brut : les colonnes
+     * {@code limits_json} / {@code quotas_json} sont des {@code jsonb} annotés
+     * {@code @JdbcTypeCode(SqlTypes.JSON)}. Un INSERT SQL de texte brut les stocke
+     * en {@code byte[]}, et la lecture Hibernate échoue alors
+     * ({@code limitsValid = false}) : le quota serait refusé pour une raison
+     * purement technique.
+     */
+    private void ensurePlanAndSubscription() {
+        if (planRepository.findById("NETWORK").isEmpty()) {
+            planRepository.save(SaasPlan.builder()
+                    .key("NETWORK")
+                    .name("Network")
+                    .description("Plan reseau (fixture de test)")
+                    .currency("EUR")
+                    .isActive(true)
+                    .isPublic(true)
+                    .status("ACTIVE")
+                    .sortOrder(1)
+                    .seatsLimit(2000)
+                    .storageLimitMb(100000)
+                    .aiCreditsLimit(5000)
+                    .limitsJson(LIMITS_JSON)
+                    .featuresJson(FEATURES_JSON)
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build());
+        }
+        if (subscriptionRepository.findCurrentByTenantId(DEFAULT_TENANT_ID).isEmpty()) {
+            Instant now = Instant.now();
+            // NB : l'identifiant est laisse genere par la base
+            // (`@GeneratedValue(UUID)`). Attribuer un id a la main ferait passer
+            // Spring Data sur `merge()`, que Hibernate 6 refuse (StaleObjectState)
+            // pour une entite a identifiant attribue dont la ligne n'existe pas.
+            subscriptionRepository.save(TenantSubscription.builder()
+                    .tenantId(DEFAULT_TENANT_ID)
+                    .planKey("NETWORK")
+                    .status(com.discipolat.modules.tenants.enums.SubscriptionStatus.ACTIVE)
+                    .billingCycle("monthly")
+                    .currentPeriodStart(now)
+                    .currentPeriodEnd(now.plusSeconds(30L * 24 * 3600))
+                    .cancelAtPeriodEnd(false)
+                    .quotasJson(LIMITS_JSON)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build());
+        }
+        jdbcTemplate.update("UPDATE tenants SET plan = 'NETWORK' WHERE id = ?", DEFAULT_TENANT_ID);
     }
 
 }

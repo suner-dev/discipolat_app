@@ -885,3 +885,138 @@ mvn -B -o test     (suite complète)
    utilisée par le parcours d'inscription.
 5. **Aucun secret ni URL interne dans la réponse** : `loginUrl` n'est envoyé que
    dans l'**email** au demandeur, jamais dans la réponse HTTP.
+
+---
+
+## A8 — Quotas espaces, événements, églises + alerte admin (constat M3)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `tenants/domain/QuotaService.java` (+ `checkCanCreateSpace`, `checkCanCreateEvent`, `checkCanCreateCampus`, alerte sur dépassement, repli `spaces` supprimé)
+  - NEW `tenants/domain/QuotaAlertService.java`
+  - MOD `events/domain/EventRepository.java` (+ `countByTenantIdAndStatutNotInAndDeletedFalse`)
+  - MOD `spaces/domain/SpaceService.java` (quota appelé dans `createSpace`)
+  - MOD `events/domain/EventService.java` (quota appelé dans `create`)
+  - MOD `tenants/domain/OrganizationNodeService.java` (quota appelé dans `createNode`)
+  - NEW `tenants/domain/QuotaServiceSpacesEventsTest.java` (11 cas)
+  - NEW `tenants/domain/QuotaAlertServiceTest.java` (5 cas)
+  - MOD tests : `QuotaServiceTest`, `SpaceServiceTest`, `EventServiceTest`,
+    `SpaceCriticalPathIntegrationTest`, `PeopleCriticalPathIntegrationTest` (fixtures)
+
+### Constat vérifié
+
+`checkCanCreateChurch` et `checkCanCreateDepartment` **existaient déjà** mais
+n'étaient appelés que par `QuotaController` (un endpoint de simulation « puis-je
+créer ? »). **La création réelle n'était donc jamais bornée** : un tenant pouvait
+dépasser son quota d'églises, de départements, de campus, d'espaces ou
+d'événements sans jamais être refusé. Aucun administrateur n'était prévenu non
+plus.
+
+### Risque R-2 du plan : vérifié, et infirmé
+
+Le plan annonce (risque R-2) : « Limites `spaces`/`events` absentes des plans
+seedés (V144) → A8 refuse des créations légitimes ».
+
+**Vérification faite : R-2 est infondé.** `V177__complete_canonical_saas_plans.sql`
+réécrit `limits_json` **en entier** pour les 4 plans canoniques :
+
+| Plan | `spaces` | `events` | `max_churches` | `max_departments` | `max_campuses` |
+|---|---|---|---|---|---|
+| DISCOVERY | 3 | 10 | 1 | 3 | 1 |
+| STARTUP | 10 | 50 | 3 | 10 | 3 |
+| GROWTH | 25 | 200 | 10 | 25 | 10 |
+| NETWORK | 100 | 1000 | 100 | 100 | 50 |
+
+(V144 pose `spaces`/`events`, V135 les `max_*`, V177 **complète** le tout.)
+Aucune nouvelle migration n'est donc nécessaire, et le fail-closed n'affecte
+aucune création légitime. Le risque est documenté ici pour que le vérificateur ne
+le ressuscite pas.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='QuotaServiceSpacesEventsTest,QuotaAlertServiceTest,QuotaServiceTest,SpaceServiceTest,EventServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaServiceSpacesEventsTest
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaAlertServiceTest
+[INFO] Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...SpaceServiceTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...EventServiceTest
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1414, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 162 = **1414**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Créer un espace/événement/église au-delà de la limite → 403 `QUOTA_*` | `spaceAtLimitIsRefusedWithAlert`, `eventAtLimitIsRefusedWithAlert`, `churchQuotaIsEnforced`, `campusQuotaIsEnforced`. Les codes commencent par `QUOTA_` → `GlobalExceptionHandler` les mappe en **403** |
+| Notification créée pour chaque admin | `onlyTenantAdminsAreNotified` : 2 notifications pour `TENANT_OWNER` + `tenant_admin`, **0** pour `PASTEUR` et `MEMBRE` |
+| Aucune régression sur les quotas existants | suite complète verte (users, storage, IA, cours, messages) |
+| Limite absente → refus (D11 fail-closed) | `spaceWithoutLimitFailsClosed`, `eventWithoutLimitFailsClosed` (et **aucune** lecture de consommation : refus d'emblée) |
+| L'alerte n'est jamais bloquante | `alertIsTriggeredAndNeverBlocksTheRefusal` : l'alerte lève, le refus `QUOTA_EXCEEDED_SPACES` est bien propagé ; `oneFailedNotificationDoesNotStopTheOthers` |
+
+### Bugs et anomalies réels trouvés et corrigés
+
+1. **Repli erroné sur la clé `spaces`** dans `organizationLimit`. Un tenant sans
+   `max_churches` se voyait appliquer le quota d'**espaces** (3 sur DISCOVERY) à
+   ses **églises** : deux ressources confondues silencieusement. Retiré — chaque
+   ressource a sa clé, et son absence est un refus explicite.
+2. **`EventController.create` ne renseigne pas `tenantId`** sur l'entité (auto-fill
+   Hibernate à la persistance). Le contrôle de quota s'exécutant **avant**, il
+   cherchait un tenant `null` et refusait **toute** création d'événement
+   (`TENANT_NOT_FOUND`). Corrigé par `EventService.resolveTenantId(event)` qui
+   retombe sur `TenantContext.requireTenantId()`. **Sans cette correction, la
+   création d'événement aurait été cassée en production** — attrapée par
+   `PeopleCriticalPathIntegrationTest.eventDressCodeArchivesFlow`.
+3. **Statuts clos d'événement vérifiés** avant d'écrire la requête : l'entité
+   `Event` n'a que `statut` (String, défaut `PLANIFIE`) et `deleted` (boolean) ;
+   les statuts réellement clos sont `TERMINE` et `ANNULE`
+   (`EventService:590`). Le test `eventCountingExcludesClosedStatuses` verrouille
+   la liste exacte passée au repository.
+
+### Fixtures de test ajoutées (et pourquoi elles sont légitimes)
+
+`SpaceCriticalPathIntegrationTest` et `PeopleCriticalPathIntegrationTest` ont
+reçu `ensurePlanAndSubscription()` : les deux échouaient désormais en
+`QUOTA_CONFIGURATION_INVALID`, non pas à cause d'une règle métier, mais parce
+qu'en H2 (base créée par Hibernate, **sans Flyway**) il n'existe ni plan de
+catalogue ni abonnement.
+
+Pièges rencontrés et documentés en commentaire :
+- `saas_plans` a pour **clé primaire la colonne `key`** (`@Id @Column(name="key")`) :
+  il n'existe pas de colonne `id` sur cette table ;
+- les colonnes `limits_json` / `quotas_json` sont des `jsonb`
+  (`@JdbcTypeCode(SqlTypes.JSON)`) : un `INSERT` SQL de texte brut les stocke en
+  `byte[]` et la relecture Hibernate échoue, ce qui rendait le plan invalide.
+  L'insertion passe donc par les **repositories**, pas par du SQL ;
+- l'id de `tenant_subscriptions` est laissé **généré** : attribuer un id à la main
+  fait passer Spring Data sur `merge()`, que Hibernate 6 refuse
+  (`StaleObjectStateException`) pour une entité à identifiant attribué sans
+  ligne préexistante.
+
+### Point de vigilance production (non bloquant, à surveiller)
+
+`lockPlan` refuse un tenant **sans abonnement actif**. C'est le comportement
+fail-closed déjà en production pour le quota utilisateurs, donc le précédent
+existe ; mais l'extension à espaces/événements/églises touche désormais des
+créations plus fréquentes. Si un tenant historique n'a pas d'abonnement, ses
+créatures d'espaces/événements échoueront en `QUOTA_CONFIGURATION_INVALID`.
+
+**Requête de contrôle recommandée avant déploiement en production** :
+```sql
+SELECT t.id, t.name
+FROM tenants t
+LEFT JOIN tenant_subscriptions s ON s.tenant_id = t.id AND s.status IN ('ACTIVE','TRIAL','PAST_DUE')
+WHERE s.id IS NULL;
+```
+Tout tenant retourné doit recevoir un abonnement avant le déploiement, sinon il
+sera bloqué. Je n'ai pas pu l'exécuter : je n'ai pas accès à la base de
+production.

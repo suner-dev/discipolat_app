@@ -10,6 +10,7 @@ import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,16 +73,30 @@ class EventServiceTest {
     private final UUID familleId = UUID.randomUUID();
     private final UUID autreFamilleId = UUID.randomUUID();
 
+    @Mock private com.discipolat.modules.tenants.domain.QuotaService quotaService;
+
+    private static final UUID TEST_TENANT_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private Event evenementFamille;
     private Event evenementEglise;
+
+    @AfterEach
+    void tearDown() {
+        com.discipolat.common.multitenancy.TenantContext.clear();
+    }
 
     @BeforeEach
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
+        // Le controle de quota (constat M3) resout le tenant via l'evenement puis
+        // via le contexte de requete : les evenements de ce test ne portent pas
+        // `tenantId` (auto-rempli a la persistance en conditions reelles).
+        com.discipolat.common.multitenancy.TenantContext.setTenantId(TEST_TENANT_ID);
         attachmentService = new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils);
         eventService = new EventService(eventRepository, registrationRepository, templateRepository,
                 userRepository, notificationService, securityUtils, workspaceScope, attachmentService, auditService,
-                propagationPublisher, propagationListener);
+                quotaService, propagationPublisher, propagationListener);
 
         evenementFamille = Event.builder()
                 .id(UUID.randomUUID())

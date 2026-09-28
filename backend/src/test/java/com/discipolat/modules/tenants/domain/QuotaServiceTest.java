@@ -31,6 +31,9 @@ class QuotaServiceTest {
     @Mock private AiUsageRepository aiUsageRepository;
     @Mock private TenantPlanPolicy planPolicy;
     @Mock private TenantUsageSnapshotService usageSnapshotService;
+    @Mock private com.discipolat.modules.spaces.domain.SpaceRepository spaceRepository;
+    @Mock private com.discipolat.modules.events.domain.EventRepository eventRepository;
+    @Mock private QuotaAlertService quotaAlertService;
 
     private QuotaService service;
     private UUID tenantId;
@@ -39,7 +42,8 @@ class QuotaServiceTest {
     void setUp() {
         service = new QuotaService(tenantRepository, userRepository, organizationNodeRepository,
                 fileRepository, courseRepository, messageRepository, aiUsageRepository,
-                planPolicy, usageSnapshotService, new ObjectMapper());
+                planPolicy, usageSnapshotService, spaceRepository, eventRepository, quotaAlertService,
+                new ObjectMapper());
         tenantId = UUID.randomUUID();
         when(tenantRepository.findByIdForUpdate(tenantId))
                 .thenReturn(java.util.Optional.of(Tenant.builder().id(tenantId).plan("GROWTH").build()));

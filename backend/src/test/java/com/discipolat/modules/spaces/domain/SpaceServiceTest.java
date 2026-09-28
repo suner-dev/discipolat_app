@@ -28,6 +28,7 @@ import static org.mockito.Mockito.*;
 class SpaceServiceTest {
 
     @Mock private SpaceRepository spaceRepository;
+    @Mock private com.discipolat.modules.tenants.domain.QuotaService quotaService;
     @Mock private OrganizationNodeRepository organizationNodeRepository;
     @Mock private TenantMembershipRepository membershipRepository;
     @Mock private AuthorizationService authorizationService;
@@ -55,7 +56,7 @@ class SpaceServiceTest {
 
     @BeforeEach
     void setUp() {
-        spaceService = new SpaceService(spaceRepository, organizationNodeRepository,
+        spaceService = new SpaceService(spaceRepository, quotaService, organizationNodeRepository,
                 membershipRepository, authorizationService, auditService, eventPublisher,
                 propagationPublisher, configurationResolver);
     }

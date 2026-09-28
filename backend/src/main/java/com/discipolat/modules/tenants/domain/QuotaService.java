@@ -1,6 +1,8 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.modules.events.domain.EventRepository;
+import com.discipolat.modules.spaces.domain.SpaceRepository;
 import com.discipolat.modules.ai.domain.AiUsageRepository;
 import com.discipolat.modules.files.domain.FileEntityRepository;
 import com.discipolat.modules.messages.domain.ConversationMessageRepository;
@@ -25,7 +27,12 @@ import java.util.UUID;
 @Transactional
 public class QuotaService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(QuotaService.class);
+
     private static final long BYTES_PER_MEGABYTE = 1024L * 1024L;
+
+    /** Statuts d'événement considérés comme clos (ne consomment pas de quota). */
+    static final java.util.List<String> CLOSED_EVENT_STATUSES = java.util.List.of("TERMINE", "ANNULE");
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
@@ -36,6 +43,9 @@ public class QuotaService {
     private final AiUsageRepository aiUsageRepository;
     private final TenantPlanPolicy planPolicy;
     private final TenantUsageSnapshotService usageSnapshotService;
+    private final SpaceRepository spaceRepository;
+    private final EventRepository eventRepository;
+    private final QuotaAlertService quotaAlertService;
     private final ObjectMapper objectMapper;
     private final Clock clock = Clock.systemUTC();
 
@@ -48,6 +58,9 @@ public class QuotaService {
                         AiUsageRepository aiUsageRepository,
                         TenantPlanPolicy planPolicy,
                         TenantUsageSnapshotService usageSnapshotService,
+                        SpaceRepository spaceRepository,
+                        EventRepository eventRepository,
+                        QuotaAlertService quotaAlertService,
                         ObjectMapper objectMapper) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
@@ -58,6 +71,9 @@ public class QuotaService {
         this.aiUsageRepository = aiUsageRepository;
         this.planPolicy = planPolicy;
         this.usageSnapshotService = usageSnapshotService;
+        this.spaceRepository = spaceRepository;
+        this.eventRepository = eventRepository;
+        this.quotaAlertService = quotaAlertService;
         this.objectMapper = objectMapper;
     }
 
@@ -69,7 +85,7 @@ public class QuotaService {
         }
         long currentUsers = userRepository.countByTenantIdAndDeletedFalse(tenantId);
         if (currentUsers >= limit.getAsLong()) {
-            throw exceeded("users", currentUsers, limit.getAsLong());
+            throw exceeded(tenantId, "users", currentUsers, limit.getAsLong());
         }
     }
 
@@ -82,7 +98,20 @@ public class QuotaService {
         long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.ROOT_CHURCH)
                 + orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.SUB_CHURCH);
         if (current >= limit) {
-            throw exceeded("churches", current, limit);
+            throw exceeded(tenantId, "churches", current, limit);
+        }
+    }
+
+    /** Constat M3 — quota des campus (limite `max_campuses`). */
+    public void checkCanCreateCampus(UUID tenantId) {
+        LockedPlan locked = lockPlan(tenantId);
+        Long limit = organizationLimit(locked.plan(), "campuses");
+        if (!locked.enforced() || limit == null) {
+            throw invalidConfiguration();
+        }
+        long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.CAMPUS);
+        if (current >= limit) {
+            throw exceeded(tenantId, "campuses", current, limit);
         }
     }
 
@@ -94,7 +123,50 @@ public class QuotaService {
         }
         long current = orgNodeRepository.countByTenantIdAndType(tenantId, OrganizationNodeType.DEPARTMENT);
         if (current >= limit) {
-            throw exceeded("departments", current, limit);
+            throw exceeded(tenantId, "departments", current, limit);
+        }
+    }
+
+    /**
+     * Constat M3 — quota des espaces (espaces de travail / modules).
+     *
+     * <p>La limite est lue depuis la clé {@code spaces} du plan. Elle est bien
+     * seedée pour les 4 plans canoniques (V144 :
+     * DISCOVERY 3, STARTUP 10, GROWTH 25, NETWORK 100) et reconnue par la
+     * validation des limites de {@code TenantPlanPolicy.isLimitKey}.
+     *
+     * <p>Fail-closed (D11) : limite absente ou plan non résolu ⇒
+     * {@code 403 QUOTA_CONFIGURATION_INVALID}, jamais un contournement silencieux.
+     */
+    public void checkCanCreateSpace(UUID tenantId) {
+        LockedPlan locked = lockPlan(tenantId);
+        Long limit = organizationLimit(locked.plan(), "spaces");
+        if (!locked.enforced() || limit == null) {
+            throw invalidConfiguration();
+        }
+        long current = spaceRepository.countByTenantIdAndDeletedAtIsNull(tenantId);
+        if (current >= limit) {
+            throw exceeded(tenantId, "spaces", current, limit);
+        }
+    }
+
+    /**
+     * Constat M3 — quota des événements actifs.
+     *
+     * <p>Limite lue depuis la clé {@code events} du plan (seedée en V144 :
+     * DISCOVERY 10, STARTUP 50, GROWTH 200, NETWORK 1000). Seuls les événements
+     * clos ({@code TERMINE}, {@code ANNULE}) sont exclus du décompte.
+     */
+    public void checkCanCreateEvent(UUID tenantId) {
+        LockedPlan locked = lockPlan(tenantId);
+        Long limit = organizationLimit(locked.plan(), "events");
+        if (!locked.enforced() || limit == null) {
+            throw invalidConfiguration();
+        }
+        long current = eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(
+                tenantId, CLOSED_EVENT_STATUSES);
+        if (current >= limit) {
+            throw exceeded(tenantId, "events", current, limit);
         }
     }
 
@@ -106,7 +178,7 @@ public class QuotaService {
         }
         long current = courseRepository.countByTenantId(tenantId);
         if (current >= limit.getAsLong()) {
-            throw exceeded("courses", current, limit.getAsLong());
+            throw exceeded(tenantId, "courses", current, limit.getAsLong());
         }
     }
 
@@ -163,7 +235,7 @@ public class QuotaService {
         long used = aiUsageRepository.sumCreditsConsumedByTenantIdAndUsageDateGreaterThanEqualAndUsageDateLessThan(
                 tenantId, month, month.plusMonths(1));
         if ((long) credits > limit.getAsLong() - Math.min(used, limit.getAsLong())) {
-            throw exceeded("ai_credits", used, limit.getAsLong());
+            throw exceeded(tenantId, "ai_credits", used, limit.getAsLong());
         }
     }
 
@@ -178,7 +250,7 @@ public class QuotaService {
         long current = messageRepository.countByTenantIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanAndIsDeletedFalse(
                 tenantId, from, to);
         if (current >= limit.getAsLong()) {
-            throw exceeded("messages", current, limit.getAsLong());
+            throw exceeded(tenantId, "messages", current, limit.getAsLong());
         }
     }
 
@@ -264,16 +336,26 @@ public class QuotaService {
         return new LockedPlan(resolvedPlan, true);
     }
 
+    /**
+     * Limite d'une ressource, lue dans le JSON de limites du plan.
+     *
+     * <p>Le repli historique sur la clé {@code "spaces"} a été RETIRÉ : il
+     * signifiait qu'un tenant sans limite d'églises se voyait appliquer le quota
+     * d'<i>espaces</i> (3 sur DISCOVERY) à ses églises — une confusion de
+     * ressources silencieuse. Chaque ressource a désormais sa propre clé, et son
+     * absence est un refus explicite (fail-closed, D11).
+     */
     private Long organizationLimit(TenantPlanPolicy.ResolvedPlan resolvedPlan, String resource) {
         String key = switch (resource) {
             case "churches" -> "max_churches";
             case "departments" -> "max_departments";
             case "campuses" -> "max_campuses";
             case "groups" -> "max_groups";
+            case "spaces" -> "spaces";
+            case "events" -> "events";
             default -> null;
         };
-        Long limit = key == null ? null : rawLimit(resolvedPlan, key);
-        return limit != null ? limit : rawLimit(resolvedPlan, "spaces");
+        return key == null ? null : rawLimit(resolvedPlan, key);
     }
 
     private Long rawLimit(TenantPlanPolicy.ResolvedPlan resolvedPlan, String key) {
@@ -300,7 +382,18 @@ public class QuotaService {
         return new BusinessRuleException("Quota configuration is unavailable or invalid", "QUOTA_CONFIGURATION_INVALID");
     }
 
-    private BusinessRuleException exceeded(String resource, long used, long limit) {
+    /**
+     * Constat M3 — un dépassement déclenche une alerte in-app pour les
+     * administrateurs du tenant. L'alerte est JAMAIS bloquante : elle est
+     * journalisée et best-effort, elle ne doit pas transformer un dépassement de
+     * quota en erreur technique.
+     */
+    private BusinessRuleException exceeded(UUID tenantId, String resource, long used, long limit) {
+        try {
+            quotaAlertService.alertQuotaExceeded(tenantId, resource, used, limit);
+        } catch (RuntimeException alertFailure) {
+            log.warn("Alerte de quota non émise pour la ressource {} : {}", resource, alertFailure.getMessage());
+        }
         return new BusinessRuleException(
                 "Quota exceeded for " + resource + ": " + used + "/" + limit,
                 "QUOTA_EXCEEDED_" + resource.toUpperCase(Locale.ROOT));
