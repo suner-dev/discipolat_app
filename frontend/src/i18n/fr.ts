@@ -2851,6 +2851,25 @@ const fr = {
   'onboarding.banner.Masquer cette bannière': 'Masquer cette bannière',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Dernière étape en cours : finalisez la configuration.',
   'onboarding.banner.remainingSteps': 'Il reste des étapes pour terminer la configuration de votre église.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'Suivre ma demande',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'Saisissez l’adresse email utilisée lors de votre demande.',
+  'registration.Adresse email invalide.': 'Adresse email invalide.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'Impossible de vérifier le statut pour le moment. Réessayez.',
+  'registration.Vérification…': 'Vérification…',
+  'registration.Vérifier le statut': 'Vérifier le statut',
+  'registration.Demande en cours d’examen': 'Demande en cours d’examen',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.',
+  'registration.Demande approuvée': 'Demande approuvée',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'Vous pouvez maintenant vous connecter avec cette adresse email.',
+  'registration.Se connecter': 'Se connecter',
+  'registration.Demande refusée': 'Demande refusée',
+  'registration.Motif :': 'Motif :',
+  'registration.Aucune demande trouvée': 'Aucune demande trouvée',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.',
+  'registration.Demander une inscription': 'Demander une inscription',
+  'registration.Retour à la connexion': 'Retour à la connexion',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.',
 };
 
 export default fr;

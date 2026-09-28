@@ -2794,6 +2794,25 @@ const en: Record<string, string> = {
   'onboarding.banner.Masquer cette bannière': 'Hide this banner',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Final step in progress: finish the setup.',
   'onboarding.banner.remainingSteps': 'Some steps remain to finish setting up your church.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'Track my request',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'Enter the email address used in your request.',
+  'registration.Adresse email invalide.': 'Invalid email address.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'Could not check the status right now. Please try again.',
+  'registration.Vérification…': 'Checking…',
+  'registration.Vérifier le statut': 'Check status',
+  'registration.Demande en cours d’examen': 'Request under review',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'Your request was received. A Super Admin still has to approve it before you can sign in.',
+  'registration.Demande approuvée': 'Request approved',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'You can now sign in with this email address.',
+  'registration.Se connecter': 'Sign in',
+  'registration.Demande refusée': 'Request rejected',
+  'registration.Motif :': 'Reason: ',
+  'registration.Aucune demande trouvée': 'No request found',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'No registration request is recorded for this address. You can submit one.',
+  'registration.Demander une inscription': 'Request a registration',
+  'registration.Retour à la connexion': 'Back to sign in',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Too many checks from this connection. Please wait a few minutes before trying again.',
 };
 
 export default en;

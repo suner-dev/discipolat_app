@@ -139,3 +139,28 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
   en français dans les 5 autres locales. Remplacé par une clé stable
   `onboarding.banner.remainingSteps` (le nombre exact est déjà lisible dans la barre de
   progression du wizard). Clé présente dans les 6 locales.
+
+---
+
+## B3 — Page publique de suivi de demande d'inscription
+
+- **Statut : DONE**
+- **Fichiers :**
+  - NEW `frontend/src/pages/RegistrationStatusPage.tsx` (route publique `/registration-status`, `AuthLayout`)
+  - MOD `frontend/src/App.tsx` (lazy import + route)
+  - MOD `frontend/src/pages/RegisterPage.tsx` (lien « Suivre ma demande », email pré-rempli)
+  - MOD `frontend/src/i18n/{fr,en,pt,es,sw,ar}.ts` (18 clés `registration.*` par locale)
+  - NEW `frontend/src/__tests__/RegistrationStatusPage.test.tsx` (10 cas)
+- **Preuves :** `tsc -b` **EXIT 0** ; `eslint` **EXIT 0** ; `vitest` **10/10 verts**
+- **Contrat §3.3 respecté :**
+  - les 4 statuts sont traités séparément, avec action adaptée ;
+  - `reason` n'est affiché **que** si `status === 'REJECTED'` (prouvé par un test où un
+    backend malveillant renvoie `reason` avec `PENDING_APPROVAL` : rien n'est divulgué) ;
+  - `canLogin` conditionne l'affichage du bouton « Se connecter » ;
+  - `429` affiché comme une attente, pas comme une erreur fatale ;
+  - **aucun cache React Query** sur cette requête (pas de `useQuery`) : un statut périmé
+    afficherait un faux « Refusé ».
+- **Défense ajoutée :** un `status` inconnu du backend est ramené à `NONE` au lieu de
+  provoquer un rendu indéfini (`switch` sans `default`).
+- **`getValues` ajouté** au destructuring de `useForm` dans `RegisterPage` (nécessaire pour
+  pré-remplir l'email du lien ; vérifié à la compilation).

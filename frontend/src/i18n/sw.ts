@@ -2955,6 +2955,25 @@ const sw: Record<string, string> = {
   'onboarding.banner.Masquer cette bannière': 'Ficha banneri hii',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Hatua ya mwisho inaendelea: kamilisha usanidi.',
   'onboarding.banner.remainingSteps': 'Hatua zimebaki kukamilisha usanidi wa kanisa chako.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'Fuatilia ombi langu',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'Weka barua pepe uliotumia katika ombi lako.',
+  'registration.Adresse email invalide.': 'Barua pepe si sahihi.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'Imeshindikana kuangalia hali kwa sasa. Jaribu tena.',
+  'registration.Vérification…': 'Inaangalia…',
+  'registration.Vérifier le statut': 'Angalia hali',
+  'registration.Demande en cours d’examen': 'Ombi limepitwa',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'Ombi lako limepokelewa. Msimamizi mkuu bado lazima alikubali kabla ya kuweza kuingia.',
+  'registration.Demande approuvée': 'Ombi limekubaliwa',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'Sasa unaweza kuingia kwa barua pepe hii.',
+  'registration.Se connecter': 'Ingia',
+  'registration.Demande refusée': 'Ombi umekataliwa',
+  'registration.Motif :': 'Sababu: ',
+  'registration.Aucune demande trouvée': 'Hakuna ombi lililopatikana',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'Hakuna ombi la usajili lililosajiliwa kwa barua pepe hii. Unaweza kutuma moja.',
+  'registration.Demander une inscription': 'Omba usajili',
+  'registration.Retour à la connexion': 'Rudi kwenye ingia',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Mara nyingi sana kutoka kwenye muunganisho huu. Tafadhali subiri dakika chache kabla ya jaribu tena.',
 };
 
 export default sw;

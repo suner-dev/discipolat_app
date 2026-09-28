@@ -2740,6 +2740,25 @@ const pt: Record<string, string> = {
   'onboarding.banner.Masquer cette bannière': 'Ocultar este banner',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Última etapa em andamento: finalize a configuração.',
   'onboarding.banner.remainingSteps': 'Ainda faltam etapas para concluir a configuração da sua igreja.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'Acompanhar meu pedido',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'Digite o e-mail usado no seu pedido.',
+  'registration.Adresse email invalide.': 'Endereço de e-mail inválido.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'Não foi possível verificar o status agora. Tente novamente.',
+  'registration.Vérification…': 'Verificando…',
+  'registration.Vérifier le statut': 'Verificar status',
+  'registration.Demande en cours d’examen': 'Pedido em análise',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'Seu pedido foi recebido. Um Super Admin ainda precisa aprová-lo antes que você possa entrar.',
+  'registration.Demande approuvée': 'Pedido aprovado',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'Agora você pode entrar com este endereço de e-mail.',
+  'registration.Se connecter': 'Entrar',
+  'registration.Demande refusée': 'Pedido recusado',
+  'registration.Motif :': 'Motivo: ',
+  'registration.Aucune demande trouvée': 'Nenhum pedido encontrado',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'Nenhum pedido de inscrição registrado para este endereço. Você pode enviar um.',
+  'registration.Demander une inscription': 'Solicitar inscrição',
+  'registration.Retour à la connexion': 'Voltar ao login',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Muitas verificações desta conexão. Aguarde alguns minutos antes de tentar novamente.',
 };
 
 export default pt;

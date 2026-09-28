@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
-import { useI18n } from '@/i18n';
+import { useI18n, tText } from '@/i18n';
 import { Loader2, UserPlus, MailCheck, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -32,6 +32,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    getValues, // B3 : pré-remplissage du suivi de demande
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -233,6 +234,19 @@ export default function RegisterPage() {
       <div className="text-center animate-slide-up" style={{ animationDelay: '150ms' }}>
         <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">
           {t('auth.haveAccount')} <span className="text-primary-500 font-medium">{t('auth.loginNow')}</span>
+        </Link>
+      </div>
+
+      {/* B3 — Suivi de la demande : on pré-remplit l'email si l'utilisateur en a
+          déjà saisi un, pour lui éviter de le ressaisir. */}
+      <div className="text-center animate-slide-up" style={{ animationDelay: '175ms' }}>
+        <Link
+          to={getValues('email').trim()
+            ? `/registration-status?email=${encodeURIComponent(getValues('email').trim())}`
+            : '/registration-status'}
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors min-h-[44px]"
+        >
+          {tText('Suivre ma demande')}
         </Link>
       </div>
 

@@ -2885,6 +2885,25 @@ const ar: Record<string, string> = {
   'onboarding.banner.Masquer cette bannière': 'إخفاء هذا الشريط',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'الخطوة الأخيرة جارية: أكمل الإعداد.',
   'onboarding.banner.remainingSteps': 'تبقت بعض الخطوات لإعداد كنيستك.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'تتبّع طلبي',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'أدخل البريد الإلكتروني المستخدم في طلبك.',
+  'registration.Adresse email invalide.': 'البريد الإلكتروني غير صالح.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'تعذّر التحقق من الحالة الآن. حاول مرة أخرى.',
+  'registration.Vérification…': 'جارٍ التحقق…',
+  'registration.Vérifier le statut': 'تحقق من الحالة',
+  'registration.Demande en cours d’examen': 'الطلب قيد المراجعة',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'تم استلام طلبك. ما زال على المشرف العام الموافقة عليه قبل أن تتمكن من تسجيل الدخول.',
+  'registration.Demande approuvée': 'تمت الموافقة على الطلب',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'يمكنك الآن تسجيل الدخول بهذا البريد الإلكتروني.',
+  'registration.Se connecter': 'تسجيل الدخول',
+  'registration.Demande refusée': 'تم رفض الطلب',
+  'registration.Motif :': 'السبب: ',
+  'registration.Aucune demande trouvée': 'لم يُعثر على أي طلب',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'لا يوجد طلب تسجيل لهذا البريد الإلكتروني. يمكنك تقديم طلب.',
+  'registration.Demander une inscription': 'اطلب تسجيلًا',
+  'registration.Retour à la connexion': 'العودة لتسجيل الدخول',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'محاولات كثيرة جدًا من هذا الاتصال. يرجى الانتظار بضع دقائق قبل المحاولة مجددًا.',
 };
 
 export default ar;

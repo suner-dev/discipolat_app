@@ -2971,6 +2971,25 @@ const es: Record<string, string> = {
   'onboarding.banner.Masquer cette bannière': 'Ocultar este banner',
   'onboarding.banner.Dernière étape en cours : finalisez la configuration.': 'Último paso en curso: completa la configuración.',
   'onboarding.banner.remainingSteps': 'Quedan algunos pasos para completar la configuración de tu iglesia.',
+  // ── B3 — Suivi public d'une demande d'inscription (contrat §3.3).
+  'registration.Suivre ma demande': 'Seguir mi solicitud',
+  'registration.Saisissez l’adresse email utilisée lors de votre demande.': 'Introduce la dirección de correo que usaste en tu solicitud.',
+  'registration.Adresse email invalide.': 'Dirección de correo no válida.',
+  'registration.Impossible de vérifier le statut pour le moment. Réessayez.': 'No se pudo comprobar el estado ahora. Inténtalo de nuevo.',
+  'registration.Vérification…': 'Comprobando…',
+  'registration.Vérifier le statut': 'Comprobar estado',
+  'registration.Demande en cours d’examen': 'Solicitud en revisión',
+  'registration.Votre demande a bien été reçue. Un Super Admin doit encore l’approuver avant que vous puissiez vous connecter.': 'Tu solicitud fue recibida. Un Super Admin todavía debe aprobarla antes de que puedas iniciar sesión.',
+  'registration.Demande approuvée': 'Solicitud aprobada',
+  'registration.Vous pouvez maintenant vous connecter avec cette adresse email.': 'Ya puedes iniciar sesión con esta dirección de correo.',
+  'registration.Se connecter': 'Iniciar sesión',
+  'registration.Demande refusée': 'Solicitud rechazada',
+  'registration.Motif :': 'Motivo: ',
+  'registration.Aucune demande trouvée': 'No se encontró ninguna solicitud',
+  'registration.Aucune demande d’inscription n’est enregistrée pour cette adresse. Vous pouvez en faire une.': 'No hay ninguna solicitud de registro para esta dirección. Puedes enviar una.',
+  'registration.Demander une inscription': 'Solicitar un registro',
+  'registration.Retour à la connexion': 'Volver al inicio de sesión',
+  'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Demasiadas comprobaciones desde esta conexión. Espera unos minutos antes de intentarlo de nuevo.',
 };
 
 export default es;
