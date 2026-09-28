@@ -4,6 +4,9 @@ import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.exception.DomainException;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.authentication.domain.EmailService;
+import com.discipolat.modules.people.domain.Person;
+import com.discipolat.modules.people.repository.PersonRepository;
+import com.discipolat.modules.people.service.PeopleService;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -23,6 +26,8 @@ import java.util.UUID;
 @Service
 public class InvitationService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InvitationService.class);
+
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
     private final TenantMembershipRepository membershipRepository;
@@ -32,6 +37,8 @@ public class InvitationService {
     private final AuditService auditService;
     private final TenantRepository tenantRepository;
     private final EmailService emailService;
+    private final PeopleService peopleService;
+    private final PersonRepository personRepository;
     private final String frontendUrl;
 
     public InvitationService(InvitationRepository invitationRepository,
@@ -43,6 +50,8 @@ public class InvitationService {
                              AuditService auditService,
                              TenantRepository tenantRepository,
                              EmailService emailService,
+                             PeopleService peopleService,
+                             PersonRepository personRepository,
                              @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
@@ -53,7 +62,71 @@ public class InvitationService {
         this.auditService = auditService;
         this.tenantRepository = tenantRepository;
         this.emailService = emailService;
+        this.peopleService = peopleService;
+        this.personRepository = personRepository;
         this.frontendUrl = frontendUrl;
+    }
+
+    /**
+     * Constat M4 — l'acceptation d'une inscription inscrivant la personne au
+     * <b>répertoire</b> de l'église.
+     *
+     * <p>Avant ce correctif, un membre invité n'apparaissait jamais dans le
+     * répertoire : l'église avait un compte sans fiches personne, donc les
+     * statistiques de suivi, les listes et les fiches étaient faux.
+     *
+     * <p><b>Jamais de doublon</b> : la recherche par {@code email_normalized}
+     * précède systématiquement l'écriture. Si une fiche existe déjà, elle est
+     * simplement réutilisée, sans appel à {@code PeopleService.registerPerson}
+     * (qui leverait une {@code PersonAlreadyExistsException}).
+     */
+    private void registerInDirectory(Invitation invitation, User user, String firstName, String lastName) {
+        String emailNormalized = user.getEmail() == null ? null : user.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (emailNormalized == null || emailNormalized.isBlank()) {
+            return;
+        }
+        if (personRepository
+                .findByTenantIdAndEmailNormalizedAndDeletedAtIsNull(invitation.getTenantId(), emailNormalized)
+                .isPresent()) {
+            return;
+        }
+        String resolvedFirstName = resolveFirstName(firstName, user, emailNormalized);
+        String resolvedLastName = resolveLastName(lastName, user);
+        Person person = Person.builder()
+                .firstName(resolvedFirstName)
+                .lastName(resolvedLastName)
+                .emailNormalized(emailNormalized)
+                .build();
+        try {
+            peopleService.registerPerson(invitation.getTenantId(), person, "INVITATION", invitation.getInviterId());
+        } catch (RuntimeException directoryFailure) {
+            // Un échec du répertoire ne doit pas faire échouer l'acceptation :
+            // le compte et la membership sont déjà créés et valides.
+            log.warn("Enregistrement au répertoire impossible pour {} : {}",
+                    emailNormalized, directoryFailure.getMessage());
+        }
+    }
+
+    private String resolveFirstName(String fromInvitation, User user, String emailNormalized) {
+        if (fromInvitation != null && !fromInvitation.isBlank()) {
+            return fromInvitation.trim();
+        }
+        if (user.getFirstName() != null && !user.getFirstName().isBlank()) {
+            return user.getFirstName().trim();
+        }
+        int at = emailNormalized.indexOf('@');
+        String localPart = at > 0 ? emailNormalized.substring(0, at) : emailNormalized;
+        return localPart.isBlank() ? "Membre" : localPart;
+    }
+
+    private String resolveLastName(String fromInvitation, User user) {
+        if (fromInvitation != null && !fromInvitation.isBlank()) {
+            return fromInvitation.trim();
+        }
+        if (user.getLastName() != null && !user.getLastName().isBlank()) {
+            return user.getLastName().trim();
+        }
+        return null;
     }
 
     // ==================================================================
@@ -374,6 +447,7 @@ public class InvitationService {
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitation.setAcceptedAt(Instant.now());
         invitationRepository.save(invitation);
+        registerInDirectory(invitation, user, firstName, lastName);
         auditService.logSimple("INVITATION_ACCEPTED", "INVITATION", invitation.getId());
         if (crossTenantIdentity) {
             auditService.logSimple("INVITATION_ACCEPTED_CROSS_TENANT", "USER", user.getId());
@@ -507,6 +581,13 @@ public class InvitationService {
             UUID tenantId,
             boolean alreadyMember,
             boolean crossTenantIdentity) {
+
+        @Override
+        public String toString() {
+            return "AcceptanceResult[userId=" + userId + ", tenantId=" + tenantId
+                    + ", alreadyMember=" + alreadyMember
+                    + ", crossTenantIdentity=" + crossTenantIdentity + "]";
+        }
 
         /** Constructeur de compatibilite : avant V185/B4, {@code crossTenantIdentity} n'existait pas. */
         public AcceptanceResult(UUID userId, String email, UUID tenantId, boolean alreadyMember) {

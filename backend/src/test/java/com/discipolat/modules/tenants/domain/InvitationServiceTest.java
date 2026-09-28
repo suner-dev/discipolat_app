@@ -39,6 +39,10 @@ class InvitationServiceTest {
     @Mock
     private AuditService auditService;
     @Mock
+    private com.discipolat.modules.people.service.PeopleService peopleService;
+    @Mock
+    private com.discipolat.modules.people.repository.PersonRepository personRepository;
+    @Mock
     private TenantRepository tenantRepository;
     @Mock
     private com.discipolat.modules.authentication.domain.EmailService emailService;
@@ -176,7 +180,7 @@ class InvitationServiceTest {
     private InvitationService service() {
         return new InvitationService(invitationRepository, userRepository, membershipRepository,
                 roleRepository, organizationNodeRepository, passwordEncoder, auditService,
-                tenantRepository, emailService, "https://app.example.com");
+                tenantRepository, emailService, peopleService, personRepository, "https://app.example.com");
     }
 
     private Invitation invitation(UUID tenantId, InvitationStatus status, Instant expiresAt) {

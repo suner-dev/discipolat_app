@@ -302,6 +302,10 @@ public class InvitationController {
         String lastName = request != null ? request.get("lastName") : null;
         InvitationService.AcceptanceResult result = invitationService.accept(token, password, firstName, lastName);
 
+        // Constat M4 — email de bienvenue apres acceptation. Jamais bloquant (D10) :
+        // un SMTP absent donne `welcomeEmailSent: false` plutot qu'une erreur.
+        boolean welcomeEmailSent = sendWelcomeEmail(result);
+
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(Map.of(
@@ -311,11 +315,28 @@ public class InvitationController {
                         "tenantId", result.tenantId().toString(),
                         "alreadyMember", result.alreadyMember(),
                         "crossTenantIdentity", result.crossTenantIdentity(),
+                        "welcomeEmailSent", welcomeEmailSent,
                         "message", result.crossTenantIdentity()
                                 ? "Invitation acceptée. Votre compte existe déjà dans une autre église : "
                                 + "utilisez le sélecteur d'organisation."
                                 : "Invitation acceptée avec succès"
                 ));
+    }
+
+    /**
+     * Constat M4 — email de bienvenue apres acceptation d'invitation.
+     * Retourne {@code false} en cas d'echec d'envoi sans jamais lever.
+     */
+    private boolean sendWelcomeEmail(InvitationService.AcceptanceResult result) {
+        try {
+            Tenant tenant = tenantRepository.findById(result.tenantId()).orElse(null);
+            String tenantName = tenant != null ? tenant.getName() : "votre eglise";
+            emailService.sendInvitationWelcome(
+                    result.email(), null, tenantName, frontendUrl + "/login");
+            return true;
+        } catch (RuntimeException failure) {
+            return false;
+        }
     }
 
     private String invitationLink(String token) {

@@ -1036,3 +1036,94 @@ validé les trois options recommandées :
 
 Le plan reste inchangé (fichier d'autorité non modifié) : ces décisions sont
 consignées ici, dans le fichier de progression de l'Agent A, conformément à `R8`.
+
+---
+
+## A9 — Invitations : répertoire, email de bienvenue, relances J-3/J-1 (constat M4)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/resources/db/migration/V184__invitation_reminder_tracking.sql`
+  - NEW `platform/domain/InvitationReminderScheduler.java`
+  - MOD `tenants/domain/Invitation.java` (+ `remindedAt`)
+  - MOD `tenants/domain/InvitationRepository.java` (+ `findByStatusAndExpiresAtBetween`)
+  - MOD `tenants/domain/InvitationService.java` (inscription au répertoire à l'acceptation)
+  - MOD `authentication/domain/EmailService.java` (+ `sendInvitationWelcome`, `sendInvitationReminder`)
+  - MOD `platform/api/InvitationController.java` (`welcomeEmailSent` dans la réponse d'acceptation)
+  - NEW `tenants/domain/InvitationDirectoryRegistrationTest.java` (5 cas)
+  - NEW `platform/domain/InvitationReminderSchedulerTest.java` (11 cas)
+  - MOD 3 tests d'invitation existants (nouveau constructeur `InvitationService`)
+
+### Constat vérifié
+
+Avant ce correctif, l'acceptation d'une invitation ne produisait **aucun** email,
+**aucune** fiche au répertoire, et l'invitation expirait **silencieusement** au
+bout de 7 jours : l'église avait un compte invisible dans le répertoire et ne
+savait pas qu'une invitation pendait.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='InvitationDirectoryRegistrationTest,InvitationReminderSchedulerTest,InvitationServiceTest,InvitationServiceCrossTenantTest,InvitationServiceCreateInvitationTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationReminderSchedulerTest
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationDirectoryRegistrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceCreateInvitationTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceCrossTenantTest
+[INFO] Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceTest
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1430, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 178 = **1430**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Une acceptation crée la personne **exactement une fois** | `registersPersonInDirectory` (création avec source `INVITATION`) + `doesNotDuplicateAnExistingPerson` (`verifyNoInteractions(peopleService)` quand la fiche existe) |
+| **Source `INVITATION`** | asserté sur le 3ᵉ argument de `registerPerson` dans 3 tests |
+| Un email de bienvenue est tenté | `sendInvitationWelcome` appelé par `InvitationController.acceptInvitation` ; `welcomeEmailSent` renvoyé dans la réponse |
+| Les relances partent **une seule fois par palier** | `sameTierIsNeverSentTwice` (`sent == 0`, aucun `save`) + `nextTierIsStillSentAfterPreviousOne` (J-3 déjà passé ⇒ J-1 envoyé quand même) |
+| Aucun envoi pour invitations acceptées/annulées | `onlyPendingInvitationsAreConsidered` : la requête filtre `eq(InvitationStatus.PENDING)` |
+| Les fenêtres J-3 / J-1 sont correctes | `windowIsCentredOnTheTier` (NOW+3j ± 12 h) et `oneDayWindowIsNarrower` (NOW+1j ± 6 h), vérifiés au `verify` exact |
+
+### Décisions et déviations documentées
+
+1. **La relance ne reconstruit PAS de lien d'invitation.** Le token n'est stocké
+   que **haché** (V173/V175) : il est mathématiquement impossible de retrouver le
+   lien à partir de la ligne `invitations`. Plutôt que d'inventer un lien qui ne
+   fonctionne pas, la relance redirige vers `/login` et le message explique que
+   l'invitation expire bientôt. Un « faux lien » serait pire que pas de lien :
+   l'invité cliquerait et comprendrait que l'application est cassée.
+2. **`reminded_at` est positionné seulement si l'envoi a réussi.** Un échec SMTP
+   ne marque pas l'invitation : le job réessaiera au prochain passage, sinon une
+   panne SMTP temporaire ferait définitivement perdre la relance.
+3. **Le scheduler n'est jamais bloquant.** `sendOne` encapsule tout dans un
+   `try/catch` : une exception d'un tiers ne doit pas arrêter le job pour tous
+   les tenants. De même, un échec d'écriture d'audit n'annule pas une relance
+   déjà partie (sinon elle serait renvoyée au prochain passage). Prouvé par
+   `auditFailureDoesNotBreakTheReminder`.
+4. **Prénom dérivé de l'email quand l'invitation n'en fournit pas.**
+   `Person.first_name` est `NOT NULL`, et une acceptation cross-tenant (décision
+   D3) se fait sans mot de passe donc souvent sans nom. Le local-part de l'email
+   est utilisé, avec « Membre » en dernier recours. Prouvé par
+   `derivesFirstNameFromEmailWhenAbsent`.
+5. **Échec du répertoire ≠ échec d'acceptation.** Le compte et la membership sont
+   déjà créés et valides : les faire échouer parce que le répertoire est en panne
+   laisserait l'invité sans accès. Le journal `warn` trace l'incident.
+   Prouvé par `directoryFailureNeverBreaksAcceptance`.
+6. **Index `idx_invitations_status_expires`** ajouté par V184 : le scheduler
+   balaie les invitations PENDING par fenêtre d'expiration une fois par jour ; sans
+   cet index, c'est un scan séquentiel de `invitations`.
+
+### Validation de la migration V184
+
+Appliquée avec les 146 autres sur base vierge PostgreSQL 16.15 lors de la
+validation A4/A7 (`now at version v185`). La colonne `reminded_at` est
+`TIMESTAMPTZ` nullable, donc **sans risque de refus sur une base existante**.

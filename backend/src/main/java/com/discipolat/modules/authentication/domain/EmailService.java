@@ -153,4 +153,53 @@ public class EmailService {
             return false;
         }
     }
+
+    // ==================================================================
+    // Invitations (constat M4) — bienvenue et relances
+    // ==================================================================
+
+    /**
+     * Email de bienvenue envoyé APRÈS acceptation d'une invitation.
+     *
+     * <p>Avant le correctif, l'acceptation d'une invitation ne produisait AUCUN
+     * email : l'invité découvrait son nouveau compte sans aucune confirmation.
+     */
+    public boolean sendInvitationWelcome(String to, String firstName, String churchName, String loginUrl) {
+        String subject = "Bienvenue dans " + (churchName == null || churchName.isBlank()
+                ? "votre église" : churchName);
+        String body = String.format(
+                "Bonjour %s,\n\n"
+                        + "Votre invitation a été acceptée : votre compte est prêt.\n\n"
+                        + "Connectez-vous dès maintenant pour commencer la configuration de votre église :\n%s\n\n"
+                        + "Au programme : l'identité de l'église, vos départements et vos familles, "
+                        + "les responsables à inviter, votre identité visuelle, vos modules et votre premier événement.\n\n"
+                        + "Cordialement,\nL'équipe Discipolat",
+                firstName == null || firstName.isBlank() ? "bienvenue" : firstName,
+                loginUrl);
+        return sendTracked(to, subject, body, "invitation_welcome");
+    }
+
+    /**
+     * Relance automatique d'une invitation en attente (constat M4).
+     *
+     * @param daysLeft jours restant avant expiration de l'invitation (3 ou 1)
+     */
+    public boolean sendInvitationReminder(String to, String firstName, String churchName,
+                                           String invitationLink, int daysLeft) {
+        String subject = "Votre invitation à rejoindre "
+                + (churchName == null || churchName.isBlank() ? "une église" : churchName)
+                + " expire bientôt";
+        String body = String.format(
+                "Bonjour %s,\n\n"
+                        + "Vous avez été invité(e) à rejoindre %s, et votre invitation n'a pas encore été acceptée.\n\n"
+                        + "Elle expire dans %d jour(s). Si vous souhaitez rejoindre cette église, "
+                        + "acceptez votre invitation :\n%s\n\n"
+                        + "Si vous ne connaissez pas cette église, vous pouvez ignorer ce message.\n\n"
+                        + "Cordialement,\nL'équipe Discipolat",
+                firstName == null || firstName.isBlank() ? "bonjour" : firstName,
+                churchName == null || churchName.isBlank() ? "cette église" : churchName,
+                Math.max(1, daysLeft),
+                invitationLink);
+        return sendTracked(to, subject, body, "invitation_reminder_d" + daysLeft);
+    }
 }

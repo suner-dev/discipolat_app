@@ -39,4 +39,10 @@ public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
     List<Invitation> findByExpiresAtAfter(Instant date);
 
     List<Invitation> findByTenantIdAndExpiresAtBefore(UUID tenantId, Instant date);
+
+    /**
+     * Constat M4 — invitations PENDING dont l'expiration tombe dans la fenêtre
+     * [from, to). Utilisé par le scheduler de relance (J-3 et J-1).
+     */
+    List<Invitation> findByStatusAndExpiresAtBetween(InvitationStatus status, Instant from, Instant to);
 }

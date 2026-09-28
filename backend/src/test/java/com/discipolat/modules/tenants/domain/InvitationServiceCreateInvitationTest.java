@@ -49,6 +49,9 @@ class InvitationServiceCreateInvitationTest {
     @Mock private OrganizationNodeRepository organizationNodeRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private AuditService auditService;
+    @Mock private com.discipolat.modules.people.service.PeopleService peopleService;
+    @Mock private com.discipolat.modules.people.repository.PersonRepository personRepository;
+
     @Mock private TenantRepository tenantRepository;
     @Mock private EmailService emailService;
 
@@ -60,7 +63,7 @@ class InvitationServiceCreateInvitationTest {
     void setUp() {
         service = new InvitationService(invitationRepository, userRepository, membershipRepository,
                 roleRepository, organizationNodeRepository, passwordEncoder, auditService,
-                tenantRepository, emailService, FRONTEND_URL);
+                tenantRepository, emailService, peopleService, personRepository, FRONTEND_URL);
         tenantId = UUID.randomUUID();
         inviterId = UUID.randomUUID();
     }
