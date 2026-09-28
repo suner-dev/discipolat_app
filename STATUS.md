@@ -1,9 +1,63 @@
-# STATUS — état factuel de la plateforme (27 septembre 2026)
+# STATUS — état factuel de la plateforme (28 septembre 2026)
 
 Ce document est un constat, pas une promesse. Chaque ligne est vérifiable dans
 le dépôt ou par les commandes citées.
 
-## Périmètre livré dans ce cycle
+## Périmètre livré dans ce cycle (RGPD — correction des limites réelles)
+
+### Purge de rétention : exécution réelle (au lieu d'un simple comptage)
+- `ComplianceManagerService.purgePolicy(...)` : en mode **dur**, export JSON
+  systématique (`DataExportRecord`, motif `AVANT_PURGE`) puis `deleteAll` réel
+  des `ConsentLog`/`AuditLog` expirés ; en mode **souple**, anonymisation des
+  traceurs (IP, user-agent, détails, valeurs d'audit) — la preuve d'art. 7 est
+  conservée, seuls les identifiants disparaissent.
+- Bouton « Exécuter » du tableau de bord conformité : `POST
+  /compliance/retention-policies/{id}/execute` exécute réellement la politique
+  ciblée (`executeRetentionPolicy`), vérifie l'appartenance au tenant, et
+  renvoie le nombre d'enregistrements traités (plus de réponse factice
+  `status: "executed"`).
+- Job planifié `0 30 3 * * *` (`scheduledPurgeAllTenants`) : appel effectif
+  `executeAutomatedPurge()` pour chaque tenant via `runAsTenant` (auparavant
+  il se contentait de logger).
+
+### Portabilité RGPD art. 20 : export réel + anti-IDOR
+- `GET /compliance/portability/{userId}` renvoie l'export réel
+  (`exportUserData` : consentements + demandes RGPD + journal d'export)
+  au lieu d'un `Map.of()` vide.
+- Accès restreint à **l'intéressé lui-même** ou à un administrateur du tenant
+  (`ROLE_ADMIN`/`ROLE_PASTEUR`) — un compte connecté ne peut plus exporter le
+  compte d'un autre utilisateur (faille IDOR corrigée).
+
+### Self-service RGPD côté utilisateur (profil web)
+- Nouvelle section « Mes données (RGPD) » dans `ProfilePage` :
+  - « Exporter mes données (art. 20) » → téléchargement JSON du compte courant ;
+  - « Demander la suppression (art. 17) » → crée une demande `SUPPRESSION` via
+    `POST /compliance/gdpr` (transmise aux administrateurs du tenant, non
+    exécutée immédiatement — aucune suppression automatique de compte).
+- Aucune suppression de fonctionnalités existantes ; sections ajoutées en
+  complément du dashboard conformité admin.
+
+## Vérifications effectuées (evidence)
+- `mvn -f backend/pom.xml test` (JDK 23) : **1 253 tests, 0 échec, 0 erreur**
+  (13 skip préexistants) — suite verte **après** les corrections de purge.
+  Note : le Mockito/Byte Buddy embarqué ne supporte pas officiellement les
+  JDK > 24 — lancer les tests sous JDK 21–23.
+- `tsc -b` + `vite build` (frontend) : 0 erreur, build réussi.
+- eslint sur les fichiers modifiés : 0 erreur.
+
+## Limites connues (factuelles, mise à jour)
+- Le self-service RGPD mobile (export/suppression depuis l'app Flutter) n'est
+  pas implémenté — seuls le web et l'admin sont couverts ; le SDK Flutter est
+  absent de l'environnement de dev.
+- La suppression art. 17 reste un flux **demande → traitement admin**
+  (`PATCH /compliance/gdpr/{id}/process`) : aucun effacement automatique du
+  compte utilisateur lui-même (volontaire, pour éviter les suppressions
+  irréversibles sans validation humaine).
+- Les autres limites du cycle précédent (Stripe non testé en live, documents
+  légaux = gabarits, mesure d'usage à chaud, hiérarchie multi-envs non chargée)
+  restent valables — voir plus bas.
+
+## Périmètre livré au cycle précédent
 
 ### RGPD / conformité (backend + web + mobile)
 - Migrations Flyway `V179`–`V182` : documents légaux, preuves de consentement,
@@ -46,19 +100,14 @@ le dépôt ou par les commandes citées.
 - Correction SecurityConfig : `POST /api/v1/payments/webhooks/**` en accès
   public (les webhooks MoMo précédemment bloqués 401 sont débloqués).
 
-## Vérifications effectuées (evidence)
-- `mvn -f backend/pom.xml test` (JDK 23) : **1 253 tests, 0 échec, 0 erreur**
-  (13 skip préexistants). Note : le Mockito/Byte Buddy embarqué ne supporte
-  pas officiellement les JDK > 24 — lancer les tests sous JDK 21–23.
-- `npm run build` (frontend) : `tsc -b` sans erreur + build Vite réussi.
-- `npx vitest run` : **47/47 fichiers de tests verts, 339 tests**.
+## Vérifications effectuées (evidence) — cycle précédent
 - Mobile : SDK Flutter absent de l'environnement de dev — `flutter analyze`
   n'a pas pu être exécuté ; le changement (`register_screen.dart`,
   consentement art. 7/9) est limité à ce fichier et relecture manuelle OK.
 - Hygiène : `app-debug.apk` et `token.tmp` ne sont plus suivis par git ;
   `.gitignore` couvre `*.log`, apk et tokens.
 
-## Limites connues (factuelles)
+## Limites connues (factuelles) — cycle précédent
 - Stripe n'a **jamais été testé en live** (pas de clés test dans ce dépôt) :
   montants, prix récurrents et messages d'abonnement doivent être validés en
   mode test avant toute commercialisation.
