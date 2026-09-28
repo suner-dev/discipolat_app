@@ -112,11 +112,66 @@ public class InvitationController {
             return ResponseEntity.badRequest().body(Map.of("error", "Le scope de l'invitation est invalide"));
         }
 
-        // Check if user already exists
-        Optional<User> existingUser = userRepository.findByTenantIdAndEmail(
-                tenantId, email.toLowerCase());
+        // B4 : l'email est une identite GLOBALE. On cherche d'abord le compte dans
+        // le tenant invite (comportement historique), puis dans TOUS les tenants.
+        Optional<User> existingUser = userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, email);
+        boolean crossTenantIdentity = false;
+        if (existingUser.isEmpty()) {
+            // Decision D3 : un compte existant dans une autre eglise ne doit jamais
+            // recevoir une membership directement (ni un doublon `users`). On cree
+            // une invitation CLASSIQUE (token + email) et on remonte le drapeau
+            // `requiresTenantSwitch` : l'utilisateur choisit lui-meme son eglise
+            // via le selecteur d'organisation apres authentification.
+            Optional<User> foreignUser = userRepository.findGlobalByEmailIgnoreCase(email);
+            if (foreignUser.isPresent()) {
+                Optional<Invitation> pendingForeign = invitationRepository
+                        .findByTenantIdAndEmailAndStatus(tenantId, email.toLowerCase(), InvitationStatus.PENDING);
+                if (pendingForeign.isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "error", "Une invitation en attente existe déjà pour cet email",
+                            "invitationId", pendingForeign.get().getId().toString()
+                    ));
+                }
+                String foreignToken = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
+                Invitation foreignInvitation = Invitation.builder()
+                        .tenantId(tenantId)
+                        .email(email.toLowerCase())
+                        .role(roleKey.toUpperCase())
+                        .scopeType(scopeType != null ? scopeType.name() : null)
+                        .scopeId(scopeId != null ? scopeId : (organizationNodeId != null ? organizationNodeId : null))
+                        .inviterId(currentUserId)
+                        .tokenHash(InvitationTokenHasher.hash(foreignToken))
+                        .status(InvitationStatus.PENDING)
+                        .expiresAt(Instant.now().plusSeconds(7 * 24 * 3600))
+                        .organizationNodeId(organizationNodeId)
+                        .build();
+                invitationRepository.save(foreignInvitation);
+                auditService.logSimple("INVITATION_CREATED_CROSS_TENANT", "INVITATION", foreignInvitation.getId());
+
+                String foreignLink = invitationLink(foreignToken);
+                boolean foreignEmailSent = sendInvitationEmail(
+                        email.toLowerCase(), roleKey.toUpperCase(), tenantId, foreignLink);
+
+                Map<String, Object> foreignResponse = new HashMap<>();
+                foreignResponse.put("success", true);
+                foreignResponse.put("requiresTenantSwitch", true);
+                foreignResponse.put("invitationId", foreignInvitation.getId().toString());
+                foreignResponse.put("email", email);
+                foreignResponse.put("role", roleKey);
+                foreignResponse.put("scopeType", scopeType != null ? scopeType.name() : null);
+                foreignResponse.put("scopeId", scopeId != null ? scopeId.toString() : null);
+                foreignResponse.put("invitationToken", foreignToken);
+                foreignResponse.put("invitationLink", foreignLink);
+                foreignResponse.put("emailSent", foreignEmailSent);
+                foreignResponse.put("expiresAt", foreignInvitation.getExpiresAt().toString());
+                foreignResponse.put("message", "Un compte existe déjà pour cet email dans une autre église. "
+                        + "L'invitation a été créée : l'utilisateur devra choisir son organisation à la connexion.");
+                return ResponseEntity.status(HttpStatus.CREATED).body(foreignResponse);
+            }
+        }
         if (existingUser.isPresent()) {
             User user = existingUser.get();
+            crossTenantIdentity = user.getTenantId() == null || !user.getTenantId().equals(tenantId);
 
             // Check if already member of this tenant
             Optional<TenantMembership> existingMembership = membershipRepository
@@ -149,6 +204,8 @@ public class InvitationController {
                     "invitedUserId", user.getId().toString(),
                     "email", email,
                     "role", roleKey,
+                    "crossTenantIdentity", crossTenantIdentity,
+                    "requiresTenantSwitch", false,
                     "message", "Utilisateur ajouté directement (compte existant)"
             ));
         }
@@ -195,6 +252,8 @@ public class InvitationController {
         response.put("invitationToken", token);
         response.put("invitationLink", invitationLink);
         response.put("emailSent", emailSent);
+        response.put("crossTenantIdentity", false);
+        response.put("requiresTenantSwitch", false);
         response.put("expiresAt", invitation.getExpiresAt().toString());
         response.put("message", "Invitation créée. Envoyez le lien à l'utilisateur : " + invitationLink);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -314,8 +373,11 @@ public class InvitationController {
         response.put("tenantName", tenant.map(Tenant::getName).orElse("Inconnu"));
         response.put("organizationName", orgNode.map(OrganizationNode::getName).orElse(null));
         response.put("expiresAt", inv.getExpiresAt().toString());
-        response.put("accountExists", userRepository.findByTenantIdAndEmail(
-                inv.getTenantId(), inv.getEmail()).isPresent());
+        // B4 : `accountExists` doit refleter l'identite GLOBALE de l'email. Si le
+        // compte existe dans une autre eglise, l'acceptation n'exigera PAS de mot
+        // de passe (decision D3) ; indiquer `false` obligerait le client a en
+        // demander un inutilement.
+        response.put("accountExists", userRepository.findGlobalByEmailIgnoreCase(inv.getEmail()).isPresent());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(response);
@@ -350,7 +412,11 @@ public class InvitationController {
                         "email", result.email(),
                         "tenantId", result.tenantId().toString(),
                         "alreadyMember", result.alreadyMember(),
-                        "message", "Invitation acceptée avec succès"
+                        "crossTenantIdentity", result.crossTenantIdentity(),
+                        "message", result.crossTenantIdentity()
+                                ? "Invitation acceptée. Votre compte existe déjà dans une autre église : "
+                                + "utilisez le sélecteur d'organisation."
+                                : "Invitation acceptée avec succès"
                 ));
     }
 

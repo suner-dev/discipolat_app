@@ -101,7 +101,8 @@ public class AuthService {
     // ======================== LOGIN ========================
 
     public AuthResult login(String email, String password) {
-        User user = userRepository.findByEmail(email)
+        // B4 : resolution d'identite insensible a la casse (index unique V185 sur LOWER(email)).
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         // US-01: Account lockout after 5 failed attempts
@@ -227,7 +228,7 @@ public class AuthService {
      * Resend activation email
      */
     public void resendActivationEmail(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("If the email exists, a new activation link has been sent."));
 
         if (user.getStatut() != UserStatus.PENDING_ACTIVATION) {
@@ -250,7 +251,7 @@ public class AuthService {
      * Generate password reset token (valid 30 min)
      */
     public String generatePasswordResetToken(String email) {
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
         if (user == null) {
             return "If the email exists, a reset link has been sent.";
         }
@@ -457,7 +458,7 @@ public class AuthService {
             throw new com.discipolat.common.domain.BusinessRuleException(
                     "MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
         }
-        return userRepository.findByEmail(entry.email)
+        return userRepository.findByEmailIgnoreCase(entry.email)
                 .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
                         "USER_NOT_FOUND", "Aucun compte associé à cet email"));
     }

@@ -40,13 +40,13 @@ class InvitationServiceTest {
     private AuditService auditService;
 
     @Test
-    void createsTenantScopedUserWhenSameEmailOnlyExistsInAnotherTenant() {
+    void createsTenantScopedUserWhenNoAccountExistsForThatEmailAnywhere() {
         UUID tenantId = UUID.randomUUID();
         Invitation invitation = invitation(tenantId, InvitationStatus.PENDING, Instant.now().plusSeconds(3600));
         Role role = Role.builder().id(UUID.randomUUID()).tenantId(null).key("MEMBER").build();
         when(invitationRepository.findByTokenHashForUpdate(InvitationTokenHasher.hash("token"))).thenReturn(Optional.of(invitation));
         when(roleRepository.findGlobalByKey("MEMBER")).thenReturn(Optional.of(role));
-        when(userRepository.findByTenantIdAndEmail(tenantId, "invitee@example.com"))
+        when(userRepository.findGlobalByEmailIgnoreCase("invitee@example.com"))
                 .thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -61,6 +61,7 @@ class InvitationServiceTest {
                 "token", "password123", "Jean", " Dupont");
 
         assertThat(result.alreadyMember()).isFalse();
+        assertThat(result.crossTenantIdentity()).isFalse();
         assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.ACCEPTED);
         assertThat(invitation.getAcceptedAt()).isNotNull();
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -110,7 +111,7 @@ class InvitationServiceTest {
                 .email(invitation.getEmail()).build();
         when(invitationRepository.findByTokenHashForUpdate(InvitationTokenHasher.hash("token"))).thenReturn(Optional.of(invitation));
         when(roleRepository.findGlobalByKey("MEMBER")).thenReturn(Optional.of(role));
-        when(userRepository.findByTenantIdAndEmail(tenantId, invitation.getEmail())).thenReturn(Optional.of(existing));
+        when(userRepository.findGlobalByEmailIgnoreCase(invitation.getEmail())).thenReturn(Optional.of(existing));
         when(membershipRepository.existsExactActiveMembership(
                 existing.getId(),
                 tenantId,
@@ -123,6 +124,7 @@ class InvitationServiceTest {
 
         assertThat(result.userId()).isEqualTo(existing.getId());
         assertThat(result.alreadyMember()).isTrue();
+        assertThat(result.crossTenantIdentity()).isFalse();
         verify(userRepository, never()).save(any(User.class));
         verify(passwordEncoder, never()).encode(any(String.class));
     }
@@ -137,7 +139,7 @@ class InvitationServiceTest {
                 .email(invitation.getEmail()).build();
         when(invitationRepository.findByTokenHashForUpdate(InvitationTokenHasher.hash("token"))).thenReturn(Optional.of(invitation));
         when(roleRepository.findGlobalByKey("PASTEUR")).thenReturn(Optional.of(role));
-        when(userRepository.findByTenantIdAndEmail(tenantId, invitation.getEmail())).thenReturn(Optional.of(existing));
+        when(userRepository.findGlobalByEmailIgnoreCase(invitation.getEmail())).thenReturn(Optional.of(existing));
         when(membershipRepository.existsExactActiveMembership(
                 existing.getId(), tenantId, role.getId(), MembershipStatus.ACTIVE,
                 MembershipScopeType.TENANT, null)).thenReturn(false);
@@ -147,6 +149,7 @@ class InvitationServiceTest {
         ArgumentCaptor<TenantMembership> captor = ArgumentCaptor.forClass(TenantMembership.class);
         verify(membershipRepository).save(captor.capture());
         assertThat(result.alreadyMember()).isFalse();
+        assertThat(result.crossTenantIdentity()).isFalse();
         assertThat(captor.getValue().getRole().getId()).isEqualTo(role.getId());
     }
 
@@ -157,7 +160,7 @@ class InvitationServiceTest {
         Role role = Role.builder().id(UUID.randomUUID()).tenantId(null).key("MEMBER").build();
         when(invitationRepository.findByTokenHashForUpdate(InvitationTokenHasher.hash("token"))).thenReturn(Optional.of(invitation));
         when(roleRepository.findGlobalByKey("MEMBER")).thenReturn(Optional.of(role));
-        when(userRepository.findByTenantIdAndEmail(tenantId, invitation.getEmail())).thenReturn(Optional.empty());
+        when(userRepository.findGlobalByEmailIgnoreCase(invitation.getEmail())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service().accept("token", "a".repeat(73), "Jean", " Dupont"))
                 .isInstanceOf(com.discipolat.common.exception.DomainException.class)

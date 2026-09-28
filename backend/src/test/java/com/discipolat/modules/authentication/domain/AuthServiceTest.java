@@ -93,7 +93,7 @@ class AuthServiceTest {
 
     @Test
     void login_WithValidCredentials_ShouldReturnAuthResult() {
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(jwtTokenProvider.generateAccessToken(any(), anyString(), anyString(), anySet(), anyBoolean(), any()))
                 .thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(any(), anyString(), anyString(), anySet(), any(), any()))
@@ -113,7 +113,7 @@ class AuthServiceTest {
 
     @Test
     void login_WithInvalidPassword_ShouldThrowBadCredentialsException() {
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         assertThrows(BadCredentialsException.class, () ->
@@ -127,7 +127,7 @@ class AuthServiceTest {
     @Test
     void login_WithInactiveUser_ShouldThrowBadCredentialsException() {
         testUser.setStatut(UserStatus.INACTIVE);
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
 
         // Password is correct but account is inactive - should throw after password check
         // Since password matches, it won't increment failed attempts, but will throw for inactive
@@ -139,7 +139,7 @@ class AuthServiceTest {
     @Test
     void login_ShouldLockAccountAfter5FailedAttempts() {
         testUser.setFailedLoginAttempts(4);
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         assertThrows(BadCredentialsException.class, () ->
@@ -153,7 +153,7 @@ class AuthServiceTest {
     @Test
     void login_ShouldRejectLockedAccount() {
         testUser.setAccountLockedUntil(java.time.Instant.now().plusSeconds(3600));
-        when(userRepository.findByEmail("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
 
         assertThrows(BadCredentialsException.class, () ->
                 authService.login("test@discipolat.com", "password123")

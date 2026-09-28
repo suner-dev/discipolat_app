@@ -58,11 +58,14 @@ public class InvitationService {
         Role role = resolveRole(invitation);
         validateScope(invitation);
 
-        Optional<User> existingUser = userRepository.findByTenantIdAndEmail(
-                invitation.getTenantId(), invitation.getEmail());
+        Optional<User> existingUser = userRepository.findGlobalByEmailIgnoreCase(invitation.getEmail());
+
         User user;
+        boolean crossTenantIdentity = false;
         if (existingUser.isPresent()) {
             user = existingUser.get();
+            crossTenantIdentity = user.getTenantId() == null
+                    || !user.getTenantId().equals(invitation.getTenantId());
         } else {
             if (password == null || password.isBlank()) {
                 throw new DomainException(
@@ -132,8 +135,16 @@ public class InvitationService {
         invitation.setAcceptedAt(Instant.now());
         invitationRepository.save(invitation);
         auditService.logSimple("INVITATION_ACCEPTED", "INVITATION", invitation.getId());
+        if (crossTenantIdentity) {
+            auditService.logSimple("INVITATION_ACCEPTED_CROSS_TENANT", "USER", user.getId());
+        }
 
-        return new AcceptanceResult(user.getId(), user.getEmail(), invitation.getTenantId(), alreadyMember);
+        return new AcceptanceResult(
+                user.getId(),
+                user.getEmail(),
+                invitation.getTenantId(),
+                alreadyMember,
+                crossTenantIdentity);
     }
 
     private Invitation findPending(String token, boolean lock) {
@@ -239,6 +250,27 @@ public class InvitationService {
         }
     }
 
-    public record AcceptanceResult(UUID userId, String email, UUID tenantId, boolean alreadyMember) {
+    /**
+     * Resultat d'acceptation d'une invitation.
+     *
+     * @param userId             identifiant du compte associe a l'invitation
+     * @param email              email du compte
+     * @param tenantId           tenant invite
+     * @param alreadyMember      le compte etait deja membre de ce tenant/role/scope
+     * @param crossTenantIdentity le compte existait deja dans une AUTRE eglise ;
+     *                           aucun utilisateur n'a alors ete cree, seule une
+     *                           {@code TenantMembership} a ete ajoutee (decision D3)
+     */
+    public record AcceptanceResult(
+            UUID userId,
+            String email,
+            UUID tenantId,
+            boolean alreadyMember,
+            boolean crossTenantIdentity) {
+
+        /** Constructeur de compatibilite : avant V185/B4, {@code crossTenantIdentity} n'existait pas. */
+        public AcceptanceResult(UUID userId, String email, UUID tenantId, boolean alreadyMember) {
+            this(userId, email, tenantId, alreadyMember, false);
+        }
     }
 }

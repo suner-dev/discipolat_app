@@ -85,7 +85,7 @@ class InvitationControllerTest {
         User user = User.builder().id(userId).tenantId(tenantId).email(invitation.getEmail()).build();
         when(invitationService.validate("secret-token")).thenReturn(invitation);
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant));
-        when(userRepository.findByTenantIdAndEmail(tenantId, invitation.getEmail()))
+        when(userRepository.findGlobalByEmailIgnoreCase(invitation.getEmail()))
                 .thenReturn(Optional.of(user));
 
         var response = controller().validateInvitation("secret-token");
