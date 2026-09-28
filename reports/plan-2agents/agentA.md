@@ -1831,3 +1831,97 @@ Deep links `https://app.discipolat.com/accept-invitation?token=<32hex>` et
 **Limite consignée** : la publication des `.well-known` et l'Associated Domains ne
 relèvent pas du code ; sans eux `autoVerify` échoue silencieusement et Android
 ouvre le navigateur. E2E-11 reste donc recette manuelle.
+
+---
+
+## H8, V178 et `role_id` — trois blocages de plus, levés
+
+En.Base mergees (RDD + onboarding), la recette E2E a fait remonter **trois**
+constats supplementaires. Les trois sont corriges et valides en execution reelle.
+
+### H8 — `organization_nodes.path` : `ltree` en base, `String` dans l'entite
+
+Toute ecriture echouait : `column "path" is of type ltree but expression is of
+type character varying`. Le module Organisation etait donc inoperable, et avec lui
+le provisionnement et l'etape CHURCH_IDENTITY du wizard.
+
+**Aucune requete n'utilisait d'operateur `ltree`** (`<@`, `@>`, `~`) : la
+hierarchie est parcourtue par `LIKE CONCAT(parent.path, '%')`. Le type `ltree` etait
+donc un heritage d'un modele jamais realise.
+
+`V187` convertit la colonne en `text` (sans perte, `USING path::text`), supprime
+l'index GIST ltree et le recree en `varchar_pattern_ops`, qui sert exactement les
+requetes de prefixe utilisees. Le `columnDefinition` de l'entite est aligne pour
+qu'une future generation de schema ne reinroduise pas l'incoherence.
+
+### V178 — la chaine de migrations ne pouvait PAS construire une base neuve
+
+Constat le plus grave de la serie. `V178__superadmin_dashboard_indexes.sql` (apportee
+par la branche RGPD) indexait **7 tables qui n'existent pas** : `events`,
+`financial_transactions` (x2), `reports`, `whatsapp_templates`, `whatsapp_contacts`,
+`prophetic_journal`. Consequence : `flyway migrate` **echouait** sur une base
+vierge, donc **aucun deploiement neuf n'etait possible**, et pas seulement
+l'onboarding.
+
+Noms reels, verifies contre le schema construit par V1..V177 :
+
+| Cite (inexistant) | Reel |
+|---|---|
+| `events(tenant_id, status, deleted)` | `event(tenant_id, status)` + `deleted_at IS NULL` |
+| `financial_transactions` (x2) | `finance_transactions` (`transaction_date` -> `date_transaction`) |
+| `reports(tenant_id, status)` | `maker_reports(tenant_id)` |
+| `whatsapp_templates` | `whatsapp_configs` |
+| `whatsapp_contacts` | `whatsapp_messages` |
+| `prophetic_journal` | `prayer_journal_entries` |
+
+Verification automatique apres correction : **25 references, 0 probleme**.
+
+Les 10 dernieres migrations (V178 a V187) s'appliquent maintenant sur une base
+vierge, et la chaine va jusqu'a **v187**.
+
+### `role_id` NOT NULL — un bug de A5, dans MON code
+
+`TenantOwnerProvisioningService` (A5) construisait la membership du proprietaire
+avec **seulement** `roleLegacy("TENANT_OWNER")`, sans la cle etrangere `role_id` qui
+est `NOT NULL` en base :
+
+```
+ERROR: null value in column "role_id" of relation "tenant_memberships" violates not-null constraint
+```
+
+Le role est desormais resolu par sa cle — la cle est une donnee de la base, pas
+une chaine codee en dur — et l'absence du role produit un `OWNER_ROLE_MISSING`
+explicite au lieu d'une violation de contrainte.
+
+**Pourquoi les tests ne l'avaient pas vu** : le repository est mocke, donc aucune
+contrainte `NOT NULL` n'est appliquee. Ce bug ne pouvait etre trouve que par
+execution sur une base reelle — c'est exactement ce que fait la recette E2E, et
+c'est la justification de sa valeur.
+
+### Etat verifie
+
+- Suite complete : **1469 tests**, 0 echec, 13 skips preexistants.
+- Base vierge : **v187**, migrations V1..V187 appliquees sans erreur.
+- Provisionnement : le 500 est devenu un **404** « OrganizationNode not found ».
+
+### Ce qui reste, et pourquoi
+
+Le provisionnement echoue désormais sur la **lecture** du nœud qu'il vient de
+creer. Cause de la meme famille que **H4** : le filtre Hibernate `tenant_id` reste
+cale sur le tenant précédent pendant que le service bascule `TenantContext` sur le
+nouveau tenant, si bien que le nœud cree n'est pas visible a la requete suivante.
+
+C'est un **defaut d'architecture transversal** — tout le cycle de provisionnement
+écrit puis relit dans un contexte de tenant qui vient de changer. Il touche H4 et
+le provisionnement, etcalls donc un unique chantier plutôt que deux correctifs
+distincts. Il n'est pas traité ici : cela sort du cadre d'une correction ponctuelle
+et exige de décider où passe la frontière entre « contexte de tenant » et
+« opération cross-tenant ».
+
+### Piège rencontré, documenté pour l'avenir
+
+Un `git checkout` de branche **sans** `mvn clean` laisse les migrations compilees de
+la branche précédente dans `target/classes` : Flyway les voit alors dans le
+classpath et echoue en `Validate failed: Detected resolved migration not applied`
+(V178 a V182 « presentes » sans l'avoir ete). Toujours construire avec `clean`
+quand on change de branche contenant des migrations.

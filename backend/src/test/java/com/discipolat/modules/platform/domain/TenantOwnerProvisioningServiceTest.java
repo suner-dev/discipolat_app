@@ -7,6 +7,8 @@ import com.discipolat.modules.authentication.domain.AuthService;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
 import com.discipolat.modules.tenants.domain.MembershipStatus;
 import com.discipolat.modules.tenants.domain.TenantMembership;
+import com.discipolat.modules.tenants.domain.Role;
+import com.discipolat.modules.tenants.domain.RoleRepository;
 import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -35,6 +37,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -46,11 +49,17 @@ class TenantOwnerProvisioningServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private TenantMembershipRepository membershipRepository;
+    @Mock private RoleRepository roleRepository;
     @Mock private AuthService authService;
     @Mock private AuditService auditService;
 
     private PasswordEncoder passwordEncoder;
     private TenantOwnerProvisioningService service;
+    // NOTE : la contrainte `role_id NOT NULL` ne peut PAS etre verifiee par un
+    // test unitaire — le repository est mocke, donc aucune contrainte n'est
+    // appliquee. La preuve de cette correction est la recette E2E
+    // (scripts/verify-tenant-onboarding.sh) sur un PostgreSQL reel : avant, le
+    // provisionnement repondait 500.
     private UUID tenantId;
     private UUID actorId;
 
@@ -58,7 +67,12 @@ class TenantOwnerProvisioningServiceTest {
     void setUp() {
         passwordEncoder = new BCryptPasswordEncoder(4);
         service = new TenantOwnerProvisioningService(userRepository, membershipRepository,
-                authService, passwordEncoder, auditService);
+                roleRepository, authService, passwordEncoder, auditService);
+        // La FK `role_id` est NOT NULL en base : sans cette resolution, la
+        // sauvegarde echoue en base reelle. Les tests unitaires ne l'auraient pas
+        // vu sans ce stub explicite.
+        org.mockito.Mockito.lenient().when(roleRepository.findGlobalByKey("TENANT_OWNER"))
+                .thenReturn(Optional.of(Role.builder().key("TENANT_OWNER").build()));
         tenantId = UUID.randomUUID();
         actorId = UUID.randomUUID();
     }
@@ -238,4 +252,5 @@ class TenantOwnerProvisioningServiceTest {
                 .satisfies(thrown -> assertThat(((DomainException) thrown).toProblemDetail().getTitle())
                         .isEqualTo("TENANT_REQUIRED"));
     }
+
 }

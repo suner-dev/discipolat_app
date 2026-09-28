@@ -1,6 +1,11 @@
 package com.discipolat.modules.platform.domain;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.UserRole;
+import com.discipolat.modules.tenants.domain.Role;
+import com.discipolat.modules.tenants.domain.RoleRepository;
+
+import java.time.Instant;
 import com.discipolat.common.exception.DomainException;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.authentication.domain.AuthService;
@@ -53,11 +58,15 @@ public class TenantOwnerProvisioningService {
     /** Longueur du mot de passe aléatoire initial (non communiqué). */
     static final int INITIAL_PASSWORD_LENGTH = 32;
 
+    /** Clé du rôle global du propriétaire d'une église. */
+    private static final String OWNER_ROLE_KEY = "TENANT_OWNER";
+
     private static final String PASSWORD_ALPHABET =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     private final UserRepository userRepository;
     private final TenantMembershipRepository membershipRepository;
+    private final RoleRepository roleRepository;
     private final AuthService authService;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
@@ -65,11 +74,13 @@ public class TenantOwnerProvisioningService {
 
     public TenantOwnerProvisioningService(UserRepository userRepository,
                                           TenantMembershipRepository membershipRepository,
+                                          RoleRepository roleRepository,
                                           AuthService authService,
                                           PasswordEncoder passwordEncoder,
                                           AuditService auditService) {
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
+        this.roleRepository = roleRepository;
         this.authService = authService;
         this.passwordEncoder = passwordEncoder;
         this.auditService = auditService;
@@ -186,10 +197,21 @@ public class TenantOwnerProvisioningService {
         if (alreadyMember) {
             return true;
         }
+        // La FK `role_id` est NOT NULL en base : renseigner seulement `roleLegacy`
+        // produisait `null value in column "role_id" ... violates not-null
+        // constraint`, donc le provisionnement atomique echouait en 500 sur toute
+        // base reelle. Les tests unitaires ne pouvaient pas le voir : ils mockent
+        // le repository. La cle du role etant une donnee, pas une chaine codee en
+        // dur, elle est resolue comme partout ailleurs dans le code.
+        Role ownerRole = roleRepository.findGlobalByKey(OWNER_ROLE_KEY)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Le rôle propriétaire est absent — provisionnement impossible",
+                        "OWNER_ROLE_MISSING"));
         membershipRepository.save(TenantMembership.builder()
                 .tenantId(tenantId)
                 .userId(userId)
-                .roleLegacy("TENANT_OWNER")
+                .role(ownerRole)
+                .roleLegacy(OWNER_ROLE_KEY)
                 .scopeType(MembershipScopeType.TENANT)
                 .status(MembershipStatus.ACTIVE)
                 .build());

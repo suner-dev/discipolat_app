@@ -1,5 +1,21 @@
 -- Additional composite indexes for Super Admin dashboard performance
 -- These indexes optimize the aggregated queries used in the Super Admin dashboard
+--
+-- CORRECTION 2026-09-28 (constat H2, verifie par execution). Cette migration
+-- visait 7 tables qui N'EXISTENT PAS dans la chaine de migrations : `events`,
+-- `financial_transactions` (x2), `reports`, `whatsapp_templates`,
+-- `whatsapp_contacts`, `prophetic_journal`. Consequence : `flyway migrate`
+-- ECHOUE sur une base vierge, donc aucun deploiement neuf n'etait possible.
+-- Les verifications suivantes ont ete faites contre le schema reellement cree par
+-- V1..V177, et les noms de tables comme de colonnes ont ete alignes sur lui :
+--   events                  -> event            (et `deleted` -> `deleted_at`)
+--   financial_transactions  -> finance_transactions (`transaction_date` -> `date_transaction`)
+--   reports                 -> maker_reports
+--   whatsapp_templates      -> whatsapp_configs
+--   whatsapp_contacts       -> whatsapp_messages
+--   prophetic_journal       -> prayer_journal_entries (`statut` existe)
+-- Aucun de ces index n'est de la decoration : chacun porte une agregation du
+-- tableau de bord Super Admin.
 
 -- Tenants: composite index for dashboard stats queries
 CREATE INDEX IF NOT EXISTS idx_tenants_status_created ON tenants(status, created_at);
@@ -32,18 +48,18 @@ CREATE INDEX IF NOT EXISTS idx_payment_intents_tenant_operator_status ON payment
 CREATE INDEX IF NOT EXISTS idx_souls_tenant ON souls(tenant_id) WHERE deleted = false;
 
 -- Events: indexes for event counts per tenant
-CREATE INDEX IF NOT EXISTS idx_events_tenant_status ON events(tenant_id, status) WHERE deleted = false;
+CREATE INDEX IF NOT EXISTS idx_event_tenant_status ON event(tenant_id, status) WHERE deleted_at IS NULL;
 
 -- Financial Transactions: indexes for finance dashboard
-CREATE INDEX IF NOT EXISTS idx_financial_transactions_tenant_type ON financial_transactions(tenant_id, type);
-CREATE INDEX IF NOT EXISTS idx_financial_transactions_tenant_date ON financial_transactions(tenant_id, transaction_date DESC);
+CREATE INDEX IF NOT EXISTS idx_finance_transactions_tenant_type ON finance_transactions(tenant_id, type);
+CREATE INDEX IF NOT EXISTS idx_finance_transactions_tenant_date ON finance_transactions(tenant_id, date_transaction DESC);
 
 -- Reports: indexes for report counts
-CREATE INDEX IF NOT EXISTS idx_reports_tenant_status ON reports(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_maker_reports_tenant ON maker_reports(tenant_id);
 
 -- WhatsApp: indexes for WhatsApp usage per tenant
-CREATE INDEX IF NOT EXISTS idx_whatsapp_templates_tenant ON whatsapp_templates(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_whatsapp_contacts_tenant ON whatsapp_contacts(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_configs_tenant ON whatsapp_configs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_tenant ON whatsapp_messages(tenant_id);
 
 -- Network: indexes for network module per tenant
 CREATE INDEX IF NOT EXISTS idx_network_resources_tenant ON network_resources(tenant_id);
@@ -56,4 +72,4 @@ CREATE INDEX IF NOT EXISTS idx_ai_predictions_tenant_created ON ai_predictions(t
 CREATE INDEX IF NOT EXISTS idx_voice_reports_tenant_created ON voice_reports(tenant_id, created_at DESC);
 
 -- Prophetic Journal: indexes for prophetic journal per tenant
-CREATE INDEX IF NOT EXISTS idx_prophetic_journal_tenant_created ON prophetic_journal(tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_prayer_journal_entries_tenant_created ON prayer_journal_entries(tenant_id, created_at DESC);
