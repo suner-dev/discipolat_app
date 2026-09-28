@@ -68,6 +68,20 @@ public class Tenant {
     @Column(name = "trial_ends_at")
     private Instant trialEndsAt;
 
+    /**
+     * Fin de l'onboarding du tenant (migration V183, décision D2).
+     * Colonnes ADDITIVES : porter l'achèvement ici plutôt que dans un nouvel
+     * état {@code ONBOARDING} de {@link TenantStatus} évite de casser l'enum,
+     * les seeds, les tableaux de bord et une dizaine de tests existants.
+     * {@code null} = onboarding non terminé.
+     */
+    @Column(name = "onboarding_completed_at")
+    private Instant onboardingCompletedAt;
+
+    /** Acteur ayant terminé l'onboarding du tenant. */
+    @Column(name = "onboarding_completed_by")
+    private UUID onboardingCompletedBy;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

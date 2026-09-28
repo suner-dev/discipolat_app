@@ -1,7 +1,9 @@
 package com.discipolat.modules.onboarding.domain;
 
 import com.discipolat.common.exception.DomainException;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.tenants.domain.TenantService;
 import com.discipolat.modules.onboarding.api.OnboardingProgressResponse;
 import com.discipolat.modules.onboarding.api.OnboardingStatusResponse;
 import com.discipolat.modules.onboarding.api.OnboardingStepResponse;
@@ -57,15 +59,21 @@ public class OnboardingWizardService {
     private final OnboardingStepActions stepActions;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<TenantOnboardingStatusPort> tenantStatusPort;
+    private final ObjectProvider<TenantService> tenantServiceProvider;
+    private final SecurityUtils securityUtils;
 
     public OnboardingWizardService(OnboardingWizardRepository wizardRepo,
                                    OnboardingStepActions stepActions,
                                    ObjectMapper objectMapper,
-                                   ObjectProvider<TenantOnboardingStatusPort> tenantStatusPort) {
+                                   ObjectProvider<TenantOnboardingStatusPort> tenantStatusPort,
+                                   ObjectProvider<TenantService> tenantServiceProvider,
+                                   SecurityUtils securityUtils) {
         this.wizardRepo = wizardRepo;
         this.stepActions = stepActions;
         this.objectMapper = objectMapper;
         this.tenantStatusPort = tenantStatusPort;
+        this.tenantServiceProvider = tenantServiceProvider;
+        this.securityUtils = securityUtils;
     }
 
     // ==================================================================
@@ -290,11 +298,7 @@ public class OnboardingWizardService {
         step.setCompletedAt(LocalDateTime.now());
         OnboardingWizardStep saved = wizardRepo.save(step);
 
-        // Décision D2 : l'achèvement GLOBAL de l'onboarding est materialisé par
-        // des colonnes additives sur `tenants` (V183) et déclenché par
-        // `TenantService.markOnboardingCompleted`. L'appel est pose en A4 (qui cree
-        // ces colonnes et la methode) ; le comportement observable de
-        // `/complete` est deja conforme au contrat §3.1 des A3.
+        markOnboardingCompletedIfAllStepsSettled(tenantId);
         return toResponse(saved);
     }
 
@@ -341,6 +345,30 @@ public class OnboardingWizardService {
         }
         step.setCompletedAt(LocalDateTime.now());
         return toResponse(wizardRepo.save(step));
+    }
+
+    // ==================================================================
+    // Achèvement global de l'onboarding (décision D2)
+    // ==================================================================
+
+    /**
+     * Quand les 7 étapes sont {@code COMPLETED} ou {@code SKIPPED}, l'achèvement
+     * est materialisé sur le tenant (colonnes additives V183) et audité.
+     *
+     * <p>Le drapeau n'est posé <b>qu'à la toute fin</b> : un wizard à 6/7 ne
+     * marque jamais le tenant. L'appel est idempotent, donc une étape rejouée ne
+     * déplace pas la date de fin.
+     */
+    private void markOnboardingCompletedIfAllStepsSettled(UUID tenantId) {
+        List<OnboardingWizardStep> steps = wizardRepo.findByTenantIdOrderByStepOrderAsc(tenantId);
+        if (steps.isEmpty() || steps.stream().anyMatch(step -> !isCompleted(step))) {
+            return;
+        }
+        TenantService tenantService = tenantServiceProvider.getIfAvailable();
+        if (tenantService == null) {
+            return;
+        }
+        tenantService.markOnboardingCompleted(securityUtils.getCurrentUserId());
     }
 
     // ==================================================================

@@ -1,6 +1,7 @@
 package com.discipolat.modules.onboarding.domain;
 
 import com.discipolat.common.exception.DomainException;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -57,14 +58,21 @@ class OnboardingWizardTenantIsolationTest {
 
     @BeforeEach
     void setUp() {
-        service = new OnboardingWizardService(wizardRepo, stepActions, objectMapper, portProvider(statusPort));
         tenantA = UUID.randomUUID();
         tenantB = UUID.randomUUID();
+        // `SecurityUtils.getCurrentUserId()` est statique : on passe par le
+        // SecurityContext (cf. SecurityTestHelper), pas par un mock.
+        SecurityTestHelper.loginAs(UUID.randomUUID());
+        service = new OnboardingWizardService(wizardRepo, stepActions, objectMapper,
+                portProvider(statusPort),
+                portProvider(org.mockito.Mockito.mock(com.discipolat.modules.tenants.domain.TenantService.class)),
+                new com.discipolat.common.infrastructure.security.SecurityUtils(null));
     }
 
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        SecurityTestHelper.logout();
     }
 
     @Test

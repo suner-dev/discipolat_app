@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.isNull;
@@ -260,6 +261,53 @@ class TenantServiceTest {
         tenantService.get(id);
 
         verifyNoInteractions(auditService);
+    }
+
+
+    // ===== A4 / D2 : marquage de l'achèvement de l'onboarding =====
+
+    @Test
+    void markOnboardingCompleted_shouldSetColumnsAndAuditOnce() {
+        UUID id = UUID.randomUUID();
+        Tenant existing = tenant(id, "eglise-a", "free");
+        com.discipolat.common.multitenancy.TenantContext.setTenantId(id);
+        when(tenantRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        boolean firstCall = tenantService.markOnboardingCompleted(UUID.randomUUID());
+
+        assertTrue(firstCall);
+        assertNotNull(existing.getOnboardingCompletedAt());
+        assertNotNull(existing.getOnboardingCompletedBy());
+        verify(auditService, times(1)).logSimple("TENANT_ONBOARDING_COMPLETED", "TENANT", id);
+        com.discipolat.common.multitenancy.TenantContext.clear();
+    }
+
+    @Test
+    void markOnboardingCompleted_shouldBeIdempotentAndNeverOverwriteTheOriginalDate() {
+        UUID id = UUID.randomUUID();
+        UUID originalActor = UUID.randomUUID();
+        Tenant existing = tenant(id, "eglise-a", "free");
+        existing.setOnboardingCompletedAt(java.time.Instant.parse("2026-09-01T08:00:00Z"));
+        existing.setOnboardingCompletedBy(originalActor);
+        com.discipolat.common.multitenancy.TenantContext.setTenantId(id);
+        when(tenantRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        boolean secondCall = tenantService.markOnboardingCompleted(UUID.randomUUID());
+
+        assertFalse(secondCall);
+        assertEquals(java.time.Instant.parse("2026-09-01T08:00:00Z"), existing.getOnboardingCompletedAt());
+        assertEquals(originalActor, existing.getOnboardingCompletedBy());
+        // Aucune écriture ni audit lors d'un rejeu.
+        verify(tenantRepository, never()).save(any());
+        verify(auditService, never()).logSimple(eq("TENANT_ONBOARDING_COMPLETED"), any(), any());
+        com.discipolat.common.multitenancy.TenantContext.clear();
+    }
+
+    @Test
+    void markOnboardingCompleted_shouldBeANoOpWithoutTenantContext() {
+        assertFalse(tenantService.markOnboardingCompleted(UUID.randomUUID()));
+        verify(tenantRepository, never()).save(any());
     }
 
 }

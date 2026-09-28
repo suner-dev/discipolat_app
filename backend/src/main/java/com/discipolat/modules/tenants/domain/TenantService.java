@@ -240,6 +240,39 @@ public class TenantService {
     }
 
     /**
+     * Marque l'onboarding du tenant comme terminé (décision D2, migration V183).
+     *
+     * <p><b>Idempotent et non destructif</b> : si la date est déjà renseignée, elle
+     * n'est <b>jamais</b> écrasée — la fin réelle de l'onboarding d'une église ne
+     * bouge pas parce qu'un administrateur a rejoué une étape. L'acteur n'est
+     * enregistré qu'à la première complétion.
+     *
+     * @return {@code true} si c'est cette appel qui a(finalisé) l'onboarding
+     */
+    public boolean markOnboardingCompleted(UUID actorId) {
+        Tenant tenant = getEntityForOnboarding(TenantContext.getTenantId());
+        if (tenant == null) {
+            return false;
+        }
+        if (tenant.getOnboardingCompletedAt() != null) {
+            // Déjà terminé : on conserve la date ET l'acteur d'origine.
+            return false;
+        }
+        tenant.setOnboardingCompletedAt(Instant.now());
+        tenant.setOnboardingCompletedBy(actorId);
+        tenantRepository.save(tenant);
+        auditService.logSimple("TENANT_ONBOARDING_COMPLETED", "TENANT", tenant.getId());
+        return true;
+    }
+
+    private Tenant getEntityForOnboarding(UUID tenantId) {
+        if (tenantId == null) {
+            return null;
+        }
+        return tenantRepository.findById(tenantId).orElse(null);
+    }
+
+    /**
      * Publie {@link TenantStatusChangedEvent} pour que {@code TenantStatusGuard}
      * invalide immédiatement son cache de statut (constat B1) : une suspension ou
      * une réactivation est effective sans attendre le TTL de 30 s.

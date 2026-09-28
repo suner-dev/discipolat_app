@@ -1,6 +1,7 @@
 package com.discipolat.modules.onboarding.domain;
 
 import com.discipolat.common.exception.DomainException;
+import com.discipolat.common.infrastructure.security.SecurityTestHelper;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.onboarding.api.OnboardingProgressResponse;
 import com.discipolat.modules.onboarding.api.OnboardingStatusResponse;
@@ -8,6 +9,7 @@ import com.discipolat.modules.onboarding.api.OnboardingStepResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -45,21 +47,32 @@ class OnboardingWizardServiceTest {
     private OnboardingStepActions stepActions;
     @Mock
     private TenantOnboardingStatusPort statusPort;
+    @Mock
+    private com.discipolat.modules.tenants.domain.TenantService tenantService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OnboardingWizardService service;
     private UUID tenantId;
+    private UUID actorId;
 
     @BeforeEach
     void setUp() {
-        service = new OnboardingWizardService(wizardRepo, stepActions, objectMapper, portProvider(statusPort));
         tenantId = UUID.randomUUID();
+        actorId = UUID.randomUUID();
+        // `SecurityUtils.getCurrentUserId()` est STATIQUE : un mock Mockito ne
+        // l'intercepte pas (cf. SecurityTestHelper : « Remplace le mock de
+        // SecurityUtils qui ne fonctionne pas pour les méthodes statiques »).
+        SecurityTestHelper.loginAs(actorId);
+        service = new OnboardingWizardService(wizardRepo, stepActions, objectMapper,
+                portProvider(statusPort), portProvider(tenantService),
+                new com.discipolat.common.infrastructure.security.SecurityUtils(null));
         TenantContext.setTenantId(tenantId);
     }
 
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        SecurityTestHelper.logout();
     }
 
     // ==================================================================
@@ -623,4 +636,60 @@ class OnboardingWizardServiceTest {
             }
         };
     }
+
+    // ==================================================================
+    // A4 / D2 : l'achèvement global n'est posé qu'à la TOUTE fin
+    // ==================================================================
+
+    @Test
+    @DisplayName("L'achèvement du tenant n'est marqué que lorsque les 7 étapes sont réglées")
+    void globalCompletionIsMarkedOnlyWhenEveryStepIsSettled() {
+        OnboardingWizardStep last = step(OnboardingWizardStep.StepType.FIRST_EVENT, 6,
+                OnboardingWizardStep.Status.IN_PROGRESS);
+        List<OnboardingWizardStep> allSettledButLast = allSixSettled();
+        allSettledButLast.add(last);
+        when(wizardRepo.findById(last.getId())).thenReturn(java.util.Optional.of(last));
+        when(wizardRepo.findByTenantIdOrderByStepOrderAsc(tenantId)).thenReturn(allSettledButLast);
+        when(wizardRepo.save(any(OnboardingWizardStep.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(stepActions.execute(any(), any(), any())).thenReturn(Map.of("ok", true));
+
+        service.completeStep(last.getId(), Map.of());
+
+        verify(tenantService, times(1)).markOnboardingCompleted(actorId);
+    }
+
+    @Test
+    @DisplayName("Une étape intermédiaire NE marque PAS l'achèvement du tenant")
+    void globalCompletionIsNotMarkedWhileAStepRemains() {
+        OnboardingWizardStep structure = step(OnboardingWizardStep.StepType.STRUCTURE, 2,
+                OnboardingWizardStep.Status.IN_PROGRESS);
+        List<OnboardingWizardStep> steps = new ArrayList<>();
+        steps.add(completedStep(OnboardingWizardStep.StepType.CHURCH_IDENTITY, 0));
+        steps.add(skippedStep(OnboardingWizardStep.StepType.MEMBER_IMPORT, 1));
+        steps.add(structure);
+        steps.add(pendingStep(OnboardingWizardStep.StepType.ROLES, 3));
+        steps.add(pendingStep(OnboardingWizardStep.StepType.BRANDING, 4));
+        steps.add(pendingStep(OnboardingWizardStep.StepType.MODULES, 5));
+        steps.add(pendingStep(OnboardingWizardStep.StepType.FIRST_EVENT, 6));
+        when(wizardRepo.findById(structure.getId())).thenReturn(java.util.Optional.of(structure));
+        when(wizardRepo.findByTenantIdOrderByStepOrderAsc(tenantId)).thenReturn(steps);
+        when(wizardRepo.save(any(OnboardingWizardStep.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(stepActions.execute(any(), any(), any())).thenReturn(Map.of("ok", true));
+
+        service.completeStep(structure.getId(), Map.of());
+
+        verify(tenantService, never()).markOnboardingCompleted(any());
+    }
+
+    private List<OnboardingWizardStep> allSixSettled() {
+        List<OnboardingWizardStep> steps = new ArrayList<>();
+        for (int order = 0; order <= 5; order++) {
+            steps.add(completedStep(
+                    OnboardingStepDefinition.CANONICAL_ORDER.get(order).stepType(), order));
+        }
+        return steps;
+    }
+
 }

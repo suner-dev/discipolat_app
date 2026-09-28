@@ -603,3 +603,118 @@ lève `DomainException(..., HttpStatus.NOT_FOUND, "STEP_NOT_FOUND")` après un
   L'interface dit `declaredOnly: true` dans le `completedData` : aucune fausse
   automatisation.
 - **Appel à `TenantService.markOnboardingCompleted`** : voir point 1, posé en A4.
+
+---
+
+## A4 — Colonnes de complétion d'onboarding + endpoint `/status` (constat B2 / D2)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/resources/db/migration/V183__tenant_onboarding_completion.sql`
+  - MOD `tenants/domain/Tenant.java` (+ `onboardingCompletedAt`, `onboardingCompletedBy`)
+  - MOD `tenants/api/TenantResponse.java` (+ 2 champs additifs **en fin** de record)
+  - MOD `tenants/domain/TenantService.java` (+ `markOnboardingCompleted(UUID actorId)`)
+  - MOD `onboarding/domain/OnboardingWizardService.java` (appel en fin de wizard, A3.6)
+  - NEW `tenants/domain/TenantOnboardingStatusAdapter.java` (implémente le port lu par `/status`)
+  - NEW `onboarding/domain/TenantOnboardingStatusPort.java` (interface, livrée en A3)
+  - NEW `onboarding/domain/OnboardingStepActionsTest.java` (**23 cas** —voir « Trou de couverture comblé »)
+  - MOD tests : `TenantServiceTest` (+3), `OnboardingWizardServiceTest` (+2 et nouveau ctor), `OnboardingWizardTenantIsolationTest` (nouveau ctor)
+
+### Preuve — tests imposés (`§4 A4`)
+
+```
+mvn -B -o test -Dtest='TenantServiceTest,OnboardingWizardServiceTest,OnboardingWizardTenantIsolationTest,OnboardingStepActionsTest'
+
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardTenantIsolationTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingStepActionsTest
+[INFO] BUILD SUCCESS
+```
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1379, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 127 = **1379**. Aucun échec.
+
+### Preuve — migration V183 sur PostgreSQL réel (base vierge)
+
+```
+mvn -B -o flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:55444/discifly3 ...
+
+[INFO] Successfully validated 147 migrations
+[INFO] Migrating schema "public" to version "183 - tenant onboarding completion"
+[INFO] Successfully applied 147 migrations to schema "public", now at version v185
+[INFO] BUILD SUCCESS
+```
+
+```
+\d tenants  ->  onboarding_completed_at | timestamp with time zone
+                onboarding_completed_by | uuid
+\d onboarding_wizard_steps
+              ->  skip_reason | text
+              ->  "uk_onboarding_step_tenant_type" UNIQUE, btree (tenant_id, step_type)
+```
+
+**L'index unique fait son travail :**
+```sql
+INSERT ... ('…001','CHURCH_IDENTITY')  -> OK
+INSERT ... ('…001','CHURCH_IDENTITY')  -> refusé
+ERROR:  duplicate key value violates unique constraint "uk_onboarding_step_tenant_type"
+```
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| La complétion du wizard renseigne les 2 colonnes **une seule fois** | `markOnboardingCompleted_shouldBeIdempotentAndNeverOverwriteTheOriginalDate` (date et acteur d'origine conservés, `verifyNoInteractions` sur save/audit au rejeu) |
+| `GET /status` renvoie `completed=true` et `completedAt` | `getStatus_reportsCompletionWithActorWhenColumnsAreSet` + `OnboardingWizardControllerTest.getStatus_isExposed` (HTTP) |
+| Un tenant non onboardé renvoie `completed=false` | `getStatus_reportsNotCompletedWhenTheTenantColumnIsAbsent` |
+| `tenantId` jamais exposé hors du tenant | `/status` ne renvoie que `completed/completedAt/completedBy/totalSteps/completedSteps/skippedSteps/percentage` ; les tests d'isolation prouvent qu'aucune requête ne sort du tenant courant |
+| Le flag n'est posé **qu'à la fin** | `globalCompletionIsMarkedOnlyWhenEveryStepIsSettled` (vrai, `verify(tenantService).markOnboardingCompleted(actorId)`) et `globalCompletionIsNotMarkedWhileAStepRemains` (faux, `never()`) |
+
+### Trou de couverture comblé
+
+Les tests de A3 **mockaient** `OnboardingStepActions` : aucune des 7 actions
+métier n'était donc réellement vérifiée, alors que le critère d'acceptation
+d'A3.4 exige « chaque étape produit un effet réel vérifiable ».
+
+`OnboardingStepActionsTest` (**23 cas**) comble ce trou : chaque action est
+prouvée appelant le **vrai** service (`OrganizationNodeService.updateNode` /
+`createRootChurch`, `TenantSettingsService.updateSettings` / `updateBranding`,
+`DepartmentService.create`, `FamilyService.create`, `InvitationService.createInvitation`,
+`TenantFeatureService.enableFeature` après validation catalogue,
+`EventService.create`), avec son audit, et avec **zéro écriture** en cas de donnée
+invalide (`verifyNoInteractions`).
+
+### Décisions et déviations documentées
+
+1. **`TenantResponse` : constructeur de compatibilité à 15 champs ajouté.** Les
+   deux champs additifs sont bien **en fin** de record comme l'impose le plan,
+   mais un constructeur secondaire à 15 champs évite de casser
+   `PlatformProvisioningServiceTest` et `TenantRegistrationServiceTest` qui
+   construisent le record directement. L'ajout reste réellement additif.
+2. **Port `TenantOnboardingStatusPort` + `TenantOnboardingStatusAdapter`.** Le
+   fichier de l'implémentation n'est pas listé dans A4 : il était nécessaire
+   pour que `GET /status` (contrat §3.1) lise réellement les colonnes V183.
+   Alternative écartée : injection de `TenantRepository` dans le module
+   onboarding (couplage direct) — le port évite ce couplage, reste sans état
+   statique, et se dégrade proprement si absent.
+3. **`markOnboardingCompleted` lit le tenant via `TenantContext`** et renvoie
+   `false` (no-op) s'il n'y a pas de contexte — au lieu de lever, pour ne pas
+   faire échouer une complétion d'étape légitime dans un flux sans tenant.
+4. **`markOnboardingCompleted` n'écrase JAMAIS** une date de fin existante, et
+   n'enregistre l'acteur qu'à la première complétion.
+5. **Numérotation des migrations** : le plan annonçait « dernier existant V182 » ;
+   le dernier réel est **V177**. V183/V184/V185 restent donc libres, mais leave
+   un **trou de numérotation** (178-182 inutilisés). Sans conséquence sur une
+   installation neuve ou existante (177 → 183 s'applique dans l'ordre), et c'est
+   ce que j'ai vérifié. Voir NEED-HELP-01.
+6. **`skip_reason`** est fusionné dans `completedData` (clé `skipReason`) plutôt
+   qu'exposé comme champ du contrat §3.1, qui n'en prévoit pas.
