@@ -28,15 +28,15 @@ public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
     @Query("SELECT i FROM Invitation i WHERE i.tokenHash = :tokenHash")
     Optional<Invitation> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
-    Optional<Invitation> findByEmailAndTenantIdAndStatus(String email, UUID tenantId, InvitationStatus status);
+    Optional<Invitation> findFirstByEmailAndTenantIdAndStatus(String email, UUID tenantId, InvitationStatus status);
 
-    Optional<Invitation> findByTenantIdAndEmailAndStatus(UUID tenantId, String email, InvitationStatus status);
+    Optional<Invitation> findFirstByTenantIdAndEmailAndStatus(UUID tenantId, String email, InvitationStatus status);
 
     List<Invitation> findByTenantIdAndStatusIn(UUID tenantId, List<InvitationStatus> statuses);
 
     List<Invitation> findByTenantId(UUID tenantId);
 
-    Optional<Invitation> findByEmailAndTenantId(String email, UUID tenantId);
+    Optional<Invitation> findFirstByEmailAndTenantId(String email, UUID tenantId);
 
     long countByTenantIdAndStatus(UUID tenantId, InvitationStatus status);
 

@@ -78,7 +78,7 @@ class InvitationServiceCreateInvitationTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findGlobalByEmailIgnoreCase("pasteur@eglise.com"))
                 .thenReturn(Optional.empty());
-        when(invitationRepository.findByTenantIdAndEmailAndStatus(
+        when(invitationRepository.findFirstByTenantIdAndEmailAndStatus(
                 tenantId, "pasteur@eglise.com", InvitationStatus.PENDING)).thenReturn(Optional.empty());
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(i -> {
             Invitation saved = i.getArgument(0);
@@ -117,7 +117,7 @@ class InvitationServiceCreateInvitationTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findGlobalByEmailIgnoreCase("pasteur@eglise.com"))
                 .thenReturn(Optional.empty());
-        when(invitationRepository.findByTenantIdAndEmailAndStatus(
+        when(invitationRepository.findFirstByTenantIdAndEmailAndStatus(
                 any(), anyString(), any())).thenReturn(Optional.empty());
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(i -> {
             Invitation saved = i.getArgument(0);
@@ -203,7 +203,7 @@ class InvitationServiceCreateInvitationTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findGlobalByEmailIgnoreCase("pasteur@eglise.com"))
                 .thenReturn(Optional.of(foreign));
-        when(invitationRepository.findByTenantIdAndEmailAndStatus(
+        when(invitationRepository.findFirstByTenantIdAndEmailAndStatus(
                 any(), anyString(), any())).thenReturn(Optional.empty());
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(i -> {
             Invitation saved = i.getArgument(0);
@@ -305,7 +305,7 @@ class InvitationServiceCreateInvitationTest {
                 .thenReturn(Optional.empty());
         when(userRepository.findGlobalByEmailIgnoreCase("pasteur@eglise.com"))
                 .thenReturn(Optional.empty());
-        when(invitationRepository.findByTenantIdAndEmailAndStatus(
+        when(invitationRepository.findFirstByTenantIdAndEmailAndStatus(
                 tenantId, "pasteur@eglise.com", InvitationStatus.PENDING)).thenReturn(Optional.of(pending));
 
         assertThatThrownBy(() -> service.createInvitation(

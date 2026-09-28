@@ -283,7 +283,7 @@ class DepartmentDossierServiceTest {
     void importMembers_previewClassifiesDuplicateAndCreatable() {
         Soul existing = Soul.builder().id(UUID.randomUUID()).nom("Martin").prenom("Paul")
                 .email("paul@mail.com").typeDisciple(TypeDisciple.NOUVEL_ARRIVANT).statut(StatutAme.ACTIF).build();
-        when(soulRepository.findByEmailIgnoreCaseAndDeletedFalse("paul@mail.com")).thenReturn(Optional.of(existing));
+        when(soulRepository.findFirstByEmailIgnoreCaseAndDeletedFalse("paul@mail.com")).thenReturn(Optional.of(existing));
         when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of(
                 DepartmentTeam.builder().id(UUID.randomUUID()).departmentId(deptId).nom("Son")
                         .statut(DepartmentTeam.TeamStatus.ACTIVE).build()));
@@ -303,7 +303,7 @@ class DepartmentDossierServiceTest {
 
     @Test
     void importMembers_commitCreatesSoulsAndAssignments() {
-        when(soulRepository.findByEmailIgnoreCaseAndDeletedFalse(any())).thenReturn(Optional.empty());
+        when(soulRepository.findFirstByEmailIgnoreCaseAndDeletedFalse(any())).thenReturn(Optional.empty());
         UUID teamId = UUID.randomUUID();
         when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of(
                 DepartmentTeam.builder().id(teamId).departmentId(deptId).nom("Son")

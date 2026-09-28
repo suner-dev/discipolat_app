@@ -80,7 +80,7 @@ class AuthServiceEmailLookupTest {
         assertThat(result.accessToken()).isEqualTo("access");
         verify(userRepository).findByEmailIgnoreCase("Pasteur@Eglise.COM");
         // Le lookup sensible à la casse ne doit plus jamais être utilisé pour le login.
-        verify(userRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findFirstByEmail(anyString());
     }
 
     @Test
@@ -118,7 +118,7 @@ class AuthServiceEmailLookupTest {
 
         service().resendActivationEmail("Pasteur@EGLISE.com");
 
-        verify(userRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findFirstByEmail(anyString());
         verify(activationTokenRepository).save(org.mockito.ArgumentMatchers.any(ActivationToken.class));
         verify(emailService).sendWelcomeEmail(org.mockito.ArgumentMatchers.eq("pasteur@eglise.com"),
                 org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
@@ -133,7 +133,7 @@ class AuthServiceEmailLookupTest {
 
         service().generatePasswordResetToken("Pasteur@EGLISE.com");
 
-        verify(userRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findFirstByEmail(anyString());
         verify(emailService).sendPasswordResetEmail(org.mockito.ArgumentMatchers.eq("pasteur@eglise.com"),
                 org.mockito.ArgumentMatchers.anyString());
     }
@@ -160,7 +160,7 @@ class AuthServiceEmailLookupTest {
         User resolved = service.verifyMagicLink(token);
 
         assertThat(resolved.getId()).isEqualTo(user.getId());
-        verify(userRepository, never()).findByEmail(anyString());
+        verify(userRepository, never()).findFirstByEmail(anyString());
     }
 
     private User activeUser(String email) {

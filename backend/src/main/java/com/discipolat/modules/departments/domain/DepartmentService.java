@@ -150,7 +150,7 @@ public class DepartmentService {
     }
 
     private UUID createNewResponsable(com.discipolat.modules.departments.api.CreateDepartmentRequest request) {
-        if (userRepository.findByEmail(request.newRespEmail()).isPresent()) {
+        if (userRepository.findFirstByEmail(request.newRespEmail()).isPresent()) {
             throw new com.discipolat.common.domain.BusinessRuleException(
                     "Un compte avec cet email existe déjà: " + request.newRespEmail(),
                     "DUPLICATE_EMAIL");

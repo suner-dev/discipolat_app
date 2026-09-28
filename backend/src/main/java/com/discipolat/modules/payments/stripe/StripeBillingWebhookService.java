@@ -158,7 +158,7 @@ public class StripeBillingWebhookService {
     private void onSubscriptionDeleted(Event event) throws StripeException {
         Subscription remote = deserialize(event, Subscription.class);
         if (remote == null) return;
-        Optional<TenantSubscription> local = subscriptionRepository.findByStripeSubscriptionId(remote.getId());
+        Optional<TenantSubscription> local = subscriptionRepository.findFirstByStripeSubscriptionId(remote.getId());
         if (local.isEmpty()) {
             log.warn("[Stripe:Webhook] subscription.deleted inconnue — {}", remote.getId());
             return;
@@ -193,7 +193,7 @@ public class StripeBillingWebhookService {
         if (stripeSubId == null) {
             return;
         }
-        Optional<TenantSubscription> local = subscriptionRepository.findByStripeSubscriptionId(stripeSubId);
+        Optional<TenantSubscription> local = subscriptionRepository.findFirstByStripeSubscriptionId(stripeSubId);
         if (local.isEmpty()) {
             return;
         }
@@ -225,7 +225,7 @@ public class StripeBillingWebhookService {
                 ? null : remote.getMetadata().get("tenant_id"));
         if (tenantId == null) {
             Optional<TenantSubscription> byStripeId =
-                    subscriptionRepository.findByStripeSubscriptionId(remote.getId());
+                    subscriptionRepository.findFirstByStripeSubscriptionId(remote.getId());
             if (byStripeId.isEmpty()) {
                 log.warn("[Stripe:Webhook] subscription sans tenant ni liaison locale — {}", remote.getId());
                 return;
@@ -244,7 +244,7 @@ public class StripeBillingWebhookService {
     private TenantSubscription resolveLocalSubscription(UUID tenantId, String stripeSubscriptionId,
                                                         Map<String, String> metadata) {
         if (stripeSubscriptionId != null) {
-            Optional<TenantSubscription> byStripeId = subscriptionRepository.findByStripeSubscriptionId(stripeSubscriptionId);
+            Optional<TenantSubscription> byStripeId = subscriptionRepository.findFirstByStripeSubscriptionId(stripeSubscriptionId);
             if (byStripeId.isPresent()) {
                 return byStripeId.get();
             }

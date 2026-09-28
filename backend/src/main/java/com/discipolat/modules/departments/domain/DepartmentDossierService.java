@@ -1406,11 +1406,11 @@ public class DepartmentDossierService {
     }
 
     private Soul findSoulByEmail(String email) {
-        return soulRepository.findByEmailIgnoreCaseAndDeletedFalse(email).orElse(null);
+        return soulRepository.findFirstByEmailIgnoreCaseAndDeletedFalse(email).orElse(null);
     }
 
     private Soul findSoulByTelephone(String telephone) {
-        return soulRepository.findByTelephoneAndDeletedFalse(telephone).orElse(null);
+        return soulRepository.findFirstByTelephoneAndDeletedFalse(telephone).orElse(null);
     }
 
     private String str(Object o) {

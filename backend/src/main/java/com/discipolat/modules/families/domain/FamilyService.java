@@ -164,7 +164,7 @@ public class FamilyService {
      */
     private UUID createNewChef(CreateFamilyRequest request) {
         // Vérifier que l'email n'existe pas déjà
-        if (userRepository.findByEmail(request.newChefEmail()).isPresent()) {
+        if (userRepository.findFirstByEmail(request.newChefEmail()).isPresent()) {
             throw new BusinessRuleException(
                     "Un compte avec cet email existe déjà: " + request.newChefEmail(),
                     "DUPLICATE_EMAIL");

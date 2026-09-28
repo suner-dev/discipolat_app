@@ -20,7 +20,7 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, UU
     @Query("SELECT p FROM PaymentIntent p WHERE p.status = 'PENDING' AND p.createdAt <= :before ORDER BY p.createdAt ASC")
     List<PaymentIntent> findPendingOlderThan(@Param("before") java.time.LocalDateTime before);
 
-    Optional<PaymentIntent> findByProviderReference(String providerReference);
+    Optional<PaymentIntent> findFirstByProviderReference(String providerReference);
 
     long countByStatus(PaymentIntent.Status status);
 

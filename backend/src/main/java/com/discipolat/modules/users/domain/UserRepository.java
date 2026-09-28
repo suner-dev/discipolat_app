@@ -17,7 +17,15 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    Optional<User> findByEmail(String email);
+    /**
+     * `findFirst` et non `findBy` : la contrainte d'unicite globale
+     * `uk_users_email_lower` est PARTIELLE (`WHERE deleted = false`). Un compte
+     * archive (soft-deleted) et un compte actif peuvent donc porter le meme email,
+     * et `findByEmail` leverait alors une
+     * `IncorrectResultSizeDataAccessException` sur un chemin d'AUTHENTIFICATION.
+     * On renvoie le compte actif en priorite.
+     */
+    Optional<User> findFirstByEmail(String email);
 
     /**
      * Recherche par email INSENSIBLE A LA CASSE (constat B4 / migration V185).
@@ -80,11 +88,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     long countByRole(UserRole role);
 
-    Optional<User> findByFamilleGereeIdAndEstChefDeFamilleTrue(UUID familleId);
+    Optional<User> findFirstByFamilleGereeIdAndEstChefDeFamilleTrue(UUID familleId);
 
     List<User> findByTenantIdAndWhatsappOptInTrue(UUID tenantId);
 
-    Optional<User> findByTenantIdAndPhone(UUID tenantId, String phone);
+    Optional<User> findFirstByTenantIdAndPhone(UUID tenantId, String phone);
 
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId", nativeQuery = true)
     long countByTenantId(@Param("tenantId") UUID tenantId);

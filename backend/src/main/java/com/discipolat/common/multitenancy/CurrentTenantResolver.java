@@ -107,7 +107,7 @@ public class CurrentTenantResolver {
             }
             if (authentication != null && authentication.getName() != null) {
                 // Try to find user by email
-                return userRepository.findByEmail(authentication.getName()).map(User::getId).orElse(null);
+                return userRepository.findFirstByEmail(authentication.getName()).map(User::getId).orElse(null);
             }
         } catch (Exception e) {
             log.debug("Could not extract user from SecurityContext: {}", e.getMessage());

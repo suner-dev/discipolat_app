@@ -296,7 +296,7 @@ public class InvitationService {
                                                              InvitationCreationKind kind,
                                                              String auditAction) {
         Optional<Invitation> pending = invitationRepository
-                .findByTenantIdAndEmailAndStatus(tenantId, normalizedEmail, InvitationStatus.PENDING);
+                .findFirstByTenantIdAndEmailAndStatus(tenantId, normalizedEmail, InvitationStatus.PENDING);
         if (pending.isPresent()) {
             throw new DomainException(
                     "Une invitation en attente existe déjà pour cet email",

@@ -314,7 +314,7 @@ public class DataInitializer implements CommandLineRunner {
      * aux départements Chorale et Audiovisuel.
      */
     private void seedMemberSpace() {
-        User membre = userRepository.findByEmail("membre@discipolat.com").orElse(null);
+        User membre = userRepository.findFirstByEmail("membre@discipolat.com").orElse(null);
         if (membre == null) return;
 
         Soul soul = soulRepository.findAllByUserId(membre.getId()).stream()
@@ -348,7 +348,7 @@ public class DataInitializer implements CommandLineRunner {
 
         final Soul memberSoul = soul;
         for (String deptNom : List.of("Chorale", "Audiovisuel")) {
-            departmentRepository.findByNom(deptNom).ifPresent(dept -> {
+            departmentRepository.findFirstByNom(deptNom).ifPresent(dept -> {
                 if (!memberDepartmentRepository.existsBySoulIdAndDepartmentId(memberSoul.getId(), dept.getId())) {
                     memberDepartmentRepository.save(MemberDepartment.builder()
                             .soulId(memberSoul.getId())
@@ -363,7 +363,7 @@ public class DataInitializer implements CommandLineRunner {
     private void seedUser(String email, String firstName, String lastName,
                           UserRole primaryRole, Set<UserRole> roles,
                           UserRole activeRole, boolean estChefDeFamille) {
-        if (userRepository.findByEmail(email).isPresent()) return;
+        if (userRepository.findFirstByEmail(email).isPresent()) return;
         
         // Get the default tenant (first active tenant)
         UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)

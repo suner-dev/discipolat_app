@@ -295,7 +295,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findFirstByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
     }
 

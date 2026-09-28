@@ -17,7 +17,7 @@ import java.util.UUID;
 @Repository
 public interface TenantSubscriptionRepository extends TenantAwareRepository<TenantSubscription, UUID> {
 
-    Optional<TenantSubscription> findByTenantId(UUID tenantId);
+    Optional<TenantSubscription> findFirstByTenantId(UUID tenantId);
 
     List<TenantSubscription> findByStatusAndCurrentPeriodStartLessThanEqual(
             SubscriptionStatus status, java.time.Instant effectiveAt);
@@ -28,9 +28,9 @@ public interface TenantSubscriptionRepository extends TenantAwareRepository<Tena
             "current_period_start DESC, created_at DESC LIMIT 1", nativeQuery = true)
     Optional<TenantSubscription> findCurrentByTenantId(@Param("tenantId") UUID tenantId);
 
-    Optional<TenantSubscription> findByStripeSubscriptionId(String stripeSubscriptionId);
+    Optional<TenantSubscription> findFirstByStripeSubscriptionId(String stripeSubscriptionId);
 
-    Optional<TenantSubscription> findByStripeCustomerId(String stripeCustomerId);
+    Optional<TenantSubscription> findFirstByStripeCustomerId(String stripeCustomerId);
 
     long countByStatus(SubscriptionStatus status);
 
