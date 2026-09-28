@@ -1020,3 +1020,19 @@ WHERE s.id IS NULL;
 Tout tenant retourné doit recevoir un abonnement avant le déploiement, sinon il
 sera bloqué. Je n'ai pas pu l'exécuter : je n'ai pas accès à la base de
 production.
+
+---
+
+## ARBITRAGES DE L'ORCHESTRATEUR (2026-09-28) — NEED-HELP 02, 03 et vigilance clos
+
+Les trois points bloquants ont été soumis à l'orchestrateur humain, qui a
+validé les trois options recommandées :
+
+| # | Question | Décision de l'orchestrateur | Conséquence |
+|---|---|---|---|
+| **NEED-HELP-02** | Preuve de validation des migrations | **Acceptée : preuve PostgreSQL hors CI** | `mvn verify` ne prouve rien sur les migrations ; la preuve officielle de A12 sera la validation sur PostgreSQL réel documentée (147 migrations sur base vierge, index/colonnes vérifiés, doublons refusés). L'ajout d'un test Testcontainers reste **hors périmètre** et pourra être repris dans `ORC-A5` (CI bloquante). |
+| **NEED-HELP-03** | `OWNER_EMAIL_ALREADY_USED` en 409 | **Validé : `DomainException` + `HttpStatus.CONFLICT`** | Le code métier est celui du plan ; seul le véhicule d'exception change, `BusinessRuleException` ne sachant produire ni 409. Aucun correctif supplémentaire requis. |
+| **Vigilance production** | Trou de numérotation 178-182 + tenants sans abonnement actif | **Documenter et continuer** | Aucune migration hors périmètre n'est créée. La requête de contrôle des tenants sans abonnement figure dans la section A8 et doit être exécutée par l'orchestrateur **avant déploiement**. |
+
+Le plan reste inchangé (fichier d'autorité non modifié) : ces décisions sont
+consignées ici, dans le fichier de progression de l'Agent A, conformément à `R8`.
