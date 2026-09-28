@@ -18,7 +18,37 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
 
+    /**
+     * Recherche par email INSENSIBLE A LA CASSE (constat B4 / migration V185).
+     * C'est la methode de reference pour toute resolution d'identite par email :
+     * `findByEmail` est sensible a la casse et peut renvoyer un compte arbitraire
+     * si deux emails ne different que par leur casse.
+     *
+     * <p>Volontairement enrequete NATIVE (comme {@code findGlobalByEmail}) : l'email
+     * est une identite GLOBALE, la resolution ne doit donc jamais etre restreinte
+     * par le filtre Hibernate multi-tenant {@code tenantFilter} (actif des qu'un
+     * TenantContext est pose). Une requete JPQL serait filtree et pourrait echouer
+     * sur un email d'un autre tenant, ou pire, depandre de l'absence de contexte.
+     */
+    @Query(value = "SELECT * FROM users WHERE LOWER(email) = LOWER(:email) AND deleted = false", nativeQuery = true)
+    Optional<User> findByEmailIgnoreCase(@Param("email") String email);
+
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM users "
+            + "WHERE LOWER(email) = LOWER(:email) AND deleted = false", nativeQuery = true)
+    boolean existsByEmailIgnoreCase(@Param("email") String email);
+
     Optional<User> findByTenantIdAndEmail(UUID tenantId, String email);
+
+    @Query("SELECT u FROM User u WHERE u.tenantId = :tenantId AND LOWER(u.email) = LOWER(:email) AND u.deleted = false")
+    Optional<User> findByTenantIdAndEmailIgnoreCase(@Param("tenantId") UUID tenantId, @Param("email") String email);
+
+    /**
+     * Recherche GLOBALE (tous tenants confondus) par email insensible a la casse.
+     * Aligne sur l'index unique `uk_users_email_lower` de la migration V185 :
+     * seules les lignes actives sont considerees.
+     */
+    @Query(value = "SELECT * FROM users WHERE LOWER(email) = LOWER(:email) AND deleted = false", nativeQuery = true)
+    Optional<User> findGlobalByEmailIgnoreCase(@Param("email") String email);
 
     @Query(value = "SELECT * FROM users WHERE email = :email", nativeQuery = true)
     Optional<User> findGlobalByEmail(@Param("email") String email);

@@ -74,7 +74,8 @@ public class PlatformProvisioningController {
                         request.chefFamilleId(), request.chefAdjointId(), request.createNewChef(),
                         request.newChefFirstName(), request.newChefLastName(), request.newChefEmail(),
                         request.newChefPhone(), request.newChefSexe(), request.newChefDateNaissance(),
-                        request.newChefAdresse()
+                        request.newChefAdresse(),
+                        request.ownerEmail(), request.ownerFirstName(), request.ownerLastName()
                 ));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("tenant", result.tenant());
@@ -92,6 +93,13 @@ public class PlatformProvisioningController {
                 "nom", result.family().getNom(),
                 "chefFamilleId", result.family().getChefFamilleId().toString()
         ));
+        if (result.owner() != null) {
+            Map<String, Object> owner = new LinkedHashMap<>();
+            owner.put("userId", result.owner().userId().toString());
+            owner.put("email", result.owner().email());
+            owner.put("activationEmailSent", result.owner().activationEmailSent());
+            body.put("owner", owner);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
@@ -290,8 +298,31 @@ public class PlatformProvisioningController {
             String newChefPhone,
             String newChefSexe,
             String newChefDateNaissance,
-            String newChefAdresse
-    ) {}
+            String newChefAdresse,
+            // Additifs A5 (contrat §3.5) — volontairement en FIN de record pour
+            // ne pas décaler l'index des champs déjà exploités.
+            String ownerEmail,
+            String ownerFirstName,
+            String ownerLastName
+    ) {
+        /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
+         *  ce que le service refuse avec OWNER_REQUIRED (fail-closed). */
+        public AtomicProvisioningRequest(
+                String name, String slug, String plan, String country, String currency, String timezone,
+                String locale, String churchName, String departmentName, String departmentDescription,
+                UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
+                String newResponsableLastName, String newResponsableEmail, String newResponsablePhone,
+                String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
+                String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
+                String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
+            this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
+                    departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
+                    newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
+                    chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
+                    newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
+                    null, null, null);
+        }
+    }
 
     /** Étape 2 — création de l'église racine du tenant. */
     public record ChurchProvisionRequest(

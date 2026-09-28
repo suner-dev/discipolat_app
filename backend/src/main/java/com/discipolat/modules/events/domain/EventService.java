@@ -42,6 +42,7 @@ public class EventService {
     private final WorkspaceScopeService workspaceScope;
     private final EntityAttachmentService attachmentService;
     private final AuditService auditService;
+    private final com.discipolat.modules.tenants.domain.QuotaService quotaService;
     private final EntityPropagationPublisher propagationPublisher;
     private final EntityPropagationListener propagationListener;
 
@@ -54,6 +55,7 @@ public class EventService {
                         WorkspaceScopeService workspaceScope,
                         EntityAttachmentService attachmentService,
                         AuditService auditService,
+                        com.discipolat.modules.tenants.domain.QuotaService quotaService,
                         EntityPropagationPublisher propagationPublisher,
                         EntityPropagationListener propagationListener) {
         this.eventRepository = eventRepository;
@@ -65,11 +67,16 @@ public class EventService {
         this.workspaceScope = workspaceScope;
         this.attachmentService = attachmentService;
         this.auditService = auditService;
+        this.quotaService = quotaService;
         this.propagationPublisher = propagationPublisher;
         this.propagationListener = propagationListener;
     }
 
     public Event create(Event event, java.util.List<java.util.UUID> fichierIds) {
+        // Constat M3 : le quota d'événements n'était jamais appliqué à la
+        // création réelle (seulement via l'endpoint de simulation QuotaController).
+        // Fail-closed : 403 QUOTA_* si le plan n'a pas de limite lisible.
+        quotaService.checkCanCreateEvent(resolveTenantId(event));
         // Espace métier : on ne crée un événement de famille/département que pour
         // une famille ou un département visible dans l'espace du rôle actif.
         if (event.getFamilleId() != null && !workspaceScope.isSuperUser()
@@ -115,6 +122,23 @@ public class EventService {
         }
 
         return saved;
+    }
+
+    /**
+     * Tenant de l'événement en cours de création.
+     *
+     * <p>{@code EventController.create} ne renseigne PAS {@code tenantId} sur
+     * l'entité : il est renseigné automatiquement à la persistance par
+     * l'auto-fill multi-tenant. Le contrôle de quota, qui s'exécute AVANT la
+     * persistance, doit donc retomber sur le contexte de requête — sinon il
+     * chercherait un tenant `null` et refuserait toute création
+     * ({@code TENANT_NOT_FOUND}).
+     */
+    private java.util.UUID resolveTenantId(Event event) {
+        if (event.getTenantId() != null) {
+            return event.getTenantId();
+        }
+        return com.discipolat.common.multitenancy.TenantContext.requireTenantId();
     }
 
     @Transactional(readOnly = true)

@@ -9,6 +9,7 @@ import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.api.UpdateTenantRequest;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,12 @@ import java.util.UUID;
  * <p>La création d'un tenant est l'amorce d'une nouvelle église : l'utilisateur
  * qui l'onboardera sera rattaché via un JWT portant le {@code tenantId} de ce
  * nouveau tenant (flux multi-tenant V70).
+ *
+ * <p><b>Audit (constat M1).</b> Toute mutation — création, mise à jour,
+ * changement de plan, suspension, réactivation, fin d'onboarding — écrit
+ * exactement un événement dans le journal d'audit chaîné par hachage, porteur de
+ * l'acteur courant. Les lectures ({@link #list()}, {@link #get(UUID)}) n'en
+ * écrivent aucun.
  */
 @Service
 @Transactional
@@ -45,13 +52,15 @@ public class TenantService {
     private final TenantPlanPolicy planPolicy;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanService saasPlanService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
                          EntityPropagationPublisher propagationPublisher,
                          TenantFeatureService featureService,
                          TenantPlanPolicy planPolicy,
                          TenantSubscriptionRepository subscriptionRepository,
-                         SaasPlanService saasPlanService) {
+                         SaasPlanService saasPlanService,
+                         ApplicationEventPublisher eventPublisher) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
@@ -59,6 +68,7 @@ public class TenantService {
         this.planPolicy = planPolicy;
         this.subscriptionRepository = subscriptionRepository;
         this.saasPlanService = saasPlanService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -92,6 +102,7 @@ public class TenantService {
                 .locale(request.locale())
                 .build();
         tenant = tenantRepository.save(tenant);
+        auditService.logSimple("TENANT_CREATED", "TENANT", tenant.getId());
         if (tenant.getId() == null) {
             return TenantResponse.from(tenant);
         }
@@ -151,6 +162,8 @@ public class TenantService {
 
     public TenantResponse update(UUID id, UpdateTenantRequest request) {
         Tenant tenant = getEntity(id);
+        TenantStatus statusBefore = tenant.getStatus();
+        String planBefore = tenant.getPlan();
         if (request.name() != null && !request.name().isBlank()) {
             tenant.setName(request.name());
         }
@@ -193,6 +206,11 @@ public class TenantService {
         propagationPublisher.publishUpdated("TENANT", tenant.getId(),
                 Map.of(), Map.of("name", tenant.getName(), "plan", tenant.getPlan()),
                 "Tenant mis à jour: " + tenant.getName());
+        auditService.logSimple("TENANT_UPDATED", "TENANT", tenant.getId());
+        if (planBefore != null && !planBefore.equals(tenant.getPlan())) {
+            auditService.logSimple("TENANT_PLAN_CHANGED", "TENANT", tenant.getId());
+        }
+        publishStatusChangeIfNeeded(tenant, statusBefore);
         return TenantResponse.from(tenant);
     }
 
@@ -205,6 +223,8 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.SUSPENDED.name(),
                 "Tenant désactivé: " + tenant.getName());
+        auditService.logSimple("TENANT_SUSPENDED", "TENANT", tenant.getId());
+        publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
     }
 
     public void reactivate(UUID id) {
@@ -215,6 +235,54 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.ACTIVE.name(),
                 "Tenant réactivé: " + tenant.getName());
+        auditService.logSimple("TENANT_REACTIVATED", "TENANT", tenant.getId());
+        publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
+    }
+
+    /**
+     * Marque l'onboarding du tenant comme terminé (décision D2, migration V183).
+     *
+     * <p><b>Idempotent et non destructif</b> : si la date est déjà renseignée, elle
+     * n'est <b>jamais</b> écrasée — la fin réelle de l'onboarding d'une église ne
+     * bouge pas parce qu'un administrateur a rejoué une étape. L'acteur n'est
+     * enregistré qu'à la première complétion.
+     *
+     * @return {@code true} si c'est cette appel qui a(finalisé) l'onboarding
+     */
+    public boolean markOnboardingCompleted(UUID actorId) {
+        Tenant tenant = getEntityForOnboarding(TenantContext.getTenantId());
+        if (tenant == null) {
+            return false;
+        }
+        if (tenant.getOnboardingCompletedAt() != null) {
+            // Déjà terminé : on conserve la date ET l'acteur d'origine.
+            return false;
+        }
+        tenant.setOnboardingCompletedAt(Instant.now());
+        tenant.setOnboardingCompletedBy(actorId);
+        tenantRepository.save(tenant);
+        auditService.logSimple("TENANT_ONBOARDING_COMPLETED", "TENANT", tenant.getId());
+        return true;
+    }
+
+    private Tenant getEntityForOnboarding(UUID tenantId) {
+        if (tenantId == null) {
+            return null;
+        }
+        return tenantRepository.findById(tenantId).orElse(null);
+    }
+
+    /**
+     * Publie {@link TenantStatusChangedEvent} pour que {@code TenantStatusGuard}
+     * invalide immédiatement son cache de statut (constat B1) : une suspension ou
+     * une réactivation est effective sans attendre le TTL de 30 s.
+     */
+    private void publishStatusChangeIfNeeded(Tenant tenant, TenantStatus previousStatus) {
+        if (previousStatus == null || previousStatus == tenant.getStatus()) {
+            return;
+        }
+        eventPublisher.publishEvent(
+                new TenantStatusChangedEvent(tenant.getId(), previousStatus, tenant.getStatus()));
     }
 
     public Optional<Tenant> findBySlug(String slug) {

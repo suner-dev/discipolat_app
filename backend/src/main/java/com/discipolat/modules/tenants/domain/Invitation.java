@@ -61,6 +61,14 @@ public class Invitation {
     @Column(name = "accepted_at")
     private Instant acceptedAt;
 
+    /**
+     * Constat M4 — horodatage de la dernière relance envoyée (migration V184).
+     * Sans cette colonne, le scheduler ne peut pas savoir qu'un rappel est déjà
+     * parti et enverrait un message à chaque exécution quotidienne.
+     */
+    @Column(name = "reminded_at")
+    private Instant remindedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

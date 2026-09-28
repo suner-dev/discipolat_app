@@ -28,6 +28,17 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
     List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
     long countByFamilleIdAndDeletedFalse(UUID familleId);
+
+    /**
+     * Constat M3 — comptage des événements NON clos d'un tenant.
+     *
+     * <p>Colonnes vérifiées sur l'entité {@code Event} : {@code tenant_id},
+     * {@code statut} (String, défaut {@code PLANIFIE}), {@code deleted} (boolean).
+     * Les statuts de clôture réellement utilisés par l'application sont
+     * {@code TERMINE} et {@code ANNULE} : seuls eux sont exclus du quota, un
+     * événement planifié compte même s'il est passé.
+     */
+    long countByTenantIdAndStatutNotInAndDeletedFalse(UUID tenantId, java.util.Collection<String> closedStatuts);
     long countByDepartmentIdAndDeletedFalse(UUID departmentId);
 
     /** Sources du Page Builder : événements à venir (non supprimés). */

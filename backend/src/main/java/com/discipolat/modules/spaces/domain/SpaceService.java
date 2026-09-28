@@ -43,6 +43,7 @@ public class SpaceService {
             "CHEF_DE_FAMILLE");
 
     private final SpaceRepository spaceRepository;
+    private final com.discipolat.modules.tenants.domain.QuotaService quotaService;
     private final OrganizationNodeRepository organizationNodeRepository;
     private final TenantMembershipRepository membershipRepository;
     private final AuthorizationService authorizationService;
@@ -169,6 +170,11 @@ public class SpaceService {
 
     public Space createSpace(UUID tenantId, UUID actorId, SpaceCommand command) {
         requireTenant(tenantId);
+        // Constat M3 : le quota des espaces n'était appliqué QUE par un endpoint
+        // de simulation (`QuotaController`), jamais à la création réelle. Un
+        // tenant pouvait donc dépasser son quota d'espaces sans jamais être
+        // refusé. Fail-closed : 403 QUOTA_* si le plan n'a pas de limite lisible.
+        quotaService.checkCanCreateSpace(tenantId);
         if (command.organizationUnitId() == null) {
             throw new IllegalArgumentException("organizationUnitId est obligatoire");
         }

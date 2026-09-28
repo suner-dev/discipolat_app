@@ -35,6 +35,7 @@ public class PlatformProvisioningService {
     private final DepartmentService departmentService;
     private final FamilyService familyService;
     private final AuditService auditService;
+    private final TenantOwnerProvisioningService ownerProvisioningService;
 
     public PlatformProvisioningService(TenantService tenantService,
                                       SaasPlanRepository planRepository,
@@ -42,7 +43,8 @@ public class PlatformProvisioningService {
                                       OrganizationNodeService organizationNodeService,
                                       DepartmentService departmentService,
                                       FamilyService familyService,
-                                      AuditService auditService) {
+                                      AuditService auditService,
+                                      TenantOwnerProvisioningService ownerProvisioningService) {
         this.tenantService = tenantService;
         this.planRepository = planRepository;
         this.saasPlanService = saasPlanService;
@@ -50,11 +52,15 @@ public class PlatformProvisioningService {
         this.departmentService = departmentService;
         this.familyService = familyService;
         this.auditService = auditService;
+        this.ownerProvisioningService = ownerProvisioningService;
     }
 
     @Transactional
     public ProvisioningResult provision(Command command) {
+        // Fail-closed : l'owner est valide EN TETE, donc AVANT toute ecriture.
+        // Un tenant sans propriétaire ne doit jamais exister.
         validate(command);
+        requireOwner(command);
         String plan = TenantPlanPolicy.canonicalizePlanKey(command.plan());
         if (plan == null) {
             plan = "DISCOVERY";
@@ -88,6 +94,17 @@ public class PlatformProvisioningService {
             String churchCode = "ROOT_CHURCH_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             OrganizationNode church = organizationNodeService.createRootChurch(
                     tenantId, command.churchName().trim(), churchCode, actorId);
+
+            // Étape 3 (A5.2) : le propriétaire est provisionné AVANT les
+            // département/famille, car un département et une famille exigent un
+            // responsable / chef valide.
+            TenantOwnerProvisioningService.OwnerProvisioningResult owner =
+                    ownerProvisioningService.provisionOwner(
+                            tenantId,
+                            command.ownerEmail(),
+                            command.ownerFirstName(),
+                            command.ownerLastName(),
+                            actorId);
 
             Department department = departmentService.create(new CreateDepartmentRequest(
                     command.departmentName().trim(),
@@ -125,14 +142,27 @@ public class PlatformProvisioningService {
 
             auditService.log(actorId, tenantId, "PROVISIONING_COMPLETED", "PLATFORM", tenantId, "SUCCESS",
                     Map.of("tenantId", tenantId.toString(), "departmentId", department.getId().toString(),
-                            "familyId", family.getId().toString()), null, null, null);
-            return new ProvisioningResult(tenant, church, department, departmentNode, family);
+                            "familyId", family.getId().toString(),
+                            "ownerUserId", owner.userId().toString()), null, null, null);
+            return new ProvisioningResult(tenant, church, department, departmentNode, family, owner);
         } finally {
             if (previousTenantId != null) {
                 TenantContext.setTenantId(previousTenantId);
             } else {
                 TenantContext.clear();
             }
+        }
+    }
+
+    /**
+     * L'email du propriétaire est obligatoire (constat B3, contrat §3.5).
+     * Le refus intervient avant toute écriture : aucun tenant créé sans owner,
+     * aucune création partielle.
+     */
+    private void requireOwner(Command command) {
+        if (blank(command.ownerEmail())) {
+            throw new BusinessRuleException(
+                    "Le propriétaire (owner) de l'église est requis", "OWNER_REQUIRED");
         }
     }
 
@@ -191,12 +221,43 @@ public class PlatformProvisioningService {
             String newChefPhone,
             String newChefSexe,
             String newChefDateNaissance,
-            String newChefAdresse
-    ) {}
+            String newChefAdresse,
+            // Additifs A5 (contrat §3.5) — en fin de record pour ne pas
+            // décaler l'index des champs existants.
+            String ownerEmail,
+            String ownerFirstName,
+            String ownerLastName
+    ) {
+        /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
+         *  ce que {@code provision} refuse explicitement (OWNER_REQUIRED). */
+        public Command(
+                String name, String slug, String plan, String country, String currency, String timezone,
+                String locale, String churchName, String departmentName, String departmentDescription,
+                UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
+                String newResponsableLastName, String newResponsableEmail, String newResponsablePhone,
+                String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
+                String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
+                String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
+            this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
+                    departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
+                    newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
+                    chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
+                    newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
+                    null, null, null);
+        }
+    }
 
     public record ProvisioningResult(TenantResponse tenant,
                                      OrganizationNode church,
                                      Department department,
                                      OrganizationNode departmentNode,
-                                     Family family) {}
+                                     Family family,
+                                     TenantOwnerProvisioningService.OwnerProvisioningResult owner) {
+
+        /** Constructeur de compatibilité (avant A5) : aucun owner provisionné. */
+        public ProvisioningResult(TenantResponse tenant, OrganizationNode church, Department department,
+                                  OrganizationNode departmentNode, Family family) {
+            this(tenant, church, department, departmentNode, family, null);
+        }
+    }
 }

@@ -10,6 +10,7 @@ import com.discipolat.modules.platform.domain.TenantRegistrationRequest;
 import com.discipolat.modules.platform.domain.TenantRegistrationService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.security.domain.TokenRevocationService;
+import com.discipolat.modules.tenants.domain.TenantStatusGuard;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -45,6 +46,7 @@ public class AuthService {
     private final TenantRegistrationService tenantRegistrationService;
     private final TokenRevocationService tokenRevocationService;
     private final RefreshTokenSessionService refreshTokenSessionService;
+    private final TenantStatusGuard tenantStatusGuard;
     private final String frontendUrl;
 
     public AuthService(UserRepository userRepository, JwtTokenProvider jwtTokenProvider,
@@ -55,6 +57,7 @@ public class AuthService {
                        TenantRegistrationService tenantRegistrationService,
                        TokenRevocationService tokenRevocationService,
                        RefreshTokenSessionService refreshTokenSessionService,
+                       TenantStatusGuard tenantStatusGuard,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -66,6 +69,7 @@ public class AuthService {
         this.tenantRegistrationService = tenantRegistrationService;
         this.tokenRevocationService = tokenRevocationService;
         this.refreshTokenSessionService = refreshTokenSessionService;
+        this.tenantStatusGuard = tenantStatusGuard;
         this.frontendUrl = frontendUrl;
     }
 
@@ -101,7 +105,8 @@ public class AuthService {
     // ======================== LOGIN ========================
 
     public AuthResult login(String email, String password) {
-        User user = userRepository.findByEmail(email)
+        // B4 : resolution d'identite insensible a la casse (index unique V185 sur LOWER(email)).
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
         // US-01: Account lockout after 5 failed attempts
@@ -126,6 +131,11 @@ public class AuthService {
         if (user.getStatut() == UserStatus.INACTIVE) {
             throw new BadCredentialsException("Account is inactive");
         }
+
+        // B1 : un tenant SUSPENDED / CANCELLED ne doit pas pouvoir se connecter.
+        // Controle APRES les verifications de compte (statut, mot de passe) afin de
+        // ne rien divulguer sur un compte en attente d'activation ou bloque.
+        tenantStatusGuard.assertAccessible(user.getTenantId());
 
         // Reset failed attempts on successful login
         user.setFailedLoginAttempts(0);
@@ -227,7 +237,7 @@ public class AuthService {
      * Resend activation email
      */
     public void resendActivationEmail(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new BadCredentialsException("If the email exists, a new activation link has been sent."));
 
         if (user.getStatut() != UserStatus.PENDING_ACTIVATION) {
@@ -250,7 +260,7 @@ public class AuthService {
      * Generate password reset token (valid 30 min)
      */
     public String generatePasswordResetToken(String email) {
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
         if (user == null) {
             return "If the email exists, a reset link has been sent.";
         }
@@ -316,6 +326,11 @@ public class AuthService {
         if (user.getStatut() != UserStatus.ACTIVE || user.isDeleted()) {
             throw new BadCredentialsException("User account is not active");
         }
+
+        // B1 : un jeton rafraichi ne doit pas survivre a la suspension du tenant.
+        // Place AVANT la consommation/rotation : un tenant suspendu ne consomme donc
+        // pas sa famille de jetons, et aucun nouveau jeton n'est emis.
+        tenantStatusGuard.assertAccessible(user.getTenantId());
 
         RefreshTokenSessionService.ConsumptionResult consumption = refreshTokenSessionService.consume(
                 refreshToken, userId, familyId);
@@ -454,12 +469,16 @@ public class AuthService {
     public User verifyMagicLink(String token) {
         MagicLinkEntry entry = magicLinks.remove(token);
         if (entry == null || entry.expiresAt.isBefore(java.time.LocalDateTime.now())) {
+            // A15 : BusinessRuleException suit la convention (message, code).
+            // Les arguments étaient INVERSÉS : le codeFrançais partait dans le
+            // `detail` de la réponse et le message technique dans le `title`
+            // (donc dans le champ `title` du ProblemDetail, lu par les clients).
             throw new com.discipolat.common.domain.BusinessRuleException(
-                    "MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
+                    "Lien magique invalide ou expiré", "MAGIC_LINK_EXPIRED");
         }
-        return userRepository.findByEmail(entry.email)
+        return userRepository.findByEmailIgnoreCase(entry.email)
                 .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
-                        "USER_NOT_FOUND", "Aucun compte associé à cet email"));
+                        "Aucun compte associé à cet email", "USER_NOT_FOUND"));
     }
 
     /** Envoie le magic link par email. */
