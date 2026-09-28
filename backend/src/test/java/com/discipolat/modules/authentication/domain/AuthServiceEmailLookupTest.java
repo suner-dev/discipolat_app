@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.platform.domain.TenantRegistrationService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.security.domain.TokenRevocationService;
+import com.discipolat.modules.tenants.domain.TenantStatusGuard;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -55,6 +56,8 @@ class AuthServiceEmailLookupTest {
     private TokenRevocationService tokenRevocationService;
     @Mock
     private RefreshTokenSessionService refreshTokenSessionService;
+    @Mock
+    private TenantStatusGuard tenantStatusGuard;
 
     @Test
     void loginIsCaseInsensitive() {
@@ -178,6 +181,6 @@ class AuthServiceEmailLookupTest {
         return new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                 activationTokenRepository, passwordResetTokenRepository, emailService,
                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService,
-                "https://app.example.com");
+                tenantStatusGuard, "https://app.example.com");
     }
 }

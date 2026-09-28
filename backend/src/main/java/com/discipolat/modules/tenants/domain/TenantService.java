@@ -9,6 +9,7 @@ import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.api.UpdateTenantRequest;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,13 +46,15 @@ public class TenantService {
     private final TenantPlanPolicy planPolicy;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanService saasPlanService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
                          EntityPropagationPublisher propagationPublisher,
                          TenantFeatureService featureService,
                          TenantPlanPolicy planPolicy,
                          TenantSubscriptionRepository subscriptionRepository,
-                         SaasPlanService saasPlanService) {
+                         SaasPlanService saasPlanService,
+                         ApplicationEventPublisher eventPublisher) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
@@ -59,6 +62,7 @@ public class TenantService {
         this.planPolicy = planPolicy;
         this.subscriptionRepository = subscriptionRepository;
         this.saasPlanService = saasPlanService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -151,6 +155,7 @@ public class TenantService {
 
     public TenantResponse update(UUID id, UpdateTenantRequest request) {
         Tenant tenant = getEntity(id);
+        TenantStatus statusBefore = tenant.getStatus();
         if (request.name() != null && !request.name().isBlank()) {
             tenant.setName(request.name());
         }
@@ -193,6 +198,7 @@ public class TenantService {
         propagationPublisher.publishUpdated("TENANT", tenant.getId(),
                 Map.of(), Map.of("name", tenant.getName(), "plan", tenant.getPlan()),
                 "Tenant mis à jour: " + tenant.getName());
+        publishStatusChangeIfNeeded(tenant, statusBefore);
         return TenantResponse.from(tenant);
     }
 
@@ -205,6 +211,7 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.SUSPENDED.name(),
                 "Tenant désactivé: " + tenant.getName());
+        publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
     }
 
     public void reactivate(UUID id) {
@@ -215,6 +222,20 @@ public class TenantService {
         propagationPublisher.publishStatusChanged("TENANT", tenant.getId(),
                 oldStatus, TenantStatus.ACTIVE.name(),
                 "Tenant réactivé: " + tenant.getName());
+        publishStatusChangeIfNeeded(tenant, TenantStatus.valueOf(oldStatus));
+    }
+
+    /**
+     * Publie {@link TenantStatusChangedEvent} pour que {@code TenantStatusGuard}
+     * invalide immédiatement son cache de statut (constat B1) : une suspension ou
+     * une réactivation est effective sans attendre le TTL de 30 s.
+     */
+    private void publishStatusChangeIfNeeded(Tenant tenant, TenantStatus previousStatus) {
+        if (previousStatus == null || previousStatus == tenant.getStatus()) {
+            return;
+        }
+        eventPublisher.publishEvent(
+                new TenantStatusChangedEvent(tenant.getId(), previousStatus, tenant.getStatus()));
     }
 
     public Optional<Tenant> findBySlug(String slug) {

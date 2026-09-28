@@ -36,6 +36,7 @@ class TenantServiceTest {
     @Mock private TenantPlanPolicy planPolicy;
     @Mock private TenantSubscriptionRepository subscriptionRepository;
     @Mock private SaasPlanService saasPlanService;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private TenantService tenantService;
 

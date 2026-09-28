@@ -283,3 +283,126 @@ traçabilité, hors périmètre de A7.
 |---|---|---|
 | Phase 0 | _(ce commit est le premier de la branche — voir `git log`)* | — |
 | A7 | *à compléter* | `feat(A7): unicité email globale V185 + acceptation invitation cross-tenant` |
+
+---
+
+## A1 — Garde de statut tenant + enforcement (constat B1)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantStatusGuard.java`
+  - NEW `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantStatusChangedEvent.java`
+  - NEW `backend/src/main/java/com/discipolat/common/multitenancy/TenantStatusInterceptor.java`
+  - MOD `backend/src/main/java/com/discipolat/common/multitenancy/WebMvcConfig.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/authentication/domain/AuthService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/platform/api/TenantSwitcherController.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantStatusGuardTest.java`
+  - NEW `backend/src/test/java/com/discipolat/common/multitenancy/TenantStatusInterceptorTest.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceTest.java` (+3 cas)
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantServiceTest.java` (+1 mock)
+  - MOD `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceEmailLookupTest.java` (nouveau ctor)
+  - MOD 3 tests d'intégration (fixtures, voir « Régression » ci-dessous)
+
+### Preuve — tests imposés (`§4 A1`)
+
+```
+mvn -B -o test -Dtest='TenantStatusGuardTest,TenantStatusInterceptorTest,AuthServiceTest,TenantServiceTest,AuthServiceEmailLookupTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceEmailLookupTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantStatusGuardTest
+[INFO] Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] Tests run:  8, Failures: 0, Errors: 0, Skipped: 0 -- in ...common.multitenancy.TenantStatusInterceptorTest
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+`TenantStatusGuardTest` (14 cas) : actif autorisé, `PENDING_SETUP` autorisé,
+`tenantId` nul transparent, suspendu → 403 `TENANT_SUSPENDED`, annulé → 403
+`TENANT_CANCELLED`, cache servi sans relecture, **TTL 30 s respecté (juste avant
+/ juste après)**, invalidation par événement, invalidation⇒cache vide,
+réactivation immédiate, fail-closed sur exception de lecture, fail-closed sur
+tenant introuvable, fail-closed sur statut `null`, **panne jamais mémorisée**.
+
+`TenantStatusInterceptorTest` (8 cas) : API authentifiée refusée, garde appelée
+avec le bon `tenantId`, chemin public ignoré, `invitations/accept/**` joignable,
+`actuator/health` joignable, requête sans contexte tenant ignorée, dégradation
+gracieuse si le bean garde est absent, dégradation gracieuse si `TenantFilter` est
+absent.
+
+`AuthServiceTest` (+3 cas) : login d'un tenant suspendu → 403 `TENANT_SUSPENDED`
+**et aucun JWT émis** ; login d'un tenant actif → garde consultée sans refus ;
+refresh d'un tenant suspendu → refus **avant** la consommation de la famille de
+jetons et sans aucun jeton émis.
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1291, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 39 = **1291**. Aucun échec. Les 13 skips sont inchangés
+(`PerIpRateLimiterIntegrationTest`, `@EnabledIf("isRedisAvailable")`).
+
+### Régression réelle rencontrée et traitée — 11 tests d'intégration
+
+**Symptôme** : après l'ajout de l'intercepteur, **11 tests** ont échoué en 403
+avec `details.reason = TENANT_NOT_FOUND`.
+
+**Diagnostic exact** : `TenantStatusGuard` lit la table `tenants` et refuse en
+fail-closed un tenant introuvable (choix conforme à D1 « fail-closed »). Or
+`SpaceCriticalPathIntegrationTest`, `PeopleCriticalPathIntegrationTest` et
+`common.infrastructure.TenantIsolationIntegrationTest` facturaient un `tenantId`
+dans le JWT **sans jamais créer la ligne `tenants` correspondante** : leurs
+scénarios étaient irréalistes, puisqu'en production un `tenantId` de JWT provient
+toujours d'un utilisateur rattaché à un tenant existant.
+
+**Traitement (R9 — tests impactés mis à jour avec justification)** : ajout d'une
+fixture `ensureActiveTenant(UUID)` dans les 3 classes, qui crée réellement la
+ligne `tenants` (`status = ACTIVE`, `plan = DISCOVERY`). Insertion en SQL direct
+et non via `TenantRepository` : Hibernate 6 lève `StaleObjectStateException` sur
+un `merge()` d'entité à identifiant attribué sans ligne préexistante
+(`DefaultMergeEventListener.entityIsDetached`) — défaut observé et documenté ici.
+
+**Aucun test n'a été affaibli ni désactivé.** Preuve que la sémantique
+d'isolation est intacte : `TenantIsolationIntegrationTest.egliseB_nePeutPasLireUneAmeDeEgliseA_parId`
+retrouve son **404 attendu** (et non 403) une fois le tenant réellement créé.
+
+### Points de conception
+
+1. **Table `tenants` lue sans filtre** : l'entité `Tenant` ne porte pas
+   `@Filter tenantFilter` (elle *définit* le tenant). La garde peut donc contrôler
+   un tenant **cible**, ce qui est indispensable pour `/tenant-switcher/switch`.
+2. **Ordre des intercepteurs** : `tenantInterceptor` → `tenantFilterInterceptor` →
+   `tenantStatusInterceptor` → `featureModuleInterceptor`. Le `TenantContext` est
+   donc posé avant la garde, et la garde s'exécute avant tout accès à un module.
+3. **Chemins publics** : la liste n'est **pas dupliquée** ;
+   `TenantStatusInterceptor` appelle `TenantFilter.shouldBypassFilter(request)`,
+   source de vérité unique (contrat §3.2).
+4. **Dégradation gracieuse** : si le bean `TenantStatusGuard` ou `TenantFilter` est
+   absent (tests `@WebMvcTest`), l'intercepteur laisse passer — cohérent avec la
+   dégradation déjà retenue pour `TenantFilterInterceptor`.
+5. **`TenantService` publie `TenantStatusChangedEvent`** dans `deactivate`,
+   `reactivate` et `update` (uniquement si le statut change) → invalidation
+   immédiate du cache, donc **réactivation/suspension sans attendre le TTL**.
+
+### Décision et déviations documentées
+
+- **`detail` du 403 pour `CANCELLED`** : le contrat §3.2 donne un seul `detail`
+  (« Le service de cette église est suspendu… ») associé à `title ∈
+  {TENANT_SUSPENDED, TENANT_CANCELLED}`. Dire « suspendu » à une église
+  résiliée serait un mensonge utilisateur. Le **`title` (code métier) est
+  strictement celui du contrat** ; seul le `detail` est différencié :
+  `« Le service de cette église a été résilié. Contactez le support Discipolat. »`
+- **Fail-closed sur tenant introuvable** : `403 TENANT_STATUS_UNAVAILABLE` avec
+  `details.reason = TENANT_NOT_FOUND`. Le contrat ne mentionne que l'erreur de
+  lecture DB ; le tenant absent en relève moralement (je ne peux pas affirmer
+  qu'il est actif). Aucun 500, aucun accès accordé.
+- **Réflexe fail-closed sur statut `null`** : impossible en base
+  (`status` est `NOT NULL`), mais traité en defense-in-depth.
+- **Aucun nouveau fichier hors de la liste de la tâche** : `TenantRepository` n'a
+  pas été modifié (lecture via le `findById` existant, mis en cache 30 s).

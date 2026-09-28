@@ -90,6 +90,8 @@ class SpaceCriticalPathIntegrationTest {
         }
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
 
+        ensureActiveTenant(DEFAULT_TENANT_ID);
+
         // Create roles needed for tests (tenant-specific since Flyway is disabled in tests)
         if (!rolesCreated) {
             createTestRoles();
@@ -395,4 +397,39 @@ class SpaceCriticalPathIntegrationTest {
         List<Map<String, Object>> orgUnits = jdbcTemplate.queryForList("SELECT id FROM organization_nodes WHERE tenant_id = ?", DEFAULT_TENANT_ID);
         return orgUnits.isEmpty() ? null : (UUID) orgUnits.get(0).get("id");
     }
+
+    /**
+     * Constat B1 : la garde de statut de tenant lit la table `tenants` (table
+     * GLOBALE) en fail-closed, et refuse l'acces si la ligne est absente. Ces
+     * tests facturaient jusqu'ici un `tenantId` dans le JWT sans jamais creer la
+     * ligne `tenants` correspondante : le scenario etait irrealiste (en
+     * production, un `tenantId` de JWT provient toujours d'un utilisateur
+     * rattache a un tenant existant) et la garde le rejetait legitimement.
+     *
+     * <p>Insertion en SQL direct (et non via le repository) car Hibernate 6
+     * leve une `StaleObjectStateException` sur un `merge()` d'entite a
+     * identifiant attribue sans ligne preexistante.
+     */
+    private void ensureActiveTenant(UUID tenantId) {
+        Integer existing = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM tenants WHERE id = ?", Integer.class, tenantId);
+        if (existing != null && existing > 0) {
+            return;
+        }
+        jdbcTemplate.update(
+                "INSERT INTO tenants (id, name, slug, status, plan, country, currency, timezone, locale, "
+                        + "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                tenantId,
+                "Eglise de test " + tenantId,
+                "test-" + tenantId.toString().substring(0, 8),
+                "ACTIVE",
+                "DISCOVERY",
+                "CM",
+                "XAF",
+                "Africa/Douala",
+                "fr",
+                java.sql.Timestamp.from(java.time.Instant.now()),
+                java.sql.Timestamp.from(java.time.Instant.now()));
+    }
+
 }

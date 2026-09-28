@@ -10,6 +10,7 @@ import com.discipolat.modules.platform.domain.TenantRegistrationRequest;
 import com.discipolat.modules.platform.domain.TenantRegistrationService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
 import com.discipolat.modules.security.domain.TokenRevocationService;
+import com.discipolat.modules.tenants.domain.TenantStatusGuard;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -45,6 +46,7 @@ public class AuthService {
     private final TenantRegistrationService tenantRegistrationService;
     private final TokenRevocationService tokenRevocationService;
     private final RefreshTokenSessionService refreshTokenSessionService;
+    private final TenantStatusGuard tenantStatusGuard;
     private final String frontendUrl;
 
     public AuthService(UserRepository userRepository, JwtTokenProvider jwtTokenProvider,
@@ -55,6 +57,7 @@ public class AuthService {
                        TenantRegistrationService tenantRegistrationService,
                        TokenRevocationService tokenRevocationService,
                        RefreshTokenSessionService refreshTokenSessionService,
+                       TenantStatusGuard tenantStatusGuard,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -66,6 +69,7 @@ public class AuthService {
         this.tenantRegistrationService = tenantRegistrationService;
         this.tokenRevocationService = tokenRevocationService;
         this.refreshTokenSessionService = refreshTokenSessionService;
+        this.tenantStatusGuard = tenantStatusGuard;
         this.frontendUrl = frontendUrl;
     }
 
@@ -127,6 +131,11 @@ public class AuthService {
         if (user.getStatut() == UserStatus.INACTIVE) {
             throw new BadCredentialsException("Account is inactive");
         }
+
+        // B1 : un tenant SUSPENDED / CANCELLED ne doit pas pouvoir se connecter.
+        // Controle APRES les verifications de compte (statut, mot de passe) afin de
+        // ne rien divulguer sur un compte en attente d'activation ou bloque.
+        tenantStatusGuard.assertAccessible(user.getTenantId());
 
         // Reset failed attempts on successful login
         user.setFailedLoginAttempts(0);
@@ -317,6 +326,11 @@ public class AuthService {
         if (user.getStatut() != UserStatus.ACTIVE || user.isDeleted()) {
             throw new BadCredentialsException("User account is not active");
         }
+
+        // B1 : un jeton rafraichi ne doit pas survivre a la suspension du tenant.
+        // Place AVANT la consommation/rotation : un tenant suspendu ne consomme donc
+        // pas sa famille de jetons, et aucun nouveau jeton n'est emis.
+        tenantStatusGuard.assertAccessible(user.getTenantId());
 
         RefreshTokenSessionService.ConsumptionResult consumption = refreshTokenSessionService.consume(
                 refreshToken, userId, familyId);

@@ -7,6 +7,7 @@ import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.TenantService;
+import com.discipolat.modules.tenants.domain.TenantStatusGuard;
 import com.discipolat.modules.platform.domain.TenantRegistrationRequest;
 import com.discipolat.modules.platform.domain.TenantRegistrationService;
 import com.discipolat.modules.security.domain.RefreshTokenSessionService;
@@ -54,6 +55,8 @@ class AuthServiceTest {
     private TokenRevocationService tokenRevocationService;
     @Mock
     private RefreshTokenSessionService refreshTokenSessionService;
+    @Mock
+    private TenantStatusGuard tenantStatusGuard;
 
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
@@ -68,7 +71,8 @@ class AuthServiceTest {
         passwordEncoder = new BCryptPasswordEncoder(4);
         authService = new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                  activationTokenRepository, passwordResetTokenRepository, emailService,
-                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService, "http://localhost:5173");
+                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService,
+                tenantStatusGuard, "http://localhost:5173");
 
         userId = UUID.randomUUID();
         testUser = User.builder()
@@ -240,6 +244,89 @@ class AuthServiceTest {
         verify(userRepository).save(argThat(u ->
                 passwordEncoder.matches("newPassword456", u.getPasswordHash())
         ));
+    }
+
+    // ===== Constat B1 : un tenant suspendu ne peut plus se connecter ni rafraichir =====
+
+    @Test
+    void login_OfSuspendedTenant_ShouldBeRefusedWith403AndContractCode() {
+        User suspendedTenantUser = User.builder()
+                .id(userId)
+                .email("test@discipolat.com")
+                .passwordHash(passwordEncoder.encode("password123"))
+                .firstName("Test")
+                .lastName("User")
+                .role(UserRole.PASTEUR)
+                .statut(UserStatus.ACTIVE)
+                .failedLoginAttempts(0)
+                .tenantId(TenantContext.getTenantId())
+                .build();
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com"))
+                .thenReturn(Optional.of(suspendedTenantUser));
+        // NB : `passwordEncoder` est un vrai BCryptPasswordEncoder dans ce test,
+        // le mot de passe doit donc etre le hash reel de "password123".
+        org.mockito.Mockito.doThrow(new DomainException(
+                        "Le service de cette église est suspendu. Contactez le support Discipolat.",
+                        org.springframework.http.HttpStatus.FORBIDDEN, "TENANT_SUSPENDED"))
+                .when(tenantStatusGuard).assertAccessible(TenantContext.getTenantId());
+
+        DomainException thrown = assertThrows(DomainException.class, () ->
+                authService.login("test@discipolat.com", "password123")
+        );
+
+        assertEquals("TENANT_SUSPENDED", thrown.toProblemDetail().getTitle());
+        assertEquals(403, thrown.toProblemDetail().getStatus());
+        // Aucun jeton ne doit avoir ete produit.
+        verify(jwtTokenProvider, never()).generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any());
+        verify(jwtTokenProvider, never()).generateRefreshToken(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void login_OfActiveTenant_DoesNotTriggerAnyGuardRefusal() {
+        when(userRepository.findByEmailIgnoreCase("test@discipolat.com")).thenReturn(Optional.of(testUser));
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any()))
+                .thenReturn("access");
+        when(jwtTokenProvider.generateRefreshToken(any(), any(), any(), any(), any(), any()))
+                .thenReturn("refresh");
+        when(jwtTokenProvider.getTokenExpiration(any())).thenReturn(java.time.Instant.now());
+
+        assertDoesNotThrow(() -> authService.login("test@discipolat.com", "password123"));
+
+        verify(tenantStatusGuard).assertAccessible(testUser.getTenantId());
+    }
+
+    @Test
+    void refreshToken_OfSuspendedTenant_ShouldBeRefusedBeforeAnyTokenIsIssued() {
+        User suspendedTenantUser = User.builder()
+                .id(userId)
+                .email("test@discipolat.com")
+                .passwordHash("hash")
+                .firstName("Test")
+                .lastName("User")
+                .role(UserRole.PASTEUR)
+                .statut(UserStatus.ACTIVE)
+                .failedLoginAttempts(0)
+                .tenantId(TenantContext.getTenantId())
+                .build();
+        when(jwtTokenProvider.validateToken("refresh")).thenReturn(true);
+        when(jwtTokenProvider.isRefreshToken("refresh")).thenReturn(true);
+        when(jwtTokenProvider.extractUserId("refresh")).thenReturn(userId);
+        when(jwtTokenProvider.extractRefreshFamilyId("refresh")).thenReturn(UUID.randomUUID());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(suspendedTenantUser));
+        org.mockito.Mockito.doThrow(new DomainException(
+                        "Le service de cette église est suspendu. Contactez le support Discipolat.",
+                        org.springframework.http.HttpStatus.FORBIDDEN, "TENANT_SUSPENDED"))
+                .when(tenantStatusGuard).assertAccessible(TenantContext.getTenantId());
+
+        DomainException thrown = assertThrows(DomainException.class, () ->
+                authService.refreshToken("refresh")
+        );
+
+        assertEquals("TENANT_SUSPENDED", thrown.toProblemDetail().getTitle());
+        // La famille de jetons ne doit meme pas etre consommee.
+        verify(refreshTokenSessionService, never()).consume(any(), any(), any());
+        verify(jwtTokenProvider, never()).generateAccessToken(any(), any(), any(), any(), any(Boolean.class), any());
+        verify(jwtTokenProvider, never()).generateRefreshToken(any(), any(), any(), any(), any(), any());
     }
 
     @Test
