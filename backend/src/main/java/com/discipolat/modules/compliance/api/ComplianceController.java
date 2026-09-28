@@ -9,7 +9,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -124,18 +126,36 @@ public class ComplianceController {
     }
 
 
-    /** Data portability — export user data (GDPR) */
+    /**
+     * Portabilité RGPD art. 20 — export réel des données de l'utilisateur.
+     * Restreint à l'intéressé lui-même ou à un administrateur du tenant
+     * (sinon n'importe quel compte connecté pourrait exporter un autre userId).
+     */
     @GetMapping("/portability/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> portability(@PathVariable String userId) {
-        return ResponseEntity.ok(Map.of("userId", userId, "data", Map.of()));
+    public ResponseEntity<Map<String, Object>> portability(@PathVariable UUID userId,
+            @RequestParam(defaultValue = "JSON") String format) {
+        UUID current = SecurityUtils.getCurrentUserId();
+        boolean self = current != null && current.equals(userId);
+        if (!self && !hasTenantAdminRole()) {
+            throw new AccessDeniedException(
+                    "Seul l'intéressé ou un administrateur peut exporter ces données (RGPD art. 20).");
+        }
+        return ResponseEntity.ok(managerService.exportUserData(userId, format));
     }
 
-    /** Execute retention policy */
+    private static boolean hasTenantAdminRole() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_PASTEUR".equals(a.getAuthority()));
+    }
+
+    /** Exécute réellement la purge d'une politique de rétention donnée. */
     @PostMapping("/retention-policies/{policyId}/execute")
     @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
-    public ResponseEntity<Map<String, Object>> executeRetentionPolicy(@PathVariable String policyId) {
-        return ResponseEntity.ok(Map.of("policyId", policyId, "status", "executed"));
+    public ResponseEntity<Map<String, Object>> executeRetentionPolicy(@PathVariable UUID policyId) {
+        return ResponseEntity.ok(managerService.executeRetentionPolicy(policyId));
     }
 
     /** Créer une politique de rétention — consommé par le Compliance Dashboard web */

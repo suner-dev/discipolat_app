@@ -127,3 +127,31 @@ Le socle Super Admin est présent sur les trois clients, avec provisioning atomi
 3. Exécuter les parcours critiques et les migrations V172/V173/V174/V175 sur PostgreSQL et Redis réels.
 4. Ajouter les tests de contrat dashboard/audit/tenants/provisioning sur les deux clients.
 5. Réduire progressivement la dette lint/analyzer sans masquer les warnings par une hausse des seuils.
+
+---
+
+## Correction 2026-09-28 — réserves sur les lignes « ✅ » de ce tableau
+
+Le tableau ci-dessus est un **état déclaré**, pas un état vérifié. La recette E2E
+(`scripts/verify-tenant-onboarding.sh`, exécutée sur un vrai PostgreSQL migré) a
+révélé des défauts bloquants, tous préexistants sur `main` et **invisibles à la
+suite de tests** — la CI utilise H2 avec `ddl-auto: create-drop`, donc le schéma
+de test est généré depuis les entités et une dérive migration/modèle ne peut pas
+être détectée.
+
+| Ligne du tableau | Réserve vérifiée |
+|---|---|
+| « Création tenant + onboarding ✅ » | ⚠️ `POST /api/v1/platform/admin/provisioning` répond **500** sur une base migrée : `organization_nodes.path` est `ltree` en base mais `String` dans l'entité (constat **H8**). L'étape CHURCH_IDENTITY du wizard échoue pour la même raison. |
+| « Église → département → famille ✅ transactionnel » | ⚠️ même cause (H8). Le transactionnel est correct, l'écriture échoue. |
+| « Modifier/suspendre/reactiver/archiver tenant ✅ » | ✅ vérifié, y compris le refus de délivrer un JWT vers un tenant suspendu (constat B1) — `OnboardingWizardSecurityIT#suspendedTenantCannotCallTheWizard`. |
+| « Dashboard métriques ✅ » | ⚠️ **500** avant correction : les compteurs d'organisations et d'utilisateurs passaient un enum dans une requête native et PostgreSQL refusait `varchar = smallint` (constat **H7**). Corrigé dans `fix/schema-drift-h1-h5`. |
+| « Inscription publique en attente ✅ » | ✅ vérifié, avec une réserve : la preuve de consentement RGPD (art. 9) est désormais un **prérequis** bloquant, et l'email de réception ne part qu'après consentement. |
+
+Autres constats bloquants relevés : **H2** (module Événements désaligné du schéma),
+**H3** (`/tenant-switcher/my-tenants` répondait 500 pour tout le monde),
+**H5** (corps JSON malformé → 500 au lieu de 400), **H6/H5b** (`Accept` non
+négociable → 500 au lieu de 406). Détail et preuves : `reports/plan-2agents/agentA.md`.
+
+**Conclusion** : ce tableau ne peut pas être lu comme un constat de
+« production readiness ». Il décrit une intention d'architecture, dont une partie
+n'est pas vérifiée sur un schéma issu des migrations.

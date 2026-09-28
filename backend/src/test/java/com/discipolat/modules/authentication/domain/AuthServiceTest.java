@@ -202,13 +202,13 @@ class AuthServiceTest {
                 .email("new@member.com")
                 .status(com.discipolat.modules.platform.domain.TenantRegistrationStatus.PENDING_APPROVAL)
                 .build();
-        when(tenantRegistrationService.submit("New@Member.com", "password123", "New", "Member", null))
+        when(tenantRegistrationService.submit("New@Member.com", "password123", "New", "Member", null, null, null))
                 .thenReturn(request);
 
         TenantRegistrationRequest created = authService.register("New@Member.com", "password123", "New", "Member", null, null);
 
         assertEquals(request, created);
-        verify(tenantRegistrationService).submit("New@Member.com", "password123", "New", "Member", null);
+        verify(tenantRegistrationService).submit("New@Member.com", "password123", "New", "Member", null, null, null);
         verifyNoInteractions(userRepository);
     }
 
@@ -223,7 +223,7 @@ class AuthServiceTest {
 
     @Test
     void register_WhenRequestAlreadyExists_ShouldThrow() {
-        when(tenantRegistrationService.submit("dup@member.com", "password123", "Dup", "Member", null))
+        when(tenantRegistrationService.submit("dup@member.com", "password123", "Dup", "Member", null, null, null))
                 .thenThrow(new BusinessRuleException("Une demande existe déjà"));
 
         assertThrows(BusinessRuleException.class, () ->

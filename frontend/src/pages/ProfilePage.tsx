@@ -6,7 +6,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import {
   User, Mail, Shield, Calendar, CheckCircle, XCircle, Edit3, Save, X, Lock,
   Eye, EyeOff, Loader2, Phone, Heart, Key, ChevronDown, ChevronUp,
-  Smartphone, Copy, Check,
+  Smartphone, Copy, Check, Download, Trash2,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
@@ -149,6 +149,39 @@ export default function ProfilePage() {
       setShowPasswordForm(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setPasswordErrors({});
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // ── Self-service RGPD (art. 15/17/20) — actions sur le compte courant uniquement ──
+  const [gdprMotif, setGdprMotif] = useState('');
+
+  const portabilityMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.get(`/compliance/portability/${user?.id}`);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(tText('Export de vos données téléchargé'));
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const gdprDeleteMutation = useMutation({
+    mutationFn: async (motif: string) => {
+      const res = await api.post('/compliance/gdpr', { typeDemande: 'SUPPRESSION', motif });
+      return res.data as { id: string; statut: string };
+    },
+    onSuccess: () => {
+      toast.success(tText('Demande de suppression transmise — un administrateur du tenant la traitera (RGPD art. 17)'));
+      setGdprMotif('');
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -528,6 +561,53 @@ export default function ProfilePage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Mes données (RGPD) — self-service, sans destruction de l'existant */}
+      <div className="glass-card p-6 mt-6 animate-slide-up border-l-4 border-emerald-500">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+          <Shield className="w-4 h-4 text-emerald-500" />
+          {tText('Mes données (RGPD)')}
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          {tText('Exportez ou demandez la suppression de vos données personnelles.')}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => portabilityMutation.mutate()}
+            disabled={portabilityMutation.isPending}
+            className="btn-secondary btn-sm inline-flex items-center justify-center gap-2"
+          >
+            {portabilityMutation.isPending
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <Download className="w-4 h-4" />}
+            {tText('Exporter mes données (art. 20)')}
+          </button>
+        </div>
+        <div className="mt-5 pt-4 border-t border-white/20 dark:border-white/[0.06]">
+          <label className="label">{tText('Motif de la demande de suppression (facultatif)')}</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              className="input flex-1"
+              value={gdprMotif}
+              onChange={(e) => setGdprMotif(e.target.value)}
+              placeholder={tText('Ex. : je quitte cette communauté')}
+            />
+            <button
+              onClick={() => gdprDeleteMutation.mutate(gdprMotif || 'Demande self-service')}
+              disabled={gdprDeleteMutation.isPending}
+              className="btn-danger btn-sm inline-flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              {gdprDeleteMutation.isPending
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Trash2 className="w-4 h-4" />}
+              {tText('Demander la suppression (art. 17)')}
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">
+            {tText('La demande est enregistrée et transmise aux administrateurs du tenant ; elle n\'est pas exécutée immédiatement.')}
+          </p>
+        </div>
       </div>
     </div>
   );

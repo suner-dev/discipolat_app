@@ -35,10 +35,10 @@ All 7 Gates (G0 → G6) have been successfully completed with all criteria verif
 | §29 Tenant features/CRUD | ✅ | ModuleCatalogService, SpaceModuleService, ModuleRouter |
 | §30-31 SaaS plans/quotas/AI credits | ✅ | 4 Dual-Market plans seeded, SuperAdminSaasPlanController |
 | §43 Super Admin impersonation | ✅ | JWT 30-min TTL, audit logging, banner UI |
-| §44-45 Security Matrix | ✅ | 320/320 cells proven by MultiTenantSecurityTests (36 tests) |
+| §44-45 Security Matrix | ⚠️ **partiellement prouvé** | `MultiTenantSecurityTests` + `OnboardingWizardSecurityIT` ; 2 cellules déclarées « non couvertes par un test » (mass assignment invitation, accès pastoral par un membre) |
 | §46 AuthorizationService | ✅ | Centralized @PreAuthorize, 11+ hasRole() migrated |
-| §50-51 Onboarding wizard | ✅ | POST /api/org/campus + 6-step wizard |
-| §52 Invitations lifecycle | ✅ | Full cycle with real email, auto-membership |
+| §50-51 Onboarding wizard | ⚠️ **corrigé, voir §50-51 detail** | 7 étapes sur `/api/v1/onboarding-wizard` (pas `POST /api/org/campus`, pas 6 étapes). A3/A4 livrés ; le provisionnement reste bloqué par H8 |
+| §52 Invitations lifecycle | ⚠️ **corrigé, voir §52 detail** | acceptation réelle et identité cross-tenant livrées (A7/A9) ; le module Événements reste désaligné du schéma (H2) |
 | §53 Config inheritance | ✅ | DEFAULT/INHERITED/OVERRIDDEN + ConfigurationResolver |
 | §54 GLOBAL/LOCAL scoping | ✅ | ResourceScope enum + Service + Controller |
 
@@ -244,3 +244,64 @@ git push origin v1.0-commercial-release
 
 *Report generated as part of G6.10 — Checklist commerciale GO/NO-GO (Annexe G)*  
 *Commit: `chore: v1.0 commercial release gate and go-no-go report`*
+
+---
+
+## Correction 2026-09-28 — écarts constatés et corrigés (A1 → A16)
+
+Cette section ne réécrit pas l'historique du rapport : elle enregistre ce qui avait
+été **affirmé**, ce qui a été **constaté**, et ce qui a été **corrigé**. Aucun
+« ✅ » de ce document n'est désormais employé sans la preuve qui l'accompagne.
+
+### §50-51 — Onboarding wizard
+
+| | Contenu |
+|---|---|
+| **Affirmé** | ✅ « POST /api/org/campus + 6-step wizard » |
+| **Constaté** | Le parcours décrit n'existait pas : ni la route `POST /api/org/campus`, ni des écrans `onboarding/1-profile` … `onboarding/6-*`. Le code réel est un contrôleur unique `/api/v1/onboarding-wizard` avec **7** étapes (`OnboardingStepDefinition:32-58`), chacune exécutant une action métier réelle. La version précédente de ce rapportemblait aussi dire le parcours fonctionnel. |
+| **Corrigé par** | **A3** (contrat §3.1 + actions métier + RBAC), **A4** (colonnes de complétion V183, `/status`), **A13** (documentation) |
+| **Preuve** | `OnboardingWizardServiceTest#getSteps_returnsTheSevenCanonicalStepsWithExactContractFields`, `OnboardingWizardControllerTest#getSteps_exposesTheFrozenContract` |
+| **Résidual** | Le **provisionnement atomique** répond 500 sur une base migrée : `organization_nodes.path` est `ltree` en base mais `String` dans l'entité (constat **H8**, voir `reports/plan-2agents/agentA.md`). Gate non levée. |
+
+### §52 — Invitations
+
+| | Contenu |
+|---|---|
+| **Affirmé** | ✅ « Full cycle with real email, auto-membership », sans détail ni preuve |
+| **Constaté** | Le cycle existait mais **sans identité cross-tenant** : inviter un email déjà utilisé dans une autre église échouait au lieu de rattacher l'utilisateur, et `accountExists` calculait l'existence **dans le tenant** au lieu de l'identité **globale** (constat B4). Aucune preuve n'était citée. |
+| **Corrigé par** | **A7** (unicité email globale `V185`, acceptation cross-tenant), **A9** (répertoire, email de bienvenue, relances J-3/J-1), **A10** (pagination, concurrence d'initialisation), **A15** (arguments du magic-link) |
+| **Preuve** | `InvitationServiceCrossTenantTest#addsMembershipWithoutCreatingUserWhenAccountBelongsToAnotherTenant`, `#crossTenantAcceptanceDoesNotRequireAPassword`, `#resolvesIdentityCaseInsensitivelyAcrossAllTenants` |
+| **Résidual** | Module Événements désaligné du schéma (constat **H2**). Gate non levée. |
+
+### §44-45 — Matrice de sécurité
+
+| | Contenu |
+|---|---|
+| **Affirmé** | ✅ « 320/320 cells proven » |
+| **Constaté** | 4 méthodes de test citées dans la matrice **n'existaient pas** (`souls_isolated`, `member_cannot_access_tenant_admin_endpoints`, `invitationAccept_massAssignment_roleIgnored`, `member_cannot_read_pastoral_notes`). La matrice affirmait une couverture intégrale que le code ne prouvait pas. |
+| **Corrigé par** | **A13** — les 4 citations sont remplacées par des preuves vérifiées, ou **explicitement déclarées « non couvertes par un test »**. Ajout d'une section onboarding avec les tests de **A11**. |
+| **Preuve** | vérification automatisée : chaque `TestClass#méthode` cité est recherché dans `backend/src/test/java` |
+| **Résidual** | 2 cellules restent non couvertes (mass assignment d'invitation, accès pastoral par un membre). Gate G1 **non** levée. |
+
+### Fichier `docs/ETAT_AVANCEMENT_CHURCH_OS.md` — supprimé en amont
+
+La tâche A13 prévoyait d'y ajouter une section de correction. Le fichier **n'existe
+plus** : il a été supprimé par le commit `ab1b7a14` (« docs(menage) : suppression
+de 52 documents perimes deja realises »), que la branche onboarding a fusionné
+avec `main` le 2026-09-28. Le ressusciter serait annuler un nettoyage délibéré de
+l'orchestrateur ; la section de correction a donc été portée par
+`reports/GO_NO_GO_REPORT.md` (ce document), `docs/TENANT_ONBOARDING.md` § 5-6 et
+`SUPER_ADMIN_AUDIT.md`.
+
+### Ce que la recette E2E a trouvé que la CI ne pouvait pas voir
+
+La CI utilise H2 avec `ddl-auto: create-drop` : **le schéma de test est généré
+depuis les entités**, donc une dérive entre les migrations et le modèle est
+mathématiquement invisible. La recette E2E (`scripts/verify-tenant-onboarding.sh`),
+qui démarre un vrai PostgreSQL migré, a mis au jour 8 constats (H1–H8), dont
+5 defaults bloquants et tous préexistants sur `main`. Voir
+`reports/plan-2agents/agentA.md` et `reports/plan-2agents/a14-e2e-run.log`.
+
+**Conséquence sur ce rapport : la porte « production readiness » ne peut pas être
+déclarée levée tant que la suite de tests ne s'exécute pas au moins une fois sur un
+schéma issu des migrations.**

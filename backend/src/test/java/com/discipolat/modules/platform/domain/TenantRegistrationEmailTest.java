@@ -55,14 +55,31 @@ class TenantRegistrationEmailTest {
     @Mock private TenantMembershipRepository membershipRepository;
     @Mock private AuditService auditService;
     @Mock private EmailService emailService;
+    // Le service exige aussi la preuve de consentement RGPD (art. 9) introduite
+    // sur la branche distante : sans ces deux dependances, la soumission echouerait
+    // en CONSENT_REQUIRED avant d'atteindre l'envoi de l'email.
+    @Mock private com.discipolat.modules.compliance.domain.ComplianceService complianceService;
+    @Mock private com.discipolat.modules.compliance.domain.LegalDocumentService legalDocumentService;
 
     private TenantRegistrationService service;
+
+    /**
+     * Preuve de consentement RGPD : les trois consentements sont obligatoires
+     * (art. 9 pour les données religieuses) et sont verifies AVANT toute
+     * ecriture. Une soumission sans consentement ne doit donc jamais produire
+     * d'email de recu — c'est le comportement attendu, pas une regression.
+     */
+    private static TenantRegistrationService.ConsentInfo consentComplet() {
+        return new TenantRegistrationService.ConsentInfo(
+                true, true, true, "2026-01-01", "203.0.113.7", "JUnit");
+    }
 
     @BeforeEach
     void setUp() {
         service = new TenantRegistrationService(requestRepository, userRepository, passwordEncoder,
                 tenantService, organizationNodeService, roleRepository, membershipRepository,
-                auditService, emailService, FRONTEND_URL);
+                auditService, complianceService, legalDocumentService,
+                emailService, FRONTEND_URL);
     }
 
     @AfterEach
@@ -80,7 +97,8 @@ class TenantRegistrationEmailTest {
         when(requestRepository.save(any(TenantRegistrationRequest.class)))
                 .thenAnswer(i -> i.getArgument(0));
 
-        service.submit("Demandeur@Example.com", "MotDePasse1", "Jean", "Dupont", null);
+        service.submit("Demandeur@Example.com", "MotDePasse1", "Jean", "Dupont", null,
+                null, consentComplet());
 
         verify(emailService).sendRegistrationReceived("demandeur@example.com", "Jean");
     }
@@ -96,7 +114,8 @@ class TenantRegistrationEmailTest {
         when(emailService.sendRegistrationReceived(anyString(), anyString())).thenReturn(false);
 
         TenantRegistrationRequest saved = service.submit(
-                "demandeur@example.com", "MotDePasse1", "Jean", "Dupont", null);
+                "demandeur@example.com", "MotDePasse1", "Jean", "Dupont", null,
+                null, consentComplet());
 
         // La demande est bien enregistrée, avec son statut PENDING_APPROVAL,
         // malgré l'échec d'envoi de l'email.

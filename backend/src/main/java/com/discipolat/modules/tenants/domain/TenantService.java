@@ -297,4 +297,12 @@ public class TenantService {
         return tenantRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tenant", id));
     }
+
+    /**
+     * Get tenant entity by ID (for internal services like rate limiting).
+     */
+    @Transactional(readOnly = true)
+    public Tenant getTenant(UUID id) {
+        return getEntity(id);
+    }
 }

@@ -95,13 +95,31 @@ public class ComplianceService {
     }
 
     public void logConsent(UUID utilisateurId, String typeConsentement, boolean accorde, String details) {
+        logConsent(utilisateurId, typeConsentement, accorde, details, null, null, null);
+    }
+
+    /**
+     * Journalise un consentement avec sa preuve RGPD (art. 7) : version du
+     * document accepté, IP et user-agent au moment de l'acceptation.
+     */
+    public void logConsent(UUID utilisateurId, String typeConsentement, boolean accorde, String details,
+                           String policyVersion, String ipAddress, String userAgent) {
         ConsentLog log = new ConsentLog();
         log.setTenantId(TenantContext.getCurrentTenantId());
         log.setUtilisateurId(utilisateurId);
         log.setTypeConsentement(typeConsentement);
         log.setAccorde(accorde);
         log.setDetails(details);
+        log.setPolicyVersion(policyVersion);
+        log.setIpAddress(ipAddress);
+        log.setUserAgent(userAgent != null && userAgent.length() > 255 ? userAgent.substring(0, 255) : userAgent);
         consentRepository.save(log);
+    }
+
+    /** Historique des consentements d'un utilisateur (tous tenants confondus côté filtre). */
+    @Transactional(readOnly = true)
+    public java.util.List<ConsentLog> consentsOf(UUID utilisateurId) {
+        return consentRepository.findByUtilisateurIdOrderByCreatedAtDesc(utilisateurId);
     }
 
     public Map<String, Object> getStats() {

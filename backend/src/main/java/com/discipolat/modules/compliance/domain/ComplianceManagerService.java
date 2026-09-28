@@ -107,6 +107,7 @@ public class ComplianceManagerService {
     /**
      * Purge les données expirées : export JSON systématique avant suppression.
      * Types pris en charge nativement : ConsentLog, AuditLog.
+     * Mode dur = suppression réelle après export ; mode souple = anonymisation.
      */
     public Map<String, Object> executeAutomatedPurge() {
         UUID tenantId = TenantContext.requireTenantId();
@@ -118,34 +119,9 @@ public class ComplianceManagerService {
         List<Map<String, Object>> details = new ArrayList<>();
         for (RetentionPolicy policy : policyRepository.findByTenantId(tenantId)) {
             if (!policy.isActive()) continue;
-            LocalDateTime cutoff = LocalDateTime.now().minusDays(policy.getRetentionDays());
-            int purged = 0;
-            if ("ConsentLog".equalsIgnoreCase(policy.getDataType())) {
-                List<ConsentLog> expired = consentRepository.findByTenantId(tenantId).stream()
-                        .filter(c -> c.getCreatedAt().isBefore(cutoff))
-                        .toList();
-                purged = expired.size();
-                if (purged > 0 && policy.isHardDelete()) {
-                    exportAndRecord(tenantId, null, "ConsentLog", expired.size(),
-                            Map.of("type", "consents", "count", expired.size()), DataExportRecord.Motif.AVANT_PURGE);
-                }
-            } else if ("AuditLog".equalsIgnoreCase(policy.getDataType())) {
-                List<AuditLog> expired = auditLogRepository.findAll().stream()
-                        .filter(a -> tenantId.equals(a.getTenantId()))
-                        .filter(a -> a.getCreatedAt() != null && a.getCreatedAt().isBefore(cutoff))
-                        .toList();
-                purged = expired.size();
-            }
-            if (purged > 0) {
-                policy.setLastPurgeAt(LocalDateTime.now());
-                policyRepository.save(policy);
-            }
-            Map<String, Object> d = new LinkedHashMap<>();
-            d.put("dataType", policy.getDataType());
-            d.put("purged", purged);
-            d.put("mode", policy.isHardDelete() ? "HARD_DELETE" : "ANONYMIZE");
+            Map<String, Object> d = purgePolicy(tenantId, policy);
             details.add(d);
-            totalPurged += purged;
+            totalPurged += (int) d.get("purged");
         }
         result.put("recordsPurged", totalPurged);
         result.put("details", details);
@@ -154,14 +130,100 @@ public class ComplianceManagerService {
         return result;
     }
 
+    /**
+     * Exécute la purge pour UNE seule politique de rétention (bouton « Exécuter »
+     * du tableau de bord conformité) — même sémantique que la purge globalisée.
+     */
+    public Map<String, Object> executeRetentionPolicy(UUID policyId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        RetentionPolicy policy = policyRepository.findById(policyId)
+                .filter(p -> tenantId.equals(p.getTenantId()))
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Politique de rétention introuvable : " + policyId));
+        Map<String, Object> detail = purgePolicy(tenantId, policy);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("policyId", policyId);
+        result.put("tenantId", tenantId);
+        result.put("executedAt", LocalDateTime.now());
+        result.put("recordsPurged", detail.get("purged"));
+        result.put("detail", detail);
+        result.put("status", "COMPLETED");
+        return result;
+    }
+
+    /**
+     * Cœur de purge pour une politique : consigne réellement les données
+     * expirées (suppression après export en mode dur, anonymisation sinon),
+     * sinon l'état « purgé » affiché à l'admin serait un mensonge.
+     */
+    private Map<String, Object> purgePolicy(UUID tenantId, RetentionPolicy policy) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(policy.getRetentionDays());
+        int purged = 0;
+        if ("ConsentLog".equalsIgnoreCase(policy.getDataType())) {
+            List<ConsentLog> expired = consentRepository.findByTenantId(tenantId).stream()
+                    .filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isBefore(cutoff))
+                    .toList();
+            purged = expired.size();
+            if (purged > 0) {
+                if (policy.isHardDelete()) {
+                    exportAndRecord(tenantId, null, "ConsentLog", purged,
+                            Map.of("type", "consents", "count", purged), DataExportRecord.Motif.AVANT_PURGE);
+                    consentRepository.deleteAll(expired);
+                } else {
+                    // Soft : la preuve du consentement (art. 7) reste, les
+                    // traceurs identifiants sont effacés.
+                    expired.forEach(c -> {
+                        c.setIpAddress(null);
+                        c.setUserAgent(null);
+                        c.setDetails("ANONYMISÉ (rétention)");
+                    });
+                    consentRepository.saveAll(expired);
+                }
+                policy.setLastPurgeAt(LocalDateTime.now());
+                policyRepository.save(policy);
+            }
+        } else if ("AuditLog".equalsIgnoreCase(policy.getDataType())) {
+            List<AuditLog> expired = auditLogRepository.findAll().stream()
+                    .filter(a -> tenantId.equals(a.getTenantId()))
+                    .filter(a -> a.getCreatedAt() != null && a.getCreatedAt().isBefore(cutoff))
+                    .toList();
+            purged = expired.size();
+            if (purged > 0) {
+                if (policy.isHardDelete()) {
+                    exportAndRecord(tenantId, null, "AuditLog", purged,
+                            Map.of("type", "audits", "count", purged), DataExportRecord.Motif.AVANT_PURGE);
+                    auditLogRepository.deleteAll(expired);
+                } else {
+                    expired.forEach(a -> {
+                        a.setUtilisateurId(null);
+                        a.setAdresseIp(null);
+                        a.setUserAgent(null);
+                        a.setAncienValeur(null);
+                        a.setNouvelleValeur(null);
+                    });
+                    auditLogRepository.saveAll(expired);
+                }
+                policy.setLastPurgeAt(LocalDateTime.now());
+                policyRepository.save(policy);
+            }
+        }
+        Map<String, Object> d = new LinkedHashMap<>();
+        d.put("dataType", policy.getDataType());
+        d.put("purged", purged);
+        d.put("mode", policy.isHardDelete() ? "HARD_DELETE" : "ANONYMIZE");
+        return d;
+    }
+
     /** Job quotidien 3h30 — purge automatique de toutes les églises. */
     @Scheduled(cron = "0 30 3 * * *")
     public void scheduledPurgeAllTenants() {
         try {
             tenantRepository.findAll().forEach(tenant ->
-                TenantContext.runAsTenant(tenant.getId(), () ->
-                    log.info("Purge RGPD planifiée déclenchée pour tenant {}", tenant.getId())
-                )
+                TenantContext.runAsTenant(tenant.getId(), () -> {
+                    Map<String, Object> result = executeAutomatedPurge();
+                    log.info("Purge RGPD planifiée tenant {} : {} enregistrements traités",
+                            tenant.getId(), result.get("recordsPurged"));
+                })
             );
         } catch (Exception e) {
             log.warn("Purge planifiée échouée : {}", e.getMessage());

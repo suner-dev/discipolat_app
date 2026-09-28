@@ -11,11 +11,14 @@ spring:
     username: discipolat
     password: discipolat_secret
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:50}
+      minimum-idle: ${HIKARI_MIN_IDLE:10}
       idle-timeout: 300000
       connection-timeout: 20000
       max-lifetime: 1200000
+      leak-detection-threshold: 60000
+      pool-name: DiscipolatHikariPool
+      register-mbeans: true
   jpa:
     hibernate:
       ddl-auto: none
@@ -132,6 +135,15 @@ app:
     simulate-confirm-delay-non-manager-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_NON_MANAGER_MS:0}
     # Périodicité du balayage des intentions en attente (ms).
     simulate-scan-interval-ms: ${PAYMENTS_SIMULATE_SCAN_INTERVAL_MS:5000}
+  stripe:
+    # Facturation SaaS par abonnement (carte bancaire) — DÉSACTIVÉ par défaut :
+    # s'active dès que STRIPE_SECRET_KEY est fournie (clé sk_test/... ou sk_live/...).
+    secret-key: ${STRIPE_SECRET_KEY:}
+    # Secret du endpoint webhook (whsec_...) — obligatoire pour accepter des webhooks (fail-closed).
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    # URLs de retour post-checkout (face avant).
+    success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/billing?checkout=success}
+    cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/pricing?checkout=cancelled}
   encryption:
     # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
     # Générer avec : openssl rand -base64 32

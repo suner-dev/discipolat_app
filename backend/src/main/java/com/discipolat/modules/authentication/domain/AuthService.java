@@ -83,12 +83,23 @@ public class AuthService {
 
     public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
                                                 String lastName, String phone, String inviteCode) {
-        return register(email, rawPassword, firstName, lastName, phone, inviteCode, null);
+        return register(email, rawPassword, firstName, lastName, phone, inviteCode, null, null);
     }
 
     public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
                                                 String lastName, String phone, String inviteCode,
                                                 String requestedPlan) {
+        return register(email, rawPassword, firstName, lastName, phone, inviteCode, requestedPlan, null);
+    }
+
+    /**
+     * Enregistrement public (demande d'organisation) — les consentements RGPD
+     * (CGU, confidentialité, art. 9) sont obligatoires et horodatés.
+     */
+    public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
+                                                String lastName, String phone, String inviteCode,
+                                                String requestedPlan,
+                                                TenantRegistrationService.ConsentInfo consent) {
         if (inviteCode != null && !inviteCode.isBlank()) {
             throw new DomainException(
                     "Les invitations doivent être acceptées via leur lien dédié",
@@ -96,10 +107,8 @@ public class AuthService {
                     "INVITATION_ACCEPTANCE_REQUIRED"
             );
         }
-        if (requestedPlan == null) {
-            return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone);
-        }
-        return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone, requestedPlan);
+        return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone,
+                requestedPlan, consent);
     }
 
     // ======================== LOGIN ========================

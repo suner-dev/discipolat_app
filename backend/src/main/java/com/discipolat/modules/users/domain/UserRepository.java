@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -115,4 +116,36 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByTenantId(UUID tenantId);
 
     Page<User> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
+
+    @Query(value = """
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE deleted = false AND statut = 'ACTIVE') as active,
+            COUNT(*) FILTER (WHERE deleted = false AND statut = 'INACTIVE') as inactive,
+            COUNT(*) FILTER (WHERE deleted = false AND whatsapp_opt_in = true) as whatsapp_opt_in
+        FROM users
+        """, nativeQuery = true)
+    Map<String, Object> getDashboardStats();
+
+    @Query(value = """
+        SELECT
+            statut,
+            COUNT(*) as count
+        FROM users
+        WHERE deleted = false
+        GROUP BY statut
+        """, nativeQuery = true)
+    List<Map<String, Object>> getUsersByStatus();
+
+    @Query(value = """
+        SELECT
+            u.tenant_id,
+            COUNT(*) as count
+        FROM users u
+        WHERE u.deleted = false
+        GROUP BY u.tenant_id
+        ORDER BY count DESC
+        LIMIT 100
+        """, nativeQuery = true)
+    List<Map<String, Object>> getTopTenantsByUserCount();
 }

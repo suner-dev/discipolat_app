@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface ConsentLogRepository extends JpaRepository<ConsentLog, UUID> {
     List<ConsentLog> findByUtilisateurId(UUID utilisateurId);
     List<ConsentLog> findByTenantId(UUID tenantId);
+    List<ConsentLog> findByUtilisateurIdOrderByCreatedAtDesc(UUID utilisateurId);
 }

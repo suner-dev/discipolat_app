@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,12 +14,35 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(8, 'Au moins 8 caractères'),
   confirmPassword: z.string(),
+  // RGPD art. 7 : consentement explicite, actif, par document — pas de case pré-cochée.
+  // `boolean + refine` (et non literal(true)) : mêmes validation et message, mais
+  // la valeur par défaut du formulaire peut légalement être `false`.
+  consentCgu: z.boolean().refine((v) => v === true, { message: 'Vous devez accepter les CGU' }),
+  consentPrivacy: z.boolean().refine((v) => v === true, { message: 'Vous devez accepter la politique de confidentialité' }),
+  consentArt9: z.boolean().refine((v) => v === true, { message: 'Vous devez consentir au traitement des données religieuses (RGPD art. 9)' }),
 }).refine((d) => d.password === d.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',
   path: ['confirmPassword'],
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
+
+interface LegalDocSummary { code: string; version: number; title: string }
+
+/** Version des documents légaux affichée au pied du formulaire (preuve art. 7). */
+function useLegalVersions() {
+  const [docs, setDocs] = useState<LegalDocSummary[]>([]);
+  useEffect(() => {
+    let active = true;
+    api.get<LegalDocSummary[]>('/public/legal')
+      .then(({ data }) => { if (active && Array.isArray(data)) setDocs(data); })
+      .catch(() => { /* version résolue côté serveur si l'affichage échoue */ });
+    return () => { active = false; };
+  }, []);
+  const versionOf = (code: string) => docs.find((d) => d.code === code)?.version;
+  const legalVersion = versionOf('CGU') ? `CGU-v${versionOf('CGU')}` : undefined;
+  return { versionOf, legalVersion };
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -28,6 +51,7 @@ export default function RegisterPage() {
   const requestedPlan = searchParams.get('plan')?.trim().toUpperCase() || 'DISCOVERY';
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { versionOf, legalVersion } = useLegalVersions();
 
   const {
     register,
@@ -35,6 +59,7 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { consentCgu: false, consentPrivacy: false, consentArt9: false },
   });
 
   const onSubmit = async (data: RegisterForm) => {
@@ -47,6 +72,10 @@ export default function RegisterPage() {
         lastName: data.lastName.trim(),
         phone: data.phone?.trim() || undefined,
         plan: requestedPlan.toLowerCase(),
+        consentCgu: data.consentCgu,
+        consentPrivacy: data.consentPrivacy,
+        consentArt9: data.consentArt9,
+        legalVersion,
       });
       setSuccess(true);
     } catch (err) {
@@ -211,6 +240,34 @@ export default function RegisterPage() {
             />
             {errors.confirmPassword && <p className="mt-1 text-xs text-red-400">{errors.confirmPassword.message}</p>}
           </div>
+        </div>
+
+        {/* Consentements RGPD explicites (art. 7 & 9) — cases vides par défaut */}
+        <div className="space-y-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50/60 dark:bg-white/5 p-4">
+          {([
+            { field: 'consentCgu', label: "J'accepte les", link: '/legal/CGU', doc: 'conditions générales d\u2019utilisation', version: versionOf('CGU') },
+            { field: 'consentPrivacy', label: 'J\u2019accepte la', link: '/legal/PRIVACY', doc: 'politique de confidentialité', version: versionOf('PRIVACY') },
+            { field: 'consentArt9', label: 'Je consens au traitement de mes', link: '/legal/CONSENT_ART9', doc: 'données religieuses (RGPD art. 9)', version: versionOf('CONSENT_ART9') },
+          ] as const).map((item) => (
+            <div key={item.field} className="flex items-start gap-2.5">
+              <input
+                id={item.field}
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 bg-white text-primary-600 focus:ring-primary-500/40 dark:border-white/20 dark:bg-white/5"
+                {...register(item.field)}
+              />
+              <label htmlFor={item.field} className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                {item.label}{' '}
+                <Link to={item.link} target="_blank" className="font-medium text-primary-600 dark:text-primary-400 hover:underline">
+                  {item.doc}
+                </Link>
+                {item.version ? ` (v${item.version})` : ''}
+              </label>
+            </div>
+          ))}
+          {(['consentCgu', 'consentPrivacy', 'consentArt9'] as const).map((field) => (
+            errors[field] ? <p key={field} className="text-xs text-red-400">{errors[field]?.message as string}</p> : null
+          ))}
         </div>
 
         <button
