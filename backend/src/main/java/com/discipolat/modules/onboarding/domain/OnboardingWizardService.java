@@ -80,14 +80,29 @@ public class OnboardingWizardService {
     // Lecture
     // ==================================================================
 
-    /** `GET /` — 7 étapes, initialise si la table est vide. Idempotent. */
-    @Transactional(readOnly = true)
+    /**
+     * `GET /` — 7 étapes, initialise si la table est vide. Idempotent.
+     *
+     * <p><b>Transaction en lecture-ECRITURE, volontairement.</b> Cette méthode
+     * écrit : quand la table est vide elle crée les 7 lignes (voir
+     * {@code createStepsIfAbsent}). Sous {@code readOnly = true}, les
+     * {@code save()} ne sont jamais flushés puis annulés au rollback : les 7
+     * identifiants retournés au client étaient <b>fabriqués puis jetés</b>, et
+     * toute mutation sur ces identifiants répondait
+     * {@code 404 STEP_NOT_FOUND}. Concrètement, le wizard était inutilisable sur
+     * un tenant fraîchement provisionné, et cela sur une base réelle
+     * uniquement : les tests unitaires mockent le repository, donc aucune
+     * sémantique de transaction n'y est visible.
+     */
+    @Transactional
     public List<OnboardingStepResponse> getSteps() {
         return toResponses(loadOrInitialize());
     }
 
     /** `GET /progress` */
-    @Transactional(readOnly = true)
+    // Transaction en lecture-ecriture : `loadOrInitialize()` peut creer les
+    // 7 etapes. Meme raison que `getSteps()`.
+    @Transactional
     public OnboardingProgressResponse getProgress() {
         List<OnboardingWizardStep> steps = loadOrInitialize();
         long completed = steps.stream().filter(s -> s.getStatus() == OnboardingWizardStep.Status.COMPLETED).count();
@@ -110,7 +125,9 @@ public class OnboardingWizardService {
      * du tenant passe par {@link TenantStatusReadPort} pour ne pas créer de
      * dépendance circulaire entre le module onboarding et le module tenants.
      */
-    @Transactional(readOnly = true)
+    // Transaction en lecture-ecriture : `loadOrInitialize()` peut creer les
+    // 7 etapes. Meme raison que `getSteps()`.
+    @Transactional
     public OnboardingStatusResponse getStatus() {
         UUID tenantId = TenantContext.requireTenantId();
         List<OnboardingWizardStep> steps = loadOrInitialize();

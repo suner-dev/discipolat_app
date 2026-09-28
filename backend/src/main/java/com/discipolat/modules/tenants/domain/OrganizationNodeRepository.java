@@ -36,7 +36,29 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
     @Query("SELECT n FROM OrganizationNode n WHERE n.tenantId = :tenantId AND n.path LIKE CONCAT((SELECT p.path FROM OrganizationNode p WHERE p.id = :parentId), '%') AND n.id != :parentId")
     List<OrganizationNode> findDescendantsByNodeId(@Param("tenantId") UUID tenantId, @Param("parentId") UUID parentId);
 
-    Optional<OrganizationNode> findRootByTenantId(UUID tenantId);
+    /**
+     * Racine d'un tenant.
+     *
+     * <p><b>Requête explicite, obligatoire.</b> Le nom
+     * {@code findRootByTenantId} était interprété par Spring Data comme une
+     * requête par SUJET : le prédicat réel retenu n'était que
+     * {@code tenantId = ?}. La méthode renvoyant un {@code Optional}, elle levait
+     * alors {@code IncorrectResultSizeDataAccessException: 2 results} dès que le
+     * tenant possédait sa racine <b>et</b> un autre nœud de premier niveau — ce
+     * qui est le cas de tout tenant provisionné (église racine + département).
+     * C'est ce qui faisait échouer l'étape CHURCH_IDENTITY du wizard sur une base
+     * réelle ; invisible en test unitaire, où un seul nœud est simulé.
+     *
+     * <p>Une église racine est identifiée par son TYPE, pas par l'absence de
+     * parent : un département peut lui aussi être un nœud de premier niveau.
+     */
+    @Query("SELECT n FROM OrganizationNode n WHERE n.tenantId = :tenantId AND n.type = :type ORDER BY n.createdAt ASC")
+    List<OrganizationNode> findRootCandidates(UUID tenantId, @Param("type") OrganizationNodeType type);
+
+    /** Première racine du tenant, ou vide. Utilise toujours par la lecture. */
+    default Optional<OrganizationNode> findRootByTenantId(UUID tenantId) {
+        return findRootCandidates(tenantId, OrganizationNodeType.ROOT_CHURCH).stream().findFirst();
+    }
 
     /**
      * Constat H7 : la colonne {@code type} est un {@code varchar} et l'entité la

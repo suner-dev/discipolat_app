@@ -49,6 +49,22 @@ public class OrganizationNodeService {
         return nodeRepository.findByTenantIdAndType(tenantId, type);
     }
 
+    /**
+     * Charge utile d'audit toleratee au null.
+     *
+     * <p>Les entrees sont paires clé/valeur : une seule valeur peut etre nulle
+     * (ex. un deplacement vers la racine, ou un renommage sans changement de
+     * code). {@code Map.of} l'interdit et provoquerait une NPE en production, la
+     * ou le test unitaire, lui, n'a qu'un seul noeud et des valeurs non nulles.
+     */
+    private static Map<String, Object> auditPayload(Object... keyValuePairs) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < keyValuePairs.length; i += 2) {
+            payload.put((String) keyValuePairs[i], keyValuePairs[i + 1]);
+        }
+        return payload;
+    }
+
     @Transactional(readOnly = true)
     public List<OrganizationNode> getChildren(UUID parentId) {
         return nodeRepository.findByParentId(parentId);
@@ -148,11 +164,8 @@ public class OrganizationNodeService {
         // eglise racine impossible (donc le provisionnement atomique, et l'etape
         // CHURCH_IDENTITY du wizard). On utilise une carte tolerante au null,
         // qui conserve aussi l'ordre des cles.
-        Map<String, Object> auditPayload = new LinkedHashMap<>();
-        auditPayload.put("type", type.name());
-        auditPayload.put("name", name);
-        auditPayload.put("parentId", effectiveParentId);
-        auditPayload.put("code", code);
+        Map<String, Object> createPayload = auditPayload(
+                "type", type.name(), "name", name, "parentId", effectiveParentId, "code", code);
 
         auditService.log(
                 creatorId,
@@ -161,7 +174,7 @@ public class OrganizationNodeService {
                 "ORGANIZATION_NODE",
                 node.getId(),
                 "SUCCESS",
-                auditPayload,
+                createPayload,
                 null, null, null
         );
 
@@ -211,6 +224,13 @@ public class OrganizationNodeService {
 
         node = nodeRepository.save(node);
 
+        // H3 : `Map.of` interdit les valeurs nulles, et `code` vaut null quand on
+        // renomme un noeud SANS changer son code — precisement ce que fait
+        // l'etape CHURCH_IDENTITY du wizard. La NPE qui en resultait rendait
+        // l'etape inutilisable sur une base reelle.
+        Map<String, Object> updatePayload = auditPayload(
+                "oldName", oldName, "newName", name, "oldCode", oldCode, "newCode", code);
+
         auditService.log(
                 updaterId,
                 node.getTenantId(),
@@ -218,7 +238,7 @@ public class OrganizationNodeService {
                 "ORGANIZATION_NODE",
                 node.getId(),
                 "SUCCESS",
-                Map.of("oldName", oldName, "newName", name, "oldCode", oldCode, "newCode", code),
+                updatePayload,
                 null, null, null
         );
 
@@ -259,7 +279,7 @@ public class OrganizationNodeService {
                 "ORGANIZATION_NODE",
                 node.getId(),
                 "SUCCESS",
-                Map.of("oldPath", oldPath, "newPath", newPath, "newParentId", newParentId),
+                auditPayload("oldPath", oldPath, "newPath", newPath, "newParentId", newParentId),
                 null, null, null
         );
 

@@ -2006,3 +2006,68 @@ script distingue les trois états.
 - `departments` / `families` receiving leur `tenant_id` par un mécanisme d'écriture
   et non par l'entité : toute lecture de `getTenantId()` sur une entité fraîchement
   créée renvoie `null` en mémoire. Source du NPE ci-dessus.
+
+---
+
+## Constat architectural majeur : `users.tenant_id` (tenant d'origine) vs tenant d'action
+
+La recette E2E a mis au jour un defaut de **coherence du modele multi-tenant** qui
+n'est pas corrige ici car il engage l'isolation des donnees.
+
+### Le symptome
+
+Quand un Super Admin (dont `users.tenant_id` = tenant `default`) agit dans un
+autre tenant (via une membership), le wizard utilise `securityUtils.getCurrentUserId()`
+comme `responsableId` (etape STRUCTURE). Cet id est ensuite resolu par
+`TenantAwareSimpleJpaRepository.findById()`, qui filtre sur
+`tenant_id = TenantContext.getTenantId()` = **le tenant d'action**. Comme
+l'utilisateur n'appartient pas a ce tenant par sa colonne `users.tenant_id`,
+la resolution echoue :
+
+```
+POST /onboarding-wizard/{id}/complete   (STRUCTURE)
+-> 404 User not found with id: 4334b638-...   (le Super Admin)
+```
+
+### Pourquoi c'est un vrai defaut, pas un bug de test
+
+Le modele reel est : `users.tenant_id` = tenant d'**origine** (NOT NULL, un seul
+par utilisateur), et `tenant_memberships` = les tenants d'**action** (plusieurs).
+Un utilisateur multi-tenant est donc legitement dans plusieurs tenants, mais sa
+colonne `users.tenant_id` n'en contient qu'un.
+
+Des que le modele prevoit le multi-tenant (B2 du plan : "un utilisateur inscrit
+dans deux eglises choisit son organisation"), `findById` sur `users` filtre par la
+mauvaise colonne. Le Super Admin, l'Impersonation, et tout utilisateur multi-eglises
+sont concernes.
+
+### Les trois voies possibles (decision requise)
+
+1. **`findById` sur `users` doitembership-scoped** : remplacer le predicat
+   `tenant_id = ?` par un `EXISTS (SELECT 1 FROM tenant_memberships ...)`.
+   Correct, mais touche **toutes** les lectures d'utilisateurs (impacts large).
+
+2. **Les etapes du wizard ne doivent pas utiliser `currentActor()` comme
+   `responsableId`** : le responsable doit etre un utilisateur **de ce tenant**
+   (par exemple l'owner provisionne). Cible le symptome, pas la cause.
+
+3. **Le fixture de recette est-il representative ?** : dans un flux reel, c'est
+   l'**owner du tenant** qui configure son eglise, pas le Super Admin. Mon E2E
+   utilise le Super Admin par.fixture, ce qui declenche le cas multi-tenant. Un
+   parcours reel declenche-t-il le bug ? **Oui**, des qu'un Super Admin configure
+   une eglise pour un tiers, ou qu'un owner d'une eglise A configure l'eglise B.
+
+**Recommandation** : la voie 1 est la seule qui corrige la cause, mais elle doit
+etreguida par une revue d'isolation complete (elle modifie le predicat de TOUTES les
+lectures d'utilisateurs). La voie 2 est un contournement cible mais laisse le defaut
+sous-jacent.
+
+### Etat de la recette a ce stade
+
+- **16/16 + A13** livres et pousses sur `main`.
+- **H1, H3, H4, H5, H7, H8, V178, `role_id`** corriges et valides sur base reelle.
+- Recette E2E : **38 PASS, 11 FAIL, 5 SKIP** (le parcours de provisioning et de
+  lecture du wizard est vert ; les echecs restants sont concentrates sur
+  STRUCTURE/roles/quotas, lies a ce defaut multi-tenant et a l'incoherence de la
+  fixture de recette).
+- **1469 tests** verts.

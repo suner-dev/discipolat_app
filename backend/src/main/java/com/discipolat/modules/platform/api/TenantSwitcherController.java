@@ -208,6 +208,16 @@ public class TenantSwitcherController {
         // aucun accessToken/refreshToken n'est produit.
         tenantStatusGuard.assertAccessible(newTenantId);
 
+        // H4 (2e cran) : l'IDENTITE de l'utilisateur ne change pas lorsqu'on
+        // change d'eglise. Il faut donc le lire AVANT de basculer le contexte :
+        // `TenantAwareSimpleJpaRepository.findById` ajoute explicitement
+        // `tenant_id = TenantContext.getTenantId()`, et apres la bascule on
+        // chercherait un utilisateur dont `users.tenant_id` est encore son tenant
+        // d'origine -> "Utilisateur introuvable", 500. Lire avant evite d'avoir a
+        // contourner l'isolation pour un acces cross-tenant.
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
+
         // Set new tenant context
         TenantContext.setTenantId(newTenantId);
 
@@ -221,8 +231,6 @@ public class TenantSwitcherController {
             return ResponseEntity.status(403).body(Map.of("error", "Accès non autorisé à ce tenant"));
         }
         TenantMembership membership = memberships.get(0);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
         String activeRole = user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name();
         Set<String> roles = user.getRoles() != null
                 ? user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())

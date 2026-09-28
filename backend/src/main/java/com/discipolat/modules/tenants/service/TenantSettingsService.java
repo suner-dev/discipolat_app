@@ -41,7 +41,8 @@ public class TenantSettingsService {
     }
 
     public TenantSettings updateSettings(UUID tenantId, TenantSettingsRequest request, UUID userId) {
-        TenantSettings settings = getSettings(tenantId);
+        TenantSettings settings = settingsRepository.findByTenantId(tenantId)
+                .orElseGet(() -> createDefaultSettings(tenantId, userId));
         
         // Identité commerciale
         if (request.businessName() != null) settings.setBusinessName(request.businessName());
@@ -277,14 +278,24 @@ public class TenantSettingsService {
         if (settingsRepository.existsByTenantId(tenantId)) {
             return; // Already exists
         }
+        createDefaultSettings(tenantId, userId);
+    }
 
+    /**
+     * Cree la ligne de reglages par defaut d'un tenant qui n'en a pas encore.
+     *
+     * <p>Isole de {@link #initializeDefaultSettings(UUID, UUID)} pour que la
+     * premiere ecriture de reglages (etape CHURCH_IDENTITY du wizard) n'ait pas a
+     * dupliquer la construction.
+     */
+    private TenantSettings createDefaultSettings(UUID tenantId, UUID userId) {
         TenantSettings settings = TenantSettings.builder()
                 .tenant(tenantRepository.getReferenceById(tenantId))
                 .createdBy(userId)
                 .updatedBy(userId)
                 .build();
 
-        settingsRepository.save(settings);
+        return settingsRepository.save(settings);
     }
 
     private void publishSettingsChangedEvent(UUID tenantId) {

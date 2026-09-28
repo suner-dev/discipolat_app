@@ -291,12 +291,19 @@ e2e_3_read_wizard() {
   local missing=""
   for f in id stepType stepOrder title description status isCompleted \
            isSkippable skipRequiresReason startedAt completedAt; do
-    jq_h "[0].${f}" || missing="${missing} ${f}"
+    # `has()` et non une lecture de valeur : `startedAt`/`completedAt` valent
+    # null sur une etape neuve, et `jq -e` quitte en erreur sur null -- un champ
+    # present mais vide ne doit pas etre signale comme manquant.
+    # `.[0]` et NON `[0]` : en jq, un `[0]` en tete de filtre est un
+    # CONSTRUCTEUR de tableau (le litteral [0]), pas un index -- d'ou une erreur
+    # "Cannot check whether array has a string key" et, avant correction, 11
+    # champsdeclare a tort manquants.
+    jq_h ".[0] | has(\"${f}\")" || missing="${missing} ${f}"
   done
   [[ -z "$missing" ]] && ok "E2E-3c contrat 3.1 complet (tous les champs)" \
                       || ko "E2E-3c contrat 3.1 complet" "champs manquants :${missing}"
 
-  jq_h '[0].config' \
+  jq_h '.[0] | has("config")' \
     && ko "E2E-3d l'entite brute n'est pas exposee" "le champ legacy \`config\` fuit dans la reponse" \
     || ok "E2E-3d l'entite brute n'est pas exposee (pas de champ config)"
 
