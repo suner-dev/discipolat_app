@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-22  
-**Status**: ✅ PRODUCTION READY
+**Statut**: Cloisonnement tenant : ⚠️ la suspension d'un tenant ne s'appliquait qu'au login avant A1 ; le sélecteur d'église était inopérant avant H4
 
 ---
 

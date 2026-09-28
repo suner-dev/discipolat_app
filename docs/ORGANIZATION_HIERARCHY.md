@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-22  
-**Status**: ✅ PRODUCTION READY
+**Statut**: Hiérarchie d'organisation : racines, campus, sous-églises, départements — ⚠️ indisponible en base migrée (constat H8, `path` en `ltree`)
 
 ---
 

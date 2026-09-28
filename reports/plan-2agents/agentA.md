@@ -1640,3 +1640,85 @@ le premier événement (H2), et l obtains d'un jeton sur le tenant de recette
 
 Aucun de ces défauts n'a été corrigé dans cette branche : la correction
 dépasse le mandat d'A14 et engage le schéma de production.
+
+---
+
+## A13 — Documentation véridique
+
+- **Statut** : DONE
+- **Fichiers** : `docs/TENANT_ONBOARDING.md` (réécrit intégralement), `docs/API.md`,
+  `docs/security/SECURITY_MATRIX.md`, `docs/MULTI_TENANT_ARCHITECTURE.md`,
+  `docs/ADMINISTRATION_MODEL.md`, `docs/ORGANIZATION_HIERARCHY.md`,
+  `docs/TENANT_SECURITY.md`, `docs/RBAC.md`, `reports/GO_NO_GO_REPORT.md`,
+  `SUPER_ADMIN_AUDIT.md`
+
+### Ce qui a été supprimé : des affirmations fausses
+
+| Affirmation | Réalité |
+|---|---|
+| `Status: ✅ PRODUCTION READY` (6 fichiers) | non prouvé, et **contredit** par 5 défauts bloquants |
+| routes `/onboarding/1-profile` … `/onboarding/6-*` | inexistantes : un contrôleur unique, 7 étapes |
+| `PUT /api/tenants/{id}` | il manque `/v1` : c'est `PUT /api/v1/tenants/{id}` |
+| `PUT /api/tenants/{id}/branding` | inexistant : c'est `PUT /api/v1/admin/branding` |
+| `/api/org/campus`, `/api/org/units` | inexistants : `/api/v1/org/tree`, `/api/v1/admin/org/nodes` |
+| « §44-45 : 320/320 cellules prouvées » | **4 méthodes de test citées n'existaient pas** |
+| « §50-51 : POST /api/org/campus + wizard 6 étapes » | parcours inexistant |
+| « §52 : cycle complet avec email réel, sans preuve » | l'identité cross-tenant n'existait pas |
+
+### Les 4 citations de test inventées, trouvées et remplacées
+
+`docs/security/SECURITY_MATRIX.md` citait `souls_isolated`,
+`member_cannot_access_tenant_admin_endpoints`,
+`invitationAccept_massAssignment_roleIgnored` et
+`member_cannot_read_pastoral_notes` : **aucune n'existe dans le code**. Deux
+cellules sont désormais déclarées « non couvertes par un test » plutôt que prétendre
+le contraire — c'est le principe de la tâche (« aucune affirmation non prouvée »).
+
+### Contrôles automatiques exécutés
+
+Deux vérifications par script, parce que la vérification manuelle est précisément
+ce qui avait laissé passer les fausses routes :
+
+```
+# 1) chaque TestClass#methode citee existe-t-il vraiment ?
+citations verifiees : 14  invalides : 0 []
+
+# 2) chaque route citee dans TENANT_ONBOARDING existe-t-elle dans un controleur ?
+routes reelles extraites des controleurs : 747
+routes citees : 13  |  verifiees : 9  |  a verifier : 0
+```
+
+Les 4 routes restantes sont citées **comme n'existant pas**, ce qui est le but de
+la section « Écarts corrigés ».
+
+### Contenu neuf
+
+- **`docs/TENANT_ONBOARDING.md`** : réécrit. Le flux réel (provisionnement atomique
+  → activation → 7 étapes → `completed`), le contrat §3.1 champ par champ, les 5
+  erreurs nommées, les **vraies** API, la section mobile avec deep links fournis
+  par l'Agent B, et une section « Écarts connus » de 6 lignes.
+- **`docs/API.md`** : ajout de 4 sections (wizard, inscription, invitations,
+  quotas) avec le comportement réel, dont le piège `/quotas/check/{resource}` qui
+  répond **toujours 200** et porte le dépassement dans le corps.
+- **`SECURITY_MATRIX.md`** : section « Onboarding d'un tenant » avec 14 cellules
+  adossées aux tests de A11 (`OnboardingWizardSecurityIT`), plus la limite H4.
+- **`GO_NO_GO_REPORT.md`** : section de correction §50-51 / §52 / §44-45, avec
+  pour chacune « ce qui était affirmé / ce qui a été constaté / qui corrige /
+  la preuve / le résiduel ».
+- **`SUPER_ADMIN_AUDIT.md`** : réserves vérifiées sur 5 lignes du tableau de ✅.
+- **`docs/ETAT_AVANCEMENT_CHURCH_OS.md`** : **supprimé en amont** par `ab1b7a14`
+  (nettoyage de 52 documents périmés). Ressusciter annulerait un choix délibéré ;
+  la section de correction est portée par GO_NO_GO_REPORT, TENANT_ONBOARDING § 5-6
+  et SUPER_ADMIN_AUDIT. Le fait est consigné dans GO_NO_GO_REPORT.
+
+### Deltas doc de l'Agent B consignés (§4 de TENANT_ONBOARDING)
+
+Deep links `https://app.discipolat.com/accept-invitation?token=<32hex>` et
+`discipolat://…`, fichiers `.well-known/assetlinks.json` et
+`apple-app-site-association`, écrans `mobile/lib/presentation/screens/onboarding/`,
+`…/invitations/accept_invitation_screen.dart`,
+`…/tenant/tenant_onboarding_screen.dart`.
+
+**Limite consignée** : la publication des `.well-known` et l'Associated Domains ne
+relèvent pas du code ; sans eux `autoVerify` échoue silencieusement et Android
+ouvre le navigateur. E2E-11 reste donc recette manuelle.

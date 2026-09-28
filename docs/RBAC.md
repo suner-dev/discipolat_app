@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-22  
-**Status**: ✅ PRODUCTION READY
+**Statut**: RBAC : rôles globaux et de tenant, applicables par le filtre multi-tenant comme par le RBAC
 
 ---
 

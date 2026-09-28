@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Date**: 2026-09-22  
-**Status**: ✅ PRODUCTION READY
+**Statut**: Multi-tenant : cloisonnement par filtre Hibernate `tenant_id`, **et** deux limites connues (sélecteur d'église et quotas) corrigées dans `fix/schema-drift-h1-h5`
 
 ---
 
