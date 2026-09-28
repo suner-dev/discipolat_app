@@ -218,3 +218,37 @@ Preuve finale B8 (après levée du blocage) :
 
 `pubspec.lock` : 2 paquets de test réalignés (`meta` 1.16.0→1.17.0, `test_api` 0.7.6→0.7.7),
 **0 paquet ajouté, 0 retiré**. `pubspec.yaml` non modifié.
+
+---
+
+## INTEGRATION AVEC LE BACKEND REEL (Agent A) — 2026-09-28
+
+L'Agent A a livré **A1 → A16** (16 commits sur `fix/onboarding-tenant-backend`).
+La fusion de sa branche dans la mienne est **déjà effective** (`a42d654`).
+
+### Vérification croisée backend réel ↔ frontend (fait champ par champ)
+
+| Élément | Backend réel (Agent A) | Mon frontend | Verdict |
+|---|---|---|---|
+| `GET /onboarding-wizard` | présent | `useOnboardingSteps` | OK |
+| `GET /onboarding-wizard/status` | `OnboardingStatusResponse` (7 champs) | `OnboardingStatus` | **OK — correspondance exacte** |
+| `GET /onboarding-wizard/progress` | présent | `useOnboardingProgress` | OK |
+| `POST /{id}/complete` | `OnboardingStepData` (corps facultatif) | `{ data }` ou `{}` | OK |
+| `POST /auth/registration-status` | `AuthController:58` + rate-limit | `RegistrationStatusPage` | **OK** |
+| `GET /admin/tenant-features` | `TenantFeatureController` | `ModulesStep` | OK |
+| `OnboardingStepResponse` | 11 champs Java | 12 champs TS | **alignement vérifié champ par champ** |
+
+`OnboardingStepResponse` : `id, stepType, stepOrder, title, description, status, isCompleted,
+isSkippable, skipRequiresReason, startedAt, completedAt, completedData` — **noms et types
+identiques** à mon `frontend/src/types/onboarding.ts`. Aucun écart de contrat (gate G-B.4).
+
+### Preuves d'intégration
+- `tsc -b` (strict) → **EXIT 0** sur le code fusionné
+- `vitest run` (suite complète) → **EXIT 0**, **51/51 fichiers**
+- `eslint src` → **EXIT 0**, **0 erreur** ; 344 warnings, **0 provenant de mes fichiers**
+  (vérifié : `onboarding`, `RegistrationStatus`, `MainLayout` → 0 occurrence)
+
+### Périmètre respecté
+Intersection des fichiers modifiés par A et par moi : **vide**. Aucun conflit de zone.
+`frontend/dist-ts/` (3 fichiers de build déjà trackés avant la campagne) restaurés à leur
+état d'origine `d730771` pour ne pas polluer l'artefact de build.
