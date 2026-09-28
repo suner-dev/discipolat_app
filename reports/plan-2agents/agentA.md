@@ -463,7 +463,7 @@ hachage (`extendHashChain`) — la chaîne d'audit reste donc inaltérable.
 ### Note sur un test existant ajusté
 
 `create_shouldAuditTenantCreatedExactlyOnce` exige que l'identifiant du tenant
-audit�� soit celui de la réponse. La fixture `tenantRepository.save(...)` de ce
+audité soit celui de la réponse. La fixture `tenantRepository.save(...)` de ce
 test attribuait un **nouveau** UUID à chaque appel, alors que `create` sauvegarde
 à nouveau le même tenant dans `ensureInitialSubscription` — l'identifiant est
 donc désormais attribué **une seule fois** (`if (t.getId() == null)`), ce qui
