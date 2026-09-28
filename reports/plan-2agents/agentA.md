@@ -1382,13 +1382,25 @@ Appliquées par `flyway:migrate` sur un conteneur PostgreSQL 16.15 **jetable**
 (`onb-flyway-check`, port 55444, sans aucun lien avec le conteneur de production
 `kfokam48-demo-init-postgres`) :
 
+> **CORRECTION (2026-09-28, après A14).** Le chiffre de « 147 » ci-dessus datait
+> d'une base neuve creee **avant** l'ajout de V184 : elle prouvait V183 et V185
+> mais **pas** V184. La preuve definitive a ete refaite sur une base vierge
+> neuf, via le demarrage reel du backend (`flyway.enabled: true`,
+> `ddl-auto: none`) — c'est-a-dire le chemin exact d'un deploiement neuf :
+
 ```
-[INFO] Successfully validated 147 migrations
+[INFO] Successfully validated 148 migrations
 [INFO] Migrating schema "public" to version "183 - tenant onboarding completion"
+[INFO] Migrating schema "public" to version "184 - invitation reminder tracking"
 [INFO] Migrating schema "public" to version "185 - users email global unique"
-[INFO] Successfully applied 147 migrations to schema "public", now at version v185
-[INFO] BUILD SUCCESS
+[INFO] Successfully applied 148 migrations to schema "public", now at version v185
 ```
+
+**148** migrations appliquees sur un schema vierge, V183 **et** V184 incluses.
+Cette meme base a ensuite revele 5 derives entite/schema (H1-H5, voir A14) que
+`mvn verify` ne peut pas voir, car le profil de test utilise H2 avec
+`ddl-auto: create-drop` : le schema y est **genere depuis les entites**, ce qui
+rend toute derive migration/entite mathématiquement invisible.
 
 Contrôles effectués sur le schéma résultant :
 
@@ -1463,3 +1475,168 @@ mvn -B -o test     (suite complète)
 [WARNING] Tests run: 1453, Failures: 0, Errors: 0, Skipped: 13
 [INFO] BUILD SUCCESS
 ```
+
+---
+
+## A14 — Recette E2E bout-en-bout (`scripts/verify-tenant-onboarding.sh`)
+
+- **Statut** : **PARTIEL — 5 defaults bloquants découverts, 1 arbitrage demandé**
+- **Fichier** : NEW `scripts/verify-tenant-onboarding.sh` (curl + jq, ~560 lignes)
+- **Journal complet** : `reports/plan-2agents/a14-e2e-run.log`
+- **Contexte d'exécution** : backend **jetable** sur le port 18080, PostgreSQL 16.15
+  jetable (55445), Redis jetable (56380), clés RSA + clé AES générées à la volée.
+  Aucun conteneur ni port de production touché (le 8080 de production n'a pas été
+  utilisé, il ne l'a jamais été).
+
+### Principe retenu : le script ne ment jamais
+
+Chaque assertion rend `PASS`, `FAIL` ou `SKIP` **avec sa raison**. Un scénario non
+exécutable est `SKIP`, **jamais** `PASS`. Un seul défaut ne masque pas le reste :
+si le provisionnement échoue, le script crée le tenant par l'endpoint simple et
+**continue**, l'échec restant compté en `FAIL`. C'est ce qui permet à la recette
+de produire un signal global même avec un défaut bloquant en tête.
+
+### Résultat de la dernière exécution
+
+```
+  PASS : 9
+  FAIL : 3
+  SKIP : 13   (non executable -- JAMAIS comptes comme PASS)
+```
+
+Passants : joignabilité + OpenAPI, login Super Admin, création du tiers dans
+l'eglise d'origine, création du tenant, `tenant.id`, suspension (204),
+**refus du switch vers un tenant suspendu (aucun JWT délivré)**, réactivation (204).
+
+### Les 5 défauts découverts — tous **préexistants sur `main`**, tous invisibles à la suite de tests
+
+> Aucun de ces 5 défauts n'est introduit par la branche. Ils sont la conséquence
+> directe du choix `H2 + ddl-auto: create-drop` pour les tests : **le schéma de
+> test est généré depuis les entités**, donc aucune dérive migration/entité ne
+> peut jamais être détectée en CI. Ils sont réels : reproduits ci-dessous par
+> exécution, pas par lecture de code.
+
+#### H1 — `organization_nodes.slug` : colonne mappée, jamais migrée → HTTP 500
+
+`OrganizationNode` mappe `@Column(name = "slug")` (ajouté par `69fea3b`, sur
+`main`) mais **aucune** migration ne crée cette colonne.
+
+```
+POST /api/v1/platform/admin/provisioning  -> 500
+ERROR: column on1_0.slug does not exist
+```
+
+Impact : le **provisionnement atomique d'un tenant est cassé** sur toute base
+construite par les migrations, donc sur **tout déploiement neuf**. L'API组织
+(`OrganizationManagementController` lit et écrit `getSlug()`) est également
+inutilisable.
+
+#### H2 — `events` : l'entité pointe une table que les migrations ne créent pas → HTTP 500
+
+```java
+// modules/events/domain/Event.java:12
+@Table(name = "events")
+```
+
+alors que la chaîne de migrations crée la table `event` (singulier).
+
+```
+GET /api/v1/events  ->  500
+ERROR: relation "events" does not exist
+```
+
+Impact : **tout le module Événements est cassé** sur une base migrationnée. Cela
+inclut l'étape `FIRST_EVENT` du wizard d'onboarding.
+
+#### H3 — `Map.of()` avec une valeur nulle : `my-tenants` renvoie 500 pour tout le monde
+
+`TenantSwitcherController:84` (et le doublon ligne 174) :
+
+```java
+"scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,   // -> null
+...
+return tenant.map(t -> Map.<String, Object>of( /* ... scopeId ... */ ));
+```
+
+`Map.of()` **interdit les valeurs nulles** : `scope_id` est `null` pour toute
+membership de portée `TENANT`, c'est-à-dire le cas normal.
+
+```
+GET /api/v1/tenant-switcher/my-tenants  ->  500
+java.lang.NullPointerException
+  at java.util.ImmutableCollections$MapN.<init>
+  at java.util.Map.of
+```
+
+Impact : le **sélecteur d'organisation est cassé pour tous les utilisateurs**.
+C'est précisément l'endpoint sur lequel repose le constat B2 du plan.
+
+#### H4 — Le filtre Hibernate multi-tenant rend le switch cross-tenant **impossible** ( architectural )
+
+`TenantFilter.enableFilter()` active pour toute la requête HTTP un filtre
+Hibernate `tenant_id = TenantContext.getTenantId()`. Ce filtre s'applique
+**aussi aux contrôles de sécurité qui doivent, eux, traverser les tenants**.
+SQL réellement émis par `POST /tenant-switcher/switch` :
+
+```sql
+select tm1_0.id from tenant_memberships tm1_0
+where tm1_0.tenant_id = ?      -- 00000000-...-0001  (tenant COURANT, injecté par le filtre)
+  and tm1_0.user_id  = ?
+  and tm1_0.tenant_id = ?      -- le tenant DEMANDÉ
+  and tm1_0.status   = ?
+```
+
+Le contrôle d'accès de `switchTenant()` exige `hasAccess == true`, donc
+**basculer vers un autre tenant est structurellement impossible** : la requête
+peut seulement retourner `true` si le tenant demandé est *déjà* le tenant courant.
+
+```
+POST /api/v1/tenant-switcher/switch (autre tenant)  ->  403 "Accès non autorisé à ce tenant"
+```
+
+Impact : le scénario **B2 du plan (« un utilisateur inscrit dans deux églises
+choisit son organisation ») n'est pas delivered** — le mécanisme est présent dans
+le code mais inopérant. C'est un défaut **d'architecture**, pas une ligne à
+corriger : il faut un chemin de lecture explicitement cross-tenant
+(désactivation ciblée du filtre, ou repository dédié), avec une garantie de
+ne pas ouvrir une fuite de données.
+
+#### H5 — Corps JSON malformé ou absent : 500 au lieu de 400, sur **tous** les endpoints
+
+`GlobalExceptionHandler` ne gère pas `HttpMessageNotReadableException` : elle
+tombe dans le `@ExceptionHandler(Exception.class)` générique.
+
+```
+POST /api/v1/users        (rôle invalide)  ->  500
+POST /api/v1/platform/admin/provisioning (corps absent) -> 500
+```
+
+Impact : une simple erreur client devient une erreur serveur, ce qui **pollue la
+supervision** (faux 5xx, alarmes) et masque la vraie cause. Correctif trivial
+(une méthode de handler) et sans risque.
+
+### Ce que la recette a prouvé malgré les blocages
+
+Le scénario B1 (suspension) est **validé de bout en bout** : le `switch` vers un
+tenant suspendu est refusé et **aucun JWT n'est délivré** (contrôle placé avant
+le changement de contexte et avant toute génération de jeton), puis la
+réactivation rétablit l'accès. C'est le comportement attendu du plan.
+
+### Arbitrage demandé (bloquant pour A14)
+
+A14 exige un parcours vert de bout en bout. Il est **impossible** tant que H1, H2,
+H3 et H4 subsistent : le wizard ne peut ni écrire l'église racine (H1), ni créer
+le premier événement (H2), et l obtains d'un jeton sur le tenant de recette
+échoue (H4). Trois voies possibles — **décision de l'orchestrateur requise** :
+
+1. **V186/V187** : migrations correctives minimales (`slug` + table `events`),
+   puis correctifs H3 et H5, et traitement explicite de H4. Rend A14 vert mais
+   touche au schéma de production au prochain déploiement.
+2. **A14 livré en l'état** : le script est un livrable complet et défendable ; il
+   documente 5 défauts reproductibles. Le parcours vert est reporté après
+   correction du schéma.
+3. **Feuille de route dédiée** pour H1–H5 (ils dépassent le périmètre des 16
+   tâches : H4 est un correctif d'architecture, pas un patch).
+
+Aucun de ces défauts n'a été corrigé dans cette branche : la correction
+dépasse le mandat d'A14 et engage le schéma de production.
