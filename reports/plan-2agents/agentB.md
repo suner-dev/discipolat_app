@@ -175,3 +175,46 @@ Worktree : `/home/arise/discipolat/discipolat_app-agentB` (créé le 2026-09-28,
   `RegisterPage`. Corrigé par `(getValues('email') ?? '').trim()`, puis re-vérifié
   (`AuthJourneys` 5/5 + `RegistrationStatusPage` 10/10) et suite complète repassée.
   **C'est exactement à cela que sert la suite complète** : mes tests ciblés étaient verts.
+
+---
+
+## LEVEMENT DU BLOCAGE MOBILE (2026-09-28) — diagnostic complet
+
+Le blocage `flutter pub get` (exit 255 sans message) a été **résolu**. Les causes
+étaient multiples et **pré-existantes** (aucune n'était due à mon code) :
+
+1. **`pubspec.lock` incohérent avec `pubspec.yaml`.** Le lock est **committé dans le dépôt**
+   (`67322d5`) et épingle `record 6.2.1`, alors que `pubspec.yaml:64` exige `^6.0.0`.
+   Or `^6.0.0` exclut explicitement `6.2.1` (`>=6.0.0 <6.2.1-∞`). Le solveur échouait donc
+   en boucle. Message réel obtenu via le SDK Dart direct :
+   `Because no versions of record match 6.2.1 ... record ^6.0.0 is forbidden.`
+   **Correction :** `dart pub upgrade record` → résolution réussie, `.dart_tool/package_config.json`
+   généré. Le `pubspec.yaml` n'a **pas** été modifié (aucun changement de dépendance, cf. R4).
+2. **Le binaire `flutter` du PATH est cassé** : `/snap/bin/flutter` sort 255, y compris pour
+   `flutter --version`. Le wrapper `/snap/flutter/161/flutter.sh` fonctionne (EXIT 0).
+   → tous les scripts de test doivent appeler le wrapper explicitement.
+3. **Contrainte de durée d'appel** : la compilation Dart de ce projet (~135 kLo) dépasse 30 s.
+   Les commandes longues doivent être lancées via un script détaché (`setsid`) qui écrit son
+   résultat dans un fichier.
+
+### SECURITY — trou trouvé et fermé par mes propres tests
+
+`invitationTokenFromUri` ne vérifiait que le **path** (`/accept-invitation`), jamais l'hôte.
+Un site tiers pouvait donc forger `https://evil.example.com/accept-invitation?token=…` et
+l'application **acceptait** l'invitation. Le test « AUTRE HÔTE » l'a démontré
+(`Expected: null / Actual: 'abcdef…'`).
+
+**Correctif** (`lib/core/invitation_token.dart`) : validation du trio (scheme, hôte, path)
+via une liste blanche `kInvitationAllowedHosts` ; seuls `https` et `discipolat` sont acceptés.
+Le cas des **URI relatives** (`/accept-invitation?token=…`, routage interne go_router) est
+**préservé** — sans quoi un test existant (`invitation_token_test.dart`) aurait cassé.
+
+Preuve : `flutter test invitation_deeplink + invitation_token` → **13 tests, All tests passed, EXIT 0**
+
+Preuve finale B8 (après levée du blocage) :
+`flutter test invitation_deeplink + invitation_token + invitation_route + accept_invitation_screen`
+→ **21 tests, All tests passed, EXIT 0** — dont les 7 tests d'`accept_invitation_screen_test.dart`
+**inchangés**, ce qui prouve l'absence de régression de mon correctif de sécurité.
+
+`pubspec.lock` : 2 paquets de test réalignés (`meta` 1.16.0→1.17.0, `test_api` 0.7.6→0.7.7),
+**0 paquet ajouté, 0 retiré**. `pubspec.yaml` non modifié.
