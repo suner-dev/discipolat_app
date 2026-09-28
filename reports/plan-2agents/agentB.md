@@ -273,5 +273,24 @@ Intersection des fichiers modifiés par A et par moi : **vide**. Aucun conflit d
   - **parsing strict** : champ manquant / `stepType` inconnu / statut inconnu / réponse
     non-liste → `FormatException` (4 tests dédiés)
 - **Note d'alignement :** le fake de test suit la convention du dépôt (`Response` **dio** +
-  `RequestOptions`), et non `http.Response` — premier essai.font un échec de compilation
- revealé et corrigé.
+  `RequestOptions`), et non `http.Response` — premier essai a donné un échec de compilation,
+  révélé et corrigé.
+
+### B7 (partie 2) — Écran mobile du wizard + 7 formulaires
+
+- **Fichiers :**
+  - NEW `mobile/lib/presentation/screens/tenant/tenant_onboarding_screen.dart` (453 l.)
+  - NEW `mobile/lib/presentation/screens/tenant/onboarding_step_forms.dart` (647 l., 7 formulaires)
+- **Preuve :** `flutter analyze` sur les 4 fichiers B7 → **EXIT 0, « No issues found! »**
+  (zéro erreur **et** zéro remarque — exigence B13.5 « aucune nouvelle remarque »)
+- **§5.0.2 — les 5 états :** chargement (spinner + texte), vide (« aucune étape »),
+  erreur (message + bouton Réessayer), succès (écran de fin), hors-ligne (message dédié).
+- **§5.0.4 — accessibilité :** cibles tactiles ≥ 48 px (`minimumSize`), `Semantics(selected:)`,
+  libellés reliés aux champs, jamais d'erreur signalée par la couleur seule.
+- **Erreurs de compilation rencontrées et corrigées (20 → 0) :** classes de formulaires
+  invoquées en `_XForm` au lieu de `XForm` ; `GlassTheme.primary` inexistant (la classe
+  correcte est `AppColors`) ; `valueColor` non supporté par la version de Flutter du dépôt ;
+  import `glass_theme` manquant dans l'écran. Chaque erreur a été localisée puis corrigée
+  à la source, sans désactivation de règle ni `ignore`.
+- **Limite assumée :** pas de pont i18n dans cet écran (le dépôt n'en a pas dans les écrans
+  tenants) — libellés en français, à migrer vers `.arb` quand le pont sera câblé (B13).
