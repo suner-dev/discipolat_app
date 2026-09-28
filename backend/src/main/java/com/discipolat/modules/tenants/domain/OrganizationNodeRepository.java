@@ -37,14 +37,39 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
 
     Optional<OrganizationNode> findRootByTenantId(UUID tenantId);
 
+    /**
+     * Constat H7 : la colonne {@code type} est un {@code varchar} et l'entité la
+     * mappe en {@code @Enumerated(STRING)}, mais dans une requête NATIVE
+     * l'annotation ne s'applique pas : Hibernate liait l'ORDINAL de l'énumère et
+     * PostgreSQL répondait
+     * {@code operator does not exist: character varying = smallint}.
+     *
+     * <p>Conséquence mesurée : <b>tous</b> les compteurs d'organisations étaient
+     * cassés — quotas églises/départements/campus (A8), tableau de bord Super
+     * Admin, tableau de bord admin tenant, statistiques de hiérarchie. C'est-à-dire
+     * précisément le travail A8, invisible à la suite de tests qui mocke les
+     * repositories.
+     *
+     * <p>La requête doit donc comparer au NOM de l'énumère, pas à sa position.
+     * Les surcharges ci-dessous gardent l'API publique en enum pour les ~25
+     * appelants existants.
+     */
     @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE tenant_id = :tenantId AND type = :type", nativeQuery = true)
-    long countByTenantIdAndType(@Param("tenantId") UUID tenantId, @Param("type") OrganizationNodeType type);
+    long countByTenantIdAndTypeName(@Param("tenantId") UUID tenantId, @Param("type") String type);
+
+    default long countByTenantIdAndType(UUID tenantId, OrganizationNodeType type) {
+        return countByTenantIdAndTypeName(tenantId, type.name());
+    }
 
     @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE tenant_id = :tenantId", nativeQuery = true)
     long countByTenantId(@Param("tenantId") UUID tenantId);
 
     @Query(value = "SELECT COUNT(*) FROM organization_nodes WHERE type = :type", nativeQuery = true)
-    long countByType(@Param("type") OrganizationNodeType type);
+    long countByTypeName(@Param("type") String type);
+
+    default long countByType(OrganizationNodeType type) {
+        return countByTypeName(type.name());
+    }
 
     @Query("SELECT CASE WHEN COUNT(n) > 0 THEN true ELSE false END FROM OrganizationNode n WHERE n.id = :nodeId AND EXISTS (SELECT a FROM OrganizationNode a WHERE a.id = :ancestorId AND n.path LIKE CONCAT(a.path, '%'))")
     boolean isDescendantOf(@Param("nodeId") UUID nodeId, @Param("ancestorId") UUID ancestorId);

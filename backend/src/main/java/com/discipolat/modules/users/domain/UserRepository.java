@@ -91,8 +91,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND deleted = false", nativeQuery = true)
     long countByTenantIdAndDeletedFalse(@Param("tenantId") UUID tenantId);
 
+    /**
+     * Constat H7 : dans une requête NATIVE, l'annotation
+     * {@code @Enumerated(STRING)} de l'entité ne s'applique pas — Hibernate liait
+     * l'ordinal de {@link UserStatus} alors que la colonne {@code statut} est un
+     * {@code varchar}, ce que PostgreSQL refusait
+     * ({@code operator does not exist: character varying = smallint}).
+     *
+     * <p>Impact mesuré : les compteurs d'utilisateurs des DEUX tableaux de bord
+     * principaux (Super Admin et admin tenant) renvoyaient 500. La comparaison
+     * porte donc sur le NOM de l'énumère, et la surcharge garde l'API publique
+     * en enum pour tous les appelants existants.
+     */
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId AND statut = :status", nativeQuery = true)
-    long countByTenantIdAndStatut(@Param("tenantId") UUID tenantId, @Param("status") UserStatus status);
+    long countByTenantIdAndStatutName(@Param("tenantId") UUID tenantId, @Param("status") String status);
+
+    default long countByTenantIdAndStatut(UUID tenantId, UserStatus status) {
+        return countByTenantIdAndStatutName(tenantId, status.name());
+    }
 
     long countByStatut(UserStatus status);
 

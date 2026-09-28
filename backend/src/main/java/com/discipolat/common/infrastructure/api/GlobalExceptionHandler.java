@@ -11,6 +11,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -61,6 +63,38 @@ public class GlobalExceptionHandler {
         problem.setTitle("Validation Error");
         problem.setType(URI.create("https://api.discipolat.com/errors/validation-error"));
         problem.setProperty("errors", errors);
+        return problem;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleUnreadableBody(HttpMessageNotReadableException ex) {
+        // Constat H5 : sans ce handler, un corps JSON malformé, un corps ABSENT
+        // ou un type de champ incohérent tombait dans handleGeneric et renvoyait
+        // un 500. Une simple erreur de client devenait donc une erreur serveur :
+        // faux 5xx, alarmes de supervision, et cause réelle masquée. C'est un
+        // problème de REQUÊTE, jamais de serveur : 400.
+        //
+        // On ne renvoie volontairement pas le message brut de Jackson : il
+        // contient le nom des classes Java et le chemin exact attendu, ce qui
+        // facilite la reconnaissance de l'API par un attaquant.
+        log.warn("Unreadable request body: {}", ex.getMostSpecificCause().getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Malformed or missing request body");
+        problem.setTitle("Bad Request");
+        problem.setType(URI.create("https://api.discipolat.com/errors/bad-request"));
+        return problem;
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ProblemDetail handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        // Même famille que H5 : une requête dont l'en-tête `Accept` ne correspond à
+        // aucune représentation disponible est un problème de REQUÊTE. Sans ce
+        // handler elle tombait dans handleGeneric et répondait 500 au lieu de 406.
+        log.warn("No acceptable representation for {}", ex.getSupportedMediaTypes());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_ACCEPTABLE,
+                "No acceptable representation for the requested media type");
+        problem.setTitle("Not Acceptable");
+        problem.setType(URI.create("https://api.discipolat.com/errors/not-acceptable"));
         return problem;
     }
 

@@ -1640,3 +1640,115 @@ le premier événement (H2), et l obtains d'un jeton sur le tenant de recette
 
 Aucun de ces défauts n'a été corrigé dans cette branche : la correction
 dépasse le mandat d'A14 et engage le schéma de production.
+
+---
+
+## H1–H8 — Dérives entité/schéma : correctifs appliqués et validés
+
+Branche dédiée : **`fix/schema-drift-h1-h5`** (jamais fusionnée dans `main` : le
+socle A1–A16, lui, y est fusionné et disponible au frontend et au mobile).
+
+Chaque correctif ci-dessous a été validé **par exécution réelle** contre une pile
+jetable (PostgreSQL 16.15 migré, Redis, clés générées), pas seulement par la
+suite de tests. La suite complète passe de 1453 à **1468 tests** (+15 de
+régression), 0 échec.
+
+| Constat | Correction | Preuve |
+|---|---|---|
+| H1 | `V186__organization_nodes_slug.sql` | V186 appliquée automatiquement, `slug VARCHAR(100)` présent |
+| H3 | `MembershipView` + `OrganizationNodeService` | `my-tenants` et création d'église racine ne lèvent plus de NPE |
+| H5 / H5b | 2 handlers dans `GlobalExceptionHandler` | corps malformé → **400**, `Accept` non négociable → **406** (mesuré) |
+| H7 | surcharges `…Name` dans 2 repositories | compteurs organisations et utilisateurs fonctionnels |
+| H4 | `CrossTenantReadScope` | code écrit + 5 tests ; **validation E2E en cours** |
+
+### H1 — colonne mappée jamais migrée
+
+`OrganizationNode` mappe `slug` (ajouté par `69fea3b`, sur `main`) mais aucune
+migration ne la créait. `V186` l'ajoute de façon idempotente et nullable, avec un
+index `(tenant_id, slug)`. La correction est côté **schéma** et non côté entité :
+retirer le champ casserait l'API organisations et son client.
+
+### H3 — `Map.of()` et les valeurs nulles
+
+Deux manifestations du même piège, toutes deux bloquantes :
+
+- `TenantSwitcherController` construisait la réponse avec `Map.of(...)` alors que
+  `scope_id` est `null` pour toute membership de portée `TENANT` — le cas normal.
+  `GET /tenant-switcher/my-tenants` répondait 500 **pour tout le monde**.
+  Le mapping est extrait dans `MembershipView`, fonction pure testable, qui
+  accepte les valeurs nulles. Au passage, le rôle retombe sur la colonne `role`
+  quand la FK `role_id` n'est pas résolue : `UNKNOWN` doit signifier
+  « réellement inconnu », pas « donnée présente mais non lue ».
+- `OrganizationNodeService.createNode` faisait de même avec `parentId`, qui est
+  `null` pour toute **église racine** : la création d'une première église — donc
+  le provisionnement atomique et l'étape `CHURCH_IDENTITY` — levait une NPE.
+
+### H5 / H5b — une requête client fautive ne doit pas répondre 5xx
+
+`HttpMessageNotReadableException` et `HttpMediaTypeNotAcceptableException`
+n'étaient pas gérées et tombaient dans le handler générique : 500 au lieu de 400
+et 406. Le détail renvoyé est un texte fixe, le message de Jackson (qui contient
+les noms de classes Java) n'est pas divulgué.
+
+### H7 — un enum dans une requête native est lié par son ordinal
+
+`@Enumerated(STRING)` ne s'applique pas aux requêtes `nativeQuery`. Les
+compteurs d'organisations (`countByTenantIdAndType`) et d'utilisateurs
+(`countByTenantIdAndStatut`) comparaient donc un `varchar` à un `smallint` :
+`operator does not exist: character varying = smallint`.
+
+Impact mesuré : **les deux tableaux de bord principaux** (Super Admin et admin
+tenant) et **tous les quotas A8** (églises, départements, campus) renvoyaient 500.
+C'est le travail A8 qui était cassé, invisible parce que les tests mockent les
+repositories.
+
+La correction passe par des méthodes `…Name(String)` et des surcharges `default`
+gardant l'API en enum : les ~25 appelants ne changent pas.
+
+### H4 — le filtre multi-tenant rendait la bascule cross-tenant impossible
+
+`TenantFilter` active pour chaque requête HTTP un filtre Hibernate
+`tenant_id = :tenantId`, qui s'applique aussi au contrôle d'accès de
+`switchTenant()`. Le SQL portait les deux prédicats (`tenant_id = tenant courant`
+ET `tenant_id = tenant demandé`) : la bascule vers une autre église était
+structurellement impossible, donc **B2 n'était pas delivered**.
+
+`CrossTenantReadScope` suspend le filtre le temps d'un bloc de lecture borné aux
+memberships de l'utilisateur authentifié, et le rétablit dans un `finally` — donc
+aussi après une exception. 5 tests verrouillent ce contrat, dont un qui échouerait
+si le rétablissement disparaissait. **La validation de bout en bout sur le
+sélecteur d'organisation reste à faire.**
+
+### Constats H2 et H8 — ouverts, décision requise
+
+Ces deux-là ne sont pas des correctifs, et relèvent du même thème : **des modules
+entiers sont écrits contre un schéma que la chaîne de migrations ne produit
+pas.** Aucun des deux n'est trivial.
+
+- **H2 — module Événements.** L'entité `Event` pointe `@Table(name = "events")` et
+  mappe un schéma **français** (`titre`, `date_debut`, `lieu`, `statut`,
+  `organisateur_id`, `nb_inscrits`, `compte_rendu`). La chaîne de migrations ne
+  crée que `event`, au schéma **anglais** (`title`, `start_at`, `organizer_id`,
+  `status`). Les requêtes natives de `LoadPredictionService`.tables ont le même
+  problème (`FROM events … date_debut … deleted`). La table `events` n'a jamais
+  existé : ce n'est pas un renommage, c'est un **port de module**.
+- **H8 — `organization_nodes.path` est un `ltree`.** L'entité déclare
+  `@Column(columnDefinition = "ltree")` sur un champ `String`, et la couche
+  applicative manipule ce chemin comme une chaîne séparée par des points
+  (`LIKE CONCAT(parent.path, '%')`). L'insertion échoue :
+  `column "path" is of type ltree but expression is of type character varying`.
+  C'est ce qui bloque encore le provisionnement atomique, donc la recette.
+
+**Voix possibles, arbitrage demandé :**
+
+1. **Aligner la base sur le code** (V187 : `path` en `varchar`, et une table
+   `events` conforme au schéma français attendu par le code) — rapide, mais
+   introduit une table `events` parallèle du vrai module `event`, donc deux
+   sources de vérité sur les événements.
+2. **Aligner le code sur la base** — porter `Event` et `LoadPredictionService`
+   vers le schéma `event`, et `path` vers `ltree`. C'est le travail correct, mais
+   c'est un refonte de module, hors périmètre d'A14.
+3. **Traiter H8 dans cette branche** (petit et isolé : une migration de type) et
+   **documenter H2 comme chantier séparé** — lToday's quick win honnête.
+
+Aucun des deux n'a été corrigé ici : les deux engagent des choix d'architecture.

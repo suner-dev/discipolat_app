@@ -97,7 +97,12 @@ jq_h() { jq -e "$1" <<<"$API_BODY" >/dev/null 2>&1; }
 
 check_backend() {
   scenario "Prealables — backend joignable"
-  api GET '/api/v1/public/docs/openapi.yaml'
+  # Pas d'en-tete Accept impose ici : l'OpenAPI est servi en
+  # application/vnd.oai.openapi, et un `Accept: application/json` y repond
+  # 406 (constat H5b) — la sonde doit donc interroger la representation reelle.
+  API_CODE="$(curl -sS -o /tmp/onb-e2e-probe.$$ -w '%{http_code}' --max-time 10 \
+      "${BASE_URL}/api/v1/public/docs/openapi.yaml" 2>/dev/null || echo 000)"
+  rm -f /tmp/onb-e2e-probe.$$
   if [[ "$API_CODE" == "200" ]]; then
     ok "Backend joignable et OpenAPI expose (${BASE_URL})"
   else

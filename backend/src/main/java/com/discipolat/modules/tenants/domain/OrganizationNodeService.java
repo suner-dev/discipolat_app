@@ -7,6 +7,7 @@ import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -141,6 +142,18 @@ public class OrganizationNodeService {
 
         node = nodeRepository.save(node);
 
+        // H3 : `Map.of` interdit les valeurs nulles et `parentId` vaut
+        // systematiquement null pour une eglise RACINE — c'est-a-dire le cas le
+        // plus courant. Le NPE qui en resultait rendait la creation de toute
+        // eglise racine impossible (donc le provisionnement atomique, et l'etape
+        // CHURCH_IDENTITY du wizard). On utilise une carte tolerante au null,
+        // qui conserve aussi l'ordre des cles.
+        Map<String, Object> auditPayload = new LinkedHashMap<>();
+        auditPayload.put("type", type.name());
+        auditPayload.put("name", name);
+        auditPayload.put("parentId", effectiveParentId);
+        auditPayload.put("code", code);
+
         auditService.log(
                 creatorId,
                 tenantId,
@@ -148,12 +161,17 @@ public class OrganizationNodeService {
                 "ORGANIZATION_NODE",
                 node.getId(),
                 "SUCCESS",
-                Map.of("type", type.name(), "name", name, "parentId", effectiveParentId),
+                auditPayload,
                 null, null, null
         );
 
+        Map<String, Object> eventPayload = new LinkedHashMap<>();
+        eventPayload.put("tenantId", tenantId);
+        eventPayload.put("type", type.name());
+        eventPayload.put("name", name);
+
         propagationPublisher.publishCreated("ORGANIZATION_NODE", node.getId(),
-                Map.of("tenantId", tenantId, "type", type.name(), "name", name),
+                eventPayload,
                 "Nœud créé: " + name + " (" + type.name() + ")");
 
         return node;
