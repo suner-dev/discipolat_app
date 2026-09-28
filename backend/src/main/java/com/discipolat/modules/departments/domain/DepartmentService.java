@@ -112,11 +112,13 @@ public class DepartmentService {
         if (request.shouldCreateNewResponsable()) {
             responsableId = createNewResponsable(request);
         } else if (request.responsableId() != null) {
+            // Constat architectural : meme correction que FamilyService — le
+            // predicat d'appartenance est la MEMBERSHIP ACTIVE dans le tenant
+            // cible, pas l'egalite entre le tenant d'origine de l'utilisateur et
+            // le tenant d'action, qui rejette a tort les utilisateurs multi-eglises.
             UUID currentTenantId = TenantContext.getTenantId();
             if (currentTenantId != null) {
-                User responsable = userRepository.findById(request.responsableId())
-                        .filter(user -> user.getTenantId() != null
-                                && currentTenantId.equals(user.getTenantId()))
+                userRepository.findByIdWithActiveMembershipInTenant(request.responsableId(), currentTenantId)
                         .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
                                 "Le responsable doit appartenir au tenant cible", "RESPONSABLE_TENANT_MISMATCH"));
             }

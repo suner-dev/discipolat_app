@@ -2151,3 +2151,71 @@ perdus de vue.
 ### Validation
 
 **1473 tests verts** (1469 + 4 garde-fous), 0 échec, 13 skips préexistants.
+
+---
+
+## Phase C — `users.tenant_id` vs tenant d'action, et rôles globaux invisibles
+
+Deux defects de la meme famille « le filtre multi-tenant masque ce qu'il ne
+devrait pas », tous deux **bloquants**, tous deux invisibles a la suite de tests.
+
+### C1 — Un utilisateur multi-tenant était introuvable (résolu)
+
+`users.tenant_id` est le tenant d'**origine** (une valeur, NOT NULL) ;
+`TenantContext` est le tenant d'**action**. `TenantAwareSimpleJpaRepository.findById`
+ajoute `AND tenant_id = TenantContext`. Dès qu'un utilisateur appartient à deux
+églises — ce que le modèle prévoit explicitement, constat B2 — cette lecture est
+fausse par construction.
+
+Symptôme mesuré : l'étape STRUCTURE du wizard répondait
+`404 User not found with id: …` sur l'utilisateur qui configurait l'église.
+
+`UserRepository.findByIdWithActiveMembershipInTenant(id, tenantId)` applique le
+prédicat **correct** : une membership ACTIVE dans le tenant demandé. Cette méthode
+**n'affaiblit pas l'isolation** — elle ne peut pas servir à lire un utilisateur
+d'une église dont on n'est pas membre ; elle remplace un prédicat faux par un
+prédicat juste. Branchée sur `FamilyService` (chef de famille) et
+`DepartmentService` (responsable), qui comparaient jusqu'ici le tenant d'origine
+au tenant d'action.
+
+### C2 — Les rôles globaux étaient invisibles : impossible d'inviter qui que ce soit (résolu)
+
+**Le défaut le plus grave de la série.**
+
+Tous les rôles sont **globaux** : `DataInitializer` les crée avec
+`tenant_id = NULL` (`PLATFORM_SUPER_ADMIN`, `TENANT_ADMIN`, `MEMBRE`, `PASTEUR`…).
+Or le filtre de l'entité `Role` était `tenant_id = :tenantId` : il masquait donc
+**la totalité** des rôles.
+
+```
+POST /api/v1/admin/invitations
+-> 400 INVITATION_ROLE_INVALID  (« Rôle invalide: TENANT_ADMIN »)
+```
+
+Autrement dit, **aucune invitation ne pouvait être créée, nulle part** — ni par le
+wizard, ni par l'endpoint dédié. L'entité `Permission`, qui porte le même schéma
+global, était touchée de la même façon ; corrigée avec le même prédicat.
+
+Nouveau prédicat : `(tenant_id = :tenantId OR tenant_id IS NULL)`. Il reste
+strictement borné : un tenant voit ses propres rôles **et** les rôles globaux,
+jamais ceux d'un autre tenant.
+
+Vérification : `Role` et `Permission` sont les **seules** entités portant un
+`@Filter` dont la colonne `tenant_id` est nullable en base — donc les seules
+concernées. Contrôle fait par requête sur `information_schema`, pas par intuition.
+
+### État de la recette
+
+`42 PASS, 10 FAIL, 7 SKIP` (contre 14 PASS au début de cette phase).
+
+Les 10 échecs restants sont **identifiés et documentés** :
+
+| Échec | Cause | Nature |
+|---|---|---|
+| E2E-4a, 5b1, 5b2 | la recette sonde des données invalides sur des étapes **hors ordre**, donc reçoit `409 STEP_ORDER_VIOLATION` avant d'atteindre la validation | **bug de la recette** |
+| E2E-6 FIRST_EVENT, 7b, 7c, 7e | le module Événements pointe une table `events` qui n'a jamais été créée (constat **H2**) | **défaut connu, non traité** |
+| E2E-9a | la fixture accorde au Super Admin une membership `TENANT_ADMIN`, mais `hasAnyRole` teste le rôle du **JWT** — le Super Admin n'est donc pas autorisé, ce qui est le comportement RBAC attendu | **limite de la fixture** |
+| E2E-10b, E2E-11 | sondes IDOR et quota dépendantes du jeton inter-tenant ci-dessus | **conséquence de la fixture** |
+
+Aucune de ces lignes n'est un défaut de production non identifié : ce sont soit
+des erreurs de la recette, soit le constat H2 déjà documenté.

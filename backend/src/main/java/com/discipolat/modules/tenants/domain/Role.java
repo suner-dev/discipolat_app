@@ -16,7 +16,18 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+/**
+ * Les roles sont <b>globaux</b> : ils sont crees avec {@code tenant_id = NULL} par
+ * le DataInitializer (PLATFORM_SUPER_ADMIN, TENANT_ADMIN, MEMBER, PASTEUR…).
+ * Le filtre doit donc les laisser visibles depuis n'importe quel tenant.
+ *
+ * <p>Sans ce correctif, la condition {@code tenant_id = :tenantId} masquait
+ * TOUS les roles, et toute creation d'invitation echouait en
+ * {@code 400 INVITATION_ROLE_INVALID} — c'est-a-dire qu'on ne pouvait inviter
+ * personne. Le predicat reste strictement borne : un tenant ne voit que ses
+ * propres roles et les roles globaux, jamais ceux d'un autre tenant.
+ */
+@Filter(name = "tenantFilter", condition = "(tenant_id = :tenantId OR tenant_id IS NULL)")
 public class Role {
 
     @Id

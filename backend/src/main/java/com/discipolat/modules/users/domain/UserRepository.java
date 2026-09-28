@@ -94,6 +94,44 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findFirstByTenantIdAndPhone(UUID tenantId, String phone);
 
+    /**
+     * Utilisateur <b>tel qu'il agit dans le tenant courant</b> (constat
+     * architectural : {@code users.tenant_id} vs tenant d'action).
+     *
+     * <h2>Le defaut que cette methode corrige</h2>
+     *
+     * <p>{@code users.tenant_id} est le tenant d'ORIGINE : une seule valeur par
+     * utilisateur, {@code NOT NULL}. {@code TenantContext} est le tenant
+     * d'ACTION. Or {@code TenantAwareSimpleJpaRepository.findById} ajoute
+     * {@code AND tenant_id = TenantContext}, donc des qu'un utilisateur est
+     * multi-tenant — ce que le modele prevoit explicitement (constat B2 : "un
+     * utilisateur inscrit dans deux eglises choisit son organisation") — cette
+     * lecture devient fausse par construction.
+     *
+     * <p>Consequence mesuree : l'etape STRUCTURE du wizard echouait en 404 sur
+     * l'utilisateur qui configure l'eglise.
+     *
+     * <h2>Pourquoi cette methode ne weakens PAS l'isolation</h2>
+     *
+     * <p>Le predicat exige une <b>membership ACTIVE dans le tenant demande</b> :
+     * elle ne peut donc pas servir a lire un utilisateur d'une eglise dont on
+     * n'est pas membre. Elle remplace un predicat faux par un predicat correct,
+     * elle n'ajoute aucun acces.
+     *
+     * <p>Volontairement {@code nativeQuery} : le predicat doit porter sur la
+     * table {@code tenant_memberships}, que le filtre Hibernate
+     * {@code tenantFilter} ne restreint pas comme {@code users}.
+     */
+    @Query(value = "SELECT u.* FROM users u"
+            + " WHERE u.id = :id"
+            + "   AND EXISTS (SELECT 1 FROM tenant_memberships m"
+            + "                 WHERE m.user_id = u.id"
+            + "                   AND m.tenant_id = :tenantId"
+            + "                   AND m.status = 'ACTIVE')",
+            nativeQuery = true)
+    Optional<User> findByIdWithActiveMembershipInTenant(@Param("id") UUID id,
+                                                        @Param("tenantId") UUID tenantId);
+
     @Query(value = "SELECT COUNT(*) FROM users WHERE tenant_id = :tenantId", nativeQuery = true)
     long countByTenantId(@Param("tenantId") UUID tenantId);
 
