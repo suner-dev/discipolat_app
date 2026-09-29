@@ -2870,6 +2870,16 @@ const fr = {
   'registration.Demander une inscription': 'Demander une inscription',
   'registration.Retour à la connexion': 'Retour à la connexion',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.',
+
+  // B1-G1 — étiquettes d'étape et catalogue de devises (endpoint /platform/currencies)
+  'onboarding.v2.Nom_commercial': 'Nom commercial',
+  'onboarding.v2.Ville': 'Ville',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'Fuseau horaire (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'Devise (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'Par exemple : Africa/Douala. La liste des fuseaux provient de votre appareil.',
+  'onboarding.step.identity.currencyFromCatalog': 'Liste officielle des devises (ISO-4217) fournie par le serveur.',
+  'onboarding.step.identity.currencyLoading': 'Chargement de la liste des devises…',
+  'onboarding.step.identity.currencyFallback': 'Liste des devises indisponible : saisissez le code ISO (ex. XAF).',
 };
 
 export default fr;

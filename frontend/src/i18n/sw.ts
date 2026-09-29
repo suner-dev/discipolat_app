@@ -2974,6 +2974,16 @@ const sw: Record<string, string> = {
   'registration.Demander une inscription': 'Omba usajili',
   'registration.Retour à la connexion': 'Rudi kwenye ingia',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Mara nyingi sana kutoka kwenye muunganisho huu. Tafadhali subiri dakika chache kabla ya jaribu tena.',
+
+  // B1-G1 — maelezo ya hatua na katalogo ya fedha (/platform/currencies)
+  'onboarding.v2.Nom_commercial': 'Jina la biashara',
+  'onboarding.v2.Ville': 'Mji',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'Saa ya muda (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'Fedha (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'Kwa mfano: Africa/Douala. Orodha ya saa za muda inatolewa na kifaa chako.',
+  'onboarding.step.identity.currencyFromCatalog': 'Orodha rasmi ya fedha (ISO-4217) inatolewa na seva.',
+  'onboarding.step.identity.currencyLoading': 'Inapakia orodha ya fedha…',
+  'onboarding.step.identity.currencyFallback': 'Orodha ya fedha haipatikani: andika msimbo wa ISO (kwa mfano XAF).',
 };
 
 export default sw;

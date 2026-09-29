@@ -2904,6 +2904,16 @@ const ar: Record<string, string> = {
   'registration.Demander une inscription': 'اطلب تسجيلًا',
   'registration.Retour à la connexion': 'العودة لتسجيل الدخول',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'محاولات كثيرة جدًا من هذا الاتصال. يرجى الانتظار بضع دقائق قبل المحاولة مجددًا.',
+
+  // B1-G1 — تسميات الخطوة وكتالوج العملات (/platform/currencies)
+  'onboarding.v2.Nom_commercial': 'الاسم التجاري',
+  'onboarding.v2.Ville': 'المدينة',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'المنطقة الزمنية (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'العملة (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'مثال: Africa/Douala. قائمة المناطق الزمنية تأتي من جهازك.',
+  'onboarding.step.identity.currencyFromCatalog': 'قائمة العملات الرسمية (ISO-4217) من الخادم.',
+  'onboarding.step.identity.currencyLoading': 'جارٍ تحميل قائمة العملات…',
+  'onboarding.step.identity.currencyFallback': 'قائمة العملات غير متاحة: اكتب رمز ISO (مثال XAF).',
 };
 
 export default ar;

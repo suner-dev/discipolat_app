@@ -2759,6 +2759,16 @@ const pt: Record<string, string> = {
   'registration.Demander une inscription': 'Solicitar inscrição',
   'registration.Retour à la connexion': 'Voltar ao login',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Muitas verificações desta conexão. Aguarde alguns minutos antes de tentar novamente.',
+
+  // B1-G1 — etiquetas de etapa e catálogo de moedas (/platform/currencies)
+  'onboarding.v2.Nom_commercial': 'Nome comercial',
+  'onboarding.v2.Ville': 'Cidade',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'Fuso horário (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'Moeda (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'Por exemplo: Africa/Douala. A lista de fusos horarios vem do seu dispositivo.',
+  'onboarding.step.identity.currencyFromCatalog': 'Lista oficial de moedas (ISO-4217) fornecida pelo servidor.',
+  'onboarding.step.identity.currencyLoading': 'A carregar a lista de moedas…',
+  'onboarding.step.identity.currencyFallback': 'Lista de moedas indisponível: introduza o código ISO (ex. XAF).',
 };
 
 export default pt;

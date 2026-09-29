@@ -2990,6 +2990,16 @@ const es: Record<string, string> = {
   'registration.Demander une inscription': 'Solicitar un registro',
   'registration.Retour à la connexion': 'Volver al inicio de sesión',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Demasiadas comprobaciones desde esta conexión. Espera unos minutos antes de intentarlo de nuevo.',
+
+  // B1-G1 — etiquetas de paso y catálogo de monedas (/platform/currencies)
+  'onboarding.v2.Nom_commercial': 'Nombre comercial',
+  'onboarding.v2.Ville': 'Ciudad',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'Zona horaria (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'Moneda (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'Por ejemplo: Africa/Douala. La lista de zonas horarias proviene de tu dispositivo.',
+  'onboarding.step.identity.currencyFromCatalog': 'Lista oficial de monedas (ISO-4217) proporcionada por el servidor.',
+  'onboarding.step.identity.currencyLoading': 'Cargando la lista de monedas…',
+  'onboarding.step.identity.currencyFallback': 'Lista de monedas no disponible: escribe el código ISO (p. ej. XAF).',
 };
 
 export default es;

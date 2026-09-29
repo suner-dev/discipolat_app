@@ -2813,6 +2813,16 @@ const en: Record<string, string> = {
   'registration.Demander une inscription': 'Request a registration',
   'registration.Retour à la connexion': 'Back to sign in',
   'registration.Trop de vérifications depuis cette connexion. Merci de patienter quelques minutes avant de réessayer.': 'Too many checks from this connection. Please wait a few minutes before trying again.',
+
+  // B1-G1 — step labels and currency catalogue (/platform/currencies)
+  'onboarding.v2.Nom_commercial': 'Trading name',
+  'onboarding.v2.Ville': 'City',
+  'onboarding.v2.Fuseau_horaire_IANA_': 'Time zone (IANA)',
+  'onboarding.v2.Devise_ISO_4217_': 'Currency (ISO-4217)',
+  'onboarding.step.identity.timezoneHint': 'For example: Africa/Douala. The time zone list comes from your device.',
+  'onboarding.step.identity.currencyFromCatalog': 'Official currency list (ISO-4217) provided by the server.',
+  'onboarding.step.identity.currencyLoading': 'Loading the currency list…',
+  'onboarding.step.identity.currencyFallback': 'Currency list unavailable: type the ISO code (e.g. XAF).',
 };
 
 export default en;
