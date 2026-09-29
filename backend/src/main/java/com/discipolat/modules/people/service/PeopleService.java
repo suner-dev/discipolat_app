@@ -277,8 +277,16 @@ public class PeopleService {
      */
     @Transactional
     public RoleAssignment assignRole(UUID tenantId, UUID actorId, UUID personId, UUID roleId, UUID orgUnitId, UUID spaceId, String reason) {
-        // Vérifier droits admin/tenant
-        // TODO: authorizationService check
+        // Qualifié le 2026-09-29 (passe-plat Agent B, HANDOVER P2) : l'appelant
+        // unique de cette méthode est PeopleController, qui impose la garde RBAC
+        // à la frontière HTTP — POST /{personId}/roles et DELETE /roles/{id} en
+        // hasAnyRole('ADMIN','PASTEUR'), POST /{personId}/transfer en
+        // hasRole('PASTOR_PRINCIPAL'). Le garde-fou est verrouillé par tests :
+        // PeopleRoleAssignmentRbacTest (403 MEMBRE / DEPARTMENT_LEADER, transfert
+        // refusé au PASTEUR). L'isolation tenant reste garantie ci-dessous et par
+        // TenantContext ; aucune autorisation granulaire par personne n'est gérée
+        // ici volontairement — si un futur appelant bypassait le contrôleur, répliquer
+        // la garde avant d'ajouter un autre caller.
 
         // Clôturer rôle actif existant sur même org_unit/space + rôle
         List<RoleAssignment> active = roleAssignmentRepository.findByTenantIdAndPersonIdAndStatus(tenantId, personId, "ACTIVE");
