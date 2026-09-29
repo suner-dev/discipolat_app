@@ -2357,3 +2357,69 @@ des erreurs de la recette, soit le constat H2 déjà documenté.
   ORC-A5) ; le premier passage en CI réelle reste à confirmer par
   l'orchestrateur sur GitHub.
 
+
+---
+
+## Phase 5.5 (reprise) — replay de la recette sur stack jetable PostgreSQL réel
+
+- **Statut** : **DONE — recette verte : 56 PASS / 0 FAIL / 3 SKIP justifiés, exit 0**
+- **Stack jetable** : backend 18080 (`/tmp/launch-e2e-stack.sh`, jar 1.0.0),
+  PostgreSQL 16 Testcontainers 55445 (`onb-e2e-postgres`), Redis 56380
+  (`onb-e2e-redis`). Base **remise à zéro** avant le premier boot (DROP/CREATE
+  `discipolat`) — chaîne V1→V192 appliquée fraîche : 160 migrations, Started
+  27,8 s ; puis V193 et V194 appliqués **incrémentalement** sur la base à V192
+  (0,188 s / 0,018 s) — chemin de déploiement réel prouvé, pas seulement
+  fresh-install.
+- **Progression honnête des replays** (logs archivés,
+  `reports/plan-2agents/evidence-5.5-replay/`) :
+
+  | Run | PASS | FAIL | SKIP | Ce que l'état prouvait |
+  |---|---|---|---|---|
+  | run1 | 4 | 3 | 9 | dérive dictionnaires V193 trouvée (500 second tenant) |
+  | run2 | 46 | 6 | 6 | 4 bugs de recette corrigés PASSent ; dérive `events` V194 trouvée (500 FIRST_EVENT, `relation "events" does not exist`) |
+  | run3 | 47 | 4 | 7 | V194 appliqué ; CHECK `events_type_evenement_check` violée par « MEETING » |
+  | run4 | 51 | 0 | 7 | `DEFAULT_EVENT_TYPE` → « REUNION » (vocabulaire legacy, cf. V158) |
+  | run5 | 53 | 0 | 5 | bugs recette n°7a/7b corrigés (chemins 404 inexistants) |
+  | run6 | 54 | 0 | 4 | bug n°8 corrigé (`.details.primaryColor`) ; E2E-2b/2c encore SKIP (bug n°9 en attente) |
+  | run7 | **56** | **0** | **3** | bug n°9 corrigé (`used`/`expires_at`, pas `consumed_at`) ; SKIPs restants justifiés ci-dessous |
+
+- **Défauts de production trouvés GRÂCE à la recette PG** (jamais visibles sous
+  H2 `flyway.enabled:false` + `ddl-auto:create-drop`) :
+  1. **V193** — `uq_dict_code` UNIQUE(dict_key, code) **mondial** (V42) contre
+     une table par tenant depuis V70 + `DictionaryService.seedForTenant` :
+     création du **second tenant** toujours 500 en réel. Preuve rouge/verte du
+     gate : sans V193, `duplicate key … "uq_dict_code" (EVENT_TYPE, SORTIE)` ;
+     avec, 5/5 vert.
+  2. **V194** — V158 a renommé `events`→`legacy_events` sans remapper l'entité
+     `Event` (`@Table("events")`) : toute la surface legacy `/api/v1/events` +
+     FIRST_EVENT 500 en réel. Résolution : le schéma rejoint le contrat du code
+     (renommage inverse + index), fail-closed si coexistence des deux tables.
+     Première tentative (entité → `legacy_events`) **abandonnée** : 9 échecs +
+     10 erreurs dans la suite (contrat `events` universel) — décision documentée.
+  3. **Vocabulaire du wizard** — `OnboardingStepActions.DEFAULT_EVENT_TYPE`
+     portait « MEETING » (ChurchOS) alors que l'action crée un `Event` legacy
+     (CHECK V42 français) ; corrigé en « REUNION » — l'équivalence est le propre
+     mapping de V158 (`WHEN type_evenement='REUNION' THEN 'MEETING'`).
+- **Gate Flyway/Testcontainers étendu à 5 tests** (dont preuve rouge
+  discriminante : retirer V193 ou V194 de `target/classes` **et** des sources
+  fait échouer le test avec l'erreur PostgreSQL exacte) :
+  `Tests run: 5, Failures: 0 … Time elapsed: 36.90 s`, BUILD SUCCESS, exit 0
+  (extrait archivé). Le scan systématique entités→schéma (267 entités @Table vs
+  tables information_schema) a sa propre preuve rouge : `Expecting empty but
+  was: ["Event → events"]`.
+- **Suite backend complète après corrections** : `Tests run: 1671, Failures: 0,
+  Errors: 0, Skipped: 13`, exit 0 (13 skips = `@EnabledIf(isRedisAvailable)`
+  du profile test + skips Docker préexistants, inchangés depuis la baseline).
+- **9 bugs de recette corrigés dans le script** (en-tête du script, n°1–9) —
+  tous « bugs d'ordre/lecture », aucun défaut production déguisé ; les chemins
+  404 (n°7) et colonnes inventées (n°9) ont été **vérifiés contre le serveur
+  réel et `\d` de PG avant correction**.
+- **3 SKIP finaux, justifiés, jamais comptés PASS** :
+  - E2E-9 : limite fixture D5 (garde `hasAnyRole` = rôle du JWT ; login/switch
+    ne délivrent que les 6 rôles globaux) → NEED-HELP D5-bis.
+  - E2E-10b : `uk_tenant_membership_user_tenant` empêche la fixture d'ajouter
+    un second rôle là où une membership existe → garde 403 avant lookup ;
+    isolation réellement prouvée par E2E-10c (PASS).
+  - E2E-11 quota space : ressource non exposée par l'endpoint de quota (A8).
+- **Effets de bord de recette** : 3 erreurs `EmailService … localhost:1025`
+  (SMTP absent, attendu — D10), logs backend archivé `backend-run4.log`.

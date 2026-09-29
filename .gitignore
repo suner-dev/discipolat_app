@@ -64,3 +64,6 @@ app-debug.apk
 # Large reference documents (keep locally, not in repo)
 docs/PRMPT.pdf
 docs/PRMPT.txt
+
+# Racine de stockage fichiers pour launches jetables de recette (DISCIPOLAT_FILE_STORAGE_ROOT)
+backend/storage-e2e/

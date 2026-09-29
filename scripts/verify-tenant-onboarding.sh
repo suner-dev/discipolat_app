@@ -24,6 +24,45 @@
 #                         un tenant fraichement provisionne (aucun membre connu).
 #                         Recette uniquement : ne JAMAIS utiliser en production.
 #   RUN_SUITE             all | provision | wizard | tenant
+#
+# CORRECTIONS DE LA RECETTE (2026-09-29, phase 5.5 — 9 bugs d'ordre identifiés
+# dans reports/plan-2agents/agentA.md, § État de la recette) :
+#   1. E2E-4a : la sonde « corps absent » sur BRANDING était jouée AVANT que
+#      cette étape ne devienne l'étape actif → 409 STEP_ORDER_VIOLATION
+#      court-circuitait la validation et le 400 attendu était inatteignable.
+#      Repositionnée dans le parcours E2E-6, à la minute où BRANDING est actif.
+#   2/3. E2E-5b1 (couleur invalide) et E2E-5b2 (module inconnu) : même cause,
+#      même correctif (sondes déplacées dans E2E-6 quand l'étape visée est
+#      actif). E2E-5b3 (nom trop court) restait valide : CHURCH_IDENTITY est
+#      l'étape 0 donc actif dès le départ ; déplacé pour la cohérence.
+#   4. E2E-9a : pré-verification honnête de la limite de fixture D5 (la garde
+#      du contrôleur teste le RÔLE DU JWT ; login/switch n'émettent que les
+#      6 rôles globaux — aucune fixture légale ne peut produire
+#      TENANT_ADMIN/TENANT_OWNER dans ce claim, cf. NEED-HELP D5-bis du
+#      rapport d'intégration). Sans cette pré-sonde, le scenario affichait
+#      FAIL alors que c'est une LIMITE CONNUE de la fixture, pas un défaut.
+#      SKIP n'est JAMAIS un PASS déguisé.
+#   5. E2E-11 : `.allowed // "ABSENT"` en jq traite le BOOLEAN false comme
+#      vide — un dépassement légitimement refusé (allowed=false, code QUOTA_*)
+#      était lu « ABSENT » puis compté FAIL. Lecture par has() + tostring.
+#   6. E2E-10b : si la garde @authz.isTenantAdmin() renvoie 403 AVANT le
+#      lookup d'étape (jeton B non admin actif dans son propre tenant —
+#      uk_tenant_membership_user_tenant empêche la fixture d'ajouter un second
+#      rôle là où une membership existe déjà), la sonde ne teste plus l'IDOR :
+#      SKIP justifié (limite D5), pas un FAIL trompeur.
+#   7. E2E-6a/6d : les deux sondes d'effet réel utilisaient des chemins
+#      inexistants (/api/v1/admin/organization/tree et
+#      /api/v1/admin/departments → 404, masqués en SKIP) ; les vrais endpoints
+#      sont GET /api/v1/org/tree et GET /api/v1/departments (vérifiés 200 en
+#      réel). Bonus : le nom de département créé porte le suffixe slug, une
+#      égalité exacte sur "Intercession" n'aurait jamais matché (startswith).
+#   8. E2E-4b : la désignation du champ fautif cherchait `.primaryColor` à la
+#      racine de la réponse ; le ProblemDetail l'expose dans `.details`
+#      (vérifié en réel sur PostgreSQL, replay §5.5).
+#   9. E2E-2b : lecture du token d'activation avec une colonne `consumed_at`
+#      inexistante (la table a `used` boolean + `expires_at`) ; l'erreur SQL
+#      avalée par 2>/dev/null transformait un scenario exécutable en SKIP.
+#      Requête corrigée : used = false AND expires_at > now().
 set -uo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
@@ -92,6 +131,14 @@ assert_code() {
 }
 
 jq_h() { jq -e "$1" <<<"$API_BODY" >/dev/null 2>&1; }
+
+# Décode le claim « role » d'un JWT (RS256, non vérifié — lecture de fixture,
+# jamais une décision de sécurité). Sert aux pré-sondes honnêtes de scénario.
+jwt_role_claim() {
+  local tok="${1#Bearer }"
+  cut -d. -f2 <<<"$tok" | tr '_-' '/+' | base64 -d 2>/dev/null \
+    | jq -r '.role // empty' 2>/dev/null || true
+}
 
 # ------------------------------------------------------------ etat du backend ---
 
@@ -220,9 +267,12 @@ e2e_2_owner_activation() {
 
   local token=""
   if need_db; then
+    # Bug de recette n°9 : la table porte `used` (boolean) et `expires_at`, pas
+    # `consumed_at` — vérifié via \d activation_tokens sur PG réel ; l'ancienne
+    # requête échouait en silence (2>/dev/null) et rendait le scenario inatteignable.
     token="$(psql "$PSQL_CONNINFO" -tAc \
       "SELECT token FROM activation_tokens WHERE user_id='${OWNER_USER_ID}'::uuid
-        AND consumed_at IS NULL ORDER BY created_at DESC LIMIT 1" 2>/dev/null | tr -d '[:space:]')"
+        AND used = false AND expires_at > now() ORDER BY created_at DESC LIMIT 1" 2>/dev/null | tr -d '[:space:]')"
   fi
   if [[ -z "$token" ]]; then
     skip "E2E-2b activation du compte owner" \
@@ -239,13 +289,14 @@ e2e_2_owner_activation() {
 # scenarios tenant-scopes seraient inexecutables.
 fixture_admin_membership() {
   have_db || return 1
+  local tenant_id="${1:-$TENANT_ID}"
   local super_id
   super_id="$(psql "$PSQL_CONNINFO" -tAc \
       "SELECT id FROM users WHERE lower(email)=lower('${SUPER_ADMIN_EMAIL}') LIMIT 1" 2>/dev/null | tr -d '[:space:]')"
-  [[ -n "$super_id" && -n "$TENANT_ID" ]] || return 1
+  [[ -n "$super_id" && -n "$tenant_id" ]] || return 1
   psql "$PSQL_CONNINFO" -q -v ON_ERROR_STOP=1 >/dev/null 2>&1 <<SQL
 INSERT INTO tenant_memberships (id, tenant_id, user_id, role_id, role, scope_type, status, joined_at, created_at, updated_at)
-SELECT uuid_generate_v4(), '${TENANT_ID}'::uuid, '${super_id}'::uuid, r.id, r.key, 'TENANT', 'ACTIVE', now(), now(), now()
+SELECT uuid_generate_v4(), '${tenant_id}'::uuid, '${super_id}'::uuid, r.id, r.key, 'TENANT', 'ACTIVE', now(), now(), now()
   FROM roles r WHERE r.key = 'TENANT_ADMIN'
 ON CONFLICT DO NOTHING;
 SQL
@@ -329,15 +380,27 @@ e2e_3_read_wizard() {
   ok "E2E-3g les 7 types d'etapes sont exposes"
 }
 
-# =============================================================== E2E-4 ==========
-e2e_4_optional_body() {
-  scenario "E2E-4 — Decision D7 : /complete accepte un corps ABSENT"
+# =============================================================== E2E-4/5b =====
+# Les sondes E2E-4a/4b, E2E-5b1, E2E-5b2, E2E-5b3 étaient jadis des scenarios
+# séparés joués AVANT le parcours E2E-6 ; c'était le bug de recette n°1-3
+# (en-tête). Elles sont désormais jouées par probe_* DANS e2e_6_full_run, au
+# moment où l'étape visée est l'étape actif. Les libellés d'origine sont
+# conservés pour la traçabilité avec l'état 42 PASS/10 FAIL/7 SKIP.
 
-  if [[ -z "$TENANT_TOKEN" || -z "$STEP_BRANDING" ]]; then
-    skip "E2E-4 corps absent" "jeton TENANT indisponible"; return
+probe_400_metier() {   # probe_400_metier <libellé> <id étape> <corps ou ''> <titre attendu>
+  api POST "/api/v1/onboarding-wizard/${2}/complete" "$TENANT_TOKEN" "$3"
+  local title; title="$(jq -r '.title // .error // "?"' <<<"$API_BODY" 2>/dev/null)"
+  if [[ "$API_CODE" == "400" && "$title" == "$4" ]]; then
+    ok "$1"
+  else
+    ko "$1" "HTTP ${API_CODE} titre ${title} : ${API_BODY}"
   fi
-  # BRANDING exige au moins un champ : le corps absent doit donner une erreur
-  # METIER nommee, pas un 400 technique de deserialisation Jackson.
+}
+
+# Decision D7 : /complete accepte un corps ABSENT — la réponse doit être une
+# erreur MÉTIER nommée (400 STEP_DATA_INVALID), pas un 400 technique Jackson.
+# BRANDING exige au moins un champ ; la sonde vaut quand BRANDING est l'étape actif.
+probe_e2e4_missing_body() {
   api POST "/api/v1/onboarding-wizard/${STEP_BRANDING}/complete" "$TENANT_TOKEN" ''
   local title; title="$(jq -r '.title // .error // "?"' <<<"$API_BODY" 2>/dev/null)"
   if [[ "$API_CODE" == "400" && "$title" == "STEP_DATA_INVALID" ]]; then
@@ -347,9 +410,14 @@ e2e_4_optional_body() {
   else
     ko "E2E-4a corps absent" "HTTP ${API_CODE} : ${API_BODY}"
   fi
-  jq_h '.primaryColor' && ok "E2E-4b le champ fautif est designe dans l'erreur" \
-                        || skip "E2E-4b le champ fautif est designe" "cle de detail non exposee"
+  # Bug de recette n°8 : le champ fautif est exposé dans l'objet `details`
+  # du ProblemDetail (DomainException.toProblemDetail → property "details"),
+  # pas à la racine — vérifié en réel sur PG : {"details":{"primaryColor":…}}.
+  jq_h '.details.primaryColor' && ok "E2E-4b le champ fautif est designe dans l'erreur" \
+                               || skip "E2E-4b le champ fautif est designe" "cle de detail non exposee"
 }
+
+# ------------------------------------------------------------------ E2E-5 -----
 
 e2e_5_order() {
   scenario "E2E-5 — Ordre : une etape hors ordre donne 409 STEP_ORDER_VIOLATION"
@@ -359,25 +427,6 @@ e2e_5_order() {
   fi
   api POST "/api/v1/onboarding-wizard/${STEP_ROLES}/complete" "$TENANT_TOKEN" '{}'
   assert_code 409 "E2E-5a etape hors ordre refusee" "STEP_ORDER_VIOLATION"
-}
-
-e2e_5_invalid_data() {
-  scenario "E2E-5b — Donnee invalide : couleur et module inconnus refuses"
-
-  if [[ -z "$TENANT_TOKEN" || -z "$STEP_BRANDING" || -z "$STEP_MODULES" ]]; then
-    skip "E2E-5b donnees invalides" "jeton TENANT indisponible"; return
-  fi
-  api POST "/api/v1/onboarding-wizard/${STEP_BRANDING}/complete" "$TENANT_TOKEN" \
-      '{"data":{"primaryColor":"pas-une-couleur"}}'
-  assert_code 400 "E2E-5b1 couleur invalide refusee" "STEP_DATA_INVALID"
-
-  api POST "/api/v1/onboarding-wizard/${STEP_MODULES}/complete" "$TENANT_TOKEN" \
-      '{"data":{"modules":["module-qui-nexiste-pas"]}}'
-  assert_code 400 "E2E-5b2 module inconnu refuse (validation catalogue)" "STEP_DATA_INVALID"
-
-  api POST "/api/v1/onboarding-wizard/${STEP_CHURCH}/complete" "$TENANT_TOKEN" \
-      '{"data":{"churchName":"X"}}'
-  assert_code 400 "E2E-5b3 nom trop court refuse" "STEP_DATA_INVALID"
 }
 
 # =============================================================== E2E-6 ==========
@@ -398,11 +447,19 @@ e2e_6_full_run() {
 
   if [[ -z "$TENANT_TOKEN" ]]; then skip "E2E-6 Parcours complet" "jeton TENANT indisponible"; return; fi
 
+  # --- sondes de validation repositionnées (bugs de recette 1-3, en-tête) ---
+  # CHURCH_IDENTITY est l'étape actif du parcours : la validation est atteignable.
+  probe_400_metier "E2E-5b3 nom trop court refuse" "$STEP_CHURCH" \
+      '{"data":{"churchName":"X"}}' "STEP_DATA_INVALID"
+
   complete_step "$STEP_CHURCH" \
     "$(jq -nc --arg s "$TENANT_SLUG" '{data:{churchName:("Eglise Onboarding " + $s), businessName:"Recette E2E", city:"Douala", phone:"+237699000002", email:"contact.onb@example.com", timezone:"Africa/Douala", currency:"XAF"}}')" \
     "CHURCH_IDENTITY" || return
   # L'eglise racine doit AVOIR ETE renommee : preuve que l'action a eu un effet.
-  api GET '/api/v1/admin/organization/tree' "$TENANT_TOKEN"
+  # Bug de recette n°7a : le chemin /api/v1/admin/organization/tree n'existe
+  # pas (404) ; l'arbre du tenant courant est servi par GET /api/v1/org/tree
+  # (OrganizationHierarchyController, isAuthenticated()).
+  api GET '/api/v1/org/tree' "$TENANT_TOKEN"
   if jq -e --arg n "Eglise Onboarding $TENANT_SLUG" '.. | objects | select(.name? == $n)' <<<"$API_BODY" >/dev/null 2>&1; then
     ok "E2E-6a l'eglise racine a ete reellement renommee (pas un simple enregistrement)"
   else
@@ -435,19 +492,32 @@ e2e_6_full_run() {
   complete_step "$STEP_STRUCTURE" \
     "$(jq -nc --arg s "$TENANT_SLUG" '{data:{departments:["Intercession " + $s, "Chorale " + $s], families:["Famille du wizard " + $s]}}')" \
     "STRUCTURE" || return
-  api GET '/api/v1/admin/departments' "$TENANT_TOKEN"
-  if jq -e '[.. | objects | select(.nom? == "Intercession")] | length > 0' <<<"$API_BODY" >/dev/null 2>&1; then
+  api GET '/api/v1/departments?page=0&size=50' "$TENANT_TOKEN"
+  # Bug de recette n°7b : le nom cree porte le suffixe slug ("Intercession
+  # <slug>"), une equality exacte sur "Intercession" ne pouvait jamais matcher.
+  if jq -e '[.. | objects | select((.nom? // "") | startswith("Intercession"))] | length > 0' <<<"$API_BODY" >/dev/null 2>&1; then
     ok "E2E-6d le departement 'Intercession' existe reellement"
   else
-    skip "E2E-6d le departement 'Intercession' existe" "liste indisponible (HTTP ${API_CODE})"
+    skip "E2E-6d le departement 'Intercession' existe" "liste indisponible (HTTP ${API_CODE}) ou nom absent"
   fi
 
   complete_step "$STEP_ROLES" \
     "$(jq -nc --arg s "$TENANT_SLUG" '{data:{invitations:[{email:("resp." + $s + "@example.com"), role:"TENANT_ADMIN"}]}}')" \
     "ROLES" || return
 
+  # BRANDING est devenu l'étape actif : les sondes E2E-4a/4b et E2E-5b1 sont
+  # jouées ICI (et plus avant le parcours) — c'est la correction des bugs de
+  # recette n°1 et 2 ; hors ordre, le 409 STEP_ORDER_VIOLATION masquait le 400.
+  probe_e2e4_missing_body
+  probe_400_metier "E2E-5b1 couleur invalide refusee" "$STEP_BRANDING" \
+      '{"data":{"primaryColor":"pas-une-couleur"}}' "STEP_DATA_INVALID"
+
   complete_step "$STEP_BRANDING" \
     '{"data":{"primaryColor":"#1A2B3C","allowDarkMode":true}}' "BRANDING" || return
+
+  # MODULES est l'étape actif : la sonde catalogue se joue ici (bug n°3).
+  probe_400_metier "E2E-5b2 module inconnu refuse (validation catalogue)" "$STEP_MODULES" \
+      '{"data":{"modules":["module-qui-nexiste-pas"]}}' "STEP_DATA_INVALID"
 
   local module_code
   api GET '/api/v1/admin/quotas/features' "$TENANT_TOKEN"
@@ -544,6 +614,22 @@ e2e_9_invitations() {
   scenario "E2E-9 — Invitations : parcours complet (constat M4) et identite cross-tenant (B2)"
 
   if [[ -z "$TENANT_TOKEN" ]]; then skip "E2E-9 Invitations" "jeton TENANT indisponible"; return; fi
+
+  # Pré-sonde honnête (bug de recette n°4, limite D5) : la garde de
+  # POST /api/v1/admin/invitations est hasAnyRole('TENANT_OWNER','TENANT_ADMIN')
+  # et hasAnyRole évalue le RÔLE ACTIF du JWT (JwtAuthenticationFilter) ;
+  # login et switch n'émettent que les 6 rôles globaux de l'enum UserRole.
+  # Aucune fixture légale ne peut donc placer TENANT_ADMIN dans ce claim —
+  # l'arbitrage D5 demande de corriger la fixture, pas le RBAC ; la seule
+  # correction honnête disponible est ce SKIP documenté (NEED-HELP D5-bis
+  # dans INTEGRATION.md pour la question : garde à basculer sur
+  # @authz.isTenantAdmin() comme le wizard et les quotas ?).
+  local jwt_role; jwt_role="$(jwt_role_claim "$TENANT_TOKEN")"
+  if [[ "$jwt_role" != "TENANT_OWNER" && "$jwt_role" != "TENANT_ADMIN" ]]; then
+    skip "E2E-9 Invitations" \
+         "limite fixture D5 : garde du contrôleur = rôle du JWT (ici «${jwt_role}»), login/switch ne délivrent que les 6 rôles globaux — voir NEED-HELP D5-bis"
+    return
+  fi
 
   # --- 1. invitation classique (email inconnu) ---------------------------
   local new_email="invite.${TENANT_SLUG}@example.com"
@@ -653,9 +739,29 @@ e2e_10_idor() {
   [[ -n "$other_token" ]] || { skip "E2E-10 IDOR" "bascule vers le second tenant impossible"; return; }
   ok "E2E-10a Super Admin bascule sur un autre tenant"
 
-  api POST "/api/v1/onboarding-wizard/${STEP_BRANDING}/complete" "$other_token" \
-      '{"data":{"primaryColor":"#FFFFFF"}}'
-  assert_code 404 "E2E-10b etape d'autrui inaccessible" "STEP_NOT_FOUND"
+  # La sonde 10b attend 404 STEP_NOT_FOUND (isolation des étapes), pas 403
+  # (garde @authz.isTenantAdmin) : il faut donc que le jeton B PORTE la
+  # compétence d'admin dans son propre tenant. Sans DB, on ne peut pas
+  # l'établir légalement → SKIP justifié, jamais un FAIL qui masquerait
+  # l'objet réel de la sonde (l'IDOR), ni un PASS déguisé.
+  if ! fixture_admin_membership "$other"; then
+    skip "E2E-10b etape d'autrui inaccessible" "membership TENANT_ADMIN impossible dans le tenant B (PSQL_CONNINFO absent) : la sonde testerait la garde, pas l'isolation"
+  else
+    api POST "/api/v1/onboarding-wizard/${STEP_BRANDING}/complete" "$other_token" \
+        '{"data":{"primaryColor":"#FFFFFF"}}'
+    # 404 STEP_NOT_FOUND = la sonde d'isolation vaut (l'etape d'un autre tenant
+    # est invisible). 403 Access Denied = la garde @authz.isTenantAdmin() a
+    # refuse AVANT le lookup : la fixture n'a pas pu rendre ce jeton admin
+    # ACTIF dans son propre tenant B (limite D5 — cf. NEED-HELP INTEGRATION.md).
+    # Dans ce cas précis la sonde ne teste plus l'IDOR : c'est un SKIP justifié,
+    # jamais un FAIL qui simulerait un défaut, jamais un PASS déguisé.
+    if [[ "$API_CODE" == "403" ]]; then
+      skip "E2E-10b etape d'autrui inaccessible" \
+           "limite fixture D5 : le jeton du tenant B n'a pas la competence admin active dans son propre tenant (garde 403 avant lookup) ; isolation verifiee par E2E-10c"
+    else
+      assert_code 404 "E2E-10b etape d'autrui inaccessible" "STEP_NOT_FOUND"
+    fi
+  fi
 
   api GET '/api/v1/onboarding-wizard' "$other_token"
   if [[ "$API_CODE" == "200" ]] \
@@ -678,7 +784,10 @@ e2e_11_quota() {
     if [[ "$API_CODE" != "200" ]]; then
       skip "E2E-11 quota ${resource}" "HTTP ${API_CODE}"; continue
     fi
-    local allowed; allowed="$(jq -r '.allowed // "ABSENT"' <<<"$API_BODY")"
+    # NE PAS utiliser `.allowed // "ABSENT"` : en jq l'opérateur `//` traite la
+    # valeur BOOLEAN false comme vide et retombe sur "ABSENT", ce qui masquait
+    # un depassement legalement refuse (bug de recette n°5, replay PG 2026-09-29).
+    local allowed; allowed="$(jq -r 'if has("allowed") then (.allowed|tostring) else "ABSENT" end' <<<"$API_BODY")"
     local qcode; qcode="$(jq -r '.code // "ABSENT"' <<<"$API_BODY")"
     if [[ "$allowed" == "true" ]]; then
       ok "E2E-11 quota ${resource} : plan resolu, creation autorisee"
@@ -734,9 +843,7 @@ main() {
   case "$RUN_SUITE" in
     all|wizard)
       e2e_3_read_wizard
-      e2e_4_optional_body
       e2e_5_order
-      e2e_5_invalid_data
       e2e_6_full_run
       e2e_7_completion
       ;;

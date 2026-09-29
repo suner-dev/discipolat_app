@@ -1,0 +1,2 @@
+[WARNING] Tests run: 1671, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
