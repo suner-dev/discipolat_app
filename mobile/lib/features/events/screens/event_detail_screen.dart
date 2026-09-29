@@ -11,7 +11,9 @@ import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/events/widgets/event_chat_overlay.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
-  final int eventId;
+  /// UUID renvoye par le backend. C'etait un `int` : `int.parse(uuid)` echouait
+  /// en echou a chaque ouverture depuis la liste.
+  final String eventId;
 
   const EventDetailScreen({super.key, required this.eventId});
 
@@ -23,6 +25,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   VideoPlayerController? _videoController;
   bool _showChat = false;
   bool _isInitialized = false;
+  bool _cancelling = false;
 
   @override
   void initState() {
@@ -478,6 +481,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _cancelEvent(Event event) async {
+    // Garde-fou anti double-tap : l'annulation est irreversible et
+    // l'ecran ne doit pas pouvoir envoyer deux requetes.
+    if (_cancelling) return;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -490,9 +497,29 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         ],
       ),
     );
-    if (confirm == true && mounted) {
-      // TODO: Implement cancel
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Annulation bientôt disponible')));
+    if (confirm != true || !mounted) return;
+
+    setState(() => _cancelling = true);
+    try {
+      final updated =
+          await ref.read(eventsServiceProvider).cancelEvent(event.id);
+      if (!mounted) return;
+      // Les providers sont invalidés : l'écran lit l'etat affiche au lieu de
+      // garder une copie locale qui divergerait du serveur.
+      ref.invalidate(_eventProvider(updated.id));
+      ref.invalidate(_registrationProvider(updated.id));
+      setState(() => _cancelling = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Événement annulé')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cancelling = false);
+      // Un echec doit etre dit : « bientot disponible » pour une operation
+      // reellement tentee serait un mensonge.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Annulation impossible : $e')),
+      );
     }
   }
 
@@ -513,12 +540,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 }
 
 // Providers
-final _eventProvider = FutureProvider.family<Event, int>((ref, id) async {
+final _eventProvider = FutureProvider.family<Event, String>((ref, id) async {
   final service = ref.watch(eventsServiceProvider);
   return service.getEvent(id);
 });
 
-final _registrationProvider = FutureProvider.family<EventRegistration?, int>((ref, eventId) async {
+final _registrationProvider = FutureProvider.family<EventRegistration?, String>((ref, eventId) async {
   final service = ref.watch(eventsServiceProvider);
   return service.getMyRegistration(eventId);
 });

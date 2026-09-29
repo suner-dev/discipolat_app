@@ -23,8 +23,6 @@ import 'package:flutter_test/flutter_test.dart';
 /// Chemins encore en `int id`, avec la raison. Toute entrée doit être
 /// supprimée au fur et à mesure de la migration.
 const _allowList = <String, String>{
-  'lib/features/events/models/event_model.dart':
-      'À migrer : EventService.getEvent/updateEvent/deleteEvent prennent int, backend = UUID',
   'lib/features/streaming/models/stream_model.dart':
       'À migrer : LiveStreamController attend Long sur /streams/{id}, écart à trancher',
   'lib/features/health/models/health_model.dart':

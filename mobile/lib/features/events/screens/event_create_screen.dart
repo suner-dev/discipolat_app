@@ -520,7 +520,9 @@ class _EventCreateScreenState extends ConsumerState<EventCreateScreen> {
 
     try {
       final event = Event(
-        id: widget.event?.id ?? 0,
+        // A la creation, l'identifiant est attribue par le backend (UUID) :
+        // la valeur locale n'est jamais envoyee comme reference.
+        id: widget.event?.id ?? '',
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         startAt: _startAt!,

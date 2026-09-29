@@ -2135,7 +2135,7 @@ final appRouter = GoRouter(
         path: '/events/:id',
         name: 'event-detail',
         builder: (ctx, s) =>
-            EventDetailScreen(eventId: int.parse(s.pathParameters['id']!))),
+            EventDetailScreen(eventId: s.pathParameters['id']!)),
     GoRoute(
         path: '/events/create',
         name: 'event-create',
