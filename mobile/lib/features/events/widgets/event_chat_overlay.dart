@@ -9,7 +9,8 @@ import 'package:discipolat_mobile/features/streaming/models/stream_model.dart'
     show StreamChatMessage;
 
 class EventChatOverlay extends ConsumerStatefulWidget {
-  final int eventId;
+  /// UUID de l'evenement (le chat est construit dessus, pas sur un int).
+  final String eventId;
   final VoidCallback onClose;
 
   const EventChatOverlay({
@@ -261,7 +262,7 @@ class _EventChatOverlayState extends ConsumerState<EventChatOverlay> {
 }
 
 // Providers
-final _messagesProvider = FutureProvider.family<List<StreamChatMessage>, int>((ref, eventId) async {
+final _messagesProvider = FutureProvider.family<List<StreamChatMessage>, String>((ref, eventId) async {
   // TODO: Implement getChatMessages in events service
   return <StreamChatMessage>[];
 });

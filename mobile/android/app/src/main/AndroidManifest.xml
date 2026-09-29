@@ -39,6 +39,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- B8 — App Links (https). Le path DOIT rester /accept-invitation :
+                 invitationTokenFromUri (lib/core/invitation_token.dart) rejette
+                 toute URI dont uri.path != '/accept-invitation'. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="app.discipolat.com" android:pathPrefix="/accept-invitation"/>
+            </intent-filter>
+            <!-- B8 — Scheme custom. Même constraint sur le path que ci-dessus. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="discipolat" android:host="app.discipolat.com" android:pathPrefix="/accept-invitation"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

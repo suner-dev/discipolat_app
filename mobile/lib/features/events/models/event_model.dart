@@ -7,7 +7,7 @@ part 'event_model.g.dart';
 @freezed
 class Event with _$Event {
   const factory Event({
-    required int id,
+    required String id,
     required String title,
     String? description,
     required EventType type,
@@ -47,9 +47,9 @@ class Event with _$Event {
 @freezed
 class EventRegistration with _$EventRegistration {
   const factory EventRegistration({
-    required int id,
-    required int eventId,
-    required int personId,
+    required String id,
+    required String eventId,
+    required String personId,
     required RegistrationStatus status,
     DateTime? checkedInAt,
     String? checkInMethod,
@@ -65,9 +65,9 @@ class EventRegistration with _$EventRegistration {
 @freezed
 class EventTeamMember with _$EventTeamMember {
   const factory EventTeamMember({
-    required int id,
-    required int eventId,
-    required int personId,
+    required String id,
+    required String eventId,
+    required String personId,
     required String role,
     required TeamRole teamRole,
     String? responsibilities,
@@ -80,8 +80,8 @@ class EventTeamMember with _$EventTeamMember {
 @freezed
 class EventChecklist with _$EventChecklist {
   const factory EventChecklist({
-    required int id,
-    required int eventId,
+    required String id,
+    required String eventId,
     required String title,
     String? description,
     @Default(false) bool isRequired,
@@ -99,7 +99,7 @@ class EventChecklist with _$EventChecklist {
 @freezed
 class DressCode with _$DressCode {
   const factory DressCode({
-    required int id,
+    required String id,
     required String name,
     String? description,
     String? colorCode,
@@ -114,8 +114,8 @@ class DressCode with _$DressCode {
 @freezed
 class DressCodeItem with _$DressCodeItem {
   const factory DressCodeItem({
-    required int id,
-    required int dressCodeId,
+    required String id,
+    required String dressCodeId,
     required String name,
     String? description,
     String? color,
@@ -195,30 +195,76 @@ enum EventType {
 }
 
 enum EventStatus {
-  @JsonValue('DRAFT')
-  draft,
-  @JsonValue('PUBLISHED')
+  /// Vocabulaire du BACKEND. Reference : `StatutEvenement` du web
+  /// ('PLANIFIE' | 'EN_COURS' | 'TERMINE' | 'ANNULE'), `Event.statut`
+  /// (String, defaut "PLANIFIE") et le filtre `findByStatutAndDeletedFalse("PLANIFIE")`.
+  /// Avant : DRAFT/PUBLISHED/LIVE/COMPLETED/CANCELLED — un vocabulaire anglais
+  /// que le backend ne produit ni ne filtre : la liste d'evenements ne pouvait
+  /// pas etre lue, et une annulation aurait ecrit une valeur invisible.
+  @JsonValue('PLANIFIE')
   published,
-  @JsonValue('LIVE')
+  @JsonValue('EN_COURS')
   live,
-  @JsonValue('COMPLETED')
+  @JsonValue('TERMINE')
   completed,
-  @JsonValue('CANCELLED')
-  cancelled;
+  @JsonValue('ANNULE')
+  cancelled,
+  @JsonValue('BROUILLON')
+  draft,
+
+  /// Valeur de repli : le backend est un texte libre, donc une valeur
+  /// inconnue ne doit JAMAIS faire echouer le chargement de l'ecran.
+  @JsonValue('UNKNOWN')
+  unknown;
 
   String get displayName {
     switch (this) {
       case EventStatus.draft:
         return 'Brouillon';
       case EventStatus.published:
-        return 'Publié';
+        return 'Planifié';
       case EventStatus.live:
         return 'En cours';
       case EventStatus.completed:
         return 'Terminé';
       case EventStatus.cancelled:
         return 'Annulé';
+      case EventStatus.unknown:
+        return 'Statut inconnu';
     }
+  }
+}
+
+/// Décodage tolérant du statut.
+///
+/// Le backend expose `statut` comme une chaîne libre. Un `enumDecode` strict
+/// lève une exception sur une valeur inattendue, ce qui ferait échouer TOUTE la
+/// liste d'événements pour un seul enregistrement. On tolère donc les deux
+/// vocabulaires (celui du backend et l'ancien vocabulaire anglais du mobile),
+/// et une valeur totalement inconnue retombe sur [EventStatus.unknown] — jamais
+/// sur une exception, jamais sur une valeur inventée.
+extension EventStatusWire on EventStatus {
+  static const Map<String, EventStatus> _byWire = {
+    'PLANIFIE': EventStatus.published,
+    'EN_COURS': EventStatus.live,
+    'TERMINE': EventStatus.completed,
+    'ANNULE': EventStatus.cancelled,
+    'BROUILLON': EventStatus.draft,
+    // Ancien vocabulaire mobile, accepte en lecture pour ne pas casser des
+    // caches ou des enregistrements deja stockes cote client.
+    'PUBLISHED': EventStatus.published,
+    'LIVE': EventStatus.live,
+    'COMPLETED': EventStatus.completed,
+    'CANCELLED': EventStatus.cancelled,
+    'DRAFT': EventStatus.draft,
+  };
+
+  static EventStatus decode(Object? raw) {
+    if (raw is EventStatus) return raw;
+    if (raw is String) {
+      return _byWire[raw.trim().toUpperCase()] ?? EventStatus.unknown;
+    }
+    return EventStatus.unknown;
   }
 }
 

@@ -37,6 +37,18 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Paramètres église',
       'route': '/tenant/settings'
     },
+    // B7 — accès au wizard d'onboarding (route réelle : /tenant/onboarding)
+    {
+      'icon': Icons.rocket_launch_rounded,
+      'title': 'Configuration initiale',
+      'route': '/tenant/onboarding'
+    },
+    // RGPD — consentements (retrait possible à tout moment)
+    {
+      'icon': Icons.verified_user_rounded,
+      'title': 'Mes consentements',
+      'route': '/compliance/consents'
+    },
     {
       'icon': Icons.dashboard_customize_rounded,
       'title': 'Pilotage Pasteur',
@@ -851,6 +863,10 @@ class _AppDrawerState extends State<AppDrawer> {
         return 'Changer d’organisation';
       case '/tenant/settings':
         return l10n.navChurchSettings;
+      case '/tenant/onboarding':
+        return 'Configuration initiale';
+      case '/compliance/consents':
+        return 'Mes consentements';
       case '/admin/custom-fields':
         return l10n.navCustomFields;
       case '/admin/dictionaries':

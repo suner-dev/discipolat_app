@@ -18,6 +18,7 @@ const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const PublicChurchesPage = lazy(() => import('@/pages/PublicChurchesPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
+const RegistrationStatusPage = lazy(() => import('@/pages/RegistrationStatusPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
@@ -352,6 +353,7 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/registration-status" element={<RegistrationStatusPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/activate" element={<ActivateAccountPage />} />

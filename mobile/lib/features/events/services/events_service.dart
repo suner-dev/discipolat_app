@@ -13,7 +13,25 @@ EventsService eventsService(EventsServiceRef ref) {
   return EventsService(api);
 }
 
+
 class EventsService {
+  /// Frontière backend -> application.
+  ///
+  /// Le backend expose `statut` comme une chaîne libre. `$enumDecode` (généré)
+  /// lève sur une valeur inattendue, ce qui ferait échouer TOUTE la liste
+  /// d'événements pour un enregistrement atypique. On normalise donc ici :
+  /// le modèle reste un modèle, la tolérance vit à la frontière.
+  static Map<String, dynamic> _normalize(Map<String, dynamic> json) {
+    final raw = json['statut'] ?? json['status'];
+    if (raw is String) {
+      return {...json, 'status': EventStatusWire.decode(raw).name};
+    }
+    return {...json, 'status': EventStatus.unknown.name};
+  }
+
+  Event _event(dynamic raw) =>
+      Event.fromJson(_normalize(raw as Map<String, dynamic>));
+
   final ApiService _api;
 
   EventsService(this._api);
@@ -60,10 +78,10 @@ class EventsService {
     }
   }
 
-  Future<Event> getEvent(int id) async {
+  Future<Event> getEvent(String id) async {
     try {
       final response = await _api.get('/events/$id');
-      return Event.fromJson(response.data as Map<String, dynamic>);
+      return _event(response.data);
     } catch (e) {
       throw Exception('Erreur lors du chargement de l\'événement: $e');
     }
@@ -72,22 +90,37 @@ class EventsService {
   Future<Event> createEvent(Event event) async {
     try {
       final response = await _api.post('/events', data: event.toJson());
-      return Event.fromJson(response.data as Map<String, dynamic>);
+      return _event(response.data);
     } catch (e) {
       throw Exception('Erreur lors de la création: $e');
     }
   }
 
-  Future<Event> updateEvent(int id, Event event) async {
+  Future<Event> updateEvent(String id, Event event) async {
     try {
       final response = await _api.put('/events/$id', data: event.toJson());
-      return Event.fromJson(response.data as Map<String, dynamic>);
+      return _event(response.data);
     } catch (e) {
       throw Exception('Erreur lors de la mise à jour: $e');
     }
   }
 
-  Future<void> deleteEvent(int id) async {
+  /// Annule un evenement.
+  ///
+  /// Le backend accepte un **patch partiel** : `EventService.update` n'ecrit
+  /// que les champs non nuls, donc envoyer uniquement `statut` laisse le
+  /// titre, les dates et le lieu intacts. La valeur envoyee est `ANNULE`, le
+  /// vocabulaire du backend (et celui du web : `StatutEvenement`).
+  Future<Event> cancelEvent(String id) async {
+    try {
+      final response = await _api.put('/events/$id', data: {'statut': 'ANNULE'});
+      return _event(response.data);
+    } catch (e) {
+      throw Exception('Erreur lors de l\'annulation: $e');
+    }
+  }
+
+  Future<void> deleteEvent(String id) async {
     try {
       await _api.delete('/events/$id');
     } catch (e) {
@@ -96,7 +129,7 @@ class EventsService {
   }
 
   // Registration
-  Future<EventRegistration> registerForEvent(int eventId, {bool hasGuest = false, int guestCount = 0}) async {
+  Future<EventRegistration> registerForEvent(String eventId, {bool hasGuest = false, int guestCount = 0}) async {
     try {
       final response = await _api.post('/events/$eventId/register', data: {
         'hasGuest': hasGuest,
@@ -108,7 +141,7 @@ class EventsService {
     }
   }
 
-  Future<void> cancelRegistration(int eventId) async {
+  Future<void> cancelRegistration(String eventId) async {
     try {
       await _api.delete('/events/$eventId/register');
     } catch (e) {
@@ -116,7 +149,7 @@ class EventsService {
     }
   }
 
-  Future<EventRegistration> getMyRegistration(int eventId) async {
+  Future<EventRegistration> getMyRegistration(String eventId) async {
     try {
       final response = await _api.get('/events/$eventId/my-registration');
       return EventRegistration.fromJson(response.data as Map<String, dynamic>);
@@ -125,7 +158,7 @@ class EventsService {
     }
   }
 
-  Future<List<EventRegistration>> getEventRegistrations(int eventId, {int page = 0, int size = 50, RegistrationStatus? status}) async {
+  Future<List<EventRegistration>> getEventRegistrations(String eventId, {int page = 0, int size = 50, RegistrationStatus? status}) async {
     try {
       final queryParams = <String, dynamic>{
         'page': page,
@@ -141,7 +174,7 @@ class EventsService {
   }
 
   // Check-in
-  Future<EventRegistration> checkIn(int eventId, {String? method, String? qrCode}) async {
+  Future<EventRegistration> checkIn(String eventId, {String? method, String? qrCode}) async {
     try {
       final response = await _api.post('/events/$eventId/check-in', data: {
         'method': method ?? 'MANUAL',
@@ -153,7 +186,7 @@ class EventsService {
     }
   }
 
-  Future<EventRegistration> checkInByQr(int eventId, String qrCode) async {
+  Future<EventRegistration> checkInByQr(String eventId, String qrCode) async {
     try {
       final response = await _api.post('/events/$eventId/check-in/qr', data: {
         'qrCode': qrCode,
@@ -165,7 +198,7 @@ class EventsService {
   }
 
   // Team
-  Future<List<EventTeamMember>> getEventTeam(int eventId) async {
+  Future<List<EventTeamMember>> getEventTeam(String eventId) async {
     try {
       final response = await _api.get('/events/$eventId/team');
       final data = response.data as List;
@@ -175,7 +208,7 @@ class EventsService {
     }
   }
 
-  Future<EventTeamMember> addTeamMember(int eventId, int personId, TeamRole role, {String? responsibilities}) async {
+  Future<EventTeamMember> addTeamMember(String eventId, String personId, TeamRole role, {String? responsibilities}) async {
     try {
       final response = await _api.post('/events/$eventId/team', data: {
         'personId': personId,
@@ -188,7 +221,7 @@ class EventsService {
     }
   }
 
-  Future<void> removeTeamMember(int eventId, int memberId) async {
+  Future<void> removeTeamMember(String eventId, String memberId) async {
     try {
       await _api.delete('/events/$eventId/team/$memberId');
     } catch (e) {
@@ -197,7 +230,7 @@ class EventsService {
   }
 
   // Checklist
-  Future<List<EventChecklist>> getChecklist(int eventId) async {
+  Future<List<EventChecklist>> getChecklist(String eventId) async {
     try {
       final response = await _api.get('/events/$eventId/checklist');
       final data = response.data as List;
@@ -207,7 +240,7 @@ class EventsService {
     }
   }
 
-  Future<EventChecklist> addChecklistItem(int eventId, EventChecklist item) async {
+  Future<EventChecklist> addChecklistItem(String eventId, EventChecklist item) async {
     try {
       final response = await _api.post('/events/$eventId/checklist', data: item.toJson());
       return EventChecklist.fromJson(response.data as Map<String, dynamic>);
@@ -216,7 +249,7 @@ class EventsService {
     }
   }
 
-  Future<EventChecklist> updateChecklistItem(int eventId, int itemId, EventChecklist item) async {
+  Future<EventChecklist> updateChecklistItem(String eventId, String itemId, EventChecklist item) async {
     try {
       final response = await _api.put('/events/$eventId/checklist/$itemId', data: item.toJson());
       return EventChecklist.fromJson(response.data as Map<String, dynamic>);
@@ -225,7 +258,7 @@ class EventsService {
     }
   }
 
-  Future<void> deleteChecklistItem(int eventId, int itemId) async {
+  Future<void> deleteChecklistItem(String eventId, String itemId) async {
     try {
       await _api.delete('/events/$eventId/checklist/$itemId');
     } catch (e) {
@@ -234,7 +267,7 @@ class EventsService {
   }
 
   // Dress Code
-  Future<DressCode?> getDressCode(int eventId) async {
+  Future<DressCode?> getDressCode(String eventId) async {
     try {
       final response = await _api.get('/events/$eventId/dress-code');
       if (response.data == null) return null;
@@ -244,7 +277,7 @@ class EventsService {
     }
   }
 
-  Future<DressCode> assignDressCode(int eventId, int dressCodeId) async {
+  Future<DressCode> assignDressCode(String eventId, String dressCodeId) async {
     try {
       final response = await _api.post('/events/$eventId/dress-code', data: {
         'dressCodeId': dressCodeId,
@@ -256,7 +289,7 @@ class EventsService {
   }
 
   // Statistics
-  Future<Map<String, dynamic>> getEventStats(int eventId) async {
+  Future<Map<String, dynamic>> getEventStats(String eventId) async {
     try {
       final response = await _api.get('/events/$eventId/stats');
       return response.data as Map<String, dynamic>;

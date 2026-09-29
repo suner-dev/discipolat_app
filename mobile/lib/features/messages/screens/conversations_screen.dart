@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:discipolat_mobile/features/messages/models/message_model.dart';
 import 'package:discipolat_mobile/features/messages/services/messages_service.dart';
+import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
 class ConversationsScreen extends ConsumerStatefulWidget {
@@ -183,7 +184,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                   else
                     Flexible(
                       child: Text(
-                        conv.lastMessage!.senderId == _getCurrentUserId() ? 'Vous: ${conv.lastMessage!.content}' : '${conv.lastMessage!.senderName}: ${conv.lastMessage!.content}',
+                        _isMine(conv.lastMessage!) ? 'Vous: ${conv.lastMessage!.content}' : '${conv.lastMessage!.senderName}: ${conv.lastMessage!.content}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.surface.withOpacity(0.7),
@@ -248,9 +249,23 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     return DateFormat('dd/MM/yyyy').format(dateTime);
   }
 
-  int _getCurrentUserId() {
-    // TODO: Get from auth state
-    return 1;
+  /// Identifiant de l'utilisateur connecté.
+  ///
+  /// AVANT : `return 1` — un identifiant codé en dur. Conséquence réelle : tout
+  /// utilisateur autre que l'utilisateur n°1 voyait « Vous: » sur les messages
+  /// des autres, et le premier message du dernier message affiché lui était
+  /// attribué. Ce n'est pas un TODO cosmétique, c'est un bug d'affichage visible.
+  ///
+  /// `Message.senderId` est un `int` alors que `AuthState().userId` est un
+  /// `String` : la comparaison se fait donc sur la forme textuelle. Comparer
+  /// directement les deux types rendrait l'égalité toujours fausse (et
+  /// l'analyseur le signale : `unrelated_type_equality_checks`).
+  String? _currentUserId() => AuthState().userId;
+
+  bool _isMine(Message message) {
+    final me = _currentUserId();
+    if (me == null || me.isEmpty) return false;
+    return message.senderId.toString() == me;
   }
 
   void _showNewConversationDialog() {

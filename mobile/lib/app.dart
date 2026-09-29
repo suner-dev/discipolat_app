@@ -205,7 +205,6 @@ import 'features/events/screens/event_create_screen.dart';
 import 'features/finances/screens/finances_screen.dart';
 import 'features/health/screens/health_screen.dart';
 import 'features/assets/screens/assets_screen.dart';
-import 'features/tasks/screens/tasks_screen.dart';
 import 'features/discipleship/screens/discipleship_screen.dart';
 import 'features/messages/screens/conversations_screen.dart' as msg_conv;
 import 'features/messages/screens/conversation_detail_screen.dart'
@@ -238,6 +237,8 @@ import 'presentation/screens/tenant/tenant_settings_screen.dart';
 import 'presentation/screens/tenant/modules_screen.dart';
 import 'presentation/screens/tenant/roles_screen.dart';
 import 'presentation/screens/tenant/users_screen.dart';
+import 'presentation/screens/tenant/tenant_onboarding_screen.dart';
+import 'presentation/screens/compliance/consent_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role and multi-tenant support (roles + activeRole + orgId).
@@ -1210,6 +1211,8 @@ Map<String, List<String>> _routeRoles = {
   '/tenant/modules': const [],
   '/tenant/roles': const [],
   '/tenant/users': const [],
+  '/tenant/onboarding': ['ADMIN', 'PASTEUR', 'TENANT_OWNER'],
+  '/compliance/consents': ['ADMIN', 'PASTEUR', 'TENANT_OWNER', 'MEMBER'],
   '/space-config-transfer': ['ADMIN', 'PASTEUR'],
   '/tenant/organizations': const [],
   '/tenant/settings': ['ADMIN', 'PASTEUR'],
@@ -2132,7 +2135,7 @@ final appRouter = GoRouter(
         path: '/events/:id',
         name: 'event-detail',
         builder: (ctx, s) =>
-            EventDetailScreen(eventId: int.parse(s.pathParameters['id']!))),
+            EventDetailScreen(eventId: s.pathParameters['id']!)),
     GoRoute(
         path: '/events/create',
         name: 'event-create',
@@ -2149,10 +2152,15 @@ final appRouter = GoRouter(
         path: '/assets',
         name: 'assets',
         builder: (ctx, s) => const AssetsScreen()),
-    GoRoute(
-        path: '/tasks',
-        name: 'tasks',
-        builder: (ctx, s) => const TasksScreen()),
+    // `/tasks` a été SUPPRIMÉ le 2026-09-29 : cet écran appelait `/tasks`,
+    // `/tasks/$id`, `/tasks/kanban/columns`, `/tasks/templates`… — 11 endpoints
+    // qui N'EXISTENT PAS dans le backend (le seul contrôleur est
+    // TeamTaskController, mappé sur `/api/v1/team-tasks`, avec des UUID et des
+    // PATCH). Le menu comme la web utilisent `/team-tasks`, qui fonctionne.
+    // Le fichier `features/tasks/screens/tasks_screen.dart` est conservé (non
+    // supprimé : il contient des filtres qui pourraient être portés) mais il
+    // n'est plus routable et son bouton « + » pointait sur une route
+    // inexistante. Voir NEED-HELP-TASKS dans reports/plan-2agents/agentB.md.
     GoRoute(
         path: '/discipleship',
         name: 'discipleship',
@@ -2440,6 +2448,19 @@ final appRouter = GoRouter(
         path: '/tenant/users',
         name: 'tenant-users',
         builder: (ctx, s) => const TenantUsersScreen()),
+    // B7 — wizard d'onboarding tenant (contrat §3.1). Route ADDITIVE : aucune
+    // route existante n'est modifiée. Le garde de rôle est déclaré dans la
+    // table `_roleGuards` ci-dessus.
+    GoRoute(
+        path: '/tenant/onboarding',
+        name: 'tenant-onboarding',
+        builder: (ctx, s) => const TenantOnboardingScreen()),
+    // RGPD — gestion des consentements (art. 7.1 / 7.3) via les endpoints
+    // /compliance/consents réellement fournis par le backend.
+    GoRoute(
+        path: '/compliance/consents',
+        name: 'compliance-consents',
+        builder: (ctx, s) => const ConsentScreen()),
     GoRoute(
         path: '/space-config-transfer',
         name: 'space-config-transfer',
