@@ -41,6 +41,7 @@ class TenantServiceTest {
     @Mock private TenantSubscriptionRepository subscriptionRepository;
     @Mock private SaasPlanService saasPlanService;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock private com.discipolat.modules.platform.domain.DictionaryService dictionaryService;
 
     @InjectMocks private TenantService tenantService;
 
@@ -85,6 +86,8 @@ class TenantServiceTest {
         assertEquals(TenantStatus.ACTIVE, created.status());
         assertEquals("DISCOVERY", created.plan());
         verify(subscriptionRepository).save(any(TenantSubscription.class));
+        // A3 (item 10) : tout nouveau tenant recoit son glossaire interne (seed idempotent).
+        verify(dictionaryService).seedForTenant(created.id());
         verify(propagationPublisher).publishCreated(eq("TENANT"), eq(created.id()), any(), anyString());
     }
 

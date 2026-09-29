@@ -248,6 +248,15 @@ public class TenantSettings {
     @Column(name = "custom_head_html", columnDefinition = "TEXT")
     private String customHeadHtml;
 
+    // Reçu fiscal — mentions configurables PAR TENANT (A3 / M9) : aucun global
+    // unique ; le numéro fiscal et les mentions légales relèvent du pays et de
+    // l'organisation locale, jamais de la plateforme.
+    @Column(name = "receipt_tax_number", length = 100)
+    private String receiptTaxNumber;
+
+    @Column(name = "receipt_legal_mentions", columnDefinition = "TEXT")
+    private String receiptLegalMentions;
+
     // Métadonnées
     @Column(name = "created_by")
     private UUID createdBy;

@@ -11,9 +11,11 @@ import java.util.*;
 public class CurrencyService {
 
     private final CurrencyConfigRepository currencyRepo;
+    private final Iso4217CurrencyValidator validator;
 
-    public CurrencyService(CurrencyConfigRepository currencyRepo) {
+    public CurrencyService(CurrencyConfigRepository currencyRepo, Iso4217CurrencyValidator validator) {
         this.currencyRepo = currencyRepo;
+        this.validator = validator;
     }
 
     public List<CurrencyConfig> listCurrencies() {
@@ -26,6 +28,8 @@ public class CurrencyService {
     }
 
     public CurrencyConfig create(CurrencyConfig config) {
+        // A3 (M9) — fail-closed : seule une devise ISO-4217 réelle entre en base.
+        validator.require(config.getCurrencyCode());
         config.setTenantId(TenantContext.getCurrentTenantId());
         if (config.getIsPrimary() != null && config.getIsPrimary()) {
             clearPrimaryFlag();
@@ -35,7 +39,10 @@ public class CurrencyService {
 
     public CurrencyConfig update(UUID id, CurrencyConfig updates) {
         CurrencyConfig existing = currencyRepo.findById(id).orElseThrow();
-        if (updates.getCurrencyCode() != null) existing.setCurrencyCode(updates.getCurrencyCode());
+        if (updates.getCurrencyCode() != null) {
+            validator.require(updates.getCurrencyCode());
+            existing.setCurrencyCode(updates.getCurrencyCode());
+        }
         if (updates.getCurrencySymbol() != null) existing.setCurrencySymbol(updates.getCurrencySymbol());
         if (updates.getTimezone() != null) existing.setTimezone(updates.getTimezone());
         if (updates.getLocale() != null) existing.setLocale(updates.getLocale());
@@ -72,34 +79,34 @@ public class CurrencyService {
         return stats;
     }
 
-    public List<Map<String, String>> getSupportedCurrencies() {
-        return List.of(
-            Map.of("code", "XAF", "symbol", "FCFA", "name", "Franc CFA"),
-            Map.of("code", "EUR", "symbol", "€", "name", "Euro"),
-            Map.of("code", "USD", "symbol", "$", "name", "Dollar US"),
-            Map.of("code", "KES", "symbol", "KSh", "name", "Shilling Kényan"),
-            Map.of("code", "NGN", "symbol", "₦", "name", "Naira Nigérian"),
-            Map.of("code", "CDF", "symbol", "FC", "name", "Franc Congolais"),
-            Map.of("code", "GBP", "symbol", "£", "name", "Livre Sterling"),
-            Map.of("code", "BIF", "symbol", "FBu", "name", "Franc Burundais"),
-            Map.of("code", "RWF", "symbol", "FRw", "name", "Franc Rwandais"),
-            Map.of("code", "ZAR", "symbol", "R", "name", "Rand Sud-Africain")
-        );
+    /**
+     * A3 (M9) — Le catalogue servi est le référentiel ISO-4217 complet
+     * (java.util.Currency), plus une liste nationale triée sur le volet : une
+     * devise absente de la liste était structurellement injouable, c'était le
+     * bug. Format de réponse conservé (code, symbol, name) + décimales ajoutées
+     * (additif) pour que le client formate avec Intl.NumberFormat sans rien figer.
+     */
+    public List<Map<String, Object>> getSupportedCurrencies() {
+        return validator.catalog().values().stream()
+                .<Map<String, Object>>map(entry -> Map.of(
+                        "code", entry.get("code"),
+                        "symbol", entry.get("symbol"),
+                        "name", entry.get("name"),
+                        "decimals", entry.get("decimals")))
+                .toList();
     }
 
+    /**
+     * Fuseaux horaires : la planète n'est pas l'Afrique francophone. Liste
+     * complète des identifiants IANA canoniques (les liens type « Africa/Accra »
+     * inclus dans la JVM sont des alias, tous valides) ; le tenant choisit le
+     * sien — le serveur valide l'identifiant, pas le continent.
+     */
     public List<Map<String, String>> getSupportedTimezones() {
-        return List.of(
-            Map.of("id", "Africa/Douala", "name", "Douala (GMT+1)"),
-            Map.of("id", "Africa/Lagos", "name", "Lagos (GMT+1)"),
-            Map.of("id", "Africa/Nairobi", "name", "Nairobi (GMT+3)"),
-            Map.of("id", "Africa/Kinshasa", "name", "Kinshasa (GMT+1)"),
-            Map.of("id", "Africa/Kigali", "name", "Kigali (GMT+2)"),
-            Map.of("id", "Africa/Bujumbura", "name", "Bujumbura (GMT+2)"),
-            Map.of("id", "Europe/Paris", "name", "Paris (GMT+1/+2)"),
-            Map.of("id", "Europe/London", "name", "Londres (GMT+0/+1)"),
-            Map.of("id", "America/New_York", "name", "New York (GMT-5/-4)"),
-            Map.of("id", "Asia/Dubai", "name", "Dubaï (GMT+4)")
-        );
+        return java.time.zone.ZoneRulesProvider.getAvailableZoneIds().stream()
+                .sorted()
+                .map(id -> Map.of("id", id, "name", id.replace('_', ' ')))
+                .toList();
     }
 
     private void clearPrimaryFlag() {

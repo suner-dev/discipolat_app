@@ -5,6 +5,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
+import com.discipolat.modules.platform.domain.DictionaryService;
 import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.api.UpdateTenantRequest;
@@ -53,6 +54,7 @@ public class TenantService {
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanService saasPlanService;
     private final ApplicationEventPublisher eventPublisher;
+    private final DictionaryService dictionaryService;
 
     public TenantService(TenantRepository tenantRepository, AuditService auditService,
                          EntityPropagationPublisher propagationPublisher,
@@ -60,7 +62,8 @@ public class TenantService {
                          TenantPlanPolicy planPolicy,
                          TenantSubscriptionRepository subscriptionRepository,
                          SaasPlanService saasPlanService,
-                         ApplicationEventPublisher eventPublisher) {
+                         ApplicationEventPublisher eventPublisher,
+                         DictionaryService dictionaryService) {
         this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
@@ -69,6 +72,7 @@ public class TenantService {
         this.subscriptionRepository = subscriptionRepository;
         this.saasPlanService = saasPlanService;
         this.eventPublisher = eventPublisher;
+        this.dictionaryService = dictionaryService;
     }
 
     @Transactional(readOnly = true)
@@ -111,6 +115,10 @@ public class TenantService {
         try {
             TenantContext.setTenantId(tenant.getId());
             seedDefaultModules(tenant.getId());
+            // A3 (item 10) — chaque nouveau tenant reçoit SON jeu d'entrées de
+            // dictionnaire : les termes (« âme », « disciple », « pasteur »…) sont
+            // ensuite surchargeables par l'admin du tenant, sans code.
+            dictionaryService.seedForTenant(tenant.getId());
             propagationPublisher.publishCreated("TENANT", tenant.getId(),
                     Map.of("name", tenant.getName(), "slug", tenant.getSlug()),
                     "Tenant créé: " + tenant.getName());

@@ -13,6 +13,11 @@ import org.hibernate.annotations.Filter;
  * Transaction financière de l'église (recette ou dépense).
  * Montants enregistrés dans la devise de l'église ; suppression = archivage
  * (soft delete) pour préserver l'historique comptable.
+ *
+ * <p>A3 (M9) — chaque transaction porte désormais sa devise ISO-4217 exacte
+ * et son montant en unités mineures entières, plus la contre-valeur dans la
+ * devise de base du tenant (audit multi-devises). Le champ historique
+ * {@code montant} est conservé tel quel : aucune régression.</p>
  */
 @Entity
 @Table(name = "finance_transactions")
@@ -45,6 +50,23 @@ public class FinanceTransaction {
 
     @Column(name = "montant", nullable = false, precision = 14, scale = 2)
     private BigDecimal montant;
+
+    /** Code ISO-4217 de la devise de saisie (XAF, EUR, USD, KES…). */
+    @Column(name = "devise", nullable = false, length = 3)
+    private String devise;
+
+    /** Montant dans l'unité mineure de la devise (entier exact, pas de virgule). */
+    @Column(name = "montant_minor")
+    private Long montantMinor;
+
+    /** Taux appliqué vers la devise de base du tenant à l'écriture (1 = devise de base). */
+    @Column(name = "taux_vers_base", precision = 18, scale = 8)
+    @Builder.Default
+    private BigDecimal tauxVersBase = BigDecimal.ONE;
+
+    /** Contre-valeur dans la devise de base du tenant (audit). */
+    @Column(name = "montant_base", precision = 14, scale = 2)
+    private BigDecimal montantBase;
 
     @Column(name = "description", length = 500)
     private String description;

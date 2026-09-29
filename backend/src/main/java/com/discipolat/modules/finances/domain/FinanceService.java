@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.propagation.EntityPropagationPublish
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.currency.domain.CurrencyService;
+import com.discipolat.modules.currency.domain.Iso4217CurrencyValidator;
 import com.discipolat.modules.finances.api.FinanceBudgetRequest;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
 import org.springframework.stereotype.Service;
@@ -32,25 +33,32 @@ public class FinanceService {
             "juillet", "août", "septembre", "octobre", "novembre", "décembre"
     };
 
+    /** Défaut historique du produit : jamais une hypothèse structurante, la
+     *  devise réelle est celle du tenant (currency_configs), modifiable. */
+    static final String DEVISE_DEFAUT = "XAF";
+
     private final FinanceTransactionRepository transactionRepository;
     private final FinanceBudgetRepository budgetRepository;
     private final SecurityUtils securityUtils;
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
     private final CurrencyService currencyService;
+    private final Iso4217CurrencyValidator currencyValidator;
 
     public FinanceService(FinanceTransactionRepository transactionRepository,
                           FinanceBudgetRepository budgetRepository,
                           SecurityUtils securityUtils,
                           AuditService auditService,
                           EntityPropagationPublisher propagationPublisher,
-                          CurrencyService currencyService) {
+                          CurrencyService currencyService,
+                          Iso4217CurrencyValidator currencyValidator) {
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
         this.securityUtils = securityUtils;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
         this.currencyService = currencyService;
+        this.currencyValidator = currencyValidator;
     }
 
     /* ----------------------------- Transactions ----------------------------- */
@@ -78,11 +86,20 @@ public class FinanceService {
     }
 
     public Map<String, Object> createTransaction(FinanceTransactionRequest request) {
+        // A3 (M9) — la transaction porte sa devise ISO-4217 exacte et son montant
+        // en unités mineures ; le montant saisi est validé CONTRE la devise du
+        // tenant (rejet comptable des décimales sur XAF/JPY…, pas une préférence).
+        String devise = resolveDeviseTenant();
+        currencyValidator.validateAmount(devise, request.montant());
         FinanceTransaction tx = FinanceTransaction.builder()
                 .type(request.type())
                 .categorie(request.categorie() == null || request.categorie().isBlank()
                         ? "AUTRE" : request.categorie().trim().toUpperCase())
                 .montant(request.montant())
+                .devise(devise)
+                .montantMinor(currencyValidator.toMinorUnits(devise, request.montant()))
+                .tauxVersBase(BigDecimal.ONE)
+                .montantBase(request.montant())
                 .description(request.description())
                 .dateTransaction(request.dateTransaction() != null ? request.dateTransaction() : LocalDate.now())
                 // Contexte système (webhook opérateur) : pas d'utilisateur authentifié.
@@ -104,6 +121,13 @@ public class FinanceService {
         tx.setType(request.type());
         tx.setCategorie(request.categorie() == null || request.categorie().isBlank()
                 ? "AUTRE" : request.categorie().trim().toUpperCase());
+        String devise = tx.getDevise() != null ? tx.getDevise() : resolveDeviseTenant();
+        currencyValidator.validateAmount(devise, request.montant());
+        tx.setDevise(devise);
+        tx.setMontantMinor(currencyValidator.toMinorUnits(devise, request.montant()));
+        if (tx.getTauxVersBase() == null) tx.setTauxVersBase(BigDecimal.ONE);
+        // Taux 1 ⇒ la saisie est dans la devise de base : contre-valeur identique.
+        if (tx.getTauxVersBase().compareTo(BigDecimal.ONE) == 0) tx.setMontantBase(request.montant());
         tx.setMontant(request.montant());
         tx.setDescription(request.description());
         tx.setDateTransaction(request.dateTransaction() != null ? request.dateTransaction() : LocalDate.now());
@@ -277,23 +301,47 @@ public class FinanceService {
         }
     }
 
+    /**
+     * A3 (M9) — Devise de saisie = devise primaire du tenant (currency_configs).
+     * Le repli XAF ne couvre que les cas sans contexte tenant (webhook opérateur)
+     * ou tenant sans configuration : c'est un défaut, pas une contrainte — toute
+     * devise ISO-4217 est configurable par le tenant.
+     */
+    private String resolveDeviseTenant() {
+        try {
+            var primary = currencyService.getPrimaryCurrency();
+            if (primary != null && primary.getCurrencyCode() != null && !primary.getCurrencyCode().isBlank()) {
+                return primary.getCurrencyCode().toUpperCase(Locale.ROOT);
+            }
+        } catch (RuntimeException noTenantContext) {
+            // webhook / tâche système : pas de TenantContext, défaut documenté.
+        }
+        return DEVISE_DEFAUT;
+    }
+
     private Map<String, Object> toMap(FinanceTransaction t) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", t.getId());
         map.put("type", t.getType() != null ? t.getType().name() : "");
         map.put("categorie", t.getCategorie());
         map.put("montant", t.getMontant());
+        // A3 (M9) — audit multi-devises : la devise portée par la ligne prime sur
+        // la devise primaire du tenant (qui peut avoir changé depuis la saisie).
+        map.put("devise", t.getDevise());
+        map.put("montantMinor", t.getMontantMinor());
+        map.put("tauxVersBase", t.getTauxVersBase());
+        map.put("montantBase", t.getMontantBase());
         map.put("description", t.getDescription() == null ? "" : t.getDescription());
         map.put("dateTransaction", t.getDateTransaction() != null ? t.getDateTransaction().toString() : "");
         map.put("createdAt", t.getCreatedAt() != null ? t.getCreatedAt().toString() : "");
-        // P0 #6 — Multi-devise : ajout de la devise et conversion
+        // P0 #6 — Multi-devise : symbole et fuseau du tenant pour l'affichage
         try {
             var primaryCurrency = currencyService.getPrimaryCurrency();
-            map.put("devise", primaryCurrency.getCurrencyCode());
+            if (t.getDevise() == null) map.put("devise", primaryCurrency.getCurrencyCode());
             map.put("deviseSymbole", primaryCurrency.getCurrencySymbol());
             map.put("fuseauHoraire", primaryCurrency.getTimezone());
         } catch (Exception e) {
-            map.put("devise", "XAF");
+            if (t.getDevise() == null) map.put("devise", DEVISE_DEFAUT);
             map.put("deviseSymbole", "FCFA");
         }
         return map;

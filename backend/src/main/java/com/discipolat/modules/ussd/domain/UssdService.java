@@ -1,6 +1,7 @@
 package com.discipolat.modules.ussd.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.currency.domain.CurrencyConfigRepository;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import org.slf4j.Logger;
@@ -21,15 +22,18 @@ public class UssdService {
     private final UssdProperties properties;
     private final PaymentGatewayService paymentGatewayService;
     private final SecurityUtils securityUtils;
+    private final CurrencyConfigRepository currencyConfigRepository;
 
     public UssdService(UssdSessionRepository sessionRepository,
                        UssdProperties properties,
                        PaymentGatewayService paymentGatewayService,
-                       SecurityUtils securityUtils) {
+                       SecurityUtils securityUtils,
+                       CurrencyConfigRepository currencyConfigRepository) {
         this.sessionRepository = sessionRepository;
         this.properties = properties;
         this.paymentGatewayService = paymentGatewayService;
         this.securityUtils = securityUtils;
+        this.currencyConfigRepository = currencyConfigRepository;
     }
 
     public String handleUssdCallback(String sessionId, String phoneNumber, String text, String serviceCode) {
@@ -55,6 +59,25 @@ public class UssdService {
                             .build();
                     return sessionRepository.save(newSession);
                 });
+    }
+
+    /**
+     * A3 (M9) — Devise du tenant pour le canal USSD : devise primaire déclarée,
+     * à défaut XOF (défaut historique des marchés opérateurs intégrés). Le tenant
+     * configure sa devise, l'affichage et l'intention de paiement suivent.
+     */
+    private String deviseDuTenant(String tenantId) {
+        try {
+            if (tenantId != null) {
+                return currencyConfigRepository
+                        .findByTenantIdAndIsPrimaryTrue(UUID.fromString(tenantId))
+                        .map(com.discipolat.modules.currency.domain.CurrencyConfig::getCurrencyCode)
+                        .orElse("XOF");
+            }
+        } catch (RuntimeException malformedOrUnreachable) {
+            // UUID invalide ou repository indisponible : défaut historique assumé.
+        }
+        return "XOF";
     }
 
     private String resolveTenantFromServiceCode(String serviceCode) {
@@ -197,7 +220,8 @@ public class UssdService {
 
         String operator = extractFromJson(ctx, "operator");
         String amount = extractFromJson(ctx, "amount");
-        return "CON Confirmer:\nMontant: " + amount + " XOF\nOp: " + operator + "\nTel: " + phone + "\n1. Confirmer\n2. Annuler";
+        return "CON Confirmer:\nMontant: " + amount + " " + deviseDuTenant(session.getTenantId())
+                + "\nOp: " + operator + "\nTel: " + phone + "\n1. Confirmer\n2. Annuler";
     }
 
     private String handleGivingConfirm(UssdSession session, String text) {
@@ -218,7 +242,9 @@ public class UssdService {
             PaymentIntent intent = new PaymentIntent();
             intent.setOperator(PaymentIntent.Operator.valueOf(operator));
             intent.setAmount(new BigDecimal(amount));
-            intent.setCurrency("XOF");
+            // A3 (M9) — la devise affichée/saisie est celle du tenant, pas un XOF
+            // figé : un canal USSD kényan (M-Pesa) ne peut pas facturer en francs CFA.
+            intent.setCurrency(deviseDuTenant(session.getTenantId()));
             intent.setPhoneNumber(phone);
             intent.setPurpose(PaymentIntent.Purpose.DIME);
             intent.setTenantId(UUID.fromString(session.getTenantId()));

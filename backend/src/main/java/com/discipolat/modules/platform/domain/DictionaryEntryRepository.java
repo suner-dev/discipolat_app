@@ -15,4 +15,8 @@ public interface DictionaryEntryRepository extends JpaRepository<DictionaryEntry
     Optional<DictionaryEntry> findByDictKeyAndCode(String dictKey, String code);
 
     List<DictionaryEntry> findByDictKeyOrderByOrdreAsc(String dictKey);
+
+    boolean existsByTenantId(UUID tenantId);
+
+    List<DictionaryEntry> findByTenantIdOrderByDictKeyAscOrdreAsc(UUID tenantId);
 }

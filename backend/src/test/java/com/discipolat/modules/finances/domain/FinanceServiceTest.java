@@ -41,7 +41,11 @@ class FinanceServiceTest {
     @BeforeEach
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
-        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService, propagationPublisher, currencyService);
+        // Iso4217CurrencyValidator est sans dépendance : instance réelle (pas de mock
+        // d'une règle métier comptable — la validation doit être testée pour de vrai).
+        service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService,
+                propagationPublisher, currencyService,
+                new com.discipolat.modules.currency.domain.Iso4217CurrencyValidator());
     }
 
     private FinanceTransaction tx(UUID id, FinanceTransaction.TransactionType type, String categorie,
@@ -64,7 +68,10 @@ class FinanceServiceTest {
 
         assertThat(result).containsEntry("type", "RECETTE")
                 .containsEntry("categorie", "DIME")
-                .containsEntry("montant", new BigDecimal("1500.00"));
+                .containsEntry("montant", new BigDecimal("1500.00"))
+                // A3 (M9) — la ligne porte sa devise et son unité mineure exacte
+                .containsEntry("devise", "XAF")
+                .containsEntry("montantMinor", 1500L);
         verify(transactionRepository).save(any(FinanceTransaction.class));
         verify(propagationPublisher).publishCreated(eq("FINANCE_TRANSACTION"), any(), any(), anyString());
     }

@@ -162,19 +162,44 @@ public class DictionaryService {
         if (repository.count() > 0) {
             return;
         }
+        seedDefaultsFor(null);
+    }
+
+    /**
+     * A3 (item 10) — Garantit qu'un NOUVEAU tenant possède ses propres entrées
+     * de dictionnaire : les termes religieux et métier (« âme », « disciple »,
+     * « pasteur », « faiseur »…) sont surchargeables par tenant parce que le
+     * tenant possède SA copie éditable. Sans ce seed, le chemin de surcharge
+     * était théorique : un tenant récent n'avait aucune entrée à modifier.
+     * Idempotent : si le tenant a déjà des entrées, on ne touche à rien.
+     */
+    public void seedForTenant(UUID tenantId) {
+        if (tenantId == null) {
+            throw new IllegalArgumentException("tenantId requis pour le seed du dictionnaire");
+        }
+        if (repository.existsByTenantId(tenantId)) {
+            return;
+        }
+        seedDefaultsFor(tenantId);
+    }
+
+    private void seedDefaultsFor(UUID tenantId) {
         Map<String, List<Object[]>> defaults = defaultSeedData();
         for (Map.Entry<String, List<Object[]>> group : defaults.entrySet()) {
             int ordre = 1;
             for (Object[] row : group.getValue()) {
-                repository.save(DictionaryEntry.builder()
+                DictionaryEntry.DictionaryEntryBuilder builder = DictionaryEntry.builder()
                         .dictKey(group.getKey())
                         .code((String) row[0])
                         .label((String) row[1])
                         .color((String) row[2])
                         .ordre(ordre++)
                         .actif(true)
-                        .isDefault(true)
-                        .build());
+                        .isDefault(true);
+                if (tenantId != null) {
+                    builder.tenantId(tenantId);
+                }
+                repository.save(builder.build());
             }
         }
     }

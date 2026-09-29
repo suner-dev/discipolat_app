@@ -195,6 +195,48 @@ app:
     simulate-confirm-delay-non-manager-ms: ${PAYMENTS_SIMULATE_CONFIRM_DELAY_NON_MANAGER_MS:0}
     # Périodicité du balayage des intentions en attente (ms).
     simulate-scan-interval-ms: ${PAYMENTS_SIMULATE_SCAN_INTERVAL_MS:5000}
+    # ===== A3 (M8) — Canaux de DÉCAISSEMENT (payouts) =====
+    # Chaque canal est désactivé par défaut (fail-closed) : enabled=true SANS
+    # credentials réels donne un disabledReason explicite dans le registre, et
+    # un initiate() qui refuse honnêtement (503) — jamais un faux succès.
+    # Les montants sont en unités mineures ISO-4217 ; webhook HMAC fail-closed.
+    providers:
+      stripe:      # Stripe Transfers (compte Connect/standard) — collect vs payout distincts
+        enabled: ${PAYOUT_STRIPE_ENABLED:false}
+        api-key: ${PAYOUT_STRIPE_API_KEY:}
+        api-secret: ${PAYOUT_STRIPE_API_SECRET:}
+        base-url: ${PAYOUT_STRIPE_BASE_URL:}
+        webhook-secret: ${PAYOUT_STRIPE_WEBHOOK_SECRET:}
+      paypal:      # PayPal Payouts v1 (client credentials)
+        enabled: ${PAYOUT_PAYPAL_ENABLED:false}
+        api-key: ${PAYOUT_PAYPAL_CLIENT_ID:}
+        api-secret: ${PAYOUT_PAYPAL_CLIENT_SECRET:}
+        base-url: ${PAYOUT_PAYPAL_BASE_URL:}
+        webhook-secret: ${PAYOUT_PAYPAL_WEBHOOK_SECRET:}
+      sepa:        # Prélèvement/virement SEPA via connecteur bancaire (IBAN mod-97 validé)
+        enabled: ${PAYOUT_SEPA_ENABLED:false}
+        api-key: ${PAYOUT_SEPA_API_KEY:}
+        api-secret: ${PAYOUT_SEPA_API_SECRET:}
+        base-url: ${PAYOUT_SEPA_BASE_URL:}
+        webhook-secret: ${PAYOUT_SEPA_WEBHOOK_SECRET:}
+      bank:        # Virement bancaire manuel : références E2E générées, statut par rapprochement
+        enabled: ${PAYOUT_BANK_ENABLED:false}
+      # Mobile Money : l'API de DÉCAISSEMENT opérateur est un produit distinct de
+      # la collecte (module mobile-money ci-dessus). Ces drapeaux exposent l'état
+      # réel ; tant que le compte disbursement n'est pas branché, initiate() répond
+      # 503 PAYOUT_DISBURSEMENT_NOT_INTEGRATED (honnête, jamais simulé).
+      mtn:
+        enabled: ${PAYOUT_MTN_ENABLED:false}
+      orange:
+        enabled: ${PAYOUT_ORANGE_ENABLED:false}
+      mpesa:
+        enabled: ${PAYOUT_MPESA_ENABLED:false}
+  scaling:
+    # A3 (M7) — taille de l'anneau de sharding : shard = hash(tenantId) % N.
+    # 1 = routage unique (comportement actuel, zéro régression). Changer N est
+    # une OPÉRATION PLANIFIÉE (re-sharding), pas un simple redémarrage :
+    # voir docs/SCALING.md Niveau 3.
+    shard-count: ${SCALING_SHARD_COUNT:1}
   stripe:
     # Facturation SaaS par abonnement (carte bancaire) — DÉSACTIVÉ par défaut :
     # s'active dès que STRIPE_SECRET_KEY est fournie (clé sk_test/... ou sk_live/...).
