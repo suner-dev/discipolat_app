@@ -1,0 +1,593 @@
+diff --git a/.github/workflows/backup-postgres.yml b/.github/workflows/backup-postgres.yml
+index f5fbcf5e..3b9f9ab4 100644
+--- a/.github/workflows/backup-postgres.yml
++++ b/.github/workflows/backup-postgres.yml
+@@ -1,30 +1,27 @@
+-name: Backup PostgreSQL (mensuel)
++name: Backup PostgreSQL (DÉPRÉCIÉ — ne pas exécuter)
+ 
+ # ============================================================
+-# Backup mensuel de la base PostgreSQL Render (plan Free).
++# ⛔ DÉPRÉCIÉ depuis le passage des bases en plan starter + réseau
++# interne uniquement (ipAllowList retirée de render.yaml).
+ #
+-# Contexte :
+-# - Les bases Free Render expirent 30 jours après création et
+-#   n'ont AUCUN backup automatique → le seul moyen de sauvegarder
+-#   est un export pg_dump EXTERNE (DEPLOYMENT.md §8.6 Option B).
+-# - Ce workflow effectue l'export mensuel et le stocke en tant
+-#   qu'artifact GitHub Actions (90 jours de rétention).
++# Raison : ce workflow se connectait via l'External Database URL,
++# devenue inaccessible par conception (la base n'est plus joignable
++# depuis Internet — c'était l'objectif). La sauvegarde de référence
++# est désormais celle de Render : backups automatiques QUOTIDIENS
++# du plan starter (Dashboard → Databases → Backups → Restore).
+ #
+-# ⚠️ SÉCURITÉ — le dump contient des DONNÉES PERSONNELLES
+-#   (âmes, familles, emails) et le dépôt est PUBLIC :
+-#   le fichier est CHIFFRÉ (AES-256, openssl) AVANT l'upload.
+-#   Sans la passphrase, l'artifact est inutilisable.
+-#   Ne jamais logger l'URL de la base ni le contenu du dump.
++# Conserver ce fichier comme archive de la procédure de chiffrement
++# des dumps ; ne réactiver un dump externe QUE vers un object
++# storage chiffré côté client (R2/B2), jamais via une base ouverte.
+ #
+-# Secrets GitHub requis (Settings → Secrets and variables → Actions) :
+-#   RENDER_DB_URL         : External Database URL de discipolat-db
+-#     Dashboard → Databases → discipolat-db → Connect →
+-#     External Database URL (⚠️ PAS l'Internal URL, inaccessible
+-#     hors du réseau privé Render)
+-#   BACKUP_ENCRYPTION_KEY : passphrase de chiffrement AES-256
+-#     Génération : openssl rand -base64 32
++# Contexte d'origine (plan Free, sans backup automatique) :
++# - Export mensuel pg_dump EXTERNE (DEPLOYMENT.md §8.6 Option B),
++#   chiffré AES-256 (openssl) AVANT upload en artifact GitHub (90 j).
++# - Le dump contenait des DONNÉES PERSONNELLES (âmes, familles,
++#   emails) et le dépôt est PUBLIC : ne jamais logger l'URL de la
++#   base ni le contenu du dump.
+ #
+-# Déchiffrement d'un artifact téléchargé :
++# Déchiffrement d'un ancien artifact téléchargé :
+ #   export ENC_KEY="<passphrase>"
+ #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+ #     -pass env:ENC_KEY \
+@@ -32,10 +29,7 @@ name: Backup PostgreSQL (mensuel)
+ # ============================================================
+ 
+ on:
+-  schedule:
+-    # 1er de chaque mois à 02:00 UTC
+-    - cron: '0 2 1 * *'
+-  workflow_dispatch: # déclenchement manuel depuis l'onglet Actions
++  workflow_dispatch: # désactivé en pratique : l'External URL n'existe plus
+ 
+ permissions:
+   contents: read
+diff --git a/backend/src/main/java/com/discipolat/modules/payments/api/PaymentController.java b/backend/src/main/java/com/discipolat/modules/payments/api/PaymentController.java
+index d3aae071..0629791b 100644
+--- a/backend/src/main/java/com/discipolat/modules/payments/api/PaymentController.java
++++ b/backend/src/main/java/com/discipolat/modules/payments/api/PaymentController.java
+@@ -24,7 +24,7 @@ public class PaymentController {
+     private final TaxReceiptService taxReceiptService;
+     private final com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService;
+ 
+-    /** Secret partagé du webhook opérateur (vide en dev → endpoint ouvert). */
++    /** Secret partagé du webhook opérateur (vide → endpoint fermé en 503, jamais ouvert). */
+     @Value("${app.payments.webhook-secret:}")
+     private String webhookSecret;
+ 
+diff --git a/backend/src/main/java/com/discipolat/modules/users/domain/User.java b/backend/src/main/java/com/discipolat/modules/users/domain/User.java
+index 467efb95..0b1d2084 100644
+--- a/backend/src/main/java/com/discipolat/modules/users/domain/User.java
++++ b/backend/src/main/java/com/discipolat/modules/users/domain/User.java
+@@ -91,9 +91,15 @@ public class User {
+     @Column(name = "two_factor_enabled", nullable = false)
+     private boolean twoFactorEnabled;
+ 
++    // WRITE_ONLY : le secret TOTP ne doit JAMAIS sortir par une réponse JSON.
++    // Le secret d'activation est livré uniquement via TwoFactorSetupResponse
++    // (TwoFactorController) ; l'entité User est imbriquée dans d'autres
++    // entités sérialisées brutes (santé, transfers) → fuite sinon.
++    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+     @Column(name = "two_factor_secret")
+     private String twoFactorSecret;
+ 
++    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+     @Column(name = "two_factor_backup_codes")
+     private String twoFactorBackupCodes;
+ 
+diff --git a/backend/src/main/java/com/discipolat/modules/ussd/api/UssdController.java b/backend/src/main/java/com/discipolat/modules/ussd/api/UssdController.java
+index 5c24a2e3..ccf66a19 100644
+--- a/backend/src/main/java/com/discipolat/modules/ussd/api/UssdController.java
++++ b/backend/src/main/java/com/discipolat/modules/ussd/api/UssdController.java
+@@ -65,12 +65,16 @@ public class UssdController {
+             return ResponseEntity.ok("END Service non disponible. Réessayez plus tard.");
+         }
+ 
+-        // Validation du secret webhook (si configuré)
+-        if (properties.getWebhookSecret() != null && !properties.getWebhookSecret().isBlank()) {
+-            if (!properties.getWebhookSecret().equals(providedSecret)) {
+-                log.warn("[USSD] Callback avec secret invalide — sessionId={}", sessionId);
+-                return ResponseEntity.status(401).body("END Accès refusé.");
+-            }
++        // SÉCURITÉ (fail-closed, même pattern que PaymentController#webhook) :
++        // sans secret configuré, l'endpoint refuse toute requête — jamais ouvert.
++        String expectedSecret = properties.getWebhookSecret();
++        if (expectedSecret == null || expectedSecret.isBlank()) {
++            log.warn("[USSD] Callback rejeté — app.ussd.webhook-secret non configuré (fail-closed)");
++            return ResponseEntity.status(503).body("END Service non disponible. Réessayez plus tard.");
++        }
++        if (!expectedSecret.equals(providedSecret)) {
++            log.warn("[USSD] Callback avec secret invalide — sessionId={}", sessionId);
++            return ResponseEntity.status(401).body("END Accès refusé.");
+         }
+ 
+         log.info("[USSD] Callback — session={}, phone={}, text={}, network={}",
+diff --git a/backend/src/test/java/com/discipolat/modules/users/domain/UserSecretSerializationTest.java b/backend/src/test/java/com/discipolat/modules/users/domain/UserSecretSerializationTest.java
+new file mode 100644
+index 00000000..9ef02923
+--- /dev/null
++++ b/backend/src/test/java/com/discipolat/modules/users/domain/UserSecretSerializationTest.java
+@@ -0,0 +1,92 @@
++package com.discipolat.modules.users.domain;
++
++import com.discipolat.common.domain.UserRole;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import org.junit.jupiter.api.DisplayName;
++import org.junit.jupiter.api.Test;
++
++import java.util.Map;
++import java.util.Set;
++import java.util.UUID;
++
++import static org.assertj.core.api.Assertions.assertThat;
++
++/**
++ * Non-régression du lot sécurité « secrets 2FA en WRITE_ONLY » (campagne hors
++ * périmètre onboarding, récupérée dans {@code main} — TODO reprise §0.2/§1.2).
++ *
++ * <p>Ce qui est verrouillé ici n'est pas l'annotation sur le champ nu — elle
++ * est déjà testée implicitement par son existence — mais le comportement dans
++ * les <b>serialisations imbriquées</b> : l'entité {@code User} est rendue
++ * brute dans des réponses de santé et de transfers, embarquée dans d'autres
++ * objets. Un {@code WRITE_ONLY} positionné trop tard, retiré par un refactor
++ * (Lombok, nouveau mixIn, {@code @JsonView}) ferait sortir
++ * {@code two_factor_secret} sans aucun test rouge. Les trois formes ci-dessous
++ * (entité seule, entité dans une Map — le cas « réponse brute » réel —, entité
++ * dans une collection) couvrent les chemins Jackson qui contournent
++ * historiquement ce genre de garde.
++ */
++class UserSecretSerializationTest {
++
++    private static final String SECRET = "JBSWY3DPEHPK3PXP-TOTP-SECRET";
++    private static final String BACKUP_CODES = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
++
++    private final ObjectMapper objectMapper = new ObjectMapper();
++
++    private User userWithSecrets() {
++        return User.builder()
++                .id(UUID.randomUUID())
++                .tenantId(UUID.randomUUID())
++                .email("owner@eglise.test")
++                .passwordHash("$2a$10$hash")
++                .firstName("Paul")
++                .lastName("Chedi")
++                .role(UserRole.PASTEUR)
++                .roles(Set.of(UserRole.PASTEUR))
++                .statut(UserStatus.ACTIVE)
++                .twoFactorEnabled(true)
++                .twoFactorSecret(SECRET)
++                .twoFactorBackupCodes(BACKUP_CODES)
++                .build();
++    }
++
++    @Test
++    @DisplayName("User sérialisé seul : aucun secret 2FA ni hash de mot de passe ne sortent")
++    void userAloneLeaksNoSecret() throws Exception {
++        String json = objectMapper.writeValueAsString(userWithSecrets());
++
++        assertThat(json).doesNotContain(SECRET);
++        assertThat(json).doesNotContain(BACKUP_CODES);
++        assertThat(json).doesNotContain("$2a$10$hash");
++        assertThat(json).doesNotContain("two_factor_secret");
++        // Nom Jackson du champ (camelCase) : c'est la clé qui apparaîtrait.
++        assertThat(json).doesNotContain("\"twoFactorSecret\"");
++        assertThat(json).doesNotContain("\"twoFactorBackupCodes\"");
++        assertThat(json).doesNotContain("\"passwordHash\"");
++    }
++
++    @Test
++    @DisplayName("User imbriqué dans une Map (réponses brutes santé/transfers) : toujours aucun secret")
++    void nestedUserInMapLeaksNoSecret() throws Exception {
++        Map<String, Object> rawResponse = Map.of(
++                "status", "UP",
++                "responsable", userWithSecrets());
++
++        String json = objectMapper.writeValueAsString(rawResponse);
++
++        assertThat(json).doesNotContain(SECRET);
++        assertThat(json).doesNotContain(BACKUP_CODES);
++        assertThat(json).doesNotContain("\"twoFactorSecret\"");
++        assertThat(json).doesNotContain("\"twoFactorBackupCodes\"");
++    }
++
++    @Test
++    @DisplayName("User dans une collection (listés bruts) : toujours aucun secret")
++    void userInCollectionLeaksNoSecret() throws Exception {
++        String json = objectMapper.writeValueAsString(
++                Map.of("members", java.util.List.of(userWithSecrets(), userWithSecrets())));
++
++        assertThat(json).doesNotContain(SECRET);
++        assertThat(json).doesNotContain("\"twoFactorSecret\"");
++    }
++}
+diff --git a/mobile/lib/data/local/offline_sync_manager.dart b/mobile/lib/data/local/offline_sync_manager.dart
+index 26ac4148..398e4270 100644
+--- a/mobile/lib/data/local/offline_sync_manager.dart
++++ b/mobile/lib/data/local/offline_sync_manager.dart
+@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import '../../tenant_config.dart';
+ import '../services/api_service.dart';
+ import 'database.dart';
++import 'sync_lock.dart';
++import 'sync_service.dart' show SyncService;
+ 
+ /// Manages automatic sync of pending items when connectivity is restored.
+ /// Handles presences, discipline, prayers, messages, and badge evaluations offline.
+@@ -35,7 +37,7 @@ class OfflineSyncManager {
+           r == ConnectivityResult.mobile ||
+           r == ConnectivityResult.ethernet);
+       if (isOnline) {
+-        _syncPendingItems();
++        syncPendingItems();
+       }
+     });
+     _refreshPendingCount();
+@@ -252,7 +254,10 @@ class OfflineSyncManager {
+   }
+ 
+   /// Manually trigger sync of all pending items
+-  Future<OfflineSyncResult> syncPendingItems() => _syncPendingItems();
++  /// Verrou partagé avec SyncService : les deux moteurs drainent la même
++  /// file et ne doivent jamais l'envoyer en parallèle (doubles POST).
++  Future<OfflineSyncResult> syncPendingItems() =>
++      syncFlushLock.run(_syncPendingItems);
+ 
+   Future<OfflineSyncResult> _syncPendingItems() async {
+     if (_isSyncing) return OfflineSyncResult(isSyncing: true);
+@@ -281,7 +286,22 @@ class OfflineSyncManager {
+ 
+       try {
+         final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+-        await _api.post(item.endpoint, data: payload);
++        // Items legacy : l'ancien endpoint d'export (GET, lecture seule)
++        // est redirigé vers le vrai endpoint d'écriture POST.
++        final endpoint = SyncService.migrateEndpoint(item.endpoint);
++        // Même injection que SyncService : POST /reports/maker-weekly exige
++        // faiseurId (@NotNull) — résolu depuis le cache local des âmes.
++        if (endpoint.contains('/reports/maker-weekly') &&
++            payload['faiseurId'] == null &&
++            payload['ameId'] is String) {
++          final faiseurId = await SyncService.resolveFaiseurId(
++              _db, tenantId, payload['ameId'] as String);
++          if (faiseurId == null) {
++            throw StateError('faiseurId introuvable pour ame ${payload['ameId']}');
++          }
++          payload['faiseurId'] = faiseurId;
++        }
++        await _api.post(endpoint, data: payload);
+         await _db.removeSyncItem(item.id);
+         synced++;
+         debugPrint('[OfflineSync] Synced: ${item.endpoint}');
+diff --git a/mobile/lib/data/local/sync_lock.dart b/mobile/lib/data/local/sync_lock.dart
+new file mode 100644
+index 00000000..bccdf3f0
+--- /dev/null
++++ b/mobile/lib/data/local/sync_lock.dart
+@@ -0,0 +1,24 @@
++/// Verrou asynchrone global de vidange de la file de synchronisation.
++///
++/// Deux moteurs drainent la même `SyncQueueTable` (SyncService — déclenché
++/// par le listener de connectivité de main.dart — et OfflineSyncManager —
++/// déclenché par son propre listener et le bouton du bandeau hors-ligne).
++/// Sans exclusion croisée, les deux peuvent envoyer le MÊME item
++/// simultanément → doubles POST (données de discipline/présences créées
++/// deux fois côté serveur). Ce verrou sérialise les vidanges ; le second
++/// moteur trouve alors une file vide et ne renvoie rien.
++class SyncFlushLock {
++  Future<void> _tail = Future<void>.value();
++
++  /// Exécute [action] après toutes les actions précédemment en file.
++  Future<T> run<T>(Future<T> Function() action) {
++    final result = _tail.then((_) => action());
++    // La chaîne survit à l'échec de l'action : une erreur ne doit pas
++    // bloquer définitivement les vidanges suivantes.
++    _tail = result.then((_) {}, onError: (_) {});
++    return result;
++  }
++}
++
++/// Instance globale partagée par les deux moteurs de sync.
++final syncFlushLock = SyncFlushLock();
+diff --git a/mobile/lib/data/local/sync_service.dart b/mobile/lib/data/local/sync_service.dart
+index 70355409..d84d1cfc 100644
+--- a/mobile/lib/data/local/sync_service.dart
++++ b/mobile/lib/data/local/sync_service.dart
+@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ import 'package:uuid/uuid.dart';
+ import '../services/api_service.dart';
+ import 'database.dart';
++import 'sync_lock.dart';
+ import '../../tenant_config.dart';
+ 
+ class SyncService {
+@@ -107,6 +108,28 @@ class SyncService {
+     return draftId;
+   }
+ 
++  /// Résout le faiseur assigné à une âme depuis le cache local Drift.
++  /// Requis par POST /reports/maker-weekly (champ `faiseurId` @NotNull).
++  /// Statique et publique : partagée avec OfflineSyncManager.
++  static Future<String?> resolveFaiseurId(
++      AppDatabase db, String tenantId, String ameId) async {
++    final souls = await db.getLocalSouls(tenantId);
++    for (final s in souls) {
++      if (s.id == ameId) return s.faiseurId;
++    }
++    return null;
++  }
++
++  Future<String?> _resolveFaiseurId(String tenantId, String ameId) =>
++      resolveFaiseurId(_db, tenantId, ameId);
++
++  /// Normalise l'endpoint d'un item en file : les items legacy pointaient
++  /// vers GET /reports/export/maker-weekly (un export CSV LECTURE SEULE —
++  /// les rapports n'étaient jamais persistés). Ils sont redirigés vers le
++  /// vrai endpoint d'écriture POST /reports/maker-weekly.
++  static String migrateEndpoint(String endpoint) =>
++      endpoint.replaceAll('/reports/export/maker-weekly', '/reports/maker-weekly');
++
+   Future<void> _submitToApi({
+     required String ameId,
+     required String semaine,
+@@ -119,14 +142,25 @@ class SyncService {
+     int nbMaintenus = 0,
+     List<String>? fichierIds,
+   }) async {
+-    await _api.get('/reports/export/maker-weekly', params: {
++    final tenantId = await _tenant();
++    final faiseurId = await _resolveFaiseurId(tenantId, ameId);
++    if (faiseurId == null) {
++      // Sans faiseur connu (âme pas encore en cache local), on refuse le
++      // send direct : l'appelant met l'item en file, qui sera rejouée
++      // une fois les âmes synchronisées. Jamais de perte silencieuse.
++      throw StateError('faiseurId introuvable pour ame $ameId — rapport en file');
++    }
++    await _api.post('/reports/maker-weekly', data: {
++      'faiseurId': faiseurId,
+       'ameId': ameId,
+       'semaine': semaine,
+-      'presencesParCulte': jsonEncode(presencesParCulte),
+-      'absenceRaison': absenceRaison,
+-      'absenceCommentaire': absenceCommentaire?.isNotEmpty == true ? absenceCommentaire : null,
+-      'difficultes': difficultes?.isNotEmpty == true ? difficultes : null,
+-      'notesComplementaires': notesComplementaires?.isNotEmpty == true ? notesComplementaires : null,
++      'presencesParCulte': presencesParCulte,
++      if (absenceRaison != null && absenceRaison.isNotEmpty) 'absenceRaison': absenceRaison,
++      if (absenceCommentaire != null && absenceCommentaire.isNotEmpty)
++        'absenceCommentaire': absenceCommentaire,
++      if (difficultes != null && difficultes.isNotEmpty) 'difficultes': difficultes,
++      if (notesComplementaires != null && notesComplementaires.isNotEmpty)
++        'notesComplementaires': notesComplementaires,
+       'nbSorties': nbSorties,
+       'nbMaintenus': nbMaintenus,
+       if (fichierIds != null && fichierIds.isNotEmpty) 'fichierIds': fichierIds,
+@@ -137,11 +171,7 @@ class SyncService {
+   Future<bool> submitQueuedItem(SyncQueueItem item) async {
+     try {
+       final payload = jsonDecode(item.payload) as Map<String, dynamic>;
+-      if (item.endpoint.contains('/reports/export')) {
+-        await _api.get(item.endpoint, params: payload);
+-      } else {
+-        await _api.post(item.endpoint, data: payload);
+-      }
++      await _submitPayload(item, payload, await _tenant());
+       await _db.removeSyncItem(item.id);
+       return true;
+     } catch (e) {
+@@ -150,13 +180,40 @@ class SyncService {
+     }
+   }
+ 
++  /// Envoie la payload d'un item en file vers le bon endpoint.
++  /// Cas des rapports : legacy `/reports/export/...` → POST maker-weekly,
++  /// avec injection du `faiseurId` résolu depuis le cache local si absent.
++  Future<void> _submitPayload(
++      SyncQueueItem item, Map<String, dynamic> payload, String tenantId) async {
++    var endpoint = migrateEndpoint(item.endpoint);
++    if (endpoint.contains('/reports/maker-weekly') &&
++        payload['faiseurId'] == null &&
++        payload['ameId'] is String) {
++      final faiseurId = await _resolveFaiseurId(tenantId, payload['ameId'] as String);
++      if (faiseurId == null) {
++        // retryCount ≥ 3 → l'item reste en file « définitivement en échec »
++        // au lieu d'être supprimé : aucune perte silencieuse.
++        throw StateError('faiseurId introuvable pour ame ${payload['ameId']}');
++      }
++      payload['faiseurId'] = faiseurId;
++    }
++    await _api.post(endpoint, data: payload);
++  }
++
+   Future<void> _queueForSync(String draftId, Map<String, dynamic> payload) async {
+     final tenantId = await _tenant();
++    // Injecter le faiseur dès la mise en file quand le cache local le permet :
++    // la rejouée ultérieure n'aura pas à le re-résoudre.
++    final ameId = payload['ameId'] as String?;
++    if (ameId != null && payload['faiseurId'] == null) {
++      final faiseurId = await _resolveFaiseurId(tenantId, ameId);
++      if (faiseurId != null) payload['faiseurId'] = faiseurId;
++    }
+     await _db.addToSyncQueue(SyncQueueItem(
+       id: const Uuid().v4(),
+       tenantId: tenantId,
+       operation: 'CREATE',
+-      endpoint: '/reports/export/maker-weekly',
++      endpoint: '/reports/maker-weekly',
+       payload: jsonEncode(payload),
+       createdAt: DateTime.now().toIso8601String(),
+       retryCount: 0,
+@@ -169,7 +226,12 @@ class SyncService {
+   /// Synchronise la file d'attente du tenant courant uniquement.
+   ///
+   /// Handles retry logic, exponential backoff, and tenant-aware filtering.
+-  Future<SyncResult> syncPending() async {
++  Future<SyncResult> syncPending() =>
++      // Verrou partagé avec OfflineSyncManager : empêche le double envoi
++      // des mêmes items par les deux moteurs simultanés.
++      syncFlushLock.run(_syncPendingLocked);
++
++  Future<SyncResult> _syncPendingLocked() async {
+     if (_isSyncing) return SyncResult(isSyncing: true);
+     _isSyncing = true;
+ 
+@@ -203,11 +265,7 @@ class SyncService {
+           payload['orgId'] = TenantConfig.currentOrgId;
+         }
+ 
+-        if (item.endpoint.contains('/reports/export')) {
+-          await _api.get(item.endpoint, params: payload);
+-        } else {
+-          await _api.post(item.endpoint, data: payload);
+-        }
++        await _submitPayload(item, payload, tenantId);
+         await _db.removeSyncItem(item.id);
+         synced++;
+       } catch (e) {
+diff --git a/render.yaml b/render.yaml
+index 596fb25b..78247a06 100644
+--- a/render.yaml
++++ b/render.yaml
+@@ -12,37 +12,31 @@ databases:
+     databaseName: discipolat
+     user: discipolat
+     region: frankfurt
+-    # NB: `plan` est volontairement OMIS (voir DEPLOYMENT.md §8.6) :
+-    # - nouvelle base → Render utilise starter par défaut ;
+-    # - base existante → Render CONSERVE le type d'instance actuel.
+-    # Cela évite tout conflit lors d'un re-sync Blueprint après un
+-    # upgrade en Dashboard (une base payante ne peut pas repasser en free).
++    # Plan Starter : backups automatiques QUOTIDIENS côté Render (plan Free :
++    # aucun backup, expiration à 30 jours). Indispensable avant tout pilote
++    # avec des données d'églises réelles.
++    plan: starter
+     version: "16"
+-    postgresMajorVersion: 16
+-    ipAllowList:
+-      - source: 0.0.0.0/0
+-        description: everywhere
++    postgresMajorVersion: "16"
++    # ipAllowList VOLONTAIREMENT ABSENTE → accès réservé aux services Render
++    # du même région (réseau interne). Les dumps externes (ancien workflow
++    # backup-postgres.yml) ne sont plus possibles : la sauvegarde de référence
++    # est celle de Render. Restauration = procédure documentée DEPLOYMENT.md.
+ 
+   # ============================================================
+   # BÊTA-TESTING PUBLIC (V50) — base ISOLÉE de la production
+   # ============================================================
+   # Les testeurs externes n'ont JAMAIS accès aux données réelles :
+   # l'environnement bêta possède sa propre base (données fictives).
+-  #
+-  # ⚠️ Limite du plan Free Render : 1 base PostgreSQL gratuite par
+-  # workspace. Si `discipolat-db` est déjà gratuite, cette base ne
+-  # pourra pas être provisionnée gratuitement → créer la base
+-  # manuellement (plan Starter ~7 $/mois recommandé) ou passer la
+-  # base existante en payant (voir DEPLOYMENT.md §Bêta).
++  # Même politique de sécurité que la prod : réseau interne uniquement
++  # (pas d'ipAllowList) + backups automatiques via le plan starter.
+   - name: discipolat-beta-db
+     databaseName: discipolat_beta
+     user: discipolat_beta
+     region: frankfurt
++    plan: starter
+     version: "16"
+-    postgresMajorVersion: 16
+-    ipAllowList:
+-      - source: 0.0.0.0/0
+-        description: everywhere
++    postgresMajorVersion: "16"
+ 
+ redis:
+   - name: discipolat-redis
+diff --git a/scripts/bootstrap_prod.sql b/scripts/bootstrap_prod.sql
+new file mode 100644
+index 00000000..ffe3fbb6
+--- /dev/null
++++ b/scripts/bootstrap_prod.sql
+@@ -0,0 +1,66 @@
++-- Bootstrap prod réel : purge des données de test seedées par Flyway (V2/V4/V5..),
++-- puis insertion d'un tenant applicatif + d'un admin réel.
++BEGIN;
++
++-- Ordre children -> parents pour respecter les FK.
++TRUNCATE TABLE
++    event_registrations,
++    soul_notes,
++    soul_departments,
++    user_departments,
++    member_departments,
++    member_presences,
++    family_reports,
++    maker_reports,
++    prayers,
++    events,
++    "event",
++    legacy_events,
++    objectives,
++    badges,
++    alerts,
++    courses,
++    custom_field_values,
++    families,
++    family_department_history,
++    departments,
++    souls,
++    user_roles,
++    users
++    CASCADE;
++
++-- Admin réel (bcrypt 12 du mot de passe Discipolat@2026).
++WITH new_user AS (
++    INSERT INTO users (
++        email, password_hash, first_name, last_name,
++        role, active_role, statut, tenant_id, est_chef_de_famille, deleted, failed_login_attempts
++    ) VALUES (
++        'arise@discipolat.io',
++        '$2b$12$yd.OfgASf8klsSuyVKpTKuqpPf1Ouaymkn0rVwZSJiT..o1.sjTXq',
++        'Arise', 'KABULO',
++        'ADMIN', 'ADMIN', 'ACTIVE',
++        '00000000-0000-0000-0000-000000000001',
++        false, false, 0
++    )
++    RETURNING id
++)
++INSERT INTO user_roles (user_id, role, tenant_id)
++SELECT id, 'ADMIN', '00000000-0000-0000-0000-000000000001' FROM new_user;
++
++INSERT INTO tenant_settings (tenant_id, business_name, slogan)
++SELECT '00000000-0000-0000-0000-000000000001', 'Discipolat', 'Église locale'
++WHERE NOT EXISTS (
++    SELECT 1 FROM tenant_settings WHERE tenant_id = '00000000-0000-0000-0000-000000000001'
++);
++
++UPDATE tenants SET name = 'Discipolat', slug = 'discipolat'
++WHERE id = '00000000-0000-0000-0000-000000000001';
++
++COMMIT;
++
++SELECT 'users' t, count(*) FROM users
++UNION ALL SELECT 'user_roles', count(*) FROM user_roles
++UNION ALL SELECT 'souls', count(*) FROM souls
++UNION ALL SELECT 'families', count(*) FROM families
++UNION ALL SELECT 'departments', count(*) FROM departments
++UNION ALL SELECT 'prayers', count(*) FROM prayers;
