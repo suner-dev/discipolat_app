@@ -194,7 +194,21 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
+    <!-- P0 (A1) : Notifications push Firebase Cloud Messaging (SDK admin).
+         Version non figee : elle suit la gestion de dependances de Spring Boot.
+         Le service account n'est JAMAIS dans une variable d'environnement en
+         clair ni versionne (voir .gitignore). -->
+    <dependency>
+        <groupId>com.google.firebase</groupId>
+        <artifactId>firebase-admin</artifactId>
+        <!-- Spring Boot 3.4 ne gere pas la version de firebase-admin dans son
+             dependency management : elle doit etre fixee ici. Version 9.4.3,
+             celle presente dans le cache local. Ne pas retrograder sans
+             verifier la compatibilite avec google-auth-library. -->
+        <version>9.4.3</version>
+    </dependency>
+
+</dependencies>
 
     <build>
         <plugins>

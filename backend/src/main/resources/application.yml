@@ -88,6 +88,57 @@ app:
     # Wildcards supportés via setAllowedOriginPatterns (ex. tunnels ngrok / cloudflared)
     allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173,https://*.ngrok-free.dev,https://*.ngrok.io,https://*.trycloudflare.com}
   frontend-url: ${FRONTEND_URL_BASE:http://localhost:5173}
+  # ---------------------------------------------------------------------
+  # A1 (M1 + M3) — Notifications push Firebase Cloud Messaging
+  # ---------------------------------------------------------------------
+  # Par defaut DESACTIVE et en DRY-RUN : aucun envoi reel tant que le service
+  # account n'est pas fourni. Le service account est lu depuis un FICHIER
+  # (jamais une variable d'environnement en clair, jamais versionne).
+  # Quand enabled=false, NoOpPushGateway est selectionne et journalise un
+  # AVERTISSEMENT UNE SEULE fois au demarrage : les push sont VOLONTAIREMENT
+  # perdus, ce n'est jamais un echec silencieux. Etat expose par
+  # GET /api/v1/notifications/push-status pour que l'UI et le mobile puissent
+  # afficher un etat honnete.
+  push:
+    enabled: ${APP_PUSH_ENABLED:false}
+    credentials-path: ${APP_PUSH_CREDENTIALS_PATH:}
+    # true = journalise la charge utile au lieu d'envoyer. Indispensable avant
+    # de disposer de vraies credentials.
+    dry-run: ${APP_PUSH_DRY_RUN:true}
+
+  # ---------------------------------------------------------------------
+  # A4 (M5 + M6) — Configuration honnete de l'IA et de la reconnaissance vocale
+  # ---------------------------------------------------------------------
+  # M6 : « aucune IA disponible » doit etre distinguable de « IA cassee ».
+  # Tant que enabled=false, AUCUN appel n'est effectue et OllamaHealth
+  # signale la cle manquante ; les chemins IA doivent repondre
+  # 503 AI_NOT_CONFIGURED plutot qu'une erreur de connexion.
+  ollama:
+    enabled: ${OLLAMA_ENABLED:false}
+    url: ${OLLAMA_URL:}
+    model: ${OLLAMA_MODEL:llama3}
+    timeout: ${OLLAMA_TIMEOUT:30s}
+  # M5 : la reconnaissance vocale etait ABSENTE de la configuration alors que
+  # des features la referencent. Sans api-url + api-key, le fournisseur reste
+  # « non configure » et repond 503 STT_NOT_CONFIGURED — aucune transcription
+  # n'est inventee. La cle n'est JAMAIS journalisee (masquee par toString).
+  speech:
+    enabled: ${APP_SPEECH_ENABLED:false}
+    api-url: ${APP_SPEECH_API_URL:}
+    api-key: ${APP_SPEECH_API_KEY:}
+    model: ${APP_SPEECH_MODEL:whisper-1}
+    timeout: ${APP_SPEECH_TIMEOUT:60s}
+
+  # ---------------------------------------------------------------------
+  # A2 (M2) — Sauvegardes applicatives
+  # ---------------------------------------------------------------------
+  # Racine de stockage des archives. Relus par un tenant dans son propre
+  # sous-repertoire ; les noms de fichiers sont valides (pas de traversee de
+  # chemin). retention-days <= 0 desactive la purge.
+  backup:
+    root: ${APP_BACKUP_ROOT:./backups}
+    retention-days: ${APP_BACKUP_RETENTION_DAYS:30}
+
   whatsapp:
     # Pont WhatsApp Business Cloud API — désactivé tant que les credentials Meta ne sont pas fournis.
     enabled: ${WHATSAPP_ENABLED:false}
