@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/invitation_admin_service.dart';
 
 /// Écran de gestion des utilisateurs
 class TenantUsersScreen extends ConsumerStatefulWidget {
@@ -12,6 +13,12 @@ class TenantUsersScreen extends ConsumerStatefulWidget {
 
 class _TenantUsersScreenState extends ConsumerState<TenantUsersScreen> {
   final ApiService _apiService = ApiService();
+  // B9 — l'envoi d'invitation est DÉLÉGUÉ au service dédié (une seule
+  // implémentation du contrat /admin/invitations, partagée avec l'écran de
+  // gestion). Le flux existant de cet écran est conservé, seulement branché
+  // sur le service.
+  late final InvitationAdminService _invitationService =
+      InvitationAdminService(apiService: _apiService);
   bool _loading = true;
   List<Map<String, dynamic>> _users = [];
 
@@ -98,14 +105,20 @@ class _TenantUsersScreenState extends ConsumerState<TenantUsersScreen> {
     emailController.dispose();
     if (invited != true || !mounted || email.isEmpty) return;
     try {
-      await _apiService.post(
-        '/admin/invitations',
-        data: {'email': email, 'role': role, 'scopeType': 'TENANT'},
+      final result = await _invitationService.create(
+        email: email,
+        role: role,
+        scopeType: 'TENANT',
       );
       if (mounted) {
+        final message = result.isDirectMembership
+            ? 'Membre ajouté (compte existant)'
+            : (result.emailSent
+                ? 'Invitation envoyée à $email'
+                : 'Invitation créée (email non envoyé)');
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Invitation envoyée à $email')));
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     } catch (e) {
       if (mounted) {
