@@ -8,6 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/services/api_service.dart';
+import '../../../data/services/currency_catalog_service.dart';
 import '../../../data/services/providers.dart';
 import '../../widgets/glass_theme.dart';
 
@@ -65,9 +67,19 @@ class _Submit extends StatelessWidget {
 
 // ── 0. CHURCH_IDENTITY ────────────────────────────────────────────────────
 class ChurchIdentityForm extends StatefulWidget {
-  const ChurchIdentityForm({super.key, required this.enabled, required this.onSubmit});
+  const ChurchIdentityForm({
+    super.key,
+    required this.enabled,
+    required this.onSubmit,
+    this.apiService,
+  });
   final bool enabled;
   final SubmitData onSubmit;
+
+  /// Client HTTP injectable. Par défaut un `ApiService` est construit — mais
+  /// les tests doivent pouvoir fournir un faux, sinon cette étape serait la
+  /// seule du wizard non testable.
+  final ApiService? apiService;
 
   @override
   State<ChurchIdentityForm> createState() => _ChurchIdentityFormState();
@@ -82,6 +94,29 @@ class _ChurchIdentityFormState extends State<ChurchIdentityForm> {
   final _timezone = TextEditingController();
   final _currency = TextEditingController();
   String? _error;
+
+  // G1 : catalogue de devises du backend, avec repli explicite.
+  List<CurrencyOption> _currencies = fallbackCurrencies;
+  bool _currencyCatalogLoaded = false;
+  String? _currencyNotice;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrencies();
+  }
+
+  Future<void> _loadCurrencies() async {
+    final catalog = await CurrencyCatalogService(widget.apiService ?? ApiService()).fetch();
+    if (!mounted) return;
+    setState(() {
+      _currencies = catalog.currencies;
+      _currencyCatalogLoaded = catalog.fromServer;
+      _currencyNotice = catalog.fromServer
+          ? null
+          : 'Liste des devises indisponible : saisissez le code ISO (ex. XAF).';
+    });
+  }
 
   @override
   void dispose() {
@@ -125,7 +160,14 @@ class _ChurchIdentityFormState extends State<ChurchIdentityForm> {
             _Field(label: 'Téléphone', controller: _phone, enabled: widget.enabled, keyboardType: TextInputType.phone),
             _Field(label: 'Email', controller: _email, enabled: widget.enabled, keyboardType: TextInputType.emailAddress),
             _Field(label: 'Fuseau horaire (IANA)', controller: _timezone, enabled: widget.enabled, hint: 'Africa/Douala'),
-            _Field(label: 'Devise (ISO-4217)', controller: _currency, enabled: widget.enabled, hint: 'XAF'),
+            _CurrencyField(
+              label: 'Devise (ISO-4217)',
+              controller: _currency,
+              enabled: widget.enabled,
+              currencies: _currencies,
+              notice: _currencyNotice,
+              loading: !_currencyCatalogLoaded && _currencyNotice == null,
+            ),
             if (_error != null) Text(_error!, style: const TextStyle(color: Colors.redAccent)),
             const SizedBox(height: 8),
             _Submit(enabled: widget.enabled, onPressed: _submit, label: 'Enregistrer'),
@@ -645,6 +687,107 @@ class _ModulesFormState extends ConsumerState<ModulesForm> {
             label: 'Enregistrer',
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Champ devise (G1) ─────────────────────────────────────────────────────
+//
+// Saisie libre + suggestions issues du catalogue ISO-4217 du backend.
+// `Autocomplete` plutôt qu'un `DropdownButton` : 180 devises dans une liste
+// fermée obligent à faire défiler au doigt ; ici la saisie reste possible
+// (D12 : rien n'est imposé) et le filtrage se fait au clavier comme au toucher.
+class _CurrencyField extends StatelessWidget {
+  const _CurrencyField({
+    required this.label,
+    required this.controller,
+    required this.currencies,
+    required this.enabled,
+    this.notice,
+    this.loading = false,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final List<CurrencyOption> currencies;
+  final bool enabled;
+  final String? notice;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Autocomplete<CurrencyOption>(
+        initialValue: TextEditingValue(text: controller.text),
+        displayStringForOption: (CurrencyOption option) => option.code,
+        optionsBuilder: (TextEditingValue value) {
+          final query = value.text.trim().toUpperCase();
+          if (query.isEmpty) return const Iterable<CurrencyOption>.empty();
+          return currencies.where(
+            (c) => c.code.contains(query) ||
+                c.name.toUpperCase().contains(query) ||
+                c.symbol.toUpperCase().contains(query),
+          );
+        },
+        onSelected: (CurrencyOption option) {
+          controller.text = option.code;
+        },
+        fieldViewBuilder: (
+          BuildContext context,
+          TextEditingController fieldController,
+          FocusNode fieldFocusNode,
+          VoidCallback onFieldSubmitted,
+        ) {
+          // Un seul contrôleur fait foi : celui du formulaire, pour que la
+          // valeur soumise soit exactement celle affichée.
+          if (!identical(fieldController, controller)) {
+            fieldController.text = controller.text;
+          }
+          return TextField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            enabled: enabled,
+            onSubmitted: (_) => onFieldSubmitted(),
+            decoration: InputDecoration(
+              labelText: label,
+              hintText: 'XAF',
+              border: const OutlineInputBorder(),
+              helperText: loading
+                  ? 'Chargement de la liste des devises…'
+                  : (notice ?? 'Liste officielle des devises (ISO-4217).'),
+              helperMaxLines: 2,
+            ),
+          );
+        },
+        optionsViewBuilder: (context, onSelected, options) {
+          final items = options.toList();
+          return Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 220, maxWidth: 420),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final option = items[index];
+                    return InkWell(
+                      onTap: () => onSelected(option),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        child: Text(option.label),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
