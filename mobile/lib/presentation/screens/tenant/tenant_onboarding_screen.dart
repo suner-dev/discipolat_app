@@ -47,12 +47,41 @@ class _TenantOnboardingScreenState extends ConsumerState<TenantOnboardingScreen>
 
   TenantOnboardingService get _service => ref.read(tenantOnboardingServiceProvider);
 
-  /// Libelles localises. Le repo n'expose pas encore de pont i18n dans cet
-  /// ecran (cf. users_screen.dart qui n'utilise pas AppLocalizations) : on ne
-  /// s'invente donc PAS une API d'i18n. Les chaines sont en francais, en
-  /// coherence avec les ecrans tenants existants. A migrer vers .arb quand le
-  /// pont i18n sera cable (tache B13).
-  String _msg(String key) => key;
+  /// Libellés de l'écran. Le repo n'expose pas encore de pont i18n (.arb) dans
+  /// cet écran (cf. users_screen.dart qui n'utilise pas AppLocalizations) : on ne
+  /// s'invente donc PAS une API d'i18n. Les libellés sont centralisés ici (en
+  /// français, en cohérence avec les écrans tenants existants) et branchés sur
+  /// le pont i18n à la tâche B13. Une clé inconnue retombe sur sa valeur de
+  /// secours pour ne jamais afficher une clé brute à l'utilisateur.
+  static const Map<String, String> _labels = <String, String>{
+    'onboarding.title': "Configuration de l'église",
+    'onboarding.progressLabel': 'Progression',
+    'onboarding.loadError': 'Chargement impossible',
+    'onboarding.loadErrorHint': 'Vérifiez votre connexion puis réessayez.',
+    'onboarding.retry': 'Réessayer',
+    'onboarding.noSteps': 'Aucune étape de configuration',
+    'onboarding.noStepsHint': 'Tout est déjà en place.',
+    'onboarding.allDone': 'Configuration terminée',
+    'onboarding.allDoneHint': 'Toutes les étapes sont complètes.',
+    'onboarding.goToDashboard': 'Aller au tableau de bord',
+    'onboarding.stepSaved': 'Étape enregistrée',
+    'onboarding.stepSkipped': 'Étape ignorée',
+    'onboarding.completed': 'Étape terminée',
+    'onboarding.skipped': 'Étape ignorée',
+    'onboarding.skip': 'Ignorer cette étape',
+    'onboarding.skipReason': 'Motif (obligatoire)',
+    'onboarding.skipReasonRequired':
+        'Un motif est requis pour ignorer cette étape.',
+    'onboarding.errOrder': 'Ordre des étapes invalide.',
+    'onboarding.errAlreadyDone': 'Cette étape est déjà terminée.',
+    'onboarding.errDataInvalid': 'Les données saisies sont invalides.',
+    'onboarding.errNotSkippable': 'Cette étape ne peut pas être ignorée.',
+    'onboarding.errSuspended':
+        "Organisation suspendue : contact de l'administrateur requis.",
+    'onboarding.errGeneric': 'Action impossible. Réessayez.',
+  };
+
+  String _msg(String key) => _labels[key] ?? key;
 
   Future<void> _load() async {
     setState(() {

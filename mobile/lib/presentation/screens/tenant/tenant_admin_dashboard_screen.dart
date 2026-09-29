@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../data/services/api_service.dart';
 import '../../../data/services/tenant_admin_usage_service.dart';
 import '../../../models/quota_usage.dart';
 import '../../../models/tenant_admin_dashboard.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/onboarding_banner.dart';
 import '../../widgets/secure_screen.dart';
 
 class TenantAdminDashboardScreen extends StatefulWidget {
@@ -79,6 +81,11 @@ class _TenantAdminDashboardScreenState
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
+          // B7 : bannière d'onboarding — visible uniquement tant que la
+          // configuration du tenant n'est pas terminée (auto-gérée par le widget).
+          OnboardingBanner(
+            onNavigate: (context, route) => context.push(route),
+          ),
           Text(
             dashboard?.tenantName ?? 'Organisation',
             style: Theme.of(context).textTheme.headlineSmall,
