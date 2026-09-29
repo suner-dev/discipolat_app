@@ -23,12 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code spring.flyway.enabled:false} et {@code ddl-auto:create-drop} — les
  * migrations ne sont donc <b>jamais</b> exécutées par la suite unitaire, et un
  * script valide seulement sur H2, ou jamais testé, peut casser le déploiement
- * réel. Ce test ferme ce trou : il applique V1..V192 sur un PostgreSQL 16 neuf
+ * réel. Ce test ferme ce trou : il applique V1..V193 sur un PostgreSQL 16 neuf
  * via Testcontainers, puis exige (1) la chaîne complète sans erreur et son
  * idempotence au second passage, (2) la version cible atteinte, (3) la
  * neutralisation effective des comptes de démonstration en bout de chaîne
- * (V192), (4) un {@code validate()} propre — aucune dérive entre le schéma et
- * les métadonnées d'ordre/appliqués.
+ * (V192), (4) l'unicité des dictionnaires réellement portée par tenant
+ * (V193 — le 500 de création d'un second tenant, attrapé par le replay de
+ * recette §5.5), (5) un {@code validate()} propre — aucune dérive entre le
+ * schéma et les métadonnées d'ordre/appliqués.
  *
  * <p>Honnêteté d'exécution : {@code disabledWithoutDocker=true} — sans daemon
  * Docker (CI sans runner containerisé), le test est <b>skip comptabilisé</b>,
@@ -40,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FlywayMigrationChainPostgreSqlTest {
 
     /** Version minimale attendue en bout de chaîne (incrémenter à chaque vague). */
-    private static final int EXPECTED_MIN_VERSION = 192;
+    private static final int EXPECTED_MIN_VERSION = 193;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
@@ -63,7 +65,7 @@ class FlywayMigrationChainPostgreSqlTest {
     }
 
     @Test
-    @DisplayName("La chaîne Flyway V1→V192 s'applique intégralement sur PostgreSQL 16 neuf")
+    @DisplayName("La chaîne Flyway V1→V193 s'applique intégralement sur PostgreSQL 16 neuf")
     void fullMigrationChainAppliesOnRealPostgres() {
         assertThat(firstPass.success)
                 .as("la chaîne complète V1..V%d doit s'appliquer sans erreur", EXPECTED_MIN_VERSION)
@@ -94,6 +96,41 @@ class FlywayMigrationChainPostgreSqlTest {
                 assertThat(rs.getInt(1))
                         .as("fail-closed V192 : zéro compte démo actif en bout de chaîne")
                         .isZero();
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("V193 : l'unicité des dictionnaires est par tenant, plus mondiale (500 du second tenant)")
+    void dictionaryUniquenessIsTenantScoped() throws Exception {
+        // Discriminant : avec l'ancien UNIQUE (dict_key, code) de V42, la seconde
+        // insertion (autre tenant, mêmes dict_key/code) leverait uq_dict_code —
+        // c'est exactement le 500 observé le 2026-09-29 sur le replay PG réel.
+        // tenant_id porte une FK vers tenants : on crée deux tenants réels
+        // (seules colonnes sans défaut : name, slug), qu'on purge ensuite.
+        String tenantA = "00000000-0000-0000-0000-0000000000a1";
+        String tenantB = "00000000-0000-0000-0000-0000000000a2";
+        String insertDict = "INSERT INTO dictionary_entries (id, tenant_id, dict_key, code, label, ordre, actif, is_default) "
+                + "VALUES (uuid_generate_v4(), '%s', 'EVENT_TYPE', 'SORTIE', 'Sortie', 1, TRUE, TRUE)";
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO tenants (id, name, slug) VALUES "
+                    + "('" + tenantA + "', 'Gate Dict A', 'gate-dict-a'), "
+                    + "('" + tenantB + "', 'Gate Dict B', 'gate-dict-b')");
+            try {
+                // Deux tenants distincts, mêmes (dict_key, code) : doit passer.
+                statement.executeUpdate(String.format(insertDict, tenantA));
+                statement.executeUpdate(String.format(insertDict, tenantB));
+                // Même tenant, même (dict_key, code) : doit être refusé.
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        java.sql.SQLException.class,
+                        () -> statement.executeUpdate(String.format(insertDict, tenantA)),
+                        "la collision doit rester bloquante À L'INTÉRIEUR d'un tenant");
+            } finally {
+                statement.executeUpdate("DELETE FROM dictionary_entries WHERE tenant_id IN ('"
+                        + tenantA + "','" + tenantB + "')");
+                statement.executeUpdate("DELETE FROM tenants WHERE id IN ('" + tenantA + "','" + tenantB + "')");
             }
         }
     }
