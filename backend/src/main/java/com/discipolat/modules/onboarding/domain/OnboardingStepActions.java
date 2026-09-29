@@ -59,8 +59,15 @@ public class OnboardingStepActions {
     private static final int MAX_LIST_SIZE = 200;
     private static final long MAX_NAME_LENGTH = 160;
 
-    /** Type d'événement par défaut du premier événement d'une église. */
-    private static final String DEFAULT_EVENT_TYPE = "MEETING";
+    /**
+     * Type d'événement par défaut du premier événement d'une église.
+     * Le wizard crée un Event legacy (table « events », V194) : la valeur doit
+     * donc appartenir au vocabulaire legacy validé par la CHECK
+     * « events_type_evenement_check » (V42). « REUNION » en est l'équivalent
+     * sémantique de « MEETING » (ChurchOS) — mapping explicite de V158
+     * (WHEN type_evenement = 'REUNION' THEN 'MEETING').
+     */
+    private static final String DEFAULT_EVENT_TYPE = "REUNION";
 
     private final OrganizationNodeService organizationNodeService;
     private final TenantSettingsService tenantSettingsService;

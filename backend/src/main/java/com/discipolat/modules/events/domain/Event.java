@@ -9,6 +9,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
+// Dérive de schéma corrigée (famille H, attrapée par le replay de recette
+// §5.5 sur PostgreSQL réel le 2026-09-29) : V158 avait renommé la table
+// physique « events » en « legacy_events » sans publier de mappage pour
+// l'entité — toute la surface /api/v1/events (dont FIRST_EVENT du wizard)
+// répondait 500 « relation events does not exist » sur les bases migrées.
+// Le profil de test H2 (ddl-auto create-drop) masquait la dérive. V194
+// remplace le nom réel en « events » pour rejoindre le contrat du code.
+// La table Church OS « event » (V158) reste propriété exclusive de ChurchEvent.
 @Table(name = "events")
 @Getter
 @Setter

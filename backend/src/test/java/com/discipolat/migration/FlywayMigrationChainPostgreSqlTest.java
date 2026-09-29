@@ -5,13 +5,22 @@ import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import jakarta.persistence.Table;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,14 +32,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code spring.flyway.enabled:false} et {@code ddl-auto:create-drop} — les
  * migrations ne sont donc <b>jamais</b> exécutées par la suite unitaire, et un
  * script valide seulement sur H2, ou jamais testé, peut casser le déploiement
- * réel. Ce test ferme ce trou : il applique V1..V193 sur un PostgreSQL 16 neuf
+ * réel. Ce test ferme ce trou : il applique V1..V194 sur un PostgreSQL 16 neuf
  * via Testcontainers, puis exige (1) la chaîne complète sans erreur et son
  * idempotence au second passage, (2) la version cible atteinte, (3) la
  * neutralisation effective des comptes de démonstration en bout de chaîne
  * (V192), (4) l'unicité des dictionnaires réellement portée par tenant
  * (V193 — le 500 de création d'un second tenant, attrapé par le replay de
  * recette §5.5), (5) un {@code validate()} propre — aucune dérive entre le
- * schéma et les métadonnées d'ordre/appliqués.
+ * schéma et les métadonnées d'ordre/appliqués, (6) AUCUNE dérive
+ * entité→schéma : chaque table {@code @Table} du code doit exister dans le
+ * PostgreSQL réellement migré — garde systématique de la famille H (le
+ * renommage events→legacy_events de V158, invisible sous H2, est exactement
+ * le défaut que cette passe attrape ; V194 le résout).
  *
  * <p>Honnêteté d'exécution : {@code disabledWithoutDocker=true} — sans daemon
  * Docker (CI sans runner containerisé), le test est <b>skip comptabilisé</b>,
@@ -42,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FlywayMigrationChainPostgreSqlTest {
 
     /** Version minimale attendue en bout de chaîne (incrémenter à chaque vague). */
-    private static final int EXPECTED_MIN_VERSION = 193;
+    private static final int EXPECTED_MIN_VERSION = 194;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
@@ -65,7 +78,7 @@ class FlywayMigrationChainPostgreSqlTest {
     }
 
     @Test
-    @DisplayName("La chaîne Flyway V1→V193 s'applique intégralement sur PostgreSQL 16 neuf")
+    @DisplayName("La chaîne Flyway V1→V194 s'applique intégralement sur PostgreSQL 16 neuf")
     void fullMigrationChainAppliesOnRealPostgres() {
         assertThat(firstPass.success)
                 .as("la chaîne complète V1..V%d doit s'appliquer sans erreur", EXPECTED_MIN_VERSION)
@@ -141,6 +154,51 @@ class FlywayMigrationChainPostgreSqlTest {
         assertThat(newFlyway().validateWithResult().validationSuccessful)
                 .as("validate après migrate : checksums et ordre cohérents")
                 .isTrue();
+    }
+
+    @Test
+    @DisplayName("Aucune dérive entité→schéma : chaque table @Table existe dans le PostgreSQL réellement migré")
+    void everyEntityTableExistsInMigratedSchema() throws Exception {
+        // Garde systématique de la famille H. Le profil H2 des tests unitaires
+        // (ddl-auto create-drop, Flyway désactivé) régénère les tables depuis
+        // les entités : une migration qui renomme/supprime une table réelle
+        // sans publier le mappage (V158 : events→legacy_events) y est
+        // INVISIBLE et explose seulement en production. Ici, la chaîne complète
+        // est appliquée sur PG 16, puis chaque @Table du code doit exister.
+        Set<String> schemaTables = new HashSet<>();
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(
+                     "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
+            while (rs.next()) {
+                schemaTables.add(rs.getString(1).toLowerCase(Locale.ROOT));
+            }
+        }
+
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(jakarta.persistence.Entity.class));
+        List<String> missing = new ArrayList<>();
+        int scanned = 0;
+        for (BeanDefinition candidate : scanner.findCandidateComponents("com.discipolat")) {
+            Class<?> entityClass = Class.forName(candidate.getBeanClassName());
+            Table table = entityClass.getAnnotation(Table.class);
+            assertThat(table)
+                    .as("chaque entité doit déclarer @Table explicite (contrat du scan : %s)",
+                            candidate.getBeanClassName())
+                    .isNotNull();
+            scanned++;
+            if (!schemaTables.contains(table.name().toLowerCase(Locale.ROOT))) {
+                missing.add(entityClass.getSimpleName() + " → " + table.name());
+            }
+        }
+        assertThat(scanned)
+                .as("le scan doit trouver la totalité des entités JPA (garde-fou anti-régression du scan lui-même)")
+                .isGreaterThan(250);
+        assertThat(missing)
+                .as("tables d'entités absentes du schéma réellement migré (dérive de famille H)")
+                .isEmpty();
     }
 
     private static Flyway newFlyway() {
