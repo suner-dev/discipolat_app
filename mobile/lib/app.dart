@@ -239,6 +239,7 @@ import 'presentation/screens/tenant/modules_screen.dart';
 import 'presentation/screens/tenant/roles_screen.dart';
 import 'presentation/screens/tenant/users_screen.dart';
 import 'presentation/screens/tenant/tenant_onboarding_screen.dart';
+import 'presentation/screens/compliance/consent_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role and multi-tenant support (roles + activeRole + orgId).
@@ -1212,6 +1213,7 @@ Map<String, List<String>> _routeRoles = {
   '/tenant/roles': const [],
   '/tenant/users': const [],
   '/tenant/onboarding': ['ADMIN', 'PASTEUR', 'TENANT_OWNER'],
+  '/compliance/consents': ['ADMIN', 'PASTEUR', 'TENANT_OWNER', 'MEMBER'],
   '/space-config-transfer': ['ADMIN', 'PASTEUR'],
   '/tenant/organizations': const [],
   '/tenant/settings': ['ADMIN', 'PASTEUR'],
@@ -2449,6 +2451,12 @@ final appRouter = GoRouter(
         path: '/tenant/onboarding',
         name: 'tenant-onboarding',
         builder: (ctx, s) => const TenantOnboardingScreen()),
+    // RGPD — gestion des consentements (art. 7.1 / 7.3) via les endpoints
+    // /compliance/consents réellement fournis par le backend.
+    GoRoute(
+        path: '/compliance/consents',
+        name: 'compliance-consents',
+        builder: (ctx, s) => const ConsentScreen()),
     GoRoute(
         path: '/space-config-transfer',
         name: 'space-config-transfer',

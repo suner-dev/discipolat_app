@@ -43,6 +43,12 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Configuration initiale',
       'route': '/tenant/onboarding'
     },
+    // RGPD — consentements (retrait possible à tout moment)
+    {
+      'icon': Icons.verified_user_rounded,
+      'title': 'Mes consentements',
+      'route': '/compliance/consents'
+    },
     {
       'icon': Icons.dashboard_customize_rounded,
       'title': 'Pilotage Pasteur',
@@ -859,6 +865,8 @@ class _AppDrawerState extends State<AppDrawer> {
         return l10n.navChurchSettings;
       case '/tenant/onboarding':
         return 'Configuration initiale';
+      case '/compliance/consents':
+        return 'Mes consentements';
       case '/admin/custom-fields':
         return l10n.navCustomFields;
       case '/admin/dictionaries':
