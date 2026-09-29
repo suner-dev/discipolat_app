@@ -1235,70 +1235,77 @@ abstract class _EventRegistration implements EventRegistration {
       throw _privateConstructorUsedError;
 }
 
-EventTeamMember _$EventTeamMemberFromJson(Map<String, dynamic> json) {
-  return _EventTeamMember.fromJson(json);
+EventTeam _$EventTeamFromJson(Map<String, dynamic> json) {
+  return _EventTeam.fromJson(json);
 }
 
 /// @nodoc
-mixin _$EventTeamMember {
+mixin _$EventTeam {
   String get id => throw _privateConstructorUsedError;
-  String get eventId => throw _privateConstructorUsedError;
-  String get personId => throw _privateConstructorUsedError;
-  String get role => throw _privateConstructorUsedError;
-  TeamRole get teamRole => throw _privateConstructorUsedError;
-  String? get responsibilities => throw _privateConstructorUsedError;
-  DateTime? get assignedAt => throw _privateConstructorUsedError;
+  String? get tenantId => throw _privateConstructorUsedError;
+  String? get churchEventId => throw _privateConstructorUsedError;
+  String? get spaceId => throw _privateConstructorUsedError;
+  String get name => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get leadPersonId => throw _privateConstructorUsedError;
+  String? get color => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
-  /// Serializes this EventTeamMember to a JSON map.
+  /// Serializes this EventTeam to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
-  /// Create a copy of EventTeamMember
+  /// Create a copy of EventTeam
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $EventTeamMemberCopyWith<EventTeamMember> get copyWith =>
+  $EventTeamCopyWith<EventTeam> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $EventTeamMemberCopyWith<$Res> {
-  factory $EventTeamMemberCopyWith(
-    EventTeamMember value,
-    $Res Function(EventTeamMember) then,
-  ) = _$EventTeamMemberCopyWithImpl<$Res, EventTeamMember>;
+abstract class $EventTeamCopyWith<$Res> {
+  factory $EventTeamCopyWith(EventTeam value, $Res Function(EventTeam) then) =
+      _$EventTeamCopyWithImpl<$Res, EventTeam>;
   @useResult
   $Res call({
     String id,
-    String eventId,
-    String personId,
-    String role,
-    TeamRole teamRole,
-    String? responsibilities,
-    DateTime? assignedAt,
+    String? tenantId,
+    String? churchEventId,
+    String? spaceId,
+    String name,
+    String? description,
+    String? leadPersonId,
+    String? color,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   });
 }
 
 /// @nodoc
-class _$EventTeamMemberCopyWithImpl<$Res, $Val extends EventTeamMember>
-    implements $EventTeamMemberCopyWith<$Res> {
-  _$EventTeamMemberCopyWithImpl(this._value, this._then);
+class _$EventTeamCopyWithImpl<$Res, $Val extends EventTeam>
+    implements $EventTeamCopyWith<$Res> {
+  _$EventTeamCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of EventTeamMember
+  /// Create a copy of EventTeam
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
-    Object? eventId = null,
-    Object? personId = null,
-    Object? role = null,
-    Object? teamRole = null,
-    Object? responsibilities = freezed,
-    Object? assignedAt = freezed,
+    Object? tenantId = freezed,
+    Object? churchEventId = freezed,
+    Object? spaceId = freezed,
+    Object? name = null,
+    Object? description = freezed,
+    Object? leadPersonId = freezed,
+    Object? color = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -1306,29 +1313,41 @@ class _$EventTeamMemberCopyWithImpl<$Res, $Val extends EventTeamMember>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            eventId: null == eventId
-                ? _value.eventId
-                : eventId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            personId: null == personId
-                ? _value.personId
-                : personId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            role: null == role
-                ? _value.role
-                : role // ignore: cast_nullable_to_non_nullable
-                      as String,
-            teamRole: null == teamRole
-                ? _value.teamRole
-                : teamRole // ignore: cast_nullable_to_non_nullable
-                      as TeamRole,
-            responsibilities: freezed == responsibilities
-                ? _value.responsibilities
-                : responsibilities // ignore: cast_nullable_to_non_nullable
+            tenantId: freezed == tenantId
+                ? _value.tenantId
+                : tenantId // ignore: cast_nullable_to_non_nullable
                       as String?,
-            assignedAt: freezed == assignedAt
-                ? _value.assignedAt
-                : assignedAt // ignore: cast_nullable_to_non_nullable
+            churchEventId: freezed == churchEventId
+                ? _value.churchEventId
+                : churchEventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            spaceId: freezed == spaceId
+                ? _value.spaceId
+                : spaceId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            leadPersonId: freezed == leadPersonId
+                ? _value.leadPersonId
+                : leadPersonId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            color: freezed == color
+                ? _value.color
+                : color // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: freezed == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
           )
           as $Val,
@@ -1337,76 +1356,94 @@ class _$EventTeamMemberCopyWithImpl<$Res, $Val extends EventTeamMember>
 }
 
 /// @nodoc
-abstract class _$$EventTeamMemberImplCopyWith<$Res>
-    implements $EventTeamMemberCopyWith<$Res> {
-  factory _$$EventTeamMemberImplCopyWith(
-    _$EventTeamMemberImpl value,
-    $Res Function(_$EventTeamMemberImpl) then,
-  ) = __$$EventTeamMemberImplCopyWithImpl<$Res>;
+abstract class _$$EventTeamImplCopyWith<$Res>
+    implements $EventTeamCopyWith<$Res> {
+  factory _$$EventTeamImplCopyWith(
+    _$EventTeamImpl value,
+    $Res Function(_$EventTeamImpl) then,
+  ) = __$$EventTeamImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({
     String id,
-    String eventId,
-    String personId,
-    String role,
-    TeamRole teamRole,
-    String? responsibilities,
-    DateTime? assignedAt,
+    String? tenantId,
+    String? churchEventId,
+    String? spaceId,
+    String name,
+    String? description,
+    String? leadPersonId,
+    String? color,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   });
 }
 
 /// @nodoc
-class __$$EventTeamMemberImplCopyWithImpl<$Res>
-    extends _$EventTeamMemberCopyWithImpl<$Res, _$EventTeamMemberImpl>
-    implements _$$EventTeamMemberImplCopyWith<$Res> {
-  __$$EventTeamMemberImplCopyWithImpl(
-    _$EventTeamMemberImpl _value,
-    $Res Function(_$EventTeamMemberImpl) _then,
+class __$$EventTeamImplCopyWithImpl<$Res>
+    extends _$EventTeamCopyWithImpl<$Res, _$EventTeamImpl>
+    implements _$$EventTeamImplCopyWith<$Res> {
+  __$$EventTeamImplCopyWithImpl(
+    _$EventTeamImpl _value,
+    $Res Function(_$EventTeamImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of EventTeamMember
+  /// Create a copy of EventTeam
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
-    Object? eventId = null,
-    Object? personId = null,
-    Object? role = null,
-    Object? teamRole = null,
-    Object? responsibilities = freezed,
-    Object? assignedAt = freezed,
+    Object? tenantId = freezed,
+    Object? churchEventId = freezed,
+    Object? spaceId = freezed,
+    Object? name = null,
+    Object? description = freezed,
+    Object? leadPersonId = freezed,
+    Object? color = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
-      _$EventTeamMemberImpl(
+      _$EventTeamImpl(
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        eventId: null == eventId
-            ? _value.eventId
-            : eventId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        personId: null == personId
-            ? _value.personId
-            : personId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        role: null == role
-            ? _value.role
-            : role // ignore: cast_nullable_to_non_nullable
-                  as String,
-        teamRole: null == teamRole
-            ? _value.teamRole
-            : teamRole // ignore: cast_nullable_to_non_nullable
-                  as TeamRole,
-        responsibilities: freezed == responsibilities
-            ? _value.responsibilities
-            : responsibilities // ignore: cast_nullable_to_non_nullable
+        tenantId: freezed == tenantId
+            ? _value.tenantId
+            : tenantId // ignore: cast_nullable_to_non_nullable
                   as String?,
-        assignedAt: freezed == assignedAt
-            ? _value.assignedAt
-            : assignedAt // ignore: cast_nullable_to_non_nullable
+        churchEventId: freezed == churchEventId
+            ? _value.churchEventId
+            : churchEventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        spaceId: freezed == spaceId
+            ? _value.spaceId
+            : spaceId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        leadPersonId: freezed == leadPersonId
+            ? _value.leadPersonId
+            : leadPersonId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        color: freezed == color
+            ? _value.color
+            : color // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: freezed == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
       ),
     );
@@ -1415,56 +1452,70 @@ class __$$EventTeamMemberImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$EventTeamMemberImpl implements _EventTeamMember {
-  const _$EventTeamMemberImpl({
+class _$EventTeamImpl implements _EventTeam {
+  const _$EventTeamImpl({
     required this.id,
-    required this.eventId,
-    required this.personId,
-    required this.role,
-    required this.teamRole,
-    this.responsibilities,
-    this.assignedAt,
+    this.tenantId,
+    this.churchEventId,
+    this.spaceId,
+    required this.name,
+    this.description,
+    this.leadPersonId,
+    this.color,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory _$EventTeamMemberImpl.fromJson(Map<String, dynamic> json) =>
-      _$$EventTeamMemberImplFromJson(json);
+  factory _$EventTeamImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EventTeamImplFromJson(json);
 
   @override
   final String id;
   @override
-  final String eventId;
+  final String? tenantId;
   @override
-  final String personId;
+  final String? churchEventId;
   @override
-  final String role;
+  final String? spaceId;
   @override
-  final TeamRole teamRole;
+  final String name;
   @override
-  final String? responsibilities;
+  final String? description;
   @override
-  final DateTime? assignedAt;
+  final String? leadPersonId;
+  @override
+  final String? color;
+  @override
+  final DateTime? createdAt;
+  @override
+  final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'EventTeamMember(id: $id, eventId: $eventId, personId: $personId, role: $role, teamRole: $teamRole, responsibilities: $responsibilities, assignedAt: $assignedAt)';
+    return 'EventTeam(id: $id, tenantId: $tenantId, churchEventId: $churchEventId, spaceId: $spaceId, name: $name, description: $description, leadPersonId: $leadPersonId, color: $color, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$EventTeamMemberImpl &&
+            other is _$EventTeamImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.eventId, eventId) || other.eventId == eventId) &&
-            (identical(other.personId, personId) ||
-                other.personId == personId) &&
-            (identical(other.role, role) || other.role == role) &&
-            (identical(other.teamRole, teamRole) ||
-                other.teamRole == teamRole) &&
-            (identical(other.responsibilities, responsibilities) ||
-                other.responsibilities == responsibilities) &&
-            (identical(other.assignedAt, assignedAt) ||
-                other.assignedAt == assignedAt));
+            (identical(other.tenantId, tenantId) ||
+                other.tenantId == tenantId) &&
+            (identical(other.churchEventId, churchEventId) ||
+                other.churchEventId == churchEventId) &&
+            (identical(other.spaceId, spaceId) || other.spaceId == spaceId) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.leadPersonId, leadPersonId) ||
+                other.leadPersonId == leadPersonId) &&
+            (identical(other.color, color) || other.color == color) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1472,65 +1523,74 @@ class _$EventTeamMemberImpl implements _EventTeamMember {
   int get hashCode => Object.hash(
     runtimeType,
     id,
-    eventId,
-    personId,
-    role,
-    teamRole,
-    responsibilities,
-    assignedAt,
+    tenantId,
+    churchEventId,
+    spaceId,
+    name,
+    description,
+    leadPersonId,
+    color,
+    createdAt,
+    updatedAt,
   );
 
-  /// Create a copy of EventTeamMember
+  /// Create a copy of EventTeam
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$EventTeamMemberImplCopyWith<_$EventTeamMemberImpl> get copyWith =>
-      __$$EventTeamMemberImplCopyWithImpl<_$EventTeamMemberImpl>(
-        this,
-        _$identity,
-      );
+  _$$EventTeamImplCopyWith<_$EventTeamImpl> get copyWith =>
+      __$$EventTeamImplCopyWithImpl<_$EventTeamImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$EventTeamMemberImplToJson(this);
+    return _$$EventTeamImplToJson(this);
   }
 }
 
-abstract class _EventTeamMember implements EventTeamMember {
-  const factory _EventTeamMember({
+abstract class _EventTeam implements EventTeam {
+  const factory _EventTeam({
     required final String id,
-    required final String eventId,
-    required final String personId,
-    required final String role,
-    required final TeamRole teamRole,
-    final String? responsibilities,
-    final DateTime? assignedAt,
-  }) = _$EventTeamMemberImpl;
+    final String? tenantId,
+    final String? churchEventId,
+    final String? spaceId,
+    required final String name,
+    final String? description,
+    final String? leadPersonId,
+    final String? color,
+    final DateTime? createdAt,
+    final DateTime? updatedAt,
+  }) = _$EventTeamImpl;
 
-  factory _EventTeamMember.fromJson(Map<String, dynamic> json) =
-      _$EventTeamMemberImpl.fromJson;
+  factory _EventTeam.fromJson(Map<String, dynamic> json) =
+      _$EventTeamImpl.fromJson;
 
   @override
   String get id;
   @override
-  String get eventId;
+  String? get tenantId;
   @override
-  String get personId;
+  String? get churchEventId;
   @override
-  String get role;
+  String? get spaceId;
   @override
-  TeamRole get teamRole;
+  String get name;
   @override
-  String? get responsibilities;
+  String? get description;
   @override
-  DateTime? get assignedAt;
+  String? get leadPersonId;
+  @override
+  String? get color;
+  @override
+  DateTime? get createdAt;
+  @override
+  DateTime? get updatedAt;
 
-  /// Create a copy of EventTeamMember
+  /// Create a copy of EventTeam
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$EventTeamMemberImplCopyWith<_$EventTeamMemberImpl> get copyWith =>
+  _$$EventTeamImplCopyWith<_$EventTeamImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -1541,16 +1601,14 @@ EventChecklist _$EventChecklistFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$EventChecklist {
   String get id => throw _privateConstructorUsedError;
+  String? get tenantId => throw _privateConstructorUsedError;
   String get eventId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  bool get isRequired => throw _privateConstructorUsedError;
-  int? get assignedToId => throw _privateConstructorUsedError;
-  String? get assignedToName => throw _privateConstructorUsedError;
-  bool get isCompleted => throw _privateConstructorUsedError;
-  DateTime? get completedAt => throw _privateConstructorUsedError;
-  int? get completedById => throw _privateConstructorUsedError;
-  int? get order => throw _privateConstructorUsedError;
+  ChecklistStatus get status => throw _privateConstructorUsedError;
+  String? get assignedTo => throw _privateConstructorUsedError;
+  int get orderIndex => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this EventChecklist to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1571,16 +1629,14 @@ abstract class $EventChecklistCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
+    String? tenantId,
     String eventId,
     String title,
     String? description,
-    bool isRequired,
-    int? assignedToId,
-    String? assignedToName,
-    bool isCompleted,
-    DateTime? completedAt,
-    int? completedById,
-    int? order,
+    ChecklistStatus status,
+    String? assignedTo,
+    int orderIndex,
+    DateTime? createdAt,
   });
 }
 
@@ -1600,16 +1656,14 @@ class _$EventChecklistCopyWithImpl<$Res, $Val extends EventChecklist>
   @override
   $Res call({
     Object? id = null,
+    Object? tenantId = freezed,
     Object? eventId = null,
     Object? title = null,
     Object? description = freezed,
-    Object? isRequired = null,
-    Object? assignedToId = freezed,
-    Object? assignedToName = freezed,
-    Object? isCompleted = null,
-    Object? completedAt = freezed,
-    Object? completedById = freezed,
-    Object? order = freezed,
+    Object? status = null,
+    Object? assignedTo = freezed,
+    Object? orderIndex = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -1617,6 +1671,10 @@ class _$EventChecklistCopyWithImpl<$Res, $Val extends EventChecklist>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
+            tenantId: freezed == tenantId
+                ? _value.tenantId
+                : tenantId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             eventId: null == eventId
                 ? _value.eventId
                 : eventId // ignore: cast_nullable_to_non_nullable
@@ -1629,34 +1687,22 @@ class _$EventChecklistCopyWithImpl<$Res, $Val extends EventChecklist>
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
                       as String?,
-            isRequired: null == isRequired
-                ? _value.isRequired
-                : isRequired // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            assignedToId: freezed == assignedToId
-                ? _value.assignedToId
-                : assignedToId // ignore: cast_nullable_to_non_nullable
-                      as int?,
-            assignedToName: freezed == assignedToName
-                ? _value.assignedToName
-                : assignedToName // ignore: cast_nullable_to_non_nullable
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as ChecklistStatus,
+            assignedTo: freezed == assignedTo
+                ? _value.assignedTo
+                : assignedTo // ignore: cast_nullable_to_non_nullable
                       as String?,
-            isCompleted: null == isCompleted
-                ? _value.isCompleted
-                : isCompleted // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            completedAt: freezed == completedAt
-                ? _value.completedAt
-                : completedAt // ignore: cast_nullable_to_non_nullable
+            orderIndex: null == orderIndex
+                ? _value.orderIndex
+                : orderIndex // ignore: cast_nullable_to_non_nullable
+                      as int,
+            createdAt: freezed == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
-            completedById: freezed == completedById
-                ? _value.completedById
-                : completedById // ignore: cast_nullable_to_non_nullable
-                      as int?,
-            order: freezed == order
-                ? _value.order
-                : order // ignore: cast_nullable_to_non_nullable
-                      as int?,
           )
           as $Val,
     );
@@ -1674,16 +1720,14 @@ abstract class _$$EventChecklistImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
+    String? tenantId,
     String eventId,
     String title,
     String? description,
-    bool isRequired,
-    int? assignedToId,
-    String? assignedToName,
-    bool isCompleted,
-    DateTime? completedAt,
-    int? completedById,
-    int? order,
+    ChecklistStatus status,
+    String? assignedTo,
+    int orderIndex,
+    DateTime? createdAt,
   });
 }
 
@@ -1702,16 +1746,14 @@ class __$$EventChecklistImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? tenantId = freezed,
     Object? eventId = null,
     Object? title = null,
     Object? description = freezed,
-    Object? isRequired = null,
-    Object? assignedToId = freezed,
-    Object? assignedToName = freezed,
-    Object? isCompleted = null,
-    Object? completedAt = freezed,
-    Object? completedById = freezed,
-    Object? order = freezed,
+    Object? status = null,
+    Object? assignedTo = freezed,
+    Object? orderIndex = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _$EventChecklistImpl(
@@ -1719,6 +1761,10 @@ class __$$EventChecklistImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
+        tenantId: freezed == tenantId
+            ? _value.tenantId
+            : tenantId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         eventId: null == eventId
             ? _value.eventId
             : eventId // ignore: cast_nullable_to_non_nullable
@@ -1731,34 +1777,22 @@ class __$$EventChecklistImplCopyWithImpl<$Res>
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
                   as String?,
-        isRequired: null == isRequired
-            ? _value.isRequired
-            : isRequired // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        assignedToId: freezed == assignedToId
-            ? _value.assignedToId
-            : assignedToId // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        assignedToName: freezed == assignedToName
-            ? _value.assignedToName
-            : assignedToName // ignore: cast_nullable_to_non_nullable
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as ChecklistStatus,
+        assignedTo: freezed == assignedTo
+            ? _value.assignedTo
+            : assignedTo // ignore: cast_nullable_to_non_nullable
                   as String?,
-        isCompleted: null == isCompleted
-            ? _value.isCompleted
-            : isCompleted // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        completedAt: freezed == completedAt
-            ? _value.completedAt
-            : completedAt // ignore: cast_nullable_to_non_nullable
+        orderIndex: null == orderIndex
+            ? _value.orderIndex
+            : orderIndex // ignore: cast_nullable_to_non_nullable
+                  as int,
+        createdAt: freezed == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
-        completedById: freezed == completedById
-            ? _value.completedById
-            : completedById // ignore: cast_nullable_to_non_nullable
-                  as int?,
-        order: freezed == order
-            ? _value.order
-            : order // ignore: cast_nullable_to_non_nullable
-                  as int?,
       ),
     );
   }
@@ -1769,16 +1803,14 @@ class __$$EventChecklistImplCopyWithImpl<$Res>
 class _$EventChecklistImpl implements _EventChecklist {
   const _$EventChecklistImpl({
     required this.id,
+    this.tenantId,
     required this.eventId,
     required this.title,
     this.description,
-    this.isRequired = false,
-    this.assignedToId,
-    this.assignedToName,
-    this.isCompleted = false,
-    this.completedAt,
-    this.completedById,
-    this.order,
+    this.status = ChecklistStatus.pending,
+    this.assignedTo,
+    this.orderIndex = 0,
+    this.createdAt,
   });
 
   factory _$EventChecklistImpl.fromJson(Map<String, dynamic> json) =>
@@ -1787,6 +1819,8 @@ class _$EventChecklistImpl implements _EventChecklist {
   @override
   final String id;
   @override
+  final String? tenantId;
+  @override
   final String eventId;
   @override
   final String title;
@@ -1794,24 +1828,18 @@ class _$EventChecklistImpl implements _EventChecklist {
   final String? description;
   @override
   @JsonKey()
-  final bool isRequired;
+  final ChecklistStatus status;
   @override
-  final int? assignedToId;
-  @override
-  final String? assignedToName;
+  final String? assignedTo;
   @override
   @JsonKey()
-  final bool isCompleted;
+  final int orderIndex;
   @override
-  final DateTime? completedAt;
-  @override
-  final int? completedById;
-  @override
-  final int? order;
+  final DateTime? createdAt;
 
   @override
   String toString() {
-    return 'EventChecklist(id: $id, eventId: $eventId, title: $title, description: $description, isRequired: $isRequired, assignedToId: $assignedToId, assignedToName: $assignedToName, isCompleted: $isCompleted, completedAt: $completedAt, completedById: $completedById, order: $order)';
+    return 'EventChecklist(id: $id, tenantId: $tenantId, eventId: $eventId, title: $title, description: $description, status: $status, assignedTo: $assignedTo, orderIndex: $orderIndex, createdAt: $createdAt)';
   }
 
   @override
@@ -1820,23 +1848,19 @@ class _$EventChecklistImpl implements _EventChecklist {
         (other.runtimeType == runtimeType &&
             other is _$EventChecklistImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.tenantId, tenantId) ||
+                other.tenantId == tenantId) &&
             (identical(other.eventId, eventId) || other.eventId == eventId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            (identical(other.isRequired, isRequired) ||
-                other.isRequired == isRequired) &&
-            (identical(other.assignedToId, assignedToId) ||
-                other.assignedToId == assignedToId) &&
-            (identical(other.assignedToName, assignedToName) ||
-                other.assignedToName == assignedToName) &&
-            (identical(other.isCompleted, isCompleted) ||
-                other.isCompleted == isCompleted) &&
-            (identical(other.completedAt, completedAt) ||
-                other.completedAt == completedAt) &&
-            (identical(other.completedById, completedById) ||
-                other.completedById == completedById) &&
-            (identical(other.order, order) || other.order == order));
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.assignedTo, assignedTo) ||
+                other.assignedTo == assignedTo) &&
+            (identical(other.orderIndex, orderIndex) ||
+                other.orderIndex == orderIndex) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1844,16 +1868,14 @@ class _$EventChecklistImpl implements _EventChecklist {
   int get hashCode => Object.hash(
     runtimeType,
     id,
+    tenantId,
     eventId,
     title,
     description,
-    isRequired,
-    assignedToId,
-    assignedToName,
-    isCompleted,
-    completedAt,
-    completedById,
-    order,
+    status,
+    assignedTo,
+    orderIndex,
+    createdAt,
   );
 
   /// Create a copy of EventChecklist
@@ -1876,16 +1898,14 @@ class _$EventChecklistImpl implements _EventChecklist {
 abstract class _EventChecklist implements EventChecklist {
   const factory _EventChecklist({
     required final String id,
+    final String? tenantId,
     required final String eventId,
     required final String title,
     final String? description,
-    final bool isRequired,
-    final int? assignedToId,
-    final String? assignedToName,
-    final bool isCompleted,
-    final DateTime? completedAt,
-    final int? completedById,
-    final int? order,
+    final ChecklistStatus status,
+    final String? assignedTo,
+    final int orderIndex,
+    final DateTime? createdAt,
   }) = _$EventChecklistImpl;
 
   factory _EventChecklist.fromJson(Map<String, dynamic> json) =
@@ -1894,25 +1914,21 @@ abstract class _EventChecklist implements EventChecklist {
   @override
   String get id;
   @override
+  String? get tenantId;
+  @override
   String get eventId;
   @override
   String get title;
   @override
   String? get description;
   @override
-  bool get isRequired;
+  ChecklistStatus get status;
   @override
-  int? get assignedToId;
+  String? get assignedTo;
   @override
-  String? get assignedToName;
+  int get orderIndex;
   @override
-  bool get isCompleted;
-  @override
-  DateTime? get completedAt;
-  @override
-  int? get completedById;
-  @override
-  int? get order;
+  DateTime? get createdAt;
 
   /// Create a copy of EventChecklist
   /// with the given fields replaced by the non-null parameter values.
@@ -1929,12 +1945,15 @@ DressCode _$DressCodeFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$DressCode {
   String get id => throw _privateConstructorUsedError;
-  String get name => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError;
-  String? get colorCode => throw _privateConstructorUsedError;
-  String? get iconUrl => throw _privateConstructorUsedError;
-  List<DressCodeItem>? get items => throw _privateConstructorUsedError;
-  bool get isRequired => throw _privateConstructorUsedError;
+  String? get spaceId => throw _privateConstructorUsedError;
+  String? get eventId => throw _privateConstructorUsedError;
+  String? get serviceName => throw _privateConstructorUsedError;
+  String get title => throw _privateConstructorUsedError;
+  DateTime? get beginsAt => throw _privateConstructorUsedError;
+  DateTime? get endsAt => throw _privateConstructorUsedError;
+  String get status => throw _privateConstructorUsedError;
+  bool get archived => throw _privateConstructorUsedError;
+  List<DressCodeRule> get rules => throw _privateConstructorUsedError;
 
   /// Serializes this DressCode to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1953,12 +1972,15 @@ abstract class $DressCodeCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String name,
-    String? description,
-    String? colorCode,
-    String? iconUrl,
-    List<DressCodeItem>? items,
-    bool isRequired,
+    String? spaceId,
+    String? eventId,
+    String? serviceName,
+    String title,
+    DateTime? beginsAt,
+    DateTime? endsAt,
+    String status,
+    bool archived,
+    List<DressCodeRule> rules,
   });
 }
 
@@ -1978,12 +2000,15 @@ class _$DressCodeCopyWithImpl<$Res, $Val extends DressCode>
   @override
   $Res call({
     Object? id = null,
-    Object? name = null,
-    Object? description = freezed,
-    Object? colorCode = freezed,
-    Object? iconUrl = freezed,
-    Object? items = freezed,
-    Object? isRequired = null,
+    Object? spaceId = freezed,
+    Object? eventId = freezed,
+    Object? serviceName = freezed,
+    Object? title = null,
+    Object? beginsAt = freezed,
+    Object? endsAt = freezed,
+    Object? status = null,
+    Object? archived = null,
+    Object? rules = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1991,30 +2016,42 @@ class _$DressCodeCopyWithImpl<$Res, $Val extends DressCode>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            name: null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
+            spaceId: freezed == spaceId
+                ? _value.spaceId
+                : spaceId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            eventId: freezed == eventId
+                ? _value.eventId
+                : eventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            serviceName: freezed == serviceName
+                ? _value.serviceName
+                : serviceName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
                       as String,
-            description: freezed == description
-                ? _value.description
-                : description // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            colorCode: freezed == colorCode
-                ? _value.colorCode
-                : colorCode // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            iconUrl: freezed == iconUrl
-                ? _value.iconUrl
-                : iconUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            items: freezed == items
-                ? _value.items
-                : items // ignore: cast_nullable_to_non_nullable
-                      as List<DressCodeItem>?,
-            isRequired: null == isRequired
-                ? _value.isRequired
-                : isRequired // ignore: cast_nullable_to_non_nullable
+            beginsAt: freezed == beginsAt
+                ? _value.beginsAt
+                : beginsAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            endsAt: freezed == endsAt
+                ? _value.endsAt
+                : endsAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String,
+            archived: null == archived
+                ? _value.archived
+                : archived // ignore: cast_nullable_to_non_nullable
                       as bool,
+            rules: null == rules
+                ? _value.rules
+                : rules // ignore: cast_nullable_to_non_nullable
+                      as List<DressCodeRule>,
           )
           as $Val,
     );
@@ -2032,12 +2069,15 @@ abstract class _$$DressCodeImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    String name,
-    String? description,
-    String? colorCode,
-    String? iconUrl,
-    List<DressCodeItem>? items,
-    bool isRequired,
+    String? spaceId,
+    String? eventId,
+    String? serviceName,
+    String title,
+    DateTime? beginsAt,
+    DateTime? endsAt,
+    String status,
+    bool archived,
+    List<DressCodeRule> rules,
   });
 }
 
@@ -2056,12 +2096,15 @@ class __$$DressCodeImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? name = null,
-    Object? description = freezed,
-    Object? colorCode = freezed,
-    Object? iconUrl = freezed,
-    Object? items = freezed,
-    Object? isRequired = null,
+    Object? spaceId = freezed,
+    Object? eventId = freezed,
+    Object? serviceName = freezed,
+    Object? title = null,
+    Object? beginsAt = freezed,
+    Object? endsAt = freezed,
+    Object? status = null,
+    Object? archived = null,
+    Object? rules = null,
   }) {
     return _then(
       _$DressCodeImpl(
@@ -2069,30 +2112,42 @@ class __$$DressCodeImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        name: null == name
-            ? _value.name
-            : name // ignore: cast_nullable_to_non_nullable
+        spaceId: freezed == spaceId
+            ? _value.spaceId
+            : spaceId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        eventId: freezed == eventId
+            ? _value.eventId
+            : eventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        serviceName: freezed == serviceName
+            ? _value.serviceName
+            : serviceName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
                   as String,
-        description: freezed == description
-            ? _value.description
-            : description // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        colorCode: freezed == colorCode
-            ? _value.colorCode
-            : colorCode // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        iconUrl: freezed == iconUrl
-            ? _value.iconUrl
-            : iconUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        items: freezed == items
-            ? _value._items
-            : items // ignore: cast_nullable_to_non_nullable
-                  as List<DressCodeItem>?,
-        isRequired: null == isRequired
-            ? _value.isRequired
-            : isRequired // ignore: cast_nullable_to_non_nullable
+        beginsAt: freezed == beginsAt
+            ? _value.beginsAt
+            : beginsAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        endsAt: freezed == endsAt
+            ? _value.endsAt
+            : endsAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String,
+        archived: null == archived
+            ? _value.archived
+            : archived // ignore: cast_nullable_to_non_nullable
                   as bool,
+        rules: null == rules
+            ? _value._rules
+            : rules // ignore: cast_nullable_to_non_nullable
+                  as List<DressCodeRule>,
       ),
     );
   }
@@ -2103,13 +2158,16 @@ class __$$DressCodeImplCopyWithImpl<$Res>
 class _$DressCodeImpl implements _DressCode {
   const _$DressCodeImpl({
     required this.id,
-    required this.name,
-    this.description,
-    this.colorCode,
-    this.iconUrl,
-    final List<DressCodeItem>? items,
-    this.isRequired = false,
-  }) : _items = items;
+    this.spaceId,
+    this.eventId,
+    this.serviceName,
+    required this.title,
+    this.beginsAt,
+    this.endsAt,
+    this.status = 'ACTIVE',
+    this.archived = false,
+    final List<DressCodeRule> rules = const <DressCodeRule>[],
+  }) : _rules = rules;
 
   factory _$DressCodeImpl.fromJson(Map<String, dynamic> json) =>
       _$$DressCodeImplFromJson(json);
@@ -2117,30 +2175,35 @@ class _$DressCodeImpl implements _DressCode {
   @override
   final String id;
   @override
-  final String name;
+  final String? spaceId;
   @override
-  final String? description;
+  final String? eventId;
   @override
-  final String? colorCode;
+  final String? serviceName;
   @override
-  final String? iconUrl;
-  final List<DressCodeItem>? _items;
+  final String title;
   @override
-  List<DressCodeItem>? get items {
-    final value = _items;
-    if (value == null) return null;
-    if (_items is EqualUnmodifiableListView) return _items;
+  final DateTime? beginsAt;
+  @override
+  final DateTime? endsAt;
+  @override
+  @JsonKey()
+  final String status;
+  @override
+  @JsonKey()
+  final bool archived;
+  final List<DressCodeRule> _rules;
+  @override
+  @JsonKey()
+  List<DressCodeRule> get rules {
+    if (_rules is EqualUnmodifiableListView) return _rules;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_rules);
   }
 
   @override
-  @JsonKey()
-  final bool isRequired;
-
-  @override
   String toString() {
-    return 'DressCode(id: $id, name: $name, description: $description, colorCode: $colorCode, iconUrl: $iconUrl, items: $items, isRequired: $isRequired)';
+    return 'DressCode(id: $id, spaceId: $spaceId, eventId: $eventId, serviceName: $serviceName, title: $title, beginsAt: $beginsAt, endsAt: $endsAt, status: $status, archived: $archived, rules: $rules)';
   }
 
   @override
@@ -2149,15 +2212,18 @@ class _$DressCodeImpl implements _DressCode {
         (other.runtimeType == runtimeType &&
             other is _$DressCodeImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.name, name) || other.name == name) &&
-            (identical(other.description, description) ||
-                other.description == description) &&
-            (identical(other.colorCode, colorCode) ||
-                other.colorCode == colorCode) &&
-            (identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl) &&
-            const DeepCollectionEquality().equals(other._items, _items) &&
-            (identical(other.isRequired, isRequired) ||
-                other.isRequired == isRequired));
+            (identical(other.spaceId, spaceId) || other.spaceId == spaceId) &&
+            (identical(other.eventId, eventId) || other.eventId == eventId) &&
+            (identical(other.serviceName, serviceName) ||
+                other.serviceName == serviceName) &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.beginsAt, beginsAt) ||
+                other.beginsAt == beginsAt) &&
+            (identical(other.endsAt, endsAt) || other.endsAt == endsAt) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.archived, archived) ||
+                other.archived == archived) &&
+            const DeepCollectionEquality().equals(other._rules, _rules));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2165,12 +2231,15 @@ class _$DressCodeImpl implements _DressCode {
   int get hashCode => Object.hash(
     runtimeType,
     id,
-    name,
-    description,
-    colorCode,
-    iconUrl,
-    const DeepCollectionEquality().hash(_items),
-    isRequired,
+    spaceId,
+    eventId,
+    serviceName,
+    title,
+    beginsAt,
+    endsAt,
+    status,
+    archived,
+    const DeepCollectionEquality().hash(_rules),
   );
 
   /// Create a copy of DressCode
@@ -2190,12 +2259,15 @@ class _$DressCodeImpl implements _DressCode {
 abstract class _DressCode implements DressCode {
   const factory _DressCode({
     required final String id,
-    required final String name,
-    final String? description,
-    final String? colorCode,
-    final String? iconUrl,
-    final List<DressCodeItem>? items,
-    final bool isRequired,
+    final String? spaceId,
+    final String? eventId,
+    final String? serviceName,
+    required final String title,
+    final DateTime? beginsAt,
+    final DateTime? endsAt,
+    final String status,
+    final bool archived,
+    final List<DressCodeRule> rules,
   }) = _$DressCodeImpl;
 
   factory _DressCode.fromJson(Map<String, dynamic> json) =
@@ -2204,17 +2276,23 @@ abstract class _DressCode implements DressCode {
   @override
   String get id;
   @override
-  String get name;
+  String? get spaceId;
   @override
-  String? get description;
+  String? get eventId;
   @override
-  String? get colorCode;
+  String? get serviceName;
   @override
-  String? get iconUrl;
+  String get title;
   @override
-  List<DressCodeItem>? get items;
+  DateTime? get beginsAt;
   @override
-  bool get isRequired;
+  DateTime? get endsAt;
+  @override
+  String get status;
+  @override
+  bool get archived;
+  @override
+  List<DressCodeRule> get rules;
 
   /// Create a copy of DressCode
   /// with the given fields replaced by the non-null parameter values.
@@ -2224,108 +2302,69 @@ abstract class _DressCode implements DressCode {
       throw _privateConstructorUsedError;
 }
 
-DressCodeItem _$DressCodeItemFromJson(Map<String, dynamic> json) {
-  return _DressCodeItem.fromJson(json);
+DressCodeRule _$DressCodeRuleFromJson(Map<String, dynamic> json) {
+  return _DressCodeRule.fromJson(json);
 }
 
 /// @nodoc
-mixin _$DressCodeItem {
-  String get id => throw _privateConstructorUsedError;
-  String get dressCodeId => throw _privateConstructorUsedError;
-  String get name => throw _privateConstructorUsedError;
+mixin _$DressCodeRule {
+  String get groupName => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  String? get color => throw _privateConstructorUsedError;
-  String? get icon => throw _privateConstructorUsedError;
-  bool get isRequired => throw _privateConstructorUsedError;
-  bool get isAlternative => throw _privateConstructorUsedError;
+  String? get imageUrl => throw _privateConstructorUsedError;
 
-  /// Serializes this DressCodeItem to a JSON map.
+  /// Serializes this DressCodeRule to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
-  /// Create a copy of DressCodeItem
+  /// Create a copy of DressCodeRule
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DressCodeItemCopyWith<DressCodeItem> get copyWith =>
+  $DressCodeRuleCopyWith<DressCodeRule> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $DressCodeItemCopyWith<$Res> {
-  factory $DressCodeItemCopyWith(
-    DressCodeItem value,
-    $Res Function(DressCodeItem) then,
-  ) = _$DressCodeItemCopyWithImpl<$Res, DressCodeItem>;
+abstract class $DressCodeRuleCopyWith<$Res> {
+  factory $DressCodeRuleCopyWith(
+    DressCodeRule value,
+    $Res Function(DressCodeRule) then,
+  ) = _$DressCodeRuleCopyWithImpl<$Res, DressCodeRule>;
   @useResult
-  $Res call({
-    String id,
-    String dressCodeId,
-    String name,
-    String? description,
-    String? color,
-    String? icon,
-    bool isRequired,
-    bool isAlternative,
-  });
+  $Res call({String groupName, String? description, String? imageUrl});
 }
 
 /// @nodoc
-class _$DressCodeItemCopyWithImpl<$Res, $Val extends DressCodeItem>
-    implements $DressCodeItemCopyWith<$Res> {
-  _$DressCodeItemCopyWithImpl(this._value, this._then);
+class _$DressCodeRuleCopyWithImpl<$Res, $Val extends DressCodeRule>
+    implements $DressCodeRuleCopyWith<$Res> {
+  _$DressCodeRuleCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of DressCodeItem
+  /// Create a copy of DressCodeRule
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
-    Object? dressCodeId = null,
-    Object? name = null,
+    Object? groupName = null,
     Object? description = freezed,
-    Object? color = freezed,
-    Object? icon = freezed,
-    Object? isRequired = null,
-    Object? isAlternative = null,
+    Object? imageUrl = freezed,
   }) {
     return _then(
       _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                      as String,
-            dressCodeId: null == dressCodeId
-                ? _value.dressCodeId
-                : dressCodeId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            name: null == name
-                ? _value.name
-                : name // ignore: cast_nullable_to_non_nullable
+            groupName: null == groupName
+                ? _value.groupName
+                : groupName // ignore: cast_nullable_to_non_nullable
                       as String,
             description: freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
                       as String?,
-            color: freezed == color
-                ? _value.color
-                : color // ignore: cast_nullable_to_non_nullable
+            imageUrl: freezed == imageUrl
+                ? _value.imageUrl
+                : imageUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
-            icon: freezed == icon
-                ? _value.icon
-                : icon // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            isRequired: null == isRequired
-                ? _value.isRequired
-                : isRequired // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            isAlternative: null == isAlternative
-                ? _value.isAlternative
-                : isAlternative // ignore: cast_nullable_to_non_nullable
-                      as bool,
           )
           as $Val,
     );
@@ -2333,83 +2372,49 @@ class _$DressCodeItemCopyWithImpl<$Res, $Val extends DressCodeItem>
 }
 
 /// @nodoc
-abstract class _$$DressCodeItemImplCopyWith<$Res>
-    implements $DressCodeItemCopyWith<$Res> {
-  factory _$$DressCodeItemImplCopyWith(
-    _$DressCodeItemImpl value,
-    $Res Function(_$DressCodeItemImpl) then,
-  ) = __$$DressCodeItemImplCopyWithImpl<$Res>;
+abstract class _$$DressCodeRuleImplCopyWith<$Res>
+    implements $DressCodeRuleCopyWith<$Res> {
+  factory _$$DressCodeRuleImplCopyWith(
+    _$DressCodeRuleImpl value,
+    $Res Function(_$DressCodeRuleImpl) then,
+  ) = __$$DressCodeRuleImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    String id,
-    String dressCodeId,
-    String name,
-    String? description,
-    String? color,
-    String? icon,
-    bool isRequired,
-    bool isAlternative,
-  });
+  $Res call({String groupName, String? description, String? imageUrl});
 }
 
 /// @nodoc
-class __$$DressCodeItemImplCopyWithImpl<$Res>
-    extends _$DressCodeItemCopyWithImpl<$Res, _$DressCodeItemImpl>
-    implements _$$DressCodeItemImplCopyWith<$Res> {
-  __$$DressCodeItemImplCopyWithImpl(
-    _$DressCodeItemImpl _value,
-    $Res Function(_$DressCodeItemImpl) _then,
+class __$$DressCodeRuleImplCopyWithImpl<$Res>
+    extends _$DressCodeRuleCopyWithImpl<$Res, _$DressCodeRuleImpl>
+    implements _$$DressCodeRuleImplCopyWith<$Res> {
+  __$$DressCodeRuleImplCopyWithImpl(
+    _$DressCodeRuleImpl _value,
+    $Res Function(_$DressCodeRuleImpl) _then,
   ) : super(_value, _then);
 
-  /// Create a copy of DressCodeItem
+  /// Create a copy of DressCodeRule
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
-    Object? dressCodeId = null,
-    Object? name = null,
+    Object? groupName = null,
     Object? description = freezed,
-    Object? color = freezed,
-    Object? icon = freezed,
-    Object? isRequired = null,
-    Object? isAlternative = null,
+    Object? imageUrl = freezed,
   }) {
     return _then(
-      _$DressCodeItemImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as String,
-        dressCodeId: null == dressCodeId
-            ? _value.dressCodeId
-            : dressCodeId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        name: null == name
-            ? _value.name
-            : name // ignore: cast_nullable_to_non_nullable
+      _$DressCodeRuleImpl(
+        groupName: null == groupName
+            ? _value.groupName
+            : groupName // ignore: cast_nullable_to_non_nullable
                   as String,
         description: freezed == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
                   as String?,
-        color: freezed == color
-            ? _value.color
-            : color // ignore: cast_nullable_to_non_nullable
+        imageUrl: freezed == imageUrl
+            ? _value.imageUrl
+            : imageUrl // ignore: cast_nullable_to_non_nullable
                   as String?,
-        icon: freezed == icon
-            ? _value.icon
-            : icon // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        isRequired: null == isRequired
-            ? _value.isRequired
-            : isRequired // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        isAlternative: null == isAlternative
-            ? _value.isAlternative
-            : isAlternative // ignore: cast_nullable_to_non_nullable
-                  as bool,
       ),
     );
   }
@@ -2417,128 +2422,81 @@ class __$$DressCodeItemImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$DressCodeItemImpl implements _DressCodeItem {
-  const _$DressCodeItemImpl({
-    required this.id,
-    required this.dressCodeId,
-    required this.name,
+class _$DressCodeRuleImpl implements _DressCodeRule {
+  const _$DressCodeRuleImpl({
+    required this.groupName,
     this.description,
-    this.color,
-    this.icon,
-    this.isRequired = true,
-    this.isAlternative = false,
+    this.imageUrl,
   });
 
-  factory _$DressCodeItemImpl.fromJson(Map<String, dynamic> json) =>
-      _$$DressCodeItemImplFromJson(json);
+  factory _$DressCodeRuleImpl.fromJson(Map<String, dynamic> json) =>
+      _$$DressCodeRuleImplFromJson(json);
 
   @override
-  final String id;
-  @override
-  final String dressCodeId;
-  @override
-  final String name;
+  final String groupName;
   @override
   final String? description;
   @override
-  final String? color;
-  @override
-  final String? icon;
-  @override
-  @JsonKey()
-  final bool isRequired;
-  @override
-  @JsonKey()
-  final bool isAlternative;
+  final String? imageUrl;
 
   @override
   String toString() {
-    return 'DressCodeItem(id: $id, dressCodeId: $dressCodeId, name: $name, description: $description, color: $color, icon: $icon, isRequired: $isRequired, isAlternative: $isAlternative)';
+    return 'DressCodeRule(groupName: $groupName, description: $description, imageUrl: $imageUrl)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$DressCodeItemImpl &&
-            (identical(other.id, id) || other.id == id) &&
-            (identical(other.dressCodeId, dressCodeId) ||
-                other.dressCodeId == dressCodeId) &&
-            (identical(other.name, name) || other.name == name) &&
+            other is _$DressCodeRuleImpl &&
+            (identical(other.groupName, groupName) ||
+                other.groupName == groupName) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            (identical(other.color, color) || other.color == color) &&
-            (identical(other.icon, icon) || other.icon == icon) &&
-            (identical(other.isRequired, isRequired) ||
-                other.isRequired == isRequired) &&
-            (identical(other.isAlternative, isAlternative) ||
-                other.isAlternative == isAlternative));
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    id,
-    dressCodeId,
-    name,
-    description,
-    color,
-    icon,
-    isRequired,
-    isAlternative,
-  );
+  int get hashCode =>
+      Object.hash(runtimeType, groupName, description, imageUrl);
 
-  /// Create a copy of DressCodeItem
+  /// Create a copy of DressCodeRule
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$DressCodeItemImplCopyWith<_$DressCodeItemImpl> get copyWith =>
-      __$$DressCodeItemImplCopyWithImpl<_$DressCodeItemImpl>(this, _$identity);
+  _$$DressCodeRuleImplCopyWith<_$DressCodeRuleImpl> get copyWith =>
+      __$$DressCodeRuleImplCopyWithImpl<_$DressCodeRuleImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$DressCodeItemImplToJson(this);
+    return _$$DressCodeRuleImplToJson(this);
   }
 }
 
-abstract class _DressCodeItem implements DressCodeItem {
-  const factory _DressCodeItem({
-    required final String id,
-    required final String dressCodeId,
-    required final String name,
+abstract class _DressCodeRule implements DressCodeRule {
+  const factory _DressCodeRule({
+    required final String groupName,
     final String? description,
-    final String? color,
-    final String? icon,
-    final bool isRequired,
-    final bool isAlternative,
-  }) = _$DressCodeItemImpl;
+    final String? imageUrl,
+  }) = _$DressCodeRuleImpl;
 
-  factory _DressCodeItem.fromJson(Map<String, dynamic> json) =
-      _$DressCodeItemImpl.fromJson;
+  factory _DressCodeRule.fromJson(Map<String, dynamic> json) =
+      _$DressCodeRuleImpl.fromJson;
 
   @override
-  String get id;
-  @override
-  String get dressCodeId;
-  @override
-  String get name;
+  String get groupName;
   @override
   String? get description;
   @override
-  String? get color;
-  @override
-  String? get icon;
-  @override
-  bool get isRequired;
-  @override
-  bool get isAlternative;
+  String? get imageUrl;
 
-  /// Create a copy of DressCodeItem
+  /// Create a copy of DressCodeRule
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DressCodeItemImplCopyWith<_$DressCodeItemImpl> get copyWith =>
+  _$$DressCodeRuleImplCopyWith<_$DressCodeRuleImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

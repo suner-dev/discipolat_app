@@ -62,35 +62,47 @@ class EventRegistration with _$EventRegistration {
   factory EventRegistration.fromJson(Map<String, dynamic> json) => _$EventRegistrationFromJson(json);
 }
 
+/// Contrat réel : `EventTeam` (backend), exposée par
+/// `GET/POST /api/v1/church-events/{eventId}/teams`.
+///
+/// ATTENTION — l'ancien modèle mobile était un « membre d'équipe » avec un
+/// rôle (`personId`, `teamRole`, `responsibilities`) : **ce concept n'existe
+/// pas côté backend**. Le serveur connaît une *équipe* avec un *responsable*
+/// (`leadPersonId`). On réaligne sur le serveur, qui est la source de vérité.
 @freezed
-class EventTeamMember with _$EventTeamMember {
-  const factory EventTeamMember({
+class EventTeam with _$EventTeam {
+  const factory EventTeam({
     required String id,
-    required String eventId,
-    required String personId,
-    required String role,
-    required TeamRole teamRole,
-    String? responsibilities,
-    DateTime? assignedAt,
-  }) = _EventTeamMember;
+    String? tenantId,
+    String? churchEventId,
+    String? spaceId,
+    required String name,
+    String? description,
+    String? leadPersonId,
+    String? color,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) = _EventTeam;
 
-  factory EventTeamMember.fromJson(Map<String, dynamic> json) => _$EventTeamMemberFromJson(json);
+  factory EventTeam.fromJson(Map<String, dynamic> json) => _$EventTeamFromJson(json);
 }
 
 @freezed
 class EventChecklist with _$EventChecklist {
+  /// Contrat réel : `EventChecklistItem` (backend) — `id`, `tenantId`,
+  /// `eventId`, `title`, `description`, `status`, `assignedTo`, `orderIndex`,
+  /// `createdAt`. Les anciens champs `isRequired`, `isCompleted`,
+  /// `assignedToId`, `order` n'existaient pas côté serveur.
   const factory EventChecklist({
     required String id,
+    String? tenantId,
     required String eventId,
     required String title,
     String? description,
-    @Default(false) bool isRequired,
-    int? assignedToId,
-    String? assignedToName,
-    @Default(false) bool isCompleted,
-    DateTime? completedAt,
-    int? completedById,
-    int? order,
+    @Default(ChecklistStatus.pending) ChecklistStatus status,
+    String? assignedTo,
+    @Default(0) int orderIndex,
+    DateTime? createdAt,
   }) = _EventChecklist;
 
   factory EventChecklist.fromJson(Map<String, dynamic> json) => _$EventChecklistFromJson(json);
@@ -98,33 +110,56 @@ class EventChecklist with _$EventChecklist {
 
 @freezed
 class DressCode with _$DressCode {
+  /// Contrat réel : `DressCodeResponse` (backend) — `id`, `spaceId`,
+  /// `eventId`, `serviceName`, `title`, `beginsAt`, `endsAt`, `status`,
+  /// `archived`, plus `rules` (`DressCodeDetailResponse`).
   const factory DressCode({
     required String id,
-    required String name,
-    String? description,
-    String? colorCode,
-    String? iconUrl,
-    List<DressCodeItem>? items,
-    @Default(false) bool isRequired,
+    String? spaceId,
+    String? eventId,
+    String? serviceName,
+    required String title,
+    DateTime? beginsAt,
+    DateTime? endsAt,
+    @Default('ACTIVE') String status,
+    @Default(false) bool archived,
+    @Default(<DressCodeRule>[]) List<DressCodeRule> rules,
   }) = _DressCode;
 
   factory DressCode.fromJson(Map<String, dynamic> json) => _$DressCodeFromJson(json);
 }
 
+/// `DressCodeRuleRequest` (backend) : `groupName`, `description`, `imageUrl`.
 @freezed
-class DressCodeItem with _$DressCodeItem {
-  const factory DressCodeItem({
-    required String id,
-    required String dressCodeId,
-    required String name,
+class DressCodeRule with _$DressCodeRule {
+  const factory DressCodeRule({
+    required String groupName,
     String? description,
-    String? color,
-    String? icon,
-    @Default(true) bool isRequired,
-    @Default(false) bool isAlternative,
-  }) = _DressCodeItem;
+    String? imageUrl,
+  }) = _DressCodeRule;
 
-  factory DressCodeItem.fromJson(Map<String, dynamic> json) => _$DressCodeItemFromJson(json);
+  factory DressCodeRule.fromJson(Map<String, dynamic> json) => _$DressCodeRuleFromJson(json);
+}
+
+/// Statuts d'un élément de checklist (`EventChecklistItem.Status`).
+enum ChecklistStatus {
+  @JsonValue('PENDING')
+  pending,
+  @JsonValue('DONE')
+  done,
+  @JsonValue('SKIPPED')
+  skipped;
+
+  String get displayName {
+    switch (this) {
+      case ChecklistStatus.pending:
+        return 'À faire';
+      case ChecklistStatus.done:
+        return 'Terminé';
+      case ChecklistStatus.skipped:
+        return 'Ignoré';
+    }
+  }
 }
 
 enum EventType {

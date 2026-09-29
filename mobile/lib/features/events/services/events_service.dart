@@ -70,7 +70,7 @@ class EventsService {
 
   Future<List<Event>> getUpcomingEvents({int limit = 10}) async {
     try {
-      final response = await _api.get('/events/upcoming', queryParameters: {'limit': limit});
+      final response = await _api.get('/events/upcoming/mine', queryParameters: {'limit': limit});
       final data = response.data as List;
       return data.map((json) => Event.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -151,7 +151,7 @@ class EventsService {
 
   Future<EventRegistration> getMyRegistration(String eventId) async {
     try {
-      final response = await _api.get('/events/$eventId/my-registration');
+      final response = await _api.get('/events/$eventId/registrations');
       return EventRegistration.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Erreur lors du chargement de l\'inscription: $e');
@@ -176,7 +176,7 @@ class EventsService {
   // Check-in
   Future<EventRegistration> checkIn(String eventId, {String? method, String? qrCode}) async {
     try {
-      final response = await _api.post('/events/$eventId/check-in', data: {
+      final response = await _api.post('/events/$eventId/attendance', data: {
         'method': method ?? 'MANUAL',
         'qrCode': qrCode,
       });
@@ -188,7 +188,7 @@ class EventsService {
 
   Future<EventRegistration> checkInByQr(String eventId, String qrCode) async {
     try {
-      final response = await _api.post('/events/$eventId/check-in/qr', data: {
+      final response = await _api.post('/events/$eventId/attendance', data: {
         'qrCode': qrCode,
       });
       return EventRegistration.fromJson(response.data as Map<String, dynamic>);
@@ -198,32 +198,34 @@ class EventsService {
   }
 
   // Team
-  Future<List<EventTeamMember>> getEventTeam(String eventId) async {
+  Future<List<EventTeam>> getEventTeams(String eventId) async {
     try {
-      final response = await _api.get('/events/$eventId/team');
+      final response = await _api.get('/church-events/$eventId/teams');
       final data = response.data as List;
-      return data.map((json) => EventTeamMember.fromJson(json as Map<String, dynamic>)).toList();
+      return data.map((json) => EventTeam.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement de l\'équipe: $e');
     }
   }
 
-  Future<EventTeamMember> addTeamMember(String eventId, String personId, TeamRole role, {String? responsibilities}) async {
+  Future<EventTeam> createTeam(String eventId, {required String name, String? description, String? leadPersonId, String? color}) async {
     try {
-      final response = await _api.post('/events/$eventId/team', data: {
-        'personId': personId,
-        'role': role.name,
-        'responsibilities': responsibilities,
+      // `EventTeam` côté backend : un nom, un responsable, une couleur.
+      final response = await _api.post('/church-events/$eventId/teams', data: {
+        'name': name,
+        if (description != null) 'description': description,
+        if (leadPersonId != null) 'leadPersonId': leadPersonId,
+        if (color != null) 'color': color,
       });
-      return EventTeamMember.fromJson(response.data as Map<String, dynamic>);
+      return EventTeam.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Erreur lors de l\'ajout au team: $e');
     }
   }
 
-  Future<void> removeTeamMember(String eventId, String memberId) async {
+  Future<void> deleteTeam(String eventId, String teamId) async {
     try {
-      await _api.delete('/events/$eventId/team/$memberId');
+      await _api.delete('/church-events/$eventId/teams/$teamId');
     } catch (e) {
       throw Exception('Erreur lors de la suppression du membre: $e');
     }
@@ -232,7 +234,7 @@ class EventsService {
   // Checklist
   Future<List<EventChecklist>> getChecklist(String eventId) async {
     try {
-      final response = await _api.get('/events/$eventId/checklist');
+      final response = await _api.get('/event-checklists/event/$eventId');
       final data = response.data as List;
       return data.map((json) => EventChecklist.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -242,7 +244,7 @@ class EventsService {
 
   Future<EventChecklist> addChecklistItem(String eventId, EventChecklist item) async {
     try {
-      final response = await _api.post('/events/$eventId/checklist', data: item.toJson());
+      final response = await _api.post('/event-checklists', data: item.toJson());
       return EventChecklist.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Erreur lors de l\'ajout: $e');
@@ -251,7 +253,7 @@ class EventsService {
 
   Future<EventChecklist> updateChecklistItem(String eventId, String itemId, EventChecklist item) async {
     try {
-      final response = await _api.put('/events/$eventId/checklist/$itemId', data: item.toJson());
+      final response = await _api.put('/event-checklists/$itemId', data: item.toJson());
       return EventChecklist.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Erreur lors de la mise à jour: $e');
@@ -260,26 +262,36 @@ class EventsService {
 
   Future<void> deleteChecklistItem(String eventId, String itemId) async {
     try {
-      await _api.delete('/events/$eventId/checklist/$itemId');
+      await _api.delete('/event-checklists/$itemId');
     } catch (e) {
       throw Exception('Erreur lors de la suppression: $e');
     }
   }
 
   // Dress Code
-  Future<DressCode?> getDressCode(String eventId) async {
+  /// Tenues affectées à un événement.
+  ///
+  /// `GET /api/v1/dress-codes` renvoie une LISTE filtrable par `eventId` : la
+  /// version mobile	expected un objet unique et aurait fait échouer la lecture
+  /// dès qu'un événement a plus d'une tenue.
+  Future<List<DressCode>> getDressCodes(String eventId) async {
     try {
-      final response = await _api.get('/events/$eventId/dress-code');
-      if (response.data == null) return null;
-      return DressCode.fromJson(response.data as Map<String, dynamic>);
+      final response =
+          await _api.get('/dress-codes', queryParameters: {'eventId': eventId});
+      final data = response.data;
+      if (data is! List) return <DressCode>[];
+      return data
+          .map((json) => DressCode.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
-      return null;
+      // Une liste vide est un état affichable ; une exception, non.
+      return <DressCode>[];
     }
   }
 
   Future<DressCode> assignDressCode(String eventId, String dressCodeId) async {
     try {
-      final response = await _api.post('/events/$eventId/dress-code', data: {
+      final response = await _api.post('/dress-codes', data: {
         'dressCodeId': dressCodeId,
       });
       return DressCode.fromJson(response.data as Map<String, dynamic>);
@@ -291,7 +303,7 @@ class EventsService {
   // Statistics
   Future<Map<String, dynamic>> getEventStats(String eventId) async {
     try {
-      final response = await _api.get('/events/$eventId/stats');
+      final response = await _api.get('/events/statistics');
       return response.data as Map<String, dynamic>;
     } catch (e) {
       throw Exception('Erreur lors du chargement des stats: $e');
