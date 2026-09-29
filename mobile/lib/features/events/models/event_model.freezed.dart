@@ -21,38 +21,31 @@ Event _$EventFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Event {
+  // --- EventResponse ---
   String get id => throw _privateConstructorUsedError;
-  String get title => throw _privateConstructorUsedError;
+  String? get organisateurId => throw _privateConstructorUsedError;
+  String? get familleId => throw _privateConstructorUsedError;
+  String? get departmentId => throw _privateConstructorUsedError;
+  String? get typeEvenement => throw _privateConstructorUsedError;
+  String get titre => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  EventType get type => throw _privateConstructorUsedError;
-  DateTime get startAt => throw _privateConstructorUsedError;
-  DateTime get endAt => throw _privateConstructorUsedError;
-  String? get location => throw _privateConstructorUsedError;
-  double? get latitude => throw _privateConstructorUsedError;
-  double? get longitude => throw _privateConstructorUsedError;
-  int? get maxAttendees => throw _privateConstructorUsedError;
-  int get currentAttendees => throw _privateConstructorUsedError;
-  EventStatus get status => throw _privateConstructorUsedError;
-  String? get spaceId => throw _privateConstructorUsedError;
-  String? get spaceName => throw _privateConstructorUsedError;
-  String? get dressCodeId => throw _privateConstructorUsedError;
-  String? get dressCodeName => throw _privateConstructorUsedError;
-  String? get dressCodeDescription => throw _privateConstructorUsedError;
-  bool get isPublic => throw _privateConstructorUsedError;
-  bool get requiresRegistration => throw _privateConstructorUsedError;
-  bool get hasCheckIn => throw _privateConstructorUsedError;
-  bool get hasGeofencing => throw _privateConstructorUsedError;
-  bool get hasFaceCheckIn => throw _privateConstructorUsedError;
-  String? get checkInQrCode => throw _privateConstructorUsedError;
-  String? get streamUrl => throw _privateConstructorUsedError;
-  String? get thumbnailUrl => throw _privateConstructorUsedError;
-  List<String>? get tags => throw _privateConstructorUsedError;
-  DateTime get createdAt => throw _privateConstructorUsedError;
-  DateTime? get updatedAt => throw _privateConstructorUsedError;
+  String? get lieu => throw _privateConstructorUsedError;
+  DateTime get dateDebut => throw _privateConstructorUsedError;
+  DateTime? get dateFin => throw _privateConstructorUsedError;
+  int? get limitePlaces => throw _privateConstructorUsedError;
+  int get nbInscrits => throw _privateConstructorUsedError;
+  EventStatus get statut => throw _privateConstructorUsedError;
+  String? get compteRendu => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
+  List<EventPieceJointe> get piecesJointes =>
+      throw _privateConstructorUsedError; // --- État DÉRIVÉ côté client ---
+  // Jamais lu dans la réponse du serveur, jamais renvoyé : calculé à partir
+  // de la session et des inscriptions. Les declaring ici évite de le
+  // transporter dans le payload, ce qui serait un mensonge de contrat.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   bool get isRegistered => throw _privateConstructorUsedError;
+  @JsonKey(includeFromJson: false, includeToJson: false)
   bool get isCheckedIn => throw _privateConstructorUsedError;
-  bool get isOrganizer => throw _privateConstructorUsedError;
-  bool get isTeamMember => throw _privateConstructorUsedError;
 
   /// Serializes this Event to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -70,37 +63,23 @@ abstract class $EventCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String title,
+    String? organisateurId,
+    String? familleId,
+    String? departmentId,
+    String? typeEvenement,
+    String titre,
     String? description,
-    EventType type,
-    DateTime startAt,
-    DateTime endAt,
-    String? location,
-    double? latitude,
-    double? longitude,
-    int? maxAttendees,
-    int currentAttendees,
-    EventStatus status,
-    String? spaceId,
-    String? spaceName,
-    String? dressCodeId,
-    String? dressCodeName,
-    String? dressCodeDescription,
-    bool isPublic,
-    bool requiresRegistration,
-    bool hasCheckIn,
-    bool hasGeofencing,
-    bool hasFaceCheckIn,
-    String? checkInQrCode,
-    String? streamUrl,
-    String? thumbnailUrl,
-    List<String>? tags,
-    DateTime createdAt,
-    DateTime? updatedAt,
-    bool isRegistered,
-    bool isCheckedIn,
-    bool isOrganizer,
-    bool isTeamMember,
+    String? lieu,
+    DateTime dateDebut,
+    DateTime? dateFin,
+    int? limitePlaces,
+    int nbInscrits,
+    EventStatus statut,
+    String? compteRendu,
+    DateTime? createdAt,
+    List<EventPieceJointe> piecesJointes,
+    @JsonKey(includeFromJson: false, includeToJson: false) bool isRegistered,
+    @JsonKey(includeFromJson: false, includeToJson: false) bool isCheckedIn,
   });
 }
 
@@ -120,37 +99,23 @@ class _$EventCopyWithImpl<$Res, $Val extends Event>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
+    Object? organisateurId = freezed,
+    Object? familleId = freezed,
+    Object? departmentId = freezed,
+    Object? typeEvenement = freezed,
+    Object? titre = null,
     Object? description = freezed,
-    Object? type = null,
-    Object? startAt = null,
-    Object? endAt = null,
-    Object? location = freezed,
-    Object? latitude = freezed,
-    Object? longitude = freezed,
-    Object? maxAttendees = freezed,
-    Object? currentAttendees = null,
-    Object? status = null,
-    Object? spaceId = freezed,
-    Object? spaceName = freezed,
-    Object? dressCodeId = freezed,
-    Object? dressCodeName = freezed,
-    Object? dressCodeDescription = freezed,
-    Object? isPublic = null,
-    Object? requiresRegistration = null,
-    Object? hasCheckIn = null,
-    Object? hasGeofencing = null,
-    Object? hasFaceCheckIn = null,
-    Object? checkInQrCode = freezed,
-    Object? streamUrl = freezed,
-    Object? thumbnailUrl = freezed,
-    Object? tags = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = freezed,
+    Object? lieu = freezed,
+    Object? dateDebut = null,
+    Object? dateFin = freezed,
+    Object? limitePlaces = freezed,
+    Object? nbInscrits = null,
+    Object? statut = null,
+    Object? compteRendu = freezed,
+    Object? createdAt = freezed,
+    Object? piecesJointes = null,
     Object? isRegistered = null,
     Object? isCheckedIn = null,
-    Object? isOrganizer = null,
-    Object? isTeamMember = null,
   }) {
     return _then(
       _value.copyWith(
@@ -158,114 +123,66 @@ class _$EventCopyWithImpl<$Res, $Val extends Event>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            title: null == title
-                ? _value.title
-                : title // ignore: cast_nullable_to_non_nullable
+            organisateurId: freezed == organisateurId
+                ? _value.organisateurId
+                : organisateurId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            familleId: freezed == familleId
+                ? _value.familleId
+                : familleId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            departmentId: freezed == departmentId
+                ? _value.departmentId
+                : departmentId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            typeEvenement: freezed == typeEvenement
+                ? _value.typeEvenement
+                : typeEvenement // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            titre: null == titre
+                ? _value.titre
+                : titre // ignore: cast_nullable_to_non_nullable
                       as String,
             description: freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
                       as String?,
-            type: null == type
-                ? _value.type
-                : type // ignore: cast_nullable_to_non_nullable
-                      as EventType,
-            startAt: null == startAt
-                ? _value.startAt
-                : startAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            endAt: null == endAt
-                ? _value.endAt
-                : endAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            location: freezed == location
-                ? _value.location
-                : location // ignore: cast_nullable_to_non_nullable
+            lieu: freezed == lieu
+                ? _value.lieu
+                : lieu // ignore: cast_nullable_to_non_nullable
                       as String?,
-            latitude: freezed == latitude
-                ? _value.latitude
-                : latitude // ignore: cast_nullable_to_non_nullable
-                      as double?,
-            longitude: freezed == longitude
-                ? _value.longitude
-                : longitude // ignore: cast_nullable_to_non_nullable
-                      as double?,
-            maxAttendees: freezed == maxAttendees
-                ? _value.maxAttendees
-                : maxAttendees // ignore: cast_nullable_to_non_nullable
+            dateDebut: null == dateDebut
+                ? _value.dateDebut
+                : dateDebut // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            dateFin: freezed == dateFin
+                ? _value.dateFin
+                : dateFin // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            limitePlaces: freezed == limitePlaces
+                ? _value.limitePlaces
+                : limitePlaces // ignore: cast_nullable_to_non_nullable
                       as int?,
-            currentAttendees: null == currentAttendees
-                ? _value.currentAttendees
-                : currentAttendees // ignore: cast_nullable_to_non_nullable
+            nbInscrits: null == nbInscrits
+                ? _value.nbInscrits
+                : nbInscrits // ignore: cast_nullable_to_non_nullable
                       as int,
-            status: null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
+            statut: null == statut
+                ? _value.statut
+                : statut // ignore: cast_nullable_to_non_nullable
                       as EventStatus,
-            spaceId: freezed == spaceId
-                ? _value.spaceId
-                : spaceId // ignore: cast_nullable_to_non_nullable
+            compteRendu: freezed == compteRendu
+                ? _value.compteRendu
+                : compteRendu // ignore: cast_nullable_to_non_nullable
                       as String?,
-            spaceName: freezed == spaceName
-                ? _value.spaceName
-                : spaceName // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            dressCodeId: freezed == dressCodeId
-                ? _value.dressCodeId
-                : dressCodeId // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            dressCodeName: freezed == dressCodeName
-                ? _value.dressCodeName
-                : dressCodeName // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            dressCodeDescription: freezed == dressCodeDescription
-                ? _value.dressCodeDescription
-                : dressCodeDescription // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            isPublic: null == isPublic
-                ? _value.isPublic
-                : isPublic // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            requiresRegistration: null == requiresRegistration
-                ? _value.requiresRegistration
-                : requiresRegistration // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            hasCheckIn: null == hasCheckIn
-                ? _value.hasCheckIn
-                : hasCheckIn // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            hasGeofencing: null == hasGeofencing
-                ? _value.hasGeofencing
-                : hasGeofencing // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            hasFaceCheckIn: null == hasFaceCheckIn
-                ? _value.hasFaceCheckIn
-                : hasFaceCheckIn // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            checkInQrCode: freezed == checkInQrCode
-                ? _value.checkInQrCode
-                : checkInQrCode // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            streamUrl: freezed == streamUrl
-                ? _value.streamUrl
-                : streamUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            thumbnailUrl: freezed == thumbnailUrl
-                ? _value.thumbnailUrl
-                : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            tags: freezed == tags
-                ? _value.tags
-                : tags // ignore: cast_nullable_to_non_nullable
-                      as List<String>?,
-            createdAt: null == createdAt
+            createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            updatedAt: freezed == updatedAt
-                ? _value.updatedAt
-                : updatedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            piecesJointes: null == piecesJointes
+                ? _value.piecesJointes
+                : piecesJointes // ignore: cast_nullable_to_non_nullable
+                      as List<EventPieceJointe>,
             isRegistered: null == isRegistered
                 ? _value.isRegistered
                 : isRegistered // ignore: cast_nullable_to_non_nullable
@@ -273,14 +190,6 @@ class _$EventCopyWithImpl<$Res, $Val extends Event>
             isCheckedIn: null == isCheckedIn
                 ? _value.isCheckedIn
                 : isCheckedIn // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            isOrganizer: null == isOrganizer
-                ? _value.isOrganizer
-                : isOrganizer // ignore: cast_nullable_to_non_nullable
-                      as bool,
-            isTeamMember: null == isTeamMember
-                ? _value.isTeamMember
-                : isTeamMember // ignore: cast_nullable_to_non_nullable
                       as bool,
           )
           as $Val,
@@ -298,37 +207,23 @@ abstract class _$$EventImplCopyWith<$Res> implements $EventCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String title,
+    String? organisateurId,
+    String? familleId,
+    String? departmentId,
+    String? typeEvenement,
+    String titre,
     String? description,
-    EventType type,
-    DateTime startAt,
-    DateTime endAt,
-    String? location,
-    double? latitude,
-    double? longitude,
-    int? maxAttendees,
-    int currentAttendees,
-    EventStatus status,
-    String? spaceId,
-    String? spaceName,
-    String? dressCodeId,
-    String? dressCodeName,
-    String? dressCodeDescription,
-    bool isPublic,
-    bool requiresRegistration,
-    bool hasCheckIn,
-    bool hasGeofencing,
-    bool hasFaceCheckIn,
-    String? checkInQrCode,
-    String? streamUrl,
-    String? thumbnailUrl,
-    List<String>? tags,
-    DateTime createdAt,
-    DateTime? updatedAt,
-    bool isRegistered,
-    bool isCheckedIn,
-    bool isOrganizer,
-    bool isTeamMember,
+    String? lieu,
+    DateTime dateDebut,
+    DateTime? dateFin,
+    int? limitePlaces,
+    int nbInscrits,
+    EventStatus statut,
+    String? compteRendu,
+    DateTime? createdAt,
+    List<EventPieceJointe> piecesJointes,
+    @JsonKey(includeFromJson: false, includeToJson: false) bool isRegistered,
+    @JsonKey(includeFromJson: false, includeToJson: false) bool isCheckedIn,
   });
 }
 
@@ -347,37 +242,23 @@ class __$$EventImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
+    Object? organisateurId = freezed,
+    Object? familleId = freezed,
+    Object? departmentId = freezed,
+    Object? typeEvenement = freezed,
+    Object? titre = null,
     Object? description = freezed,
-    Object? type = null,
-    Object? startAt = null,
-    Object? endAt = null,
-    Object? location = freezed,
-    Object? latitude = freezed,
-    Object? longitude = freezed,
-    Object? maxAttendees = freezed,
-    Object? currentAttendees = null,
-    Object? status = null,
-    Object? spaceId = freezed,
-    Object? spaceName = freezed,
-    Object? dressCodeId = freezed,
-    Object? dressCodeName = freezed,
-    Object? dressCodeDescription = freezed,
-    Object? isPublic = null,
-    Object? requiresRegistration = null,
-    Object? hasCheckIn = null,
-    Object? hasGeofencing = null,
-    Object? hasFaceCheckIn = null,
-    Object? checkInQrCode = freezed,
-    Object? streamUrl = freezed,
-    Object? thumbnailUrl = freezed,
-    Object? tags = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = freezed,
+    Object? lieu = freezed,
+    Object? dateDebut = null,
+    Object? dateFin = freezed,
+    Object? limitePlaces = freezed,
+    Object? nbInscrits = null,
+    Object? statut = null,
+    Object? compteRendu = freezed,
+    Object? createdAt = freezed,
+    Object? piecesJointes = null,
     Object? isRegistered = null,
     Object? isCheckedIn = null,
-    Object? isOrganizer = null,
-    Object? isTeamMember = null,
   }) {
     return _then(
       _$EventImpl(
@@ -385,114 +266,66 @@ class __$$EventImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        title: null == title
-            ? _value.title
-            : title // ignore: cast_nullable_to_non_nullable
+        organisateurId: freezed == organisateurId
+            ? _value.organisateurId
+            : organisateurId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        familleId: freezed == familleId
+            ? _value.familleId
+            : familleId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        departmentId: freezed == departmentId
+            ? _value.departmentId
+            : departmentId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        typeEvenement: freezed == typeEvenement
+            ? _value.typeEvenement
+            : typeEvenement // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        titre: null == titre
+            ? _value.titre
+            : titre // ignore: cast_nullable_to_non_nullable
                   as String,
         description: freezed == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
                   as String?,
-        type: null == type
-            ? _value.type
-            : type // ignore: cast_nullable_to_non_nullable
-                  as EventType,
-        startAt: null == startAt
-            ? _value.startAt
-            : startAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        endAt: null == endAt
-            ? _value.endAt
-            : endAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        location: freezed == location
-            ? _value.location
-            : location // ignore: cast_nullable_to_non_nullable
+        lieu: freezed == lieu
+            ? _value.lieu
+            : lieu // ignore: cast_nullable_to_non_nullable
                   as String?,
-        latitude: freezed == latitude
-            ? _value.latitude
-            : latitude // ignore: cast_nullable_to_non_nullable
-                  as double?,
-        longitude: freezed == longitude
-            ? _value.longitude
-            : longitude // ignore: cast_nullable_to_non_nullable
-                  as double?,
-        maxAttendees: freezed == maxAttendees
-            ? _value.maxAttendees
-            : maxAttendees // ignore: cast_nullable_to_non_nullable
+        dateDebut: null == dateDebut
+            ? _value.dateDebut
+            : dateDebut // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        dateFin: freezed == dateFin
+            ? _value.dateFin
+            : dateFin // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        limitePlaces: freezed == limitePlaces
+            ? _value.limitePlaces
+            : limitePlaces // ignore: cast_nullable_to_non_nullable
                   as int?,
-        currentAttendees: null == currentAttendees
-            ? _value.currentAttendees
-            : currentAttendees // ignore: cast_nullable_to_non_nullable
+        nbInscrits: null == nbInscrits
+            ? _value.nbInscrits
+            : nbInscrits // ignore: cast_nullable_to_non_nullable
                   as int,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
+        statut: null == statut
+            ? _value.statut
+            : statut // ignore: cast_nullable_to_non_nullable
                   as EventStatus,
-        spaceId: freezed == spaceId
-            ? _value.spaceId
-            : spaceId // ignore: cast_nullable_to_non_nullable
+        compteRendu: freezed == compteRendu
+            ? _value.compteRendu
+            : compteRendu // ignore: cast_nullable_to_non_nullable
                   as String?,
-        spaceName: freezed == spaceName
-            ? _value.spaceName
-            : spaceName // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        dressCodeId: freezed == dressCodeId
-            ? _value.dressCodeId
-            : dressCodeId // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        dressCodeName: freezed == dressCodeName
-            ? _value.dressCodeName
-            : dressCodeName // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        dressCodeDescription: freezed == dressCodeDescription
-            ? _value.dressCodeDescription
-            : dressCodeDescription // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        isPublic: null == isPublic
-            ? _value.isPublic
-            : isPublic // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        requiresRegistration: null == requiresRegistration
-            ? _value.requiresRegistration
-            : requiresRegistration // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        hasCheckIn: null == hasCheckIn
-            ? _value.hasCheckIn
-            : hasCheckIn // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        hasGeofencing: null == hasGeofencing
-            ? _value.hasGeofencing
-            : hasGeofencing // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        hasFaceCheckIn: null == hasFaceCheckIn
-            ? _value.hasFaceCheckIn
-            : hasFaceCheckIn // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        checkInQrCode: freezed == checkInQrCode
-            ? _value.checkInQrCode
-            : checkInQrCode // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        streamUrl: freezed == streamUrl
-            ? _value.streamUrl
-            : streamUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        thumbnailUrl: freezed == thumbnailUrl
-            ? _value.thumbnailUrl
-            : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        tags: freezed == tags
-            ? _value._tags
-            : tags // ignore: cast_nullable_to_non_nullable
-                  as List<String>?,
-        createdAt: null == createdAt
+        createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        updatedAt: freezed == updatedAt
-            ? _value.updatedAt
-            : updatedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        piecesJointes: null == piecesJointes
+            ? _value._piecesJointes
+            : piecesJointes // ignore: cast_nullable_to_non_nullable
+                  as List<EventPieceJointe>,
         isRegistered: null == isRegistered
             ? _value.isRegistered
             : isRegistered // ignore: cast_nullable_to_non_nullable
@@ -500,14 +333,6 @@ class __$$EventImplCopyWithImpl<$Res>
         isCheckedIn: null == isCheckedIn
             ? _value.isCheckedIn
             : isCheckedIn // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        isOrganizer: null == isOrganizer
-            ? _value.isOrganizer
-            : isOrganizer // ignore: cast_nullable_to_non_nullable
-                  as bool,
-        isTeamMember: null == isTeamMember
-            ? _value.isTeamMember
-            : isTeamMember // ignore: cast_nullable_to_non_nullable
                   as bool,
       ),
     );
@@ -519,128 +344,85 @@ class __$$EventImplCopyWithImpl<$Res>
 class _$EventImpl implements _Event {
   const _$EventImpl({
     required this.id,
-    required this.title,
+    this.organisateurId,
+    this.familleId,
+    this.departmentId,
+    this.typeEvenement,
+    required this.titre,
     this.description,
-    required this.type,
-    required this.startAt,
-    required this.endAt,
-    this.location,
-    this.latitude,
-    this.longitude,
-    this.maxAttendees,
-    this.currentAttendees = 0,
-    required this.status,
-    this.spaceId,
-    this.spaceName,
-    this.dressCodeId,
-    this.dressCodeName,
-    this.dressCodeDescription,
-    this.isPublic = false,
-    this.requiresRegistration = false,
-    this.hasCheckIn = false,
-    this.hasGeofencing = false,
-    this.hasFaceCheckIn = false,
-    this.checkInQrCode,
-    this.streamUrl,
-    this.thumbnailUrl,
-    final List<String>? tags,
-    required this.createdAt,
-    this.updatedAt,
+    this.lieu,
+    required this.dateDebut,
+    this.dateFin,
+    this.limitePlaces,
+    this.nbInscrits = 0,
+    required this.statut,
+    this.compteRendu,
+    this.createdAt,
+    final List<EventPieceJointe> piecesJointes = const <EventPieceJointe>[],
+    @JsonKey(includeFromJson: false, includeToJson: false)
     this.isRegistered = false,
+    @JsonKey(includeFromJson: false, includeToJson: false)
     this.isCheckedIn = false,
-    this.isOrganizer = false,
-    this.isTeamMember = false,
-  }) : _tags = tags;
+  }) : _piecesJointes = piecesJointes;
 
   factory _$EventImpl.fromJson(Map<String, dynamic> json) =>
       _$$EventImplFromJson(json);
 
+  // --- EventResponse ---
   @override
   final String id;
   @override
-  final String title;
+  final String? organisateurId;
+  @override
+  final String? familleId;
+  @override
+  final String? departmentId;
+  @override
+  final String? typeEvenement;
+  @override
+  final String titre;
   @override
   final String? description;
   @override
-  final EventType type;
+  final String? lieu;
   @override
-  final DateTime startAt;
+  final DateTime dateDebut;
   @override
-  final DateTime endAt;
+  final DateTime? dateFin;
   @override
-  final String? location;
-  @override
-  final double? latitude;
-  @override
-  final double? longitude;
-  @override
-  final int? maxAttendees;
+  final int? limitePlaces;
   @override
   @JsonKey()
-  final int currentAttendees;
+  final int nbInscrits;
   @override
-  final EventStatus status;
+  final EventStatus statut;
   @override
-  final String? spaceId;
+  final String? compteRendu;
   @override
-  final String? spaceName;
-  @override
-  final String? dressCodeId;
-  @override
-  final String? dressCodeName;
-  @override
-  final String? dressCodeDescription;
+  final DateTime? createdAt;
+  final List<EventPieceJointe> _piecesJointes;
   @override
   @JsonKey()
-  final bool isPublic;
-  @override
-  @JsonKey()
-  final bool requiresRegistration;
-  @override
-  @JsonKey()
-  final bool hasCheckIn;
-  @override
-  @JsonKey()
-  final bool hasGeofencing;
-  @override
-  @JsonKey()
-  final bool hasFaceCheckIn;
-  @override
-  final String? checkInQrCode;
-  @override
-  final String? streamUrl;
-  @override
-  final String? thumbnailUrl;
-  final List<String>? _tags;
-  @override
-  List<String>? get tags {
-    final value = _tags;
-    if (value == null) return null;
-    if (_tags is EqualUnmodifiableListView) return _tags;
+  List<EventPieceJointe> get piecesJointes {
+    if (_piecesJointes is EqualUnmodifiableListView) return _piecesJointes;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_piecesJointes);
   }
 
+  // --- État DÉRIVÉ côté client ---
+  // Jamais lu dans la réponse du serveur, jamais renvoyé : calculé à partir
+  // de la session et des inscriptions. Les declaring ici évite de le
+  // transporter dans le payload, ce qui serait un mensonge de contrat.
   @override
-  final DateTime createdAt;
-  @override
-  final DateTime? updatedAt;
-  @override
-  @JsonKey()
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final bool isRegistered;
   @override
-  @JsonKey()
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final bool isCheckedIn;
-  @override
-  @JsonKey()
-  final bool isOrganizer;
-  @override
-  @JsonKey()
-  final bool isTeamMember;
 
   @override
   String toString() {
-    return 'Event(id: $id, title: $title, description: $description, type: $type, startAt: $startAt, endAt: $endAt, location: $location, latitude: $latitude, longitude: $longitude, maxAttendees: $maxAttendees, currentAttendees: $currentAttendees, status: $status, spaceId: $spaceId, spaceName: $spaceName, dressCodeId: $dressCodeId, dressCodeName: $dressCodeName, dressCodeDescription: $dressCodeDescription, isPublic: $isPublic, requiresRegistration: $requiresRegistration, hasCheckIn: $hasCheckIn, hasGeofencing: $hasGeofencing, hasFaceCheckIn: $hasFaceCheckIn, checkInQrCode: $checkInQrCode, streamUrl: $streamUrl, thumbnailUrl: $thumbnailUrl, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt, isRegistered: $isRegistered, isCheckedIn: $isCheckedIn, isOrganizer: $isOrganizer, isTeamMember: $isTeamMember)';
+    return 'Event(id: $id, organisateurId: $organisateurId, familleId: $familleId, departmentId: $departmentId, typeEvenement: $typeEvenement, titre: $titre, description: $description, lieu: $lieu, dateDebut: $dateDebut, dateFin: $dateFin, limitePlaces: $limitePlaces, nbInscrits: $nbInscrits, statut: $statut, compteRendu: $compteRendu, createdAt: $createdAt, piecesJointes: $piecesJointes, isRegistered: $isRegistered, isCheckedIn: $isCheckedIn)';
   }
 
   @override
@@ -649,100 +431,63 @@ class _$EventImpl implements _Event {
         (other.runtimeType == runtimeType &&
             other is _$EventImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.title, title) || other.title == title) &&
+            (identical(other.organisateurId, organisateurId) ||
+                other.organisateurId == organisateurId) &&
+            (identical(other.familleId, familleId) ||
+                other.familleId == familleId) &&
+            (identical(other.departmentId, departmentId) ||
+                other.departmentId == departmentId) &&
+            (identical(other.typeEvenement, typeEvenement) ||
+                other.typeEvenement == typeEvenement) &&
+            (identical(other.titre, titre) || other.titre == titre) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            (identical(other.type, type) || other.type == type) &&
-            (identical(other.startAt, startAt) || other.startAt == startAt) &&
-            (identical(other.endAt, endAt) || other.endAt == endAt) &&
-            (identical(other.location, location) ||
-                other.location == location) &&
-            (identical(other.latitude, latitude) ||
-                other.latitude == latitude) &&
-            (identical(other.longitude, longitude) ||
-                other.longitude == longitude) &&
-            (identical(other.maxAttendees, maxAttendees) ||
-                other.maxAttendees == maxAttendees) &&
-            (identical(other.currentAttendees, currentAttendees) ||
-                other.currentAttendees == currentAttendees) &&
-            (identical(other.status, status) || other.status == status) &&
-            (identical(other.spaceId, spaceId) || other.spaceId == spaceId) &&
-            (identical(other.spaceName, spaceName) ||
-                other.spaceName == spaceName) &&
-            (identical(other.dressCodeId, dressCodeId) ||
-                other.dressCodeId == dressCodeId) &&
-            (identical(other.dressCodeName, dressCodeName) ||
-                other.dressCodeName == dressCodeName) &&
-            (identical(other.dressCodeDescription, dressCodeDescription) ||
-                other.dressCodeDescription == dressCodeDescription) &&
-            (identical(other.isPublic, isPublic) ||
-                other.isPublic == isPublic) &&
-            (identical(other.requiresRegistration, requiresRegistration) ||
-                other.requiresRegistration == requiresRegistration) &&
-            (identical(other.hasCheckIn, hasCheckIn) ||
-                other.hasCheckIn == hasCheckIn) &&
-            (identical(other.hasGeofencing, hasGeofencing) ||
-                other.hasGeofencing == hasGeofencing) &&
-            (identical(other.hasFaceCheckIn, hasFaceCheckIn) ||
-                other.hasFaceCheckIn == hasFaceCheckIn) &&
-            (identical(other.checkInQrCode, checkInQrCode) ||
-                other.checkInQrCode == checkInQrCode) &&
-            (identical(other.streamUrl, streamUrl) ||
-                other.streamUrl == streamUrl) &&
-            (identical(other.thumbnailUrl, thumbnailUrl) ||
-                other.thumbnailUrl == thumbnailUrl) &&
-            const DeepCollectionEquality().equals(other._tags, _tags) &&
+            (identical(other.lieu, lieu) || other.lieu == lieu) &&
+            (identical(other.dateDebut, dateDebut) ||
+                other.dateDebut == dateDebut) &&
+            (identical(other.dateFin, dateFin) || other.dateFin == dateFin) &&
+            (identical(other.limitePlaces, limitePlaces) ||
+                other.limitePlaces == limitePlaces) &&
+            (identical(other.nbInscrits, nbInscrits) ||
+                other.nbInscrits == nbInscrits) &&
+            (identical(other.statut, statut) || other.statut == statut) &&
+            (identical(other.compteRendu, compteRendu) ||
+                other.compteRendu == compteRendu) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
-            (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt) &&
+            const DeepCollectionEquality().equals(
+              other._piecesJointes,
+              _piecesJointes,
+            ) &&
             (identical(other.isRegistered, isRegistered) ||
                 other.isRegistered == isRegistered) &&
             (identical(other.isCheckedIn, isCheckedIn) ||
-                other.isCheckedIn == isCheckedIn) &&
-            (identical(other.isOrganizer, isOrganizer) ||
-                other.isOrganizer == isOrganizer) &&
-            (identical(other.isTeamMember, isTeamMember) ||
-                other.isTeamMember == isTeamMember));
+                other.isCheckedIn == isCheckedIn));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hashAll([
+  int get hashCode => Object.hash(
     runtimeType,
     id,
-    title,
+    organisateurId,
+    familleId,
+    departmentId,
+    typeEvenement,
+    titre,
     description,
-    type,
-    startAt,
-    endAt,
-    location,
-    latitude,
-    longitude,
-    maxAttendees,
-    currentAttendees,
-    status,
-    spaceId,
-    spaceName,
-    dressCodeId,
-    dressCodeName,
-    dressCodeDescription,
-    isPublic,
-    requiresRegistration,
-    hasCheckIn,
-    hasGeofencing,
-    hasFaceCheckIn,
-    checkInQrCode,
-    streamUrl,
-    thumbnailUrl,
-    const DeepCollectionEquality().hash(_tags),
+    lieu,
+    dateDebut,
+    dateFin,
+    limitePlaces,
+    nbInscrits,
+    statut,
+    compteRendu,
     createdAt,
-    updatedAt,
+    const DeepCollectionEquality().hash(_piecesJointes),
     isRegistered,
     isCheckedIn,
-    isOrganizer,
-    isTeamMember,
-  ]);
+  );
 
   /// Create a copy of Event
   /// with the given fields replaced by the non-null parameter values.
@@ -761,105 +506,71 @@ class _$EventImpl implements _Event {
 abstract class _Event implements Event {
   const factory _Event({
     required final String id,
-    required final String title,
+    final String? organisateurId,
+    final String? familleId,
+    final String? departmentId,
+    final String? typeEvenement,
+    required final String titre,
     final String? description,
-    required final EventType type,
-    required final DateTime startAt,
-    required final DateTime endAt,
-    final String? location,
-    final double? latitude,
-    final double? longitude,
-    final int? maxAttendees,
-    final int currentAttendees,
-    required final EventStatus status,
-    final String? spaceId,
-    final String? spaceName,
-    final String? dressCodeId,
-    final String? dressCodeName,
-    final String? dressCodeDescription,
-    final bool isPublic,
-    final bool requiresRegistration,
-    final bool hasCheckIn,
-    final bool hasGeofencing,
-    final bool hasFaceCheckIn,
-    final String? checkInQrCode,
-    final String? streamUrl,
-    final String? thumbnailUrl,
-    final List<String>? tags,
-    required final DateTime createdAt,
-    final DateTime? updatedAt,
+    final String? lieu,
+    required final DateTime dateDebut,
+    final DateTime? dateFin,
+    final int? limitePlaces,
+    final int nbInscrits,
+    required final EventStatus statut,
+    final String? compteRendu,
+    final DateTime? createdAt,
+    final List<EventPieceJointe> piecesJointes,
+    @JsonKey(includeFromJson: false, includeToJson: false)
     final bool isRegistered,
+    @JsonKey(includeFromJson: false, includeToJson: false)
     final bool isCheckedIn,
-    final bool isOrganizer,
-    final bool isTeamMember,
   }) = _$EventImpl;
 
   factory _Event.fromJson(Map<String, dynamic> json) = _$EventImpl.fromJson;
 
+  // --- EventResponse ---
   @override
   String get id;
   @override
-  String get title;
+  String? get organisateurId;
+  @override
+  String? get familleId;
+  @override
+  String? get departmentId;
+  @override
+  String? get typeEvenement;
+  @override
+  String get titre;
   @override
   String? get description;
   @override
-  EventType get type;
+  String? get lieu;
   @override
-  DateTime get startAt;
+  DateTime get dateDebut;
   @override
-  DateTime get endAt;
+  DateTime? get dateFin;
   @override
-  String? get location;
+  int? get limitePlaces;
   @override
-  double? get latitude;
+  int get nbInscrits;
   @override
-  double? get longitude;
+  EventStatus get statut;
   @override
-  int? get maxAttendees;
+  String? get compteRendu;
   @override
-  int get currentAttendees;
+  DateTime? get createdAt;
   @override
-  EventStatus get status;
+  List<EventPieceJointe> get piecesJointes; // --- État DÉRIVÉ côté client ---
+  // Jamais lu dans la réponse du serveur, jamais renvoyé : calculé à partir
+  // de la session et des inscriptions. Les declaring ici évite de le
+  // transporter dans le payload, ce qui serait un mensonge de contrat.
   @override
-  String? get spaceId;
-  @override
-  String? get spaceName;
-  @override
-  String? get dressCodeId;
-  @override
-  String? get dressCodeName;
-  @override
-  String? get dressCodeDescription;
-  @override
-  bool get isPublic;
-  @override
-  bool get requiresRegistration;
-  @override
-  bool get hasCheckIn;
-  @override
-  bool get hasGeofencing;
-  @override
-  bool get hasFaceCheckIn;
-  @override
-  String? get checkInQrCode;
-  @override
-  String? get streamUrl;
-  @override
-  String? get thumbnailUrl;
-  @override
-  List<String>? get tags;
-  @override
-  DateTime get createdAt;
-  @override
-  DateTime? get updatedAt;
-  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   bool get isRegistered;
   @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   bool get isCheckedIn;
-  @override
-  bool get isOrganizer;
-  @override
-  bool get isTeamMember;
 
   /// Create a copy of Event
   /// with the given fields replaced by the non-null parameter values.
@@ -2498,5 +2209,221 @@ abstract class _DressCodeRule implements DressCodeRule {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$DressCodeRuleImplCopyWith<_$DressCodeRuleImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+EventPieceJointe _$EventPieceJointeFromJson(Map<String, dynamic> json) {
+  return _EventPieceJointe.fromJson(json);
+}
+
+/// @nodoc
+mixin _$EventPieceJointe {
+  String get id => throw _privateConstructorUsedError;
+  String get fileId => throw _privateConstructorUsedError;
+  String get nom => throw _privateConstructorUsedError;
+  String get url => throw _privateConstructorUsedError;
+
+  /// Serializes this EventPieceJointe to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of EventPieceJointe
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $EventPieceJointeCopyWith<EventPieceJointe> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $EventPieceJointeCopyWith<$Res> {
+  factory $EventPieceJointeCopyWith(
+    EventPieceJointe value,
+    $Res Function(EventPieceJointe) then,
+  ) = _$EventPieceJointeCopyWithImpl<$Res, EventPieceJointe>;
+  @useResult
+  $Res call({String id, String fileId, String nom, String url});
+}
+
+/// @nodoc
+class _$EventPieceJointeCopyWithImpl<$Res, $Val extends EventPieceJointe>
+    implements $EventPieceJointeCopyWith<$Res> {
+  _$EventPieceJointeCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of EventPieceJointe
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? fileId = null,
+    Object? nom = null,
+    Object? url = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            fileId: null == fileId
+                ? _value.fileId
+                : fileId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            nom: null == nom
+                ? _value.nom
+                : nom // ignore: cast_nullable_to_non_nullable
+                      as String,
+            url: null == url
+                ? _value.url
+                : url // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$EventPieceJointeImplCopyWith<$Res>
+    implements $EventPieceJointeCopyWith<$Res> {
+  factory _$$EventPieceJointeImplCopyWith(
+    _$EventPieceJointeImpl value,
+    $Res Function(_$EventPieceJointeImpl) then,
+  ) = __$$EventPieceJointeImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id, String fileId, String nom, String url});
+}
+
+/// @nodoc
+class __$$EventPieceJointeImplCopyWithImpl<$Res>
+    extends _$EventPieceJointeCopyWithImpl<$Res, _$EventPieceJointeImpl>
+    implements _$$EventPieceJointeImplCopyWith<$Res> {
+  __$$EventPieceJointeImplCopyWithImpl(
+    _$EventPieceJointeImpl _value,
+    $Res Function(_$EventPieceJointeImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of EventPieceJointe
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? fileId = null,
+    Object? nom = null,
+    Object? url = null,
+  }) {
+    return _then(
+      _$EventPieceJointeImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        fileId: null == fileId
+            ? _value.fileId
+            : fileId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        nom: null == nom
+            ? _value.nom
+            : nom // ignore: cast_nullable_to_non_nullable
+                  as String,
+        url: null == url
+            ? _value.url
+            : url // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$EventPieceJointeImpl implements _EventPieceJointe {
+  const _$EventPieceJointeImpl({
+    required this.id,
+    required this.fileId,
+    required this.nom,
+    required this.url,
+  });
+
+  factory _$EventPieceJointeImpl.fromJson(Map<String, dynamic> json) =>
+      _$$EventPieceJointeImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final String fileId;
+  @override
+  final String nom;
+  @override
+  final String url;
+
+  @override
+  String toString() {
+    return 'EventPieceJointe(id: $id, fileId: $fileId, nom: $nom, url: $url)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$EventPieceJointeImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.fileId, fileId) || other.fileId == fileId) &&
+            (identical(other.nom, nom) || other.nom == nom) &&
+            (identical(other.url, url) || other.url == url));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, fileId, nom, url);
+
+  /// Create a copy of EventPieceJointe
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$EventPieceJointeImplCopyWith<_$EventPieceJointeImpl> get copyWith =>
+      __$$EventPieceJointeImplCopyWithImpl<_$EventPieceJointeImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$EventPieceJointeImplToJson(this);
+  }
+}
+
+abstract class _EventPieceJointe implements EventPieceJointe {
+  const factory _EventPieceJointe({
+    required final String id,
+    required final String fileId,
+    required final String nom,
+    required final String url,
+  }) = _$EventPieceJointeImpl;
+
+  factory _EventPieceJointe.fromJson(Map<String, dynamic> json) =
+      _$EventPieceJointeImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  String get fileId;
+  @override
+  String get nom;
+  @override
+  String get url;
+
+  /// Create a copy of EventPieceJointe
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$EventPieceJointeImplCopyWith<_$EventPieceJointeImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

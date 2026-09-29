@@ -8,88 +8,50 @@ part of 'event_model.dart';
 
 _$EventImpl _$$EventImplFromJson(Map<String, dynamic> json) => _$EventImpl(
   id: json['id'] as String,
-  title: json['title'] as String,
+  organisateurId: json['organisateurId'] as String?,
+  familleId: json['familleId'] as String?,
+  departmentId: json['departmentId'] as String?,
+  typeEvenement: json['typeEvenement'] as String?,
+  titre: json['titre'] as String,
   description: json['description'] as String?,
-  type: $enumDecode(_$EventTypeEnumMap, json['type']),
-  startAt: DateTime.parse(json['startAt'] as String),
-  endAt: DateTime.parse(json['endAt'] as String),
-  location: json['location'] as String?,
-  latitude: (json['latitude'] as num?)?.toDouble(),
-  longitude: (json['longitude'] as num?)?.toDouble(),
-  maxAttendees: (json['maxAttendees'] as num?)?.toInt(),
-  currentAttendees: (json['currentAttendees'] as num?)?.toInt() ?? 0,
-  status: $enumDecode(_$EventStatusEnumMap, json['status']),
-  spaceId: json['spaceId'] as String?,
-  spaceName: json['spaceName'] as String?,
-  dressCodeId: json['dressCodeId'] as String?,
-  dressCodeName: json['dressCodeName'] as String?,
-  dressCodeDescription: json['dressCodeDescription'] as String?,
-  isPublic: json['isPublic'] as bool? ?? false,
-  requiresRegistration: json['requiresRegistration'] as bool? ?? false,
-  hasCheckIn: json['hasCheckIn'] as bool? ?? false,
-  hasGeofencing: json['hasGeofencing'] as bool? ?? false,
-  hasFaceCheckIn: json['hasFaceCheckIn'] as bool? ?? false,
-  checkInQrCode: json['checkInQrCode'] as String?,
-  streamUrl: json['streamUrl'] as String?,
-  thumbnailUrl: json['thumbnailUrl'] as String?,
-  tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt: json['updatedAt'] == null
+  lieu: json['lieu'] as String?,
+  dateDebut: DateTime.parse(json['dateDebut'] as String),
+  dateFin: json['dateFin'] == null
       ? null
-      : DateTime.parse(json['updatedAt'] as String),
-  isRegistered: json['isRegistered'] as bool? ?? false,
-  isCheckedIn: json['isCheckedIn'] as bool? ?? false,
-  isOrganizer: json['isOrganizer'] as bool? ?? false,
-  isTeamMember: json['isTeamMember'] as bool? ?? false,
+      : DateTime.parse(json['dateFin'] as String),
+  limitePlaces: (json['limitePlaces'] as num?)?.toInt(),
+  nbInscrits: (json['nbInscrits'] as num?)?.toInt() ?? 0,
+  statut: $enumDecode(_$EventStatusEnumMap, json['statut']),
+  compteRendu: json['compteRendu'] as String?,
+  createdAt: json['createdAt'] == null
+      ? null
+      : DateTime.parse(json['createdAt'] as String),
+  piecesJointes:
+      (json['piecesJointes'] as List<dynamic>?)
+          ?.map((e) => EventPieceJointe.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const <EventPieceJointe>[],
 );
 
 Map<String, dynamic> _$$EventImplToJson(_$EventImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'title': instance.title,
+      'organisateurId': instance.organisateurId,
+      'familleId': instance.familleId,
+      'departmentId': instance.departmentId,
+      'typeEvenement': instance.typeEvenement,
+      'titre': instance.titre,
       'description': instance.description,
-      'type': _$EventTypeEnumMap[instance.type]!,
-      'startAt': instance.startAt.toIso8601String(),
-      'endAt': instance.endAt.toIso8601String(),
-      'location': instance.location,
-      'latitude': instance.latitude,
-      'longitude': instance.longitude,
-      'maxAttendees': instance.maxAttendees,
-      'currentAttendees': instance.currentAttendees,
-      'status': _$EventStatusEnumMap[instance.status]!,
-      'spaceId': instance.spaceId,
-      'spaceName': instance.spaceName,
-      'dressCodeId': instance.dressCodeId,
-      'dressCodeName': instance.dressCodeName,
-      'dressCodeDescription': instance.dressCodeDescription,
-      'isPublic': instance.isPublic,
-      'requiresRegistration': instance.requiresRegistration,
-      'hasCheckIn': instance.hasCheckIn,
-      'hasGeofencing': instance.hasGeofencing,
-      'hasFaceCheckIn': instance.hasFaceCheckIn,
-      'checkInQrCode': instance.checkInQrCode,
-      'streamUrl': instance.streamUrl,
-      'thumbnailUrl': instance.thumbnailUrl,
-      'tags': instance.tags,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt?.toIso8601String(),
-      'isRegistered': instance.isRegistered,
-      'isCheckedIn': instance.isCheckedIn,
-      'isOrganizer': instance.isOrganizer,
-      'isTeamMember': instance.isTeamMember,
+      'lieu': instance.lieu,
+      'dateDebut': instance.dateDebut.toIso8601String(),
+      'dateFin': instance.dateFin?.toIso8601String(),
+      'limitePlaces': instance.limitePlaces,
+      'nbInscrits': instance.nbInscrits,
+      'statut': _$EventStatusEnumMap[instance.statut]!,
+      'compteRendu': instance.compteRendu,
+      'createdAt': instance.createdAt?.toIso8601String(),
+      'piecesJointes': instance.piecesJointes,
     };
-
-const _$EventTypeEnumMap = {
-  EventType.culte: 'CULTE',
-  EventType.reunion: 'REUNION',
-  EventType.evangelisation: 'EVANGELISATION',
-  EventType.formation: 'FORMATION',
-  EventType.evenementSpecial: 'EVENEMENT_SPECIAL',
-  EventType.repas: 'REPAS',
-  EventType.retraite: 'RETRAITE',
-  EventType.conference: 'CONFERENCE',
-  EventType.autre: 'AUTRE',
-};
 
 const _$EventStatusEnumMap = {
   EventStatus.published: 'PLANIFIE',
@@ -262,3 +224,21 @@ Map<String, dynamic> _$$DressCodeRuleImplToJson(_$DressCodeRuleImpl instance) =>
       'description': instance.description,
       'imageUrl': instance.imageUrl,
     };
+
+_$EventPieceJointeImpl _$$EventPieceJointeImplFromJson(
+  Map<String, dynamic> json,
+) => _$EventPieceJointeImpl(
+  id: json['id'] as String,
+  fileId: json['fileId'] as String,
+  nom: json['nom'] as String,
+  url: json['url'] as String,
+);
+
+Map<String, dynamic> _$$EventPieceJointeImplToJson(
+  _$EventPieceJointeImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'fileId': instance.fileId,
+  'nom': instance.nom,
+  'url': instance.url,
+};

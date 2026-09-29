@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -104,10 +103,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
                           return EventCard(
                             event: event,
                             onTap: () => context.push('/events/${event.id}'),
-                            onRegister: event.isRegistered || event.status != EventStatus.published
+                            onRegister: event.isRegistered || event.statut != EventStatus.published
                                 ? null
                                 : () => _handleRegister(event),
-                            onCheckIn: event.isCheckedIn || !event.hasCheckIn || event.status != EventStatus.live
+                            onCheckIn: event.isCheckedIn || event.statut != EventStatus.live
                                 ? null
                                 : () => _handleCheckIn(event),
                           );
@@ -143,7 +142,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
       data: (events) {
         final eventMap = <DateTime, List<Event>>{};
         for (final event in events) {
-          final date = DateTime(event.startAt.year, event.startAt.month, event.startAt.day);
+          final date = DateTime(event.dateDebut.year, event.dateDebut.month, event.dateDebut.day);
           eventMap.putIfAbsent(date, () => []).add(event);
         }
 
@@ -273,7 +272,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
                 event: event,
                 onTap: () => context.push('/events/${event.id}'),
                 onRegister: event.isRegistered ? null : () => _handleRegister(event),
-                onCheckIn: event.isCheckedIn || !event.hasCheckIn ? null : () => _handleCheckIn(event),
+                onCheckIn: event.isCheckedIn || event.statut != EventStatus.live ? null : () => _handleCheckIn(event),
               );
             },
           ),

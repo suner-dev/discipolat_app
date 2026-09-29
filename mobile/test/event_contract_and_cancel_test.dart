@@ -211,29 +211,90 @@ void main() {
     });
   });
 
-  group('Divergence de schéma CONNUE (module non fonctionnel)', () {
-    // Ce test ne « passe » pas par hasard : il DOCUMENTE un écart mesuré. Le
-    // modèle `Event` a été écrit contre un schéma qui n'a jamais été celui du
-    // backend. Tant qu'il existe avec cette liste, la correction n'a pas eu
-    // lieu ; le supprimer et le remplacer par des tests de parsing réel est le
-    // signal de fin de la migration.
-    test('le modèle mobile et EventResponse n\'ont AUCUN champ en commun', () {
-      const backendFields = {
-        'id', 'organisateurId', 'familleId', 'departmentId', 'typeEvenement',
-        'titre', 'description', 'lieu', 'dateDebut', 'dateFin', 'limitePlaces',
-        'nbInscrits', 'statut', 'compteRendu', 'createdAt', 'piecesJointes',
-      };
-      const expectedByMobile = {
-        'title', 'startAt', 'endAt', 'location', 'type', 'currentAttendees',
-        'maxAttendees', 'isPublic', 'requiresRegistration', 'hasCheckIn',
-        'spaceId', 'dressCodeId', 'organizerId', 'attachments',
-      };
-      final missing = expectedByMobile.difference(backendFields);
-      expect(missing, isNotEmpty,
-          reason:
-              'Si cette liste est vide, le modèle a été réaligné sur '
-              'EventResponse : supprime ce test et ajoute les tests de parsing.');
-      expect(missing.length, greaterThanOrEqualTo(10));
+  group('Parsing du contrat réel (migration achevée)', () {
+    test('un EventResponse réel est lu sans erreur et sans perte', () {
+      final event = Event.fromJson(backendEventJson());
+
+      expect(event.id, _uuid);
+      expect(event.titre, 'Reunion de priere');
+      expect(event.lieu, 'Salle 1');
+      expect(event.typeEvenement, 'REUNION');
+      expect(event.dateDebut, DateTime(2026, 10, 1, 18));
+      expect(event.dateFin, isNotNull);
+      expect(event.limitePlaces, 50);
+      expect(event.nbInscrits, 3);
+      expect(event.statut, EventStatus.published);
+      expect(event.organisateurId, _person);
+      expect(event.piecesJointes, isEmpty);
+    });
+
+    test('le statut ANNULE du serveur devient EventStatus.cancelled', () {
+      final event = Event.fromJson(backendEventJson(statut: 'ANNULE'));
+      expect(event.statut, EventStatus.cancelled);
+    });
+
+    test('un statut atypique ne fait pas échouer la lecture', () async {
+      // La tolérance est une propriété de la FRONTIÈRE (le service) : c'est le
+      // seul endroit qui décode une réponse du serveur. Le modèle reste strict,
+      // sinon json_serializable ne génère plus son décodeur.
+      final api = _FakeApi({
+        '/events/$_uuid': backendEventJson(statut: 'REPORTEE'),
+      });
+      final event = await EventsService(api).getEvent(_uuid);
+      expect(event.statut, EventStatus.unknown);
+      expect(event.titre, 'Reunion de priere'); // le reste est bien lu
+    });
+
+    test('un statut atypique ne fait pas échouer toute la liste', () async {
+      final api = _FakeApi({
+        '/events': [
+          backendEventJson(statut: 'PLANIFIE'),
+          backendEventJson(
+              statut: 'REPORTEE', id: '33333333-3333-3333-3333-333333333333'),
+        ],
+      });
+      final events = await EventsService(api).getEvents();
+      expect(events.length, 2);
+      expect(events.first.statut, EventStatus.published);
+      expect(events.last.statut, EventStatus.unknown);
+    });
+
+    test('une pièce jointe réelle est lue (AttachmentItem)', () {
+      final json = backendEventJson();
+      json['piecesJointes'] = [
+        {
+          'id': _uuid,
+          'fileId': _person,
+          'nom': 'Ordre du jour.pdf',
+          'url': 'https://files.example/ordre-du-jour.pdf',
+        },
+      ];
+      final event = Event.fromJson(json);
+      expect(event.piecesJointes.single.nom, 'Ordre du jour.pdf');
+      expect(event.piecesJointes.single.url, 'https://files.example/ordre-du-jour.pdf');
+    });
+
+    test("l'état dérivé n'est jamais lu dans la réponse", () {
+      // Les drapeaux client ne sont pas du contrat : le serveur ne les envoie
+      // pas, et le modèle ne doit donc pas les prétendre.
+      final event = Event.fromJson(backendEventJson());
+      expect(event.isRegistered, isFalse);
+      expect(event.isCheckedIn, isFalse);
+      expect(event.isOrganizedBy(null), isFalse);
+      expect(event.isOrganizedBy(_person), isTrue);
+    });
+
+    test('le corps ENVOYÉ utilise les noms du serveur', () {
+      final event = Event.fromJson(backendEventJson());
+      final body = event.toJson();
+      expect(body['titre'], 'Reunion de priere');
+      expect(body['lieu'], 'Salle 1');
+      expect(body['typeEvenement'], 'REUNION');
+      expect(body['dateDebut'], isA<String>());
+      // et aucun des anciens noms anglicisés
+      expect(body.containsKey('title'), isFalse);
+      expect(body.containsKey('startAt'), isFalse);
+      expect(body.containsKey('location'), isFalse);
     });
   });
 }

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 import 'package:discipolat_mobile/features/events/services/events_service.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
@@ -37,21 +38,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     try {
       final event = await ref.read(eventsServiceProvider).getEvent(widget.eventId);
       
-      if (event.streamUrl != null && event.streamUrl!.isNotEmpty) {
-        _videoController = VideoPlayerController.networkUrl(Uri.parse(event.streamUrl!))
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {
-                _isInitialized = true;
-              });
-              if (event.status == EventStatus.live) {
-                _videoController!.play();
-              }
-            }
-          }).catchError((error) {
-            print('Video init error: $error');
-          });
-      }
+      // Pas de lecteur vidéo ici : `EventResponse` n'expose aucune URL de
+      // flux. Le streaming est un module distinct (`/api/v1/streams`,
+      // `LiveStream.streamUrl`) ; le mélanger à l'événement était un mensonge
+      // de contrat qui ne pouvait rien afficher.
       
       // Load registration if exists
       ref.read(eventsServiceProvider).getMyRegistration(widget.eventId);
@@ -73,6 +63,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(_eventProvider(widget.eventId));
+
     final registrationAsync = ref.watch(_registrationProvider(widget.eventId));
 
     return Scaffold(
@@ -97,12 +88,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Widget _buildContent(Event event, AsyncValue<EventRegistration?> registrationAsync) {
-    final isLive = event.status == EventStatus.live;
-    final isUpcoming = event.status == EventStatus.published;
-    final canRegister = isUpcoming && !event.isRegistered && event.requiresRegistration;
-    final canCheckIn = isLive && event.hasCheckIn && !event.isCheckedIn;
-    final isTeam = event.isTeamMember;
-    final isOrganizer = event.isOrganizer;
+    final isLive = event.statut == EventStatus.live;
+    final isUpcoming = event.statut == EventStatus.published;
+    final canRegister = isUpcoming && !event.isRegistered;
+    final canCheckIn = isLive && !event.isCheckedIn;
+    final isOrganizer = event.isOrganizedBy(AuthState().userId);
 
     return Stack(
       children: [
@@ -113,13 +103,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   aspectRatio: _videoController!.value.aspectRatio,
                   child: VideoPlayer(_videoController!),
                 )
-              : event.thumbnailUrl != null
-                  ? Image.network(
-                      event.thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholder(event),
-                    )
-                  : _buildPlaceholder(event),
+                // `EventResponse` n'expose aucune vignette : on affiche le
+                // placeholder plutôt qu'une image qui n'existe pas.
+                : _buildPlaceholder(event),
         ),
         // Gradient overlay
         Positioned.fill(
@@ -157,7 +143,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          event.title,
+                          event.titre,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -166,10 +152,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (event.startAt != null)
+                        if (event.dateDebut != null)
                           Text(
                             isLive ? 'En direct' :
-                                DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(event.startAt.toLocal()),
+                                DateFormat('EEEE dd MMMM yyyy', 'fr_FR').format(event.dateDebut.toLocal()),
                             style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                       ],
@@ -213,7 +199,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         const PopupMenuItem(value: 'register', child: Row(children: [Icon(Icons.how_to_reg_rounded), SizedBox(width: 8), Text('S\'inscrire')])),
                       if (canCheckIn)
                         const PopupMenuItem(value: 'checkin', child: Row(children: [Icon(Icons.check_circle_rounded, color: Colors.green), SizedBox(width: 8), Text('Check-in')])),
-                      if (isTeam || isOrganizer)
+                      if (isOrganizer)
                         const PopupMenuItem(value: 'team', child: Row(children: [Icon(Icons.group_rounded), SizedBox(width: 8), Text('Équipe')])),
                       const PopupMenuItem(value: 'share', child: Row(children: [Icon(Icons.share_rounded), SizedBox(width: 8), Text('Partager')])),
                       const PopupMenuItem(value: 'calendar', child: Row(children: [Icon(Icons.calendar_month_rounded), SizedBox(width: 8), Text('Ajouter au calendrier')])),
@@ -246,7 +232,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           bottom: 0,
           left: 0,
           right: 0,
-          child: _buildBottomPanel(event, registrationAsync, canRegister, canCheckIn, isTeam, isOrganizer),
+          child: _buildBottomPanel(event, registrationAsync, canRegister, canCheckIn, false, isOrganizer),
         ),
         // Controls overlay
         if (_isInitialized && _videoController != null)
@@ -275,7 +261,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   Widget _buildPlaceholder(Event event) {
     final typeColor = event.type.getColorHex().toColor();
-    final isLive = event.status == EventStatus.live;
+    final isLive = event.statut == EventStatus.live;
     return Container(
       color: typeColor.withOpacity(0.1),
       child: Center(
@@ -324,12 +310,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             spacing: 16,
             runSpacing: 12,
             children: [
-              if (event.location != null)
-                _buildInfoChip(Icons.location_on_rounded, event.location!, AppColors.primary),
-              if (event.dressCodeName != null)
-                _buildInfoChip(Icons.checkroom_rounded, 'Dress code: ${event.dressCodeName!}', AppColors.accent),
-              if (event.maxAttendees != null && event.maxAttendees! > 0)
-                _buildInfoChip(Icons.people_rounded, '${event.currentAttendees}/${event.maxAttendees} inscrits', Colors.blue),
+              if (event.lieu != null)
+                _buildInfoChip(Icons.location_on_rounded, event.lieu!, AppColors.primary),
+              if (event.limitePlaces != null && event.limitePlaces! > 0)
+                _buildInfoChip(Icons.people_rounded, '${event.nbInscrits}/${event.limitePlaces} inscrits', Colors.blue),
             ],
           ),
           const SizedBox(height: 16),
@@ -377,7 +361,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ),
             ],
           ),
-          if (isTeam || isOrganizer) ...[
+          if (isOrganizer) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -530,10 +514,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   void _addToCalendar(Event event) {
     final url = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
-        '&text=${Uri.encodeComponent(event.title)}'
-        '&dates=${Uri.encodeComponent('${DateFormat('yyyyMMddTHHmmssZ').format(event.startAt.toUtc())}/${DateFormat('yyyyMMddTHHmmssZ').format(event.endAt.toUtc())}')}'
+        '&text=${Uri.encodeComponent(event.titre)}'
+        '&dates=${Uri.encodeComponent('${DateFormat('yyyyMMddTHHmmssZ').format(event.dateDebut.toUtc())}/${event.dateFin != null ? DateFormat('yyyyMMddTHHmmssZ').format(event.dateFin!.toUtc()) : ''}')}'
         '&details=${Uri.encodeComponent(event.description ?? '')}'
-        '&location=${Uri.encodeComponent(event.location ?? '')}';
+        '&location=${Uri.encodeComponent(event.lieu ?? '')}';
     launchUrl(Uri.parse(url));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ouverture du calendrier...')));
   }

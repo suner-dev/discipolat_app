@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
-import 'package:discipolat_mobile/features/events/models/event_model.dart';
-import 'package:discipolat_mobile/features/events/services/events_service.dart';
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart'
     show StreamChatMessage;
 

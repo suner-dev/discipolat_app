@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
@@ -24,9 +23,9 @@ class EventsService {
   static Map<String, dynamic> _normalize(Map<String, dynamic> json) {
     final raw = json['statut'] ?? json['status'];
     if (raw is String) {
-      return {...json, 'status': EventStatusWire.decode(raw).name};
+      return {...json, 'statut': EventStatusWire.wire(EventStatusWire.decode(raw))};
     }
-    return {...json, 'status': EventStatus.unknown.name};
+    return {...json, 'statut': EventStatusWire.wire(EventStatus.unknown)};
   }
 
   Event _event(dynamic raw) =>
@@ -62,7 +61,7 @@ class EventsService {
       };
       final response = await _api.get('/events', queryParameters: queryParams);
       final data = response.data as List;
-      return data.map((json) => Event.fromJson(json as Map<String, dynamic>)).toList();
+      return data.map((json) => _event(json)).toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des événements: $e');
     }
@@ -72,7 +71,7 @@ class EventsService {
     try {
       final response = await _api.get('/events/upcoming/mine', queryParameters: {'limit': limit});
       final data = response.data as List;
-      return data.map((json) => Event.fromJson(json as Map<String, dynamic>)).toList();
+      return data.map((json) => _event(json)).toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement des événements à venir: $e');
     }
