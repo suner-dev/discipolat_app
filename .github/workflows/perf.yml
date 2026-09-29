@@ -1,0 +1,98 @@
+# A5 #5 — Tests de charge k6 en CI (plan gratuit).
+#
+# Scénario : performance-tests/k6-ci-gate.js, enveloppe du scénario existant
+# k6-load-test.js (aucune duplication de logique).
+# PORTE BLOQUANTE EXIGÉE : si P95 > 2000 ms → échec du workflow.
+# Trace : summary-export JSON + log console archivés en artifacts.
+#
+# Cible par défaut : l'API beta déployée (render.yaml :
+# https://discipolat-beta-api.onrender.com). Le scénario authentifie ses
+# requêtes via JWT_TOKEN : sans secret PERF_JWT_TOKEN (jeton admin valide
+# émis par la cible), le job échoue immédiatement avec la marche à suivre —
+# mieux vaut un échec explicite qu'un faux vert.
+name: Performance (k6)
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: >-
+          URL API cible. Vide = https://discipolat-beta-api.onrender.com
+        required: false
+        default: ''
+  schedule:
+    - cron: '0 4 * * 6'  # samedi 04:00 UTC : dérive de latence hebdomadaire
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: k6 — gate P95 < 2000 ms
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ github.event.inputs.base_url || 'https://discipolat-beta-api.onrender.com' }}
+      JWT_TOKEN: ${{ secrets.PERF_JWT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pré-vol — jeton requis
+        run: |
+          if [ -z "$JWT_TOKEN" ]; then
+            echo "::error::Secret PERF_JWT_TOKEN absent : générez un jeton admin"
+            echo "::error::valide sur la cible (POST /api/v1/auth/login) et ajoutez-le"
+            echo "::error::dans Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Cible : $BASE_URL"
+
+      - name: Install k6
+        run: |
+          sudo mkdir -m 755 /etc/apt/keyrings
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/k6.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/k6.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6-stable.list
+          sudo apt-get update -qq
+          sudo apt-get install -y k6
+          k6 version
+
+      - name: Run k6 (scénario enveloppé, seuils du gate dans l'options)
+        run: |
+          # pipefail : sans ça, `| tee` avalerait le code de sortie de k6
+          # (k6 sort en 99 quand un seuil casse) et le job serait faux vert.
+          set -o pipefail
+          k6 run performance-tests/k6-ci-gate.js \
+            --summary-export=k6-summary.json 2>&1 | tee k6-run.log
+
+      - name: Gate explicite — P95 > 2000 ms ⇒ échec
+        if: always()
+        run: |
+          if [ ! -f k6-summary.json ]; then
+            echo "::error::k6 n'a pas produit de summary (échec du run lui-même)."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, sys
+          with open('k6-summary.json') as f:
+              s = json.load(f)
+          p95 = s['metrics']['http_req_duration']['values']['p(95)']
+          failed = s['metrics'].get('http_req_failed', {}).get('values', {}).get('rate')
+          print(f"P95 = {p95:.1f} ms  (porte : < 2000 ms)")
+          print(f"taux d'erreurs HTTP = {failed}")
+          if p95 > 2000:
+              print(f"::error::P95 {p95:.0f} ms > 2000 ms — porte de latence franchie.")
+              sys.exit(1)
+          print("Porte de latence OK.")
+          PY
+
+      - name: Upload résultats (trace de la porte)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-perf-results-${{ github.run_id }}
+          path: |
+            k6-summary.json
+            k6-run.log
+          retention-days: 30

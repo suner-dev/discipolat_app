@@ -1,0 +1,127 @@
+# A5 #3 — Chaîne de sécurité (plan GitHub gratuit, aucune runner payant).
+#
+# Périmètre :
+#   1. gitleaks            → secrets dans l'historique complet (clé du risque
+#                            juridique/réglementaire : clé privée ou mot de
+#                            passe committé une fois = compromis pour toujours).
+#   2. dependency-review   → toute PR ajoutant une dépendance connue vulnérable
+#                            est bloquée (source : GitHub Advisory Database).
+#   3. npm audit           → frontend, bloquant dès sévérité HIGH.
+#   4. bandit              → scripts Python (scripts/, performance-tests/),
+#                            bloquant dès sévérité HIGH ; le rapport complet
+#                            (tous niveaux) est tracé dans le résumé du job.
+#   5. OWASP dependency-check (backend) → report HTML en artifact. NON
+#                            bloquant : sans clé NVD, le débit gratuit fait
+#                            échouer le téléchargement de la base de manière
+#                            aléatoire — un gate aléatoire n'est pas un gate.
+#                            La porte bloquante côté dépendances Java reste
+#                            dependency-review (#2). Le rapport détaillé est
+#                            conservé en artifact et relué à chaque release.
+#
+# Déclenchement : push/PR like ci.yml + hebdomadaire (les CVE évoluent alors
+# que le code, lui, est fixe).
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '30 3 * * 1'  # lundi 03:30 UTC : re-scan de la base de code inchangée
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secrets — gitleaks (historique complet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks scanne chaque commit de l'histoire
+      # Les clés JWT de dev sont générées à la volée (openssl) et .gitignorees ;
+      # keys/ ne contient que .gitkeep. Tout PEM commité doit donc être lu comme
+      # une vraie violation — il n'y a pas de faux positif à whitelister.
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    name: Dépendances — dependency review (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bloquer toute dépendance vulnérable (high+) introduite par la PR
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  npm-audit:
+    name: NPM audit (frontend, bloquant high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # npm audit travaille depuis package-lock.json : pas d'installation,
+      # donc pas de scripts arbitraires exécutés dans le workflow.
+      - name: Audit
+        run: cd frontend && npm audit --audit-level=high
+
+  bandit:
+    name: Bandit (scripts Python, bloquant high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bandit
+        run: python -m pip install --quiet bandit
+      - name: Rapport complet (tous niveaux) → résumé du job
+        run: |
+          {
+            echo '## Bandit — rapport complet'
+            echo '```'
+            bandit -q -r scripts/ performance-tests/ -f txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Porte bloquante — sévérité HIGH uniquement
+        # Choix assumé : le niveau medium inclut des avertissements stylistiques
+        # (assert, hardcoded temp passwords dans des utilitaires de test) dont
+        # le tri n'a pas encore été fait ; la porte durcira après tri.
+        run: bandit -q -r scripts/ performance-tests/ -f txt -ll
+
+  owasp-backend:
+    name: OWASP dependency-check (backend, report non bloquant)
+    runs-on: ubuntu-latest
+    continue-on-error: true  # voir en-tête du fichier : débit NVD gratuit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+      - name: Scan
+        run: |
+          cd backend
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -DsuppressionFile=.dependency-check-suppressions.xml
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-backend-${{ github.run_id }}
+          path: backend/target/dependency-check-report.html
+          retention-days: 14

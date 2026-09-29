@@ -69,6 +69,16 @@ jobs:
           SPRING_DATASOURCE_USERNAME: discipolat
           SPRING_DATASOURCE_PASSWORD: discipolat_secret
           REDIS_URL: redis://localhost:6379
+      # A5 #7 — rapports de tests conservés comme artifacts (même en cas
+      # d'échec : c'est là qu'ils servent). Bloquant : l'étape mvn verify
+      # ci-dessus fait déjà échouer le job.
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports-${{ github.run_id }}
+          path: backend/target/surefire-reports/
+          retention-days: 14
 
   frontend:
     name: Frontend - Build & Lint
@@ -88,7 +98,15 @@ jobs:
       - name: TypeScript check
         run: cd frontend && npx tsc --noEmit
       - name: Run tests
-        run: cd frontend && npx vitest run
+        # double reporter : sortie lisible dans le log + junit.xml uploadé
+        run: cd frontend && npx vitest run --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml
+      - name: Upload frontend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-vitest-reports-${{ github.run_id }}
+          path: frontend/test-results/
+          retention-days: 14
       - name: Build
         run: cd frontend && npm run build
 
@@ -106,7 +124,16 @@ jobs:
       - name: Analyze
         run: cd mobile && flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
       - name: Test
-        run: cd mobile && flutter test --no-pub
+        # --file-reporter json : rapport machine archivé en artifact, console
+        # console reste lisible ; le code de sortie de flutter test reste bloquant.
+        run: cd mobile && flutter test --no-pub --file-reporter json:flutter-test-report.json
+      - name: Upload mobile test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-flutter-test-report-${{ github.run_id }}
+          path: mobile/flutter-test-report.json
+          retention-days: 14
       - name: Build APK
         run: cd mobile && flutter build apk --debug --no-pub
 

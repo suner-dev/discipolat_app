@@ -1,0 +1,72 @@
+# A5 #4 — Suite E2E Playwright, configuration dans `e2/` à la racine.
+#
+# CONTRAT : ce workflow ne touche AUCUN code du frontend. Il détecte les
+# specs `e2/specs/**/*.spec.ts` et les exécute contre une URL déployée.
+# « Le jour où Agent B livre la suite, elle s'exécute automatiquement » :
+# aucune modification de ce fichier n'est nécessaire pour l'activation.
+name: E2E (Playwright)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: >-
+          URL cible (frontend déployé). Vide = https://discipolat-beta.onrender.com
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: Playwright (e2/specs)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: e2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Détecter la suite
+        id: specs
+        run: |
+          count=$(find specs -name '*.spec.ts' 2>/dev/null | wc -l)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -eq 0 ]; then
+            echo "::notice::Aucune spec e2e déposée — le job passe en mode attente."
+            echo "La suite s'activera automatiquement à la première spec dans e2/specs/."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.specs.outputs.count != '0'
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: e2/package-lock.json
+
+      - name: Installation (deps + navigateur)
+        if: steps.specs.outputs.count != '0'
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npx playwright install --with-deps chromium
+
+      - name: Exécution
+        if: steps.specs.outputs.count != '0'
+        env:
+          E2E_BASE_URL: ${{ github.event.inputs.base_url || 'https://discipolat-beta.onrender.com' }}
+        run: npx playwright test
+
+      - name: Upload rapport (HTML + junit)
+        if: always() && steps.specs.outputs.count != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            e2/playwright-report/
+            e2/results/
+          retention-days: 14

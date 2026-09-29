@@ -1,0 +1,5 @@
+# artefacts locaux de la suite Playwright (jamais commités)
+node_modules/
+playwright-report/
+results/
+test-results/

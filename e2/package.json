@@ -1,0 +1,13 @@
+{
+  "name": "discipolat-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Suite E2E Playwright (A5 #4) — totalement indépendante du code frontend : elle ne parle qu'à une URL déployée.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0"
+  }
+}

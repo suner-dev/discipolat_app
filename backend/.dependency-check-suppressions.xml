@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Suppressions OWASP dependency-check (référencé par ci-cd.yml et security.yml).
+  Règle d'or : ne jamais masquer un CVE sans justification traçable.
+  Chaque entrée DOIT porter un commentaire <notes> expliquant la décision,
+  la version corrective attendue et une date de revue.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+        Fichier de base volontairement vide : aucune suppression n'est
+        justifiée à ce jour.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:nothing/nothing@.*$</packageUrl>
+        <cve>CVE-0000-0000</cve>
+    </suppress>
+</suppressions>

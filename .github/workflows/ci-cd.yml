@@ -39,6 +39,15 @@ jobs:
           distribution: temurin
           cache: maven
 
+      # Les tests signent de vrais JWT (RSA) : sans clés générées la suite
+      # échoue — même recette que ci.yml (clés produites à la volée,
+      # jamais commitées).
+      - name: Generate test keys
+        run: |
+          mkdir -p keys
+          openssl genpkey -algorithm RSA -out keys/private.pem -pkeyopt rsa_keygen_bits:2048
+          openssl pkey -in keys/private.pem -pubout -out keys/public.pem
+
       - name: Compile
         run: cd backend && mvn compile -q
 
@@ -49,8 +58,13 @@ jobs:
         run: cd backend && mvn verify -q -Dspring.profiles.active=test -DskipTests=false
 
       - name: Security Scan (OWASP)
-         run: cd backend && mvn dependency-check:check -q
-
+        # Coordonnées complètes exigées : le plugin n'est pas déclaré dans le
+        # pom, le préfixe nu « dependency-check:check » ne résoudrait pas.
+        run: |
+          cd backend
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=9 \
+            -DsuppressionFile=.dependency-check-suppressions.xml
 
       - name: Upload Test Reports
         if: always()
@@ -81,8 +95,7 @@ jobs:
         run: cd frontend && npm run lint
 
       - name: Unit Tests
-         run: cd frontend && npm test
-
+        run: cd frontend && npm test
 
       - name: Build
         run: cd frontend && npm run build
@@ -101,16 +114,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-           flutter-version: '3.35.6'
-
+          flutter-version: '3.35.6'
           channel: stable
 
       - name: Get Dependencies
         run: cd mobile && flutter pub get
 
       - name: Analyze
-         run: cd mobile && flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
-
+        run: cd mobile && flutter analyze --no-pub --no-fatal-warnings --no-fatal-infos
 
       - name: Test
         run: cd mobile && flutter test --no-pub
@@ -128,9 +139,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-       - name: NPM Audit
-         run: cd frontend && npm audit --audit-level=high
-
+      - name: NPM Audit
+        # npm audit lit le lockfile : aucune installation requise.
+        run: cd frontend && npm audit --audit-level=high
 
       - name: Backend Dependency Check
         uses: actions/setup-java@v4
@@ -141,10 +152,16 @@ jobs:
       - name: OWASP Dependency Check
         run: |
           cd backend
-          mvn org.owasp:dependency-check-maven:check \
-             -DfailBuildOnCVSS=9 \
-             -DsuppressionFile=.dependency-check-suppressions.xml
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=9 \
+            -DsuppressionFile=.dependency-check-suppressions.xml
 
+      - name: Upload Dependency-Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-report
+          path: backend/target/dependency-check-report.html
 
   # ── Docker Build ───────────────────────────────────────
   docker:
