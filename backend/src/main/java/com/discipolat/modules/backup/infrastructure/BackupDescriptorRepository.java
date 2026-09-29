@@ -11,15 +11,11 @@ import java.util.UUID;
  * Persistance des descripteurs de sauvegarde.
  *
  * <p>Pourquoi pas d'entité JPA ? Le profil par défaut impose
- * {@code spring.jpa.hibernate.ddl-auto=none} et laisse Flyway maître du schéma
- * (155 migrations dans {@code db/migration}) : une nouvelle entité exigerait une
- * migration. L'implémentation ci-dessous est en JDBC pur sur la {@code DataSource}
- * existante et crée sa propre table en {@code CREATE TABLE IF NOT EXISTS}, ce
- * qui rend le module autonome.
- *
- * <p><b>TODO(intégrateur)</b> : reprendre ce {@code CREATE TABLE IF NOT EXISTS}
- * dans une migration Flyway dès qu'une migration peut être ajoutée, pour aligner
- * le module sur la convention du dépôt.
+ * {@code spring.jpa.hibernate.ddl-auto=none} et laisse Flyway maître du schéma :
+ * l'implémentation est en JDBC pur sur la {@code DataSource} existante. Le schéma
+ * de la table {@code backup_archive} est la propriété de la migration
+ * {@code V189__create_backup_archive.sql} (source de vérité unique, convention
+ * du dépôt) — ce package ne crée aucune table au démarrage.
  */
 public interface BackupDescriptorRepository {
 

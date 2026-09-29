@@ -23,11 +23,10 @@ import java.util.UUID;
  * Persistance JDBC des descripteurs de sauvegarde, dans la table
  * {@code backup_archive}.
  *
- * <p>La table est créée au démarrage ({@code CREATE TABLE IF NOT EXISTS}, voir
- * {@link #init()}) : le module reste autonome et n'exige pas de migration
- * Flyway pour fonctionner. L'échec de création est bloquant (échec au
- * démarrage) plutôt que silencieux — sans table, chaque sauvegarde se perdrait
- * au redémarrage, ce qui vaut mieux à voir tout de suite.
+ * <p>Le schéma de la table appartient à Flyway
+ * ({@code V189__create_backup_archive.sql}) : ce dépôt n'ouvre que des
+ * connexions, il ne crée jamais de table au démarrage (voir le commentaire
+ * inline ci-dessous pour les raisons).
  *
  * <p>Toutes les requêtes sont des PreparedStatement : aucune valeur n'est
  * concaténée dans le SQL.
