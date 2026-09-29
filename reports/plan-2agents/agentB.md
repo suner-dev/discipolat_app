@@ -294,3 +294,57 @@ Intersection des fichiers modifiés par A et par moi : **vide**. Aucun conflit d
   à la source, sans désactivation de règle ni `ignore`.
 - **Limite assumée :** pas de pont i18n dans cet écran (le dépôt n'en a pas dans les écrans
   tenants) — libellés en français, à migrer vers `.arb` quand le pont sera câblé (B13).
+
+---
+
+## AUDIT DE PRODUCTION (2026-09-28) — conformité stricte, sans faux
+
+### Fusion à jour
+L'Agent A avait **3 commits de plus** (`45c6a698` : NPE systémiques, filtre tenant).
+Fusion effectuée. **Aucun de mes fichiers touché** (`onboarding.ts`,
+`useOnboardingWizard.ts`, `compliance_service.dart`, `onboarding_step.dart`,
+`invitation_token.dart` : tous INTACT). Fusion sans conflit.
+
+⚠️ **Piège documenté** : la branche locale `fix/onboarding-tenant-backend` est figée à
+`72ec85d5` dans le worktree Agent B et ne reflète **pas** l'avancement réel de l'Agent A.
+`git merge fix/onboarding-tenant-backend` répond « Already up to date » **à tort**.
+Il faut merger le commit exact du worktree de l'Agent A (`git -C ../discipolat_app-agentA rev-parse HEAD`).
+
+### 1. Couverture des endpoints — 1071 appels clients audités
+Extraction automatique de **toutes** les routes backend, puis confrontation à **tous** les
+appels web + mobile (hors tests).
+**Résultat : 1071 appels, 1071 résolus vers une route backend réelle, 0 orphelin.**
+Aucun écran ne pointe dans le vide.
+
+### 2. Contrat — égalité stricte des 3 faces (après fusion)
+- `OnboardingStepResponse` (12 champs) : backend == web == mobile ✅
+- `OnboardingStatusResponse` (7 champs) : backend == web == mobile ✅
+- **Aucun DTO de mon contrat modifié** par les 3 commits de l'Agent A.
+
+### 3. Recherche de données fictives en production
+| Recherche | Résultat |
+|---|---|
+| `mock|fake|dummy|sampleData|stub` dans `frontend/src` (hors tests) | **0** — seul `keepPreviousData` (cache TanStack, légitime) |
+| `mock|dummy|sampleData` dans `mobile/lib` (hors tests) | **0** — uniquement des commentaires d'injection de dépendances |
+| Listes d'étapes en dur dans mes écrans | **0** — tout provient de l'API |
+| Dégradations silencieuses (`?? []`, `catch` muet) | **0** — mes écrans **captent et affichent** l'erreur |
+
+### 4. Non-régression réelle (exécutée fichier par fichier)
+La suite globale n'est **pas exploitable sur cette machine** : 20 cœurs, 2,5 Go de RAM
+libres, swap saturé → Vitest lance 20 workers qui meurent (« Timeout waiting for worker
+to respond »). Ce sont des **timeouts d'infrastructure**, pas des défauts de code.
+
+Validation par exécution isolée, seule méthode fiable ici :
+
+| Périmètre | Fichiers | Tests | Résultat |
+|---|---|---|---|
+| **Moi (Agent B)** | 5 | **64** | **tous verts** (15 + 7 + 10 + 7 + 25) |
+| **Agent A** | 5 | **49** | **tous verts** (8 + 6 + 12 + 19 + 4) |
+
+Les 4 suites qui semblaient « échouer » (`CrmFaiseurPage`, `DashboardPage`,
+`Pastoral360Page`, `RoleWorkspaceRouting`) **passent isolément** : elles n'échouaient que
+par contention machine. **La fusion n'a rien cassé.**
+
+⚠️ Note d'honnêteté : un premier passage a rapporté « 50 fichiers en échec » — c'était un
+artefact de mon script de lots (option de pool invalide), infirmé ensuite par exécution
+directe. Aucun test n'a été modifié ou désactivé pour obtenir un vert.
