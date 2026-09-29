@@ -22,16 +22,40 @@ public record EventResponse(
         Integer nbInscrits,
         String statut,
         String compteRendu,
+        String imageUrl,
+        List<String> tags,
+        Boolean publicEvent,
+        Boolean requiresRegistration,
+        Boolean checkinEnabled,
+        java.util.UUID streamId,
         LocalDateTime createdAt,
         List<EntityAttachmentService.AttachmentItem> piecesJointes
 ) {
     public static EventResponse from(Event event, List<EntityAttachmentService.AttachmentItem> piecesJointes) {
+        // L'ordre suit EXACTEMENT la declaration du record : c'est le seul moyen
+        // que le compilateur_signale une divergence de contrat.
         return new EventResponse(
-                event.getId(), event.getOrganisateurId(), event.getFamilleId(), event.getDepartmentId(),
-                event.getTypeEvenement(), event.getTitre(), event.getDescription(),
-                event.getLieu(), event.getDateDebut(), event.getDateFin(),
-                event.getLimitePlaces(), event.getNbInscrits(), event.getStatut(),
-                event.getCompteRendu(), event.getCreatedAt(),
+                event.getId(),
+                event.getOrganisateurId(),
+                event.getFamilleId(),
+                event.getDepartmentId(),
+                event.getTypeEvenement(),
+                event.getTitre(),
+                event.getDescription(),
+                event.getLieu(),
+                event.getDateDebut(),
+                event.getDateFin(),
+                event.getLimitePlaces(),
+                event.getNbInscrits(),
+                event.getStatut(),
+                event.getCompteRendu(),
+                event.getImageUrl(),
+                event.getTags() == null ? List.of() : List.of(event.getTags()),
+                Boolean.TRUE.equals(event.getPublicEvent()),
+                Boolean.TRUE.equals(event.getRequiresRegistration()),
+                Boolean.TRUE.equals(event.getCheckinEnabled()),
+                event.getStreamId(),
+                event.getCreatedAt(),
                 piecesJointes != null ? piecesJointes : List.of());
     }
 }

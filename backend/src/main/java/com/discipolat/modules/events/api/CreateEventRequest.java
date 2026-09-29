@@ -17,5 +17,11 @@ public record CreateEventRequest(
         Integer limitePlaces,
         UUID familleId,
         UUID departmentId,
-        List<UUID> fichierIds
+        List<UUID> fichierIds,
+        String imageUrl,
+        List<String> tags,
+        Boolean isPublic,
+        Boolean requiresRegistration,
+        Boolean hasCheckin,
+        UUID streamId
 ) {}

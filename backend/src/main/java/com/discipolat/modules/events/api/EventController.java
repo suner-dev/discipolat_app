@@ -53,6 +53,12 @@ public class EventController {
                 .limitePlaces(request.limitePlaces())
                 .familleId(request.familleId())
                 .departmentId(request.departmentId())
+                .imageUrl(request.imageUrl())
+                .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
+                .publicEvent(Boolean.TRUE.equals(request.isPublic()))
+                .requiresRegistration(Boolean.TRUE.equals(request.requiresRegistration()))
+                .checkinEnabled(Boolean.TRUE.equals(request.hasCheckin()))
+                .streamId(request.streamId())
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(toResponse(eventService.create(event, request.fichierIds())));
@@ -124,6 +130,13 @@ public class EventController {
                 .statut(request.statut())
                 .compteRendu(request.compteRendu())
                 .departmentId(request.departmentId())
+                .imageUrl(request.imageUrl())
+                .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
+                // Les booleens sont des patches partiels : null = inchange.
+                .publicEvent(request.isPublic())
+                .requiresRegistration(request.requiresRegistration())
+                .checkinEnabled(request.hasCheckin())
+                .streamId(request.streamId())
                 .build();
         return ResponseEntity.ok(toResponse(eventService.update(id, event, request.fichierIds())));
     }
