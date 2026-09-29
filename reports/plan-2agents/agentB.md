@@ -402,7 +402,7 @@ plus un chantier **non commité** : `V190` (multi-devises ISO-4217), `V191` (ind
 
 **Déjà consommé (rien à faire)** : le push mobile enregistre déjà le jeton FCM sur
 `/notifications/register-token` et le désinscrit sur `/notifications/unregister-token` — la
-livraison FCM de l'Agent A a donc bien un客户端.
+livraison FCM de l'Agent A a donc bien unclient.
 
 ### G1 — corrigé aujourd'hui (web)
 
