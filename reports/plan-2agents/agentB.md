@@ -348,3 +348,20 @@ par contention machine. **La fusion n'a rien cassé.**
 ⚠️ Note d'honnêteté : un premier passage a rapporté « 50 fichiers en échec » — c'était un
 artefact de mon script de lots (option de pool invalide), infirmé ensuite par exécution
 directe. Aucun test n'a été modifié ou désactivé pour obtenir un vert.
+
+### B7 (partie 3) — routage mobile effectif
+
+Trou fonctionnel fermé : l'écran du wizard existait et était validé, mais était **inatteignable**.
+- `mobile/lib/app.dart` : import + `GoRoute('/tenant/onboarding', name: 'tenant-onboarding')` +
+  garde de rôles `['ADMIN','PASTEUR','TENANT_OWNER']` dans la table existante. **Routes existantes
+  non modifiées** (ajout additif uniquement).
+- `mobile/lib/presentation/widgets/app_drawer.dart` : entrée de menu « Configuration initiale »
+  + libellé dans le switch de traductions — sans elle, l'entrée s'afficherait avec un libellé vide.
+
+Preuve : `flutter analyze` sur `app.dart` + `app_drawer.dart` + l'écran → **0 erreur**.
+Warnings : **7 avant, 7 après** → aucune remarque introduite (les 7 sont pré-existantes :
+imports inutilisés et clés de map dupliquées dans `app.dart`).
+
+Note de méthode : la mesure « avant/après » a été faite via `git stash` ; le `stash pop`
+ayant été coupé par l'expiration de l'appel, le travail a été **récupéré et vérifié**
+(`grep` : 2 occurrences dans `app.dart`, 3 dans `app_drawer.dart`). Aucune perte.

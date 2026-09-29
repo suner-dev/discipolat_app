@@ -37,6 +37,12 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Paramètres église',
       'route': '/tenant/settings'
     },
+    // B7 — accès au wizard d'onboarding (route réelle : /tenant/onboarding)
+    {
+      'icon': Icons.rocket_launch_rounded,
+      'title': 'Configuration initiale',
+      'route': '/tenant/onboarding'
+    },
     {
       'icon': Icons.dashboard_customize_rounded,
       'title': 'Pilotage Pasteur',
@@ -851,6 +857,8 @@ class _AppDrawerState extends State<AppDrawer> {
         return 'Changer d’organisation';
       case '/tenant/settings':
         return l10n.navChurchSettings;
+      case '/tenant/onboarding':
+        return 'Configuration initiale';
       case '/admin/custom-fields':
         return l10n.navCustomFields;
       case '/admin/dictionaries':

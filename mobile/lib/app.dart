@@ -238,6 +238,7 @@ import 'presentation/screens/tenant/tenant_settings_screen.dart';
 import 'presentation/screens/tenant/modules_screen.dart';
 import 'presentation/screens/tenant/roles_screen.dart';
 import 'presentation/screens/tenant/users_screen.dart';
+import 'presentation/screens/tenant/tenant_onboarding_screen.dart';
 
 /// Auth state notifier — singleton that tracks the authenticated user
 /// with full multi-role and multi-tenant support (roles + activeRole + orgId).
@@ -1210,6 +1211,7 @@ Map<String, List<String>> _routeRoles = {
   '/tenant/modules': const [],
   '/tenant/roles': const [],
   '/tenant/users': const [],
+  '/tenant/onboarding': ['ADMIN', 'PASTEUR', 'TENANT_OWNER'],
   '/space-config-transfer': ['ADMIN', 'PASTEUR'],
   '/tenant/organizations': const [],
   '/tenant/settings': ['ADMIN', 'PASTEUR'],
@@ -2440,6 +2442,13 @@ final appRouter = GoRouter(
         path: '/tenant/users',
         name: 'tenant-users',
         builder: (ctx, s) => const TenantUsersScreen()),
+    // B7 — wizard d'onboarding tenant (contrat §3.1). Route ADDITIVE : aucune
+    // route existante n'est modifiée. Le garde de rôle est déclaré dans la
+    // table `_roleGuards` ci-dessus.
+    GoRoute(
+        path: '/tenant/onboarding',
+        name: 'tenant-onboarding',
+        builder: (ctx, s) => const TenantOnboardingScreen()),
     GoRoute(
         path: '/space-config-transfer',
         name: 'space-config-transfer',
