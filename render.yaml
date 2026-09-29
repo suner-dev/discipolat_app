@@ -133,7 +133,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
-         value: "22.15.1"
+        value: "22.15.1"
 
       # Évite le double install : Render auto-installerait les deps,
       # puis buildCommand rejouerait `npm ci`. SKIP_INSTALL_DEPS=true
@@ -249,7 +249,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: NODE_VERSION
-         value: "22.15.1"
+        value: "22.15.1"
 
       - key: SKIP_INSTALL_DEPS
         value: "true"

@@ -327,31 +327,41 @@ aws ecs update-service --cluster discipolat-cluster \
 
 ## 6. Variables d'environnement — Référence complète
 
-| Variable | Description | Local (docker-compose) | Render |
-|----------|-------------|----------------------|--------|
-| `SPRING_DATASOURCE_URL` | URL JDBC PostgreSQL | `jdbc:postgresql://db:5432/discipolat` | Généré automatiquement |
-| `SPRING_DATASOURCE_USERNAME` | Utilisateur DB | `discipolat` | Généré automatiquement |
-| `SPRING_DATASOURCE_PASSWORD` | Mot de passe DB | `discipolat_secret` | Généré automatiquement |
-| `JWT_PRIVATE_KEY` | Clé privée RSA (base64) | Générée par `setup-keys.sh` | **Secret** — à fournir |
-| `JWT_PUBLIC_KEY` | Clé publique RSA (base64) | Générée par `setup-keys.sh` | **Secret** — à fournir |
-| `JWT_PRIVATE_KEY_PATH` | Chemin fichier clé privée | `keys/private.pem` | Non utilisé (base64) |
-| `JWT_PUBLIC_KEY_PATH` | Chemin fichier clé publique | `keys/public.pem` | Non utilisé (base64) |
-| `FRONTEND_URL` | URLs autorisées CORS | `http://localhost:3000,http://localhost:5173` | `https://discipolat.onrender.com` |
-| `FRONTEND_URL_BASE` | Base des liens email (activation, reset password) | `http://localhost:5173` | `https://discipolat.onrender.com` |
-| `SPRING_PROFILES_ACTIVE` | Profil Spring | `docker` | `prod` |
+Le tableau ci-dessous est la liste EXACTE consommée par `render.yaml`
+(secrets `sync: false` = à saisir dans le Dashboard Render) et par le code
+(`@Value`/`${...}`). Colonne **Obligatoire** : vérité terrain vérifiée —
+« refusé au démarrage » = la JVM ne démarre pas sans la variable (comportement
+vérifié en conditions réelles : `JwtTokenProvider.readKey` et
+`CryptoService` lèvent au démarrage).
+
+| Variable | Description | Obligatoire | Local (docker-compose) | Render |
+|----------|-------------|-------------|----------------------|--------|
+| `SPRING_DATASOURCE_URL` | URL JDBC PostgreSQL | ✅ | `jdbc:postgresql://db:5432/discipolat` | Généré automatiquement |
+| `SPRING_DATASOURCE_USERNAME` | Utilisateur DB | ✅ | `discipolat` | Généré automatiquement |
+| `SPRING_DATASOURCE_PASSWORD` | Mot de passe DB | ✅ | `discipolat_secret` | Généré automatiquement |
+| `JWT_PRIVATE_KEY` | Clé privée RSA (base64) | ✅ refusé au démarrage sans clé | Générée par `setup-keys.sh` | **Secret** — à fournir |
+| `JWT_PUBLIC_KEY` | Clé publique RSA (base64) | ✅ refusé au démarrage sans clé | Générée par `setup-keys.sh` | **Secret** — à fournir |
+| `JWT_PRIVATE_KEY_PATH` | Chemin fichier clé privée | alternative à `JWT_PRIVATE_KEY` | `keys/private.pem` | Non utilisé (base64) |
+| `JWT_PUBLIC_KEY_PATH` | Chemin fichier clé publique | alternative à `JWT_PUBLIC_KEY` | `keys/public.pem` | Non utilisé (base64) |
+| `ENCRYPTION_AES_KEY` | AES-256-GCM au repos (`CryptoService`) : 32 octets **base64** (`openssl rand -base64 32`) | ✅ refusé au démarrage + exigé par l'audit prod/beta (`SecurityStartupAudit`) | dans `.env` | **Secret** — à fournir |
+| `PAYMENTS_WEBHOOK_SECRET` | Signature des webhooks opérateurs | ⚠️ optionnel au démarrage, mais sans lui les confirmations webhook sont REFUSÉES (fail-closed, comportement voulu) | `.env.example` | **Secret** — à fournir si paiements actifs |
+| `REDIS_URL` | Rate limiting distribué (Bucket4j) | non — dégradation propre (voir RUNBOOK, `PerIpRateLimiter` fail-open) | `redis://redis:6379` | Généré (instance Redis) |
+| `FRONTEND_URL` | URLs autorisées CORS | ✅ en prod (sinon login cassé côté client) | `http://localhost:3000,http://localhost:5173` | `https://discipolat.onrender.com` |
+| `FRONTEND_URL_BASE` | Base des liens email (activation, reset password) | recommandé | `http://localhost:5173` | `https://discipolat.onrender.com` |
+| `SPRING_PROFILES_ACTIVE` | Profil Spring | ✅ | `docker` | `prod` (bêta : `beta`) |
+| `APP_ENVIRONMENT` | Garde de comportement prod/bêta (`dev\|docker\|beta\|prod`) | ✅ (défaut `dev`) | `docker` | `prod` / `beta` |
+| `VITE_API_URL` | URL API pour le frontend (build statique) | ✅ pour le frontend | `/api` (proxy Nginx) | `https://discipolat-api.onrender.com` |
+| `SERVER_PORT` | Port interne (`PORT` lu par Spring) | non (défaut 8080) | 8080 | 10000 (défaut Render) |
+| `MAIL_HOST` | Serveur SMTP | non — emails désactivés/erreur hors profil prod | `mailhog` | `smtp.mailgun.org` |
+| `MAIL_PORT` | Port SMTP | non | `1025` | `2525` ⚠️ (voir note ci-dessous) |
+| `MAIL_USERNAME` | Utilisateur SMTP | avec `MAIL_HOST` | — | À configurer |
+| `MAIL_PASSWORD` | Mot de passe SMTP | avec `MAIL_HOST` | — | **Secret** — à configurer |
 
 > ⚠️ **SMTP sur plan Free Render : port 2525 obligatoire.** Les web services du plan
 > Free bloquent le trafic SMTP sortant sur les ports **25, 465 et 587**. Or l'API
 > envoie des emails (création de compte, reset password, rappels). Mailgun accepte
 > le port **2525** avec STARTTLS (même comportement que 587) → `MAIL_PORT=2525`.
 > Sans cette valeur, les emails échouent silencieusement en production.
-
-| `VITE_API_URL` | URL API pour le frontend | `/api` (proxy Nginx) | `https://discipolat-api.onrender.com` |
-| `SERVER_PORT` | Port interne | 8080 | 10000 (défaut Render) |
-| `MAIL_HOST` | Serveur SMTP | `mailhog` | `smtp.mailgun.org` |
-| `MAIL_PORT` | Port SMTP | `1025` | `2525` ⚠️ (pas 587, voir note ci-dessous) |
-| `MAIL_USERNAME` | Utilisateur SMTP | — | À configurer |
-| `MAIL_PASSWORD` | Mot de passe SMTP | — | **Secret** — à configurer |
 
 ---
 
@@ -755,7 +765,7 @@ plus de spin-down, plus de quota, meilleures performances. C'est un choix métie
 | CORS bloque les requêtes | `FRONTEND_URL` incorrect | Vérifier l'URL exacte du frontend Render |
 | Tâches planifiées (absences, rappels) non exécutées | Scheduler Spring inactif | Vérifier les logs API (`ScheduledJobs`) + que le keep-alive tourne (API éveillée) |
 | Page blanche (frontend) | Build non trouvé ou `VITE_API_URL` incorrect | Vérifier les logs Nginx dans le Dashboard |
-| Flyway migration échoue | Schéma DB incompatible | Supprimer la table `flyway_schema_history` et relancer (⚠️ données perdues) |
+| Flyway migration échoue | Schéma DB incompatible | **Ne JAMAIS supprimer `flyway_schema_history` en prod sans snapshot** — suivre §12 |
 
 ---
 
@@ -768,3 +778,82 @@ plus de spin-down, plus de quota, meilleures performances. C'est un choix métie
 - Environnements : `dev|docker|beta|prod` + staging/beta/prod (§G6.9) ; beta : `deploy-beta.yml`, double garde reset (jamais en prod) ; toutes les variables documentees dans [ENV_TEMPLATE.md](ENV_TEMPLATE.md).
 - Monitoring : Prometheus (`/actuator/prometheus`) + Grafana (`infra/monitoring`) ; sauvegardes : snapshots + PITR + dump mensuel chiffre (`backup-postgres.yml`), restauration testee en staging — runbook [RUNBOOK.md](RUNBOOK.md).
 - Docs liees : [ARCHITECTURE.md](ARCHITECTURE.md) · [API.md](API.md) · [DATABASE.md](DATABASE.md) · [ENV_TEMPLATE.md](ENV_TEMPLATE.md) · [GUIDE_UTILISATEUR.md](GUIDE_UTILISATEUR.md) · [GUIDE_BACK_OFFICE_COMMERCIAL.md](GUIDE_BACK_OFFICE_COMMERCIAL.md) · [RUNBOOK.md](RUNBOOK.md).
+
+---
+
+## 12. Flyway en production — règles d'airain (A6)
+
+Configuration vérifiée (`application.yml`) : `flyway.enabled=true`,
+`baseline-on-migrate=true`, `locations=classpath:db/migration` ; le profil de
+base impose `ddl-auto: none` (Hibernate ne touche JAMAIS le schéma — c'est
+Flyway qui pilote). Les tests (H2) désactivent Flyway (`ddl-auto:
+create-drop`) : **les migrations ne sont jamais validées par les tests**,
+seule la base réelle (docker-compose local ou bêta) les exerce avant prod.
+
+Règles (politique du dépôt, cf. `docs/DATABASE.md`) :
+
+1. **ADDITIVE ONLY** : une migration ne fait que CREATE TABLE / ALTER TABLE
+   ADD COLUMN (nullable ou avec défaut) / CREATE INDEX. Jamais de DROP, de
+   RENAME ou d'UPDATE massif dans une migration applicative — c'est ce qui
+   rend le rollback code possible sans rollback schéma.
+2. **Irréversibilité assumée** : pas de scripts `undo_*` ; le retour arrière
+   se fait par redeploy du code antérieur (compatible car le schéma n'a que
+   du rajout) — voir §14.
+3. **Migration qui échoue au démarrage** : l'API ne démarre pas (fail-fast).
+   Render marque le deploy échoué et conserve la dernière image saine →
+   rollback §14. Diagnostiquer dans les logs Flyway (nom du `V###__` fautif),
+   puis corriger par une NOUVELLE migration — jamais en modifiant une
+   migration déjà appliquée (checksum).
+4. **`flyway repair`** : uniquement si un échec a laissé une ligne
+   `success=false` dans `flyway_schema_history` après correction manuelle du
+   SQL ; exécuté à la main, après snapshot de la base, jamais par défaut.
+5. **Suppression de `flyway_schema_history`** = re-baseline complète,
+   réservée aux bases jetables ou à une restauration depuis snapshot.
+
+---
+
+## 13. Rotation des clés JWT (A6)
+
+Le signing est RSA : la clé privée signe, la publique vérifie — la rotation
+est un remplacement de la paire, sans modification de code :
+
+1. Générer la nouvelle paire : `bash setup-keys.sh` (ou `openssl genpkey
+   -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048` + export
+   `openssl pkey -pubout`).
+2. Encoder en base64 monoligne : `base64 -w0 private.pem` / `base64 -w0 public.pem`.
+3. Render Dashboard → `discipolat-api` (puis `discipolat-beta-api`) → Secrets
+   → remplacer `JWT_PRIVATE_KEY` et `JWT_PUBLIC_KEY` → **Manual Deploy**.
+   (docker-compose local : régénérer dans `keys/`, relancer `discipolat-api`.)
+4. Effet sur les jetons : les access/refresh tokens émis avec l'ancienne clé
+   privée ne sont plus vérifiables → **toutes les sessions actives sont
+   déconnectées au prochain appel** (re-login). Les durées de vie courtes
+   (`app.jwt.*` dans `application.yml`) limitent la fenêtre d'exposition
+   résiduelle ; la révocation serveur (`TokenRevocationService`, qui dégrade
+   proprement sans Redis) reste le mécanisme ciblé de kill d'un jeton.
+5. **Rotation d'urgence** (clé privée soupçonnée compromise) : mêmes étapes +
+   invalider les refresh tokens en base si un incident jetons volés est
+   déclaré ; documenter dans [RUNBOOK.md](RUNBOOK.md) §2.
+6. Fréquence recommandée : annuelle, immédiate après tout départ d'une
+   personne ayant accès aux secrets, et immédiate si gitleaks
+   (`security.yml`) signalait une clé dans l'historique.
+
+> ⚠️ Les secrets Render `sync: false` : un re-Sync du Blueprint NE TOUCHERA
+> JAMAIS les clés — la rotation est un acte délibéré, jamais un effet de bord
+> d'un déploiement.
+
+---
+
+## 14. Plan de rollback (retour arrière) — A6
+
+| Scénario | Fenêtre | Procédure | Preuve |
+|---|---|---|---|
+| **Code applicatif cassé** (5xx, boot KO) | minutes | Render Dashboard → `discipolat-api` → **Rollback** vers la dernière version saine ; ou repointer le tag d'image GHCR : `ci.yml` pousse `:latest` ET `:${github.sha}` → rollback reproductible par tag de commit. | ci.yml job docker |
+| **Migration Flyway problématique** | heures | Rollback CODE d'abord (les migrations sont additives par règle §12 → l'ancien code tolère le nouveau schéma). Si une migration non additive a été poussée (règle violée) : restaurer la base depuis snapshot/dump (§7) PUIS rollback image. | §12 |
+| **Données corrompues / incident cross-tenant** | heures-jours | Restaurer : snapshot Render (plans payants) ou dump chiffré mensuel `backup-postgres.yml` (artifact 90 j — §7 et [RUNBOOK.md](RUNBOOK.md) §3) ; vérifier l'intégrité (sha256) avant remise en service. | RUNBOOK §3 |
+| **Frontend static site cassé** | minutes | Render → `discipolat` → Rollback commit ; revérifier l'URL puis le login (CORS). | §8.5 |
+| **Secret JWT compromis** | immédiat | §13 (rotation) ; déconnections globales acceptées. | §13 |
+| **Secret AES compromis** | planifié | La rotation `ENCRYPTION_AES_KEY` NE RÉENCRYPTÉ PAS les données existantes → ré-encryption planifiée ou restauration d'un backup antérieur à la compromission. | §6 |
+
+Vérifications après tout rollback : `GET /actuator/health` → UP ; login sur
+l'environnement ciblé ; une opération métier critique ; post-mortem + entrée
+CHANGELOG (exigence RUNBOOK §2.4).

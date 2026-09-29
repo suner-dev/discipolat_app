@@ -77,6 +77,20 @@ Amener Discipolat au niveau **production mondiale** :
 | CI/CD + infra | `render.yaml`, `docker-compose.yml`, `.github/workflows/` |
 | Monitoring | `infra/monitoring/prometheus.yml`, `grafana-cache-dashboard.json` |
 
+**Complété depuis — livré par les prompts A1–A6 (Agent A, branche de travail,
+preuves vérifiables par grep) :**
+
+| Domaine | Preuve dans le code |
+|---------|--------------------|
+| Envoi push FCM réel († M1) | `modules/notifications/domain/FirebaseAdminPushGateway.java` (`com.google.firebase.messaging.FirebaseMessaging`), endpoint `GET /api/v1/notifications/push-status` (`PushTokenController:89`) |
+| Module Backup Java († M2) | `backend/src/main/java/com/discipolat/modules/backup/` + `BackupServiceTest`, `IsolationBackupCurrencyTest` |
+| Devises ISO-4217 + abstraction payout († M8 M9) | `modules/currency/domain/Iso4217CurrencyValidator`, `modules/payments/payout/PayoutProviderRegistry` + `CurrencyValidationTest`, `PayoutProviderRegistryTest` |
+| Fondations sharding/partitionnement († M7) | `common/scaling/ShardRouting`, `SingleDatabaseTenantDataSource` + `ShardingRoutingTest`, [docs/SCALING.md](docs/SCALING.md) |
+| Isolation cross-tenant bout-en-bout HTTP († M13) | `backend/src/test/java/com/discipolat/security/TenantModuleIsolationEndToEndHttpTest.java` (10 tests, 9 modules + usurpation d'en-tête) |
+| CI bloquante sécurité/charge/e2e († M10 M11) | `.github/workflows/security.yml`, `perf.yml` (porte k6 P95 > 2 s → échec), `e2e.yml` + scaffold `e2/` ; `ci.yml` upload les rapports de tests en artifacts |
+| Config STT + Ollama fail-closed († M5 M6) | audits `AiConfigurationStartupAudit` (503 `AI_NOT_CONFIGURED`, aucun repli présenté comme IA) |
+| Documentation professionnelle (A6) | `README.md` réécrit, `docs/API.md` + `docs/openapi.json` (générés par `scripts/generate-api-docs.sh`, chemin springdoc vérifié `/api-docs`), `docs/DEPLOYMENT.md` §6-§14 (secrets obligatoires/optionnels, Flyway, rotation JWT, rollback), `docs/RUNBOOK.md` §2 (incidents symptôme→diagnostic→résolution) |
+
 ### 1.3 VRAIS MANQUES (vérifiés par grep le 2026-09-27)
 
 | # | Manque | Preuve de l'absence | Sévérité |
