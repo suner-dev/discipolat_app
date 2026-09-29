@@ -2423,3 +2423,122 @@ des erreurs de la recette, soit le constat H2 déjà documenté.
   - E2E-11 quota space : ressource non exposée par l'endpoint de quota (A8).
 - **Effets de bord de recette** : 3 erreurs `EmailService … localhost:1025`
   (SMTP absent, attendu — D10), logs backend archivé `backend-run4.log`.
+
+---
+
+# PHASE 2 (reprise) — Blocs NEED-HELP, décisions D1→D6
+
+Rappel règle R7 : ces points engagent l'architecture ou le schéma de production
+et relèvent d'une **décision humaine**. Ils ne sont pas improvisés. Ce qui suit
+reflète l'état **après** le travail §5.5 (V193/V194/REUNION), en distinguant ce
+que la recette sur PostgreSQL réel a **débloqué** de ce qui **reste** à arbitrer.
+Chaque affirmation est prouvée par commande sur la stack jetable PG 16 (§5.5).
+
+### NEED-HELP — D1 (constat H2, module Événements)
+
+- **Ce que §5.5 a résolu** : V194 rétablit la table physique `events` que V158
+  avait renommée `legacy_events` sans remapper l'entité `Event`. Résultat mesuré :
+  `FIRST_EVENT` du wizard et `/api/v1/events` ne répondent plus 500 « relation
+  "events" does not exist » ; E2E-6 FIRST_EVENT **PASS**, chaîne E2E-7 **PASS**.
+- **Ce qui RESTE bloquant (décision humaine)** : le port réel du module n'est pas
+  fait. Deux sources de vérité coexistent — `events` (legacy, schéma FR : `titre`,
+  `date_debut`, `lieu`, `statut`, CHECK V42 sur 13 types français) et `event`
+  (Church OS, V158, mappée par `ChurchEvent`, schéma EN). L'entité legacy et le
+  module Church OS ne sont pas réconciliés.
+- **Défaut prouvé, hors du chemin de recette, NON corrigé (R12 + D1)** :
+  `LoadPredictionService` (:31/:34/:48/:50) porte une requête native
+  `SELECT date(debut) … FROM events … GROUP BY date(debut)` — **la colonne
+  `debut` n'existe pas** (le bon nom est `date_debut`, correctement employé au
+  WHERE). Preuve : `psql -c "SELECT date(debut) FROM events …"` →
+  `ERROR: column "debut" does not exist`. Cet endpoint n'a **aucun test** (la
+  suite 1671 est verte sans le couvrir) et n'est pas appelés par la recette. Le
+  corriger = « Voie 2 : porter le code sur la base », explicitement hors périmètre
+  initial. **Arbitrage demandé** : Voie 1 (aligner la base, crée deux sources — à
+  refuser), Voie 2 (porter `Event`+`LoadPredictionService` vers `event` — le
+  travail correct, chantier séparé), Voie 3 (traiter H2 comme chantier documenté).
+- **Statut** : PARTIEL — dérivé bloquant wizard résolu ; port du module et
+  requête morte `LoadPredictionService` = BLOCKED sur décision D1.
+
+### NEED-HELP — D2 (`users.tenant_id` d'origine vs tenant d'action)
+
+- Constat : la garde de bascule lit l'utilisateur **avant** de changer
+  `TenantContext` (`TenantSwitcherController` :213-220, commentaire H4 2ᵉ cran) —
+  symptôme évité. La **cause** (prédicat `findById` scopé tenant sur
+  `TenantAwareSimpleJpaRepository`) n'est pas traitée : toute lecture
+  d'utilisateur hors du tenant d'origine reste dépendante d'un appel `crossTenantRead`.
+- Arbitrage (Voie 1 membership-scoped `findById`, revue d'isolation complète ;
+  Voie 2 faire que le wizard n'utilise plus `currentActor()` comme `responsableId`
+  — le chemin est bien **actif** : `applyStructure` pose `.responsableId(actorId)`
+  avec `actorId = currentActor()` (OnboardingStepActions :264/:275) ; Voie 3
+  fixture owner). Aucune voie prise sans revue humaine. **Statut : BLOCKED (D2).**
+
+### NEED-HELP — D3 (validation bout-en-bout du sélecteur cross-tenant)
+
+- Preuves §5.5 : `POST /tenant-switcher/switch` fonctionne et ne livre **pas** de
+  JWT à un tenant suspendu (E2E-8c PASS), le tenant réactivé redevient basculable
+  (E2E-8f PASS), un jeton B ne voit **aucune** étape de A (E2E-10c PASS), et le
+  Super Admin bascule sur un autre tenant (E2E-10a PASS). Le 500 « Utilisateur
+  introuvable » initial n'est **plus** reproduit : la lecture pré-bascule (H4 2ᵉ
+  cran) le prévient.
+- **Reste** : le scénario **B2 du plan** (« un membre de deux églises choisit son
+  organisation ») validé **bout-en-bout par un vrai utilisateur non-Super-Admin**
+  n'a pas de fixture légale dans la recette (le login d'un owner fraichement
+  provisionné exige son mot de passe aléatoire jamais communiqué, et `activate`
+  ne prend qu'un token — cf. E2E-2b SKIP). D3 est donc **partiellement** prouvé
+  (par bascule Super Admin + isolation), pas par le flux membre réel.
+- **Arbitrage demandé** : valider B2 par un compte membre réel de deux tenants
+  (choix de fixture représentative — relève de D2 Voie 3). **Statut : PARTIEL.**
+
+### NEED-HELP — D4 (`families.nom` UNIQUE mondial — défaut multi-tenant confirmé)
+
+- **Prouvé sur PG réel §5.5** : `uk_families_nom` est `UNIQUE (nom)` **sans scope
+  tenant**. Insertion de `DupProbe Family` dans le tenant A = `INSERT 0 1` ; la
+  **même** famille dans un **autre** tenant B → `ERROR: duplicate key …
+  "uk_families_nom"`. Deux églises ne peuvent donc pas avoir une famille du même
+  nom — exactement la classe du défaut dictionnaires corrigé par V193.
+- Non corrigé ici car **D4 est une décision humaine** (migration + backfill +
+  arbitrage de la clé cible `(tenant_id, nom)`). La recette ne le 500-pas car elle
+  utilise des noms à suffixe slug distincts (commentaire script :467) — donc le
+  défaut est **masqué, pas absent**.
+- **Résolution proposée pour validation** : même patron que V193
+  (`DROP uk_families_nom` + `CREATE UNIQUE INDEX … (tenant_id, nom)`), sans perte
+  de données (contrainte mondiale plus stricte ⇒ a fortiori pas de doublon par
+  tenant). **Statut : BLOCKED (décision D4).**
+
+### NEED-HELP — D5 / D5-bis (`E2E-9a`, sondes IDOR/quota — limite de fixture, PAS un défaut)
+
+- D5 : `hasAnyRole` évalue le **rôle du JWT** ; `login`/`switch` ne délivrent que
+  les 6 rôles globaux de l'enum `UserRole` — aucune fixture légale ne place
+  `TENANT_ADMIN`/`TENANT_OWNER` dans ce claim. E2E-9 → SKIP honnête (pré-sonde
+  bug n°4) ; E2E-10b → SKIP (bug n°6 : `uk_tenant_membership_user_tenant` empêche
+  un second rôle là où une membership existe, donc 403 avant lookup). L'isolation
+  réelle est prouvée par E2E-10c (PASS). **La fixture est à corriger, pas le RBAC.**
+- **D5-bis (question ouverte)** : la garde `POST /api/v1/admin/invitations`
+  (`hasAnyRole('TENANT_OWNER','TENANT_ADMIN')` sur le rôle JWT) devrait-elle
+  basculer sur `@authz.isTenantAdmin()` (lecture des memberships DB à la requête),
+  comme le wizard et les quotas ? C'est cohérent mais engage le RBAC → arbitrage
+  humain. **Statut : limite documentée, aucune correction improvisée.**
+
+### NEED-HELP — D6 (actions ops hors périmètre code)
+
+- Publication `/.well-known/assetlinks.json` et `apple-app-site-association` sur
+  `app.discipolat.com` (sinon Android ouvre le navigateur au lieu de l'app) ;
+  `usesCleartextTraffic="true"` dans `AndroidManifest.xml` (risque sécurité, hors
+  B8). Ni l'un ni l'autre ne se corrige « en douce » depuis le backend.
+  **Statut : BLOCKED — campagne ops dédiée.**
+
+### Notes d'exploitation à valider par l'orchestrateur (hors tâches D1–D6)
+
+- **§5.8 / dérive de push** : la consigne de reprise est « **ni push ni tag** ».
+  Cette campagne s'y conforme — les 3 commits §5.5 (`ed599fb0` V193, `fc90282e`
+  V194, `08dd12ff` recette+preuves) sont **locaux**. **MAIS** la branche
+  `fix/schema-drift-h1-h5` avait été poussée sur `origin` jusqu'à `a9eed1d7` par
+  une campagne antérieure (38 commits d'avance non-poussés depuis). Cette divergence
+  doit être connue de l'humain : un futur push exposerait à la fois `a9eed1d7` et
+  le travail ici local. **Aucune action de push prise.**
+- **Ordre de déploiement V192/V194 (fail-closed)** : V194 lève une exception si
+  `events` **et** `legacy_events` coexistent (signature d'un environnement ayant
+  tourné en `ddl-auto:update` après V158) ou si aucune des deux n'existe. Sur une
+  base propre migrée V1→V193 (comme le prouve le gate), V194 s'applique sans
+  risque ; sur un environnement ayant eu `ddl-auto:update`, il **échoue
+  volontairement** et demande une réconciliation manuelle. À mentionner au runbook.
