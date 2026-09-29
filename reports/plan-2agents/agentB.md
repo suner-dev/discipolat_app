@@ -450,3 +450,81 @@ table `events` — que la chaîne de migrations ne crée jamais (constat H2). Le
 envoient cette étape : le parcours de bout en bout échouera en 500 sur une base migrée tant que
 l'arbitrage « aligner le code sur la base » vs « aligner la base sur le code » n'est pas tranché.
 Ce n'est pas un défaut de mon code : **je ne peux pas le corriger seul**, et je n'improvise pas.
+
+---
+
+## B4 — Invitations admin complètes (constat F3)
+
+- **Statut** : **DONE**
+- **Fichiers** : NEW `src/hooks/useInvitations.ts`, NEW `src/hooks/useOrgNodes.ts`,
+  NEW `src/components/admin/InvitationCreateDialog.tsx`, NEW `src/components/admin/InvitationLinkDialog.tsx`,
+  MOD `src/pages/TenantAdminInvitationsPage.tsx`, NEW `src/__tests__/TenantAdminInvitationsPage.test.tsx`,
+  + **53 clés i18n dans les 6 locales** (parité stricte vérifiée : 53/53/53/53/53/53).
+
+### Ce que la page consomme enfin du backend (écarts G3, G4 et **G11**)
+
+| Consommation | Avant | Après |
+|---|---|---|
+| `GET /admin/invitations?page&size&status&q` (A10) | appelé **sans aucun paramètre** → liste complète | pagination + filtres serveur, `PageResponse` validé |
+| `POST /admin/invitations/{id}/resend` (A9) | **jamais appelé** | bouton par ligne + avertissement si `emailSent=false` |
+| `GET /admin/org/tree` | jamais appelé | sélecteur de portée `ORGANIZATION` alimenté par l'arborescence réelle |
+| `GET /admin/roles/overview` | **jamais appelé** (liste en dur) | rôles réellement assignables |
+| `invitationLink` / `emailSent` / `requiresTenantSwitch` | ignorés | modale de copie du lien + bandeaux d'alerte honnêtes |
+| `expiresAt < now` | statut affiché tel quel | badge « Expirée » (le backend ne rebadge pas la ligne) |
+
+### G11 — défaut fonctionnel réel trouvé et corrigé en chemin
+
+La liste des rôles était **codée en dur** dans l'écran : `TENANT_OWNER`, `TENANT_ADMIN`,
+`CHURCH_ADMIN`, `RESPONSABLE`, `CHEF_DE_FAMILLE`, `FAISEUR`, `MEMBRE`.
+
+Or le backend résout le rôle dans la **table `roles`** (`InvitationService` →
+`roleRepository.findByTenantIdAndKey(tenantId, roleKey)`, sinon recherche globale, sinon refus).
+Les rôles système seedés par `V135__create_multi_tenant_core_tables.sql` sont : `PLATFORM_SUPER_ADMIN`,
+`TENANT_OWNER`, `TENANT_ADMIN`, `CHURCH_ADMIN`, `CHURCH_LEADER`, `DEPARTMENT_ADMIN`,
+`DEPARTMENT_LEADER`, `FAMILY_LEADER`, `DISCIPLE_MAKER`, `MEMBER`, `GUEST`.
+
+→ **4 des 7 rôles proposés par l'ancien écran n'existaient pas** (`RESPONSABLE`,
+`CHEF_DE_FAMILLE`, `FAISEUR`, `MEMBRE`) : l'invitation était **refusée par le serveur**. Et aucun
+rôle personnalisé du tenant n'était proposable, alors que l'API les expose.
+
+Correction : `useAssignableRoles()` consomme `/admin/roles/overview` (rôles système + rôles custom du
+tenant) ; le repli est la liste des clés **réellement seedées**, pas une traduction inventée par
+l'écran. Un test verrouille les deux cas (API disponible / API en échec).
+
+### Qualité (§5.0 du plan)
+
+- 5 états explicites : squelette (`SkeletonTable`), vide (`EmptyState` + action), **erreur actionnable
+  avec `Réessayer`**, succès, et les trois issues métier (email non envoyé, changement d'église,
+  expiration).
+- `alert()` et `confirm()` natifs **supprimés** : `ConfirmDialog` du design system + `toast`.
+- Dates via `Intl.DateTimeFormat(locale)` : plus aucun `toLocaleDateString('fr-FR')` sur cette page.
+- Classes logiques (`text-start`, `text-end`, `ms-`/`me-`) : RTL correct.
+- Cibles ≥ 44 px, `aria-label` sur les champs, `role="alert"` sur les bandeaux, `aria-live` sur la
+  confirmation de copie.
+- Clés de cache **préfixées par le tenant** (`['t', tenantId, 'admin', 'invitations']`) : sans cela,
+  un changement d'église pouvait afficher les invitations de la précédente pendant le `staleTime`.
+- Réponses API **validées par zod** ; la liste accepte les deux formes possibles du backend
+  (`PageResponse` ou tableau) sans `as`.
+
+### Preuve
+
+- `vitest src/__tests__/TenantAdminInvitationsPage.test.tsx` → **16/16**
+  (pagination, vide, erreur+retry, filtre de statut, expirée, création, copie du lien,
+  `emailSent=false`, `requiresTenantSwitch`, portée ORGANIZATION, membre ajouté directement,
+  renvoi, renvoi sans email, confirmation d'annulation, rôles API, repli des rôles).
+- `tsc --noEmit` → 0 erreur. `eslint --max-warnings 0` sur les 6 fichiers → 0 erreur, 0 warning.
+- **Non-régression : 54 fichiers de test sur 54 verts**, exécutés **un par un**.
+
+⚠️ Note de méthode honnête : une première passe de non-régression a rapporté « 54 échecs ». C'était
+**mon script de détection** (je lisais `tail -3` d'une sortie Vitest où la ligne de résultat est
+précédée de retours chariot). Refait sur le **code de sortie** : 54/54 verts. Aucun test n'a été
+modifié ni désactivé.
+
+### Défauts de mon propre code, trouvés par mes propres tests et corrigés
+
+1. J'utilisais `t('common.retry')` et `t('common.close')` : **ces clés n'existent pas** (la seconde
+   n'existe qu'en `ar`). Une recherche par clé inexistante renvoie la clé : le bouton affichait
+   littéralement « common.retry ». Corrigé en `invitations.retry` / `invitations.close`, présents
+   dans les 6 locales.
+2. Mes tests sélectionnaient le rôle `MEMBRE` : c'est précisément une des clés invalides. Le test a
+   donc corrigé le test, pas le code — et a fait apparaître le défaut G11.
