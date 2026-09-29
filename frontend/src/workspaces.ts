@@ -335,6 +335,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Récompenses', href: '/rewards', icon: Trophy, subtitle: 'Gamification & badges' },
       { name: 'Système', href: '/admin/system', icon: Server, subtitle: 'Santé, cache & performances' },
       { name: 'Églises (tenants)', href: '/admin/tenants', icon: Building2, subtitle: 'Multi-tenant' },
+      { name: 'Abonnement & quotas', href: '/admin/subscription', icon: Wallet, subtitle: 'Plan, facturation & consommation' },
       { name: 'Audit', href: '/audit', icon: Activity, subtitle: 'Journal de bord' },
       { name: 'Retours testeurs', href: '/admin/feedback', icon: MessageSquare, subtitle: 'Bugs & suggestions' },
     ],
