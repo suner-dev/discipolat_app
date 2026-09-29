@@ -365,3 +365,88 @@ imports inutilisés et clés de map dupliquées dans `app.dart`).
 Note de méthode : la mesure « avant/après » a été faite via `git stash` ; le `stash pop`
 ayant été coupé par l'expiration de l'appel, le travail a été **récupéré et vérifié**
 (`grep` : 2 occurrences dans `app.dart`, 3 dans `app_drawer.dart`). Aucune perte.
+
+---
+
+## 2026-09-29 — INVENTAIRE DES ÉCARTS DE CONSOMMATION (Agent A → clients)
+
+**Pourquoi cette section.** Je suis passé en rôle « Agent B » : mon travail n'est pas seulement
+d'avancer mes tâches, c'est aussi de vérifier que **tout ce que le backend produit est réellement
+consommé** par le web et le mobile. Un endpoint livré et jamais appelé est du travail backend qui
+n'apporte rien au produit.
+
+**Méthode (reproductible).** Extraction de toutes les routes déclarées dans les contrôleurs du
+backend **dans le worktree de l'Agent A** (1 156 routes, `grep` sur `@*Mapping` + `@RequestMapping`),
+puis confrontation à tous les appels clients de ma branche (661 web + 579 mobile). Pour chaque
+livrable de l'Agent A, vérification ciblée de la présence d'un consommateur.
+
+**État de l'Agent A au moment du contrôle** : HEAD `049edede` (2 commits au-delà de `edd76954`),
+plus un chantier **non commité** : `V190` (multi-devises ISO-4217), `V191` (index tables chaudes),
+`PlatformCurrenciesController`, `Iso4217CurrencyValidator`, `common/scaling/`,
+`modules/payments/payout/` (Stripe, PayPal, SEPA, virement), `docs/SCALING.md`.
+
+### Écarts trouvés — et leur traitement
+
+| # | Livré par l'Agent A | Preuve backend | Consommateur avant | Traitement |
+|---|---|---|---|---|
+| **G1** | `GET /api/v1/platform/currencies` (ISO-4217 : code, name, symbol, decimals) + `V190` | `PlatformCurrenciesController` (**non commité**) | **AUCUN** — devise en texte libre dans les 2 wizards | **CORRIGÉ** ce jour (web + mobile) |
+| **G2** | `GET /api/v1/notifications/push-status` (état honnête du push) | `PushTokenController:89`, commit `049edede` | **AUCUN** | À faire (mobile) — l'app ne peut pas dire « le push n'est pas configuré » |
+| **G3** | `GET /api/v1/admin/invitations?page&size&status&q` (A10) | `InvitationController:178-208` | `TenantAdminInvitationsPage.tsx:31` appelle **sans aucun paramètre** | Tâche **B4** (non commencée) |
+| **G4** | `POST /api/v1/admin/invitations/{id}/resend` (A9) | `InvitationController:278` | **AUCUN** — l'UI ne sait pas renvoyer une invitation | Tâche **B4** |
+| **G5** | `onboardingCompletedAt` + `onboardingCompletedBy` (A4) | `TenantResponse` | **AUCUN** | Tâche **B5** (badge « onboarding terminé le … ») |
+| **G6** | `GET /api/v1/platform/admin/quota-usage/tenants/{id}` | `PlatformQuotaUsageController:33` | web : 2 fichiers, mais pour la liste agrégée, pas par tenant | Tâche **B6** |
+| **G7** | `BackupController` (campagne orchestration A2) | commité `edd76954` | aucun | **Hors périmètre** (R12) : une API de backup n'a pas d'écran exigé par le plan |
+| **G8** | `GET /api/v1/platform/config-summary` | commité `049edede` | aucun | **Hors périmètre** (R12) : useful en exploitation, pas pour l'utilisateur final |
+| **G9** | Actions métier du wizard (A3) : `FIRST_EVENT` crée un événement | `OnboardingStepActions:115` | web B1 + mobile B7 envoient bien l'étape | ⚠️ **BLOQUÉ par l'arbitrage D1** (H2) : la table `events` n'a jamais été créée par les migrations. Le parcours échouera en 500 tant que l'Agent A n'a pas tranché |
+| **G10** | Payout providers + sharding (A3 en cours) | non commité | aucun client requis | — |
+
+**Déjà consommé (rien à faire)** : le push mobile enregistre déjà le jeton FCM sur
+`/notifications/register-token` et le désinscrit sur `/notifications/unregister-token` — la
+livraison FCM de l'Agent A a donc bien un客户端.
+
+### G1 — corrigé aujourd'hui (web)
+
+- `useCurrencies` : lit `/platform/currencies` et **valide la réponse avec un schéma zod à la
+  frontière**. C'est la première réponse d'API validée par schéma dans le frontend (zod n'existait
+  que dans 5 formulaires) : une forme de réponse qui change échoue ici, pas dans un `<select>` trois
+  écrans plus loin.
+- Repli D12 : EUR/XAF/USD, **annoncé explicitement** à l'utilisateur, saisie toujours possible.
+- Fuseau : `Intl.supportedValuesOf('timeZone')` → suggestion, **zéro dépendance ajoutée**.
+- **Défaut i18n corrigé au passage** : les libellés de cette étape passaient par
+  `t(texteFrançais)`, c'est-à-dire une recherche par **clé** ; les clés n'existant pas, les
+  libellés s'affichaient en français dans les 5 autres locales. Ils passent par `tText`
+  (traduction par **valeur**) et 9 clés ont été ajoutées **dans les 6 locales** (parité vérifiée
+  1/1/1/1/1/1).
+- **Défaut de testabilité corrigé** : mon hook forçait `retry: 1`, ce qui **écrasait la politique
+  globale** (application : 2, tests : false). Un composant qui bat la config globale n'est ni
+  pilotable ni testable. Plus de `retry` local.
+
+Preuve : `vitest` **5/5** (nouveau `ChurchIdentityStep.test.tsx` : catalogue servi, état de
+chargement, repli annoncé, payload soumis, fuseaux IANA) + **54/54** de non-régression
+(wizard, bannière, UXComponents) ; `tsc --noEmit` 0 erreur ; `eslint --max-warnings 0` sur 3 fichiers.
+
+### G1 — corrigé aujourd'hui (mobile)
+
+- `CurrencyCatalogService` : décodage **strict** champ par champ (`CurrencyOption.tryParse`), tri,
+  repli sur 3 devises si l'API échoue **ou** répond autre chose qu'un catalogue — une réponse vide
+  ou illisible est traitée comme un échec, pas affichée comme un catalogue vide.
+- `_CurrencyField` : `Autocomplete` (180 devises dans un `DropdownButton` obligeraient à faire
+  défiler au doigt ; ici filtrage clavier **et** tactile, saisie libre conservée).
+- `ApiService` injectable dans `ChurchIdentityForm` : c'était la **seule** étape du wizard non
+  testable. Convention du dépôt respectée (faux `ApiService` maison, **aucune dépendance ajoutée**).
+
+Preuve : `flutter test` **34/34** sur 4 fichiers ; `flutter analyze` 3 fichiers → **No issues**.
+
+**Note d'honnêteté** : un premier passage de tests signalait un débordement de 2 px du formulaire.
+Diagnostic après vérification : c'était un **artefact de mon harnais de test isolé** — l'écran du
+wizard monte déjà le formulaire dans un `ListView` (`tenant_onboarding_screen.dart:232`), donc
+l'utilisateur fait défiler. Le test reproduit maintenant le montage réel. Je n'ai pas « corrigé » le
+symptôme en agrandissant la surface de test.
+
+### Blocage à arbitrer (transmis à l'orchestrateur)
+
+**G9 / D1** : l'action `FIRST_EVENT` du wizard appelle `EventService`, dont l'entité pointe la
+table `events` — que la chaîne de migrations ne crée jamais (constat H2). Les deux wizards
+envoient cette étape : le parcours de bout en bout échouera en 500 sur une base migrée tant que
+l'arbitrage « aligner le code sur la base » vs « aligner la base sur le code » n'est pas tranché.
+Ce n'est pas un défaut de mon code : **je ne peux pas le corriger seul**, et je n'improvise pas.
