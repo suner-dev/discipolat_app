@@ -69,7 +69,9 @@ class AiConfigurationPropertiesBindingTest {
 
         assertFalse(properties.isEnabled());
         assertFalse(properties.isConfigured(), "sans app.ollama.* dans le yml, l'IA doit être absente");
-        assertEquals("http://localhost:11434", properties.getUrl());
+        // M6 : défaut VIDE, pas « localhost ». Un défaut localhost ferait tenter un
+        // appel futile qui échoue en silence dans un déploiement réel.
+        assertEquals("", properties.getUrl());
         assertEquals("llama3", properties.getModel());
         assertEquals(Duration.ofSeconds(30), properties.getTimeout());
     }

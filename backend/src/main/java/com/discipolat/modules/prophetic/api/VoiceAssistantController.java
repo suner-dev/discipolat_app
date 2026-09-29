@@ -1,5 +1,6 @@
 package com.discipolat.modules.prophetic.api;
 
+import com.discipolat.common.infrastructure.config.SpeechToTextProperties;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.prophetic.domain.*;
 import org.springframework.http.HttpHeaders;
@@ -28,10 +29,14 @@ public class VoiceAssistantController {
     private final VoiceTtsService ttsService;
     private final SecurityUtils securityUtils;
 
+    private final SpeechToTextProperties speechProperties;
+
     public VoiceAssistantController(VoiceAssistantService voiceService,
                                     VoiceSttService sttService,
                                     VoiceTtsService ttsService,
-                                    SecurityUtils securityUtils) {
+                                    SecurityUtils securityUtils,
+                                    SpeechToTextProperties speechProperties) {
+        this.speechProperties = speechProperties;
         this.voiceService = voiceService;
         this.sttService = sttService;
         this.ttsService = ttsService;
@@ -78,9 +83,14 @@ public class VoiceAssistantController {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Fichier audio requis"));
         }
-        // G6.6 — garde-fous audio : 25MB max, MIME audio/* allowlist, extension audio.
-        if (file.getSize() > 25 * 1024 * 1024) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Fichier audio trop volumineux (max 25MB)"));
+        // Garde-fou audio (M5) : la PLAFONDE vient de la configuration
+        // (`app.speech.max-file-bytes`, 25 MiB par defaut) et n'est plus codee en
+        // dur dans le controleur. Un upload non borne est un DoS : la valeur
+        // declaree doit donc etre celle reellement appliquee.
+        if (file.getSize() > speechProperties.getMaxFileBytes()) {
+            return ResponseEntity.status(413).body(Map.of(
+                    "error", "Fichier audio trop volumineux",
+                    "maxBytes", speechProperties.getMaxFileBytes()));
         }
         String audioCt = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
         String audioName = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";

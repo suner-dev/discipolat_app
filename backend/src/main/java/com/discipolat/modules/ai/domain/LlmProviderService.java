@@ -1,5 +1,6 @@
 package com.discipolat.modules.ai.domain;
 
+import com.discipolat.common.infrastructure.config.OllamaProperties;
 import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +18,19 @@ public class LlmProviderService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final PlatformFeatureFlagService featureFlagService;
 
-    public LlmProviderService(PlatformFeatureFlagService featureFlagService) {
+    public LlmProviderService(PlatformFeatureFlagService featureFlagService,
+                              OllamaProperties ollamaProperties) {
         this.featureFlagService = featureFlagService;
+        this.ollamaProperties = ollamaProperties;
     }
+
+    /**
+     * M6 : l'URL Ollama etait codee en dur DANS LE SOURCE
+     * (« http://localhost:11434 »), ce qui est pire qu'une valeur par défaut en
+     * configuration : rien ne pouvait la changer et l'etat « disponible » etait
+     * donc un mensonge en environnement deploye.
+     */
+    private final OllamaProperties ollamaProperties;
 
     @Value("${app.ai.groq-api-key:}") private String groqApiKey;
     @Value("${app.ai.gemini-api-key:}") private String geminiApiKey;
@@ -68,7 +79,7 @@ public class LlmProviderService {
         p.put("gemini", isConfigured(geminiApiKey));
         p.put("mistral", isConfigured(mistralApiKey));
         p.put("huggingface", isConfigured(huggingfaceApiKey) || true); // Anonyme possible
-        p.put("ollama", getOllamaAvailability());
+        p.put("ollama", ollamaProperties.isConfigured());
         p.put("local", false); // Déterministe — toujours dispo mais pas un LLM
         p.put("fallback", true);
         return p;
@@ -203,15 +214,12 @@ public class LlmProviderService {
         return null;
     }
 
-    // ==================== OLLAMA (local, aucune clé nécessaire) ====================
-    private boolean getOllamaAvailability() {
-        try {
-            ResponseEntity<String> resp = restTemplate.getForEntity("http://localhost:11434/api/tags", String.class);
-            return resp.getStatusCode().is2xxSuccessful();
-        } catch (Exception e) {
-            return false;
-        }
-    }
+    // M6 : la sonde réseau « Ollama est-il joignable ? » a été SUPPRIMÉE.
+    // Elle interrogeait « http://localhost:11434/api/tags » codé en dur dans le
+    // source, et son résultat était déjà remplacé plus haut par
+    // `ollamaProperties.isConfigured()`. La conserver aurait laissé une sonde
+    // réseau — et un délai de connexion — sur un chemin qui ne sert plus à rien,
+    // en plus d'être le menteur que ce chantier supprime.
 
     // ==================== FALLBACK DETERMINISTE ====================
     private String generateFallback(String prompt) {

@@ -66,7 +66,9 @@ class OllamaPropertiesTest {
     void defaultsAreUsableButInactive() {
         OllamaProperties properties = new OllamaProperties();
 
-        assertEquals("http://localhost:11434", properties.getUrl());
+        // M6 : le defaut est VIDE, pas « localhost ». Un defaut localhost en
+        // production fait tenter un appel futile qui echoue en silence.
+        assertEquals("", properties.getUrl());
         assertEquals("llama3", properties.getModel());
         assertEquals(Duration.ofSeconds(30), properties.getTimeout());
         assertFalse(properties.isConfigured());
@@ -185,7 +187,10 @@ class OllamaPropertiesTest {
 
     @Test
     void maskedUrlKeepsPlainLocalDevelopmentUrlReadable() {
+        // Une URL de developpement explicite reste lisible : le masquage ne sert
+        // qu'a retirer des identifiants, pas a rendre l'URL illisible.
         OllamaProperties properties = new OllamaProperties();
+        properties.setUrl("http://localhost:11434");
 
         assertEquals("http://localhost:11434", properties.maskedUrl());
     }

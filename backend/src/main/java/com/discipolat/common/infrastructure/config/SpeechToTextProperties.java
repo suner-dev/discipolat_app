@@ -2,6 +2,8 @@ package com.discipolat.common.infrastructure.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
@@ -72,6 +74,17 @@ public class SpeechToTextProperties {
     /** Timeout d'une transcription. Un nombre seul est interprété en secondes. */
     @DurationUnit(ChronoUnit.SECONDS)
     private Duration timeout = DEFAULT_TIMEOUT;
+
+    /**
+     * Taille maximale d'un envoi audio, en octets (defaut 25 MiB).
+     *
+     * <p>Plafonne <b>dure</b> : un upload non borne est un DoS. La valeur est
+     * exposee publiquement car elle doit etre annoncee au client en cas de
+     * refus (413) — elle ne contient aucun secret.
+     */
+    @Min(1)
+    @Max(104857600)   // 100 MiB : au-dela, ce n'est plus de l'audio
+    private long maxFileBytes = 25L * 1024 * 1024;   // 25 MiB
 
     /**
      * Accès explicite à la clé. Réservé à l'adaptateur HTTP qui doit envoyer

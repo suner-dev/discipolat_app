@@ -12,6 +12,8 @@ import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.common.infrastructure.config.OllamaHealth;
+import com.discipolat.common.infrastructure.config.OllamaProperties;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
@@ -22,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -52,12 +55,12 @@ public class AiAssistantService {
 
     private static final Logger log = LoggerFactory.getLogger(AiAssistantService.class);
 
-    @Value("${app.ai.ollama-url:http://localhost:11434}")
-    private String ollamaUrl;
+    // M6 : la configuration passe par OllamaProperties/OllamaHealth, pas par des
+    // @Value codes en dur sur `localhost`. C'etait la source du mensonge : une URL
+    // localhost en dur donne l'illusion que l'IA est disponible.
 
-    @Value("${app.ai.model:llama3}")
-    private String modelName;
-
+    private final OllamaProperties ollamaProperties;
+    private final OllamaHealth ollamaHealth;
     private final SoulRepository soulRepository;
     private final UserRepository userRepository;
     private final FamilyRepository familyRepository;
@@ -83,7 +86,11 @@ public class AiAssistantService {
                                SecurityUtils securityUtils,
                                AiChatConversationRepository chatRepo,
                                AiCreditsService aiCreditsService,
-                               PlatformFeatureFlagService featureFlagService) {
+                               PlatformFeatureFlagService featureFlagService,
+                               OllamaProperties ollamaProperties,
+                               OllamaHealth ollamaHealth) {
+        this.ollamaProperties = ollamaProperties;
+        this.ollamaHealth = ollamaHealth;
         this.soulRepository = soulRepository;
         this.userRepository = userRepository;
         this.familyRepository = familyRepository;
@@ -168,7 +175,7 @@ public class AiAssistantService {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         // Check and consume AI credits (1 credit per chat message)
         try {
-            aiCreditsService.consumeCredits(userId, "CHAT", 1, modelName);
+            aiCreditsService.consumeCredits(userId, "CHAT", 1, ollamaProperties.getModel());
         } catch (BusinessRuleException e) {
             return Map.of("reply", "⚠️ " + e.getMessage(), "sources", List.of(), "sessionId", UUID.randomUUID().toString());
         }
@@ -197,7 +204,7 @@ public class AiAssistantService {
                 userId,
                 "CHAT",
                 1,
-                modelName,
+                ollamaProperties.getModel(),
                 null, // tokens input - could be calculated
                 null, // tokens output
                 (int) responseTimeMs,
@@ -252,13 +259,29 @@ public class AiAssistantService {
      */
     public Map<String, Object> checkHealth() {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
+        // M6 : l'etat de sante vient de la configuration honnete, et ne divulgue
+        // ni l'URL brute (elle peut contenir user:pass@) ni le message d'une
+        // exception, qui exposait l'infrastructure interne.
+        if (!ollamaHealth.isConfigured()) {
+            return Map.of("ollama", false, "configured", false,
+                    "reason", ollamaHealth.reason(),
+                    "fallback", "deterministic",
+                    "model", ollamaProperties.getModel());
+        }
         try {
-            RestTemplate rt = new RestTemplate();
-            ResponseEntity<String> resp = rt.getForEntity(ollamaUrl + "/api/tags", String.class);
-            boolean available = resp.getStatusCode() == HttpStatus.OK;
-            return Map.of("ollama", available, "url", ollamaUrl, "model", modelName);
+            RestTemplate rt = new RestTemplateBuilder()
+                    .setConnectTimeout(ollamaProperties.getTimeout())
+                    .setReadTimeout(ollamaProperties.getTimeout())
+                    .build();
+            ResponseEntity<String> resp =
+                    rt.getForEntity(ollamaProperties.getUrl() + "/api/tags", String.class);
+            return Map.of("ollama", resp.getStatusCode() == HttpStatus.OK,
+                    "url", ollamaProperties.maskedUrl(),
+                    "model", ollamaProperties.getModel());
         } catch (Exception e) {
-            return Map.of("ollama", false, "url", ollamaUrl, "model", modelName, "error", e.getMessage());
+            log.warn("Sonde Ollama en echec : {}", e.getClass().getSimpleName());
+            return Map.of("ollama", false, "reason", "serveur Ollama injoignable",
+                    "url", ollamaProperties.maskedUrl(), "model", ollamaProperties.getModel());
         }
     }
 
@@ -305,7 +328,7 @@ public class AiAssistantService {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.AI_ENABLED);
         // Consume 2 credits for soul analysis (more complex operation)
         try {
-            aiCreditsService.consumeCredits(userId, "ANALYZE", 2, modelName);
+            aiCreditsService.consumeCredits(userId, "ANALYZE", 2, ollamaProperties.getModel());
         } catch (BusinessRuleException e) {
             return Map.of("error", e.getMessage(), "soulId", soulId.toString());
         }
@@ -323,7 +346,7 @@ public class AiAssistantService {
                 userId,
                 "ANALYZE",
                 2,
-                modelName,
+                ollamaProperties.getModel(),
                 null, null,
                 0,
                 true,
@@ -605,13 +628,29 @@ public class AiAssistantService {
      * Appelle Ollama pour générer une réponse IA.
      */
     private String callOllama(String systemPrompt, String userPrompt) {
+        // M6 : un defaut « localhost » en production fait que l'IA tente de
+        // joindre localhost:11434 et echoue en silence. Le defaut est donc vide
+        // (fail-closed) et, quand l'IA n'est pas configuree, on NE TENTE PAS
+        // d'appel : le moteur deterministe de repli prend le relais. C'est le
+        // comportement exige — un 503 ici priverait l'eglise de son assistant
+        // contextuel alors que ce repli est justement prevu pour cela.
+        if (!ollamaHealth.isConfigured()) {
+            log.warn("IA locale non configurée ({}) : repli déterministe activé", ollamaHealth.reason());
+            return null;
+        }
         try {
-            RestTemplate rt = new RestTemplate();
+            // Le timeout est applique : une valeur de configuration non respectee
+            // serait exactement le genre de cle « documentee mais inexistante »
+            // que ce chantier supprime.
+            RestTemplate rt = new RestTemplateBuilder()
+                    .setConnectTimeout(ollamaProperties.getTimeout())
+                    .setReadTimeout(ollamaProperties.getTimeout())
+                    .build();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model", modelName);
+            body.put("model", ollamaProperties.getModel());
             body.put("stream", false);
             body.put("messages", List.of(
                     Map.of("role", "system", "content", systemPrompt),
@@ -619,7 +658,7 @@ public class AiAssistantService {
             ));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<Map> response = rt.postForEntity(ollamaUrl + "/api/chat", request, Map.class);
+            ResponseEntity<Map> response = rt.postForEntity(ollamaProperties.getUrl() + "/api/chat", request, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 @SuppressWarnings("unchecked")

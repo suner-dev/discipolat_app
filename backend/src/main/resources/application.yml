@@ -115,8 +115,14 @@ app:
   # 503 AI_NOT_CONFIGURED plutot qu'une erreur de connexion.
   ollama:
     enabled: ${OLLAMA_ENABLED:false}
+    # DEFAUT VIDE, et c'est deliberé (M6). Un défaut « localhost » en production
+    # fait que l'IA tente de joindre localhost:11434 et echoue en silence. Vide =
+    # fail-closed : aucune tentative, et le moteur deterministe de repli prend le
+    # relais avec un warning clair au demarrage.
     url: ${OLLAMA_URL:}
     model: ${OLLAMA_MODEL:llama3}
+    # Un LLM lent ne doit pas bloquer un thread de requete indefiniment. Le
+    # timeout est REELLEMENT APPLIQUE (RestTemplateBuilder), pas seulement declare.
     timeout: ${OLLAMA_TIMEOUT:30s}
   # M5 : la reconnaissance vocale etait ABSENTE de la configuration alors que
   # des features la referencent. Sans api-url + api-key, le fournisseur reste
@@ -128,6 +134,9 @@ app:
     api-key: ${APP_SPEECH_API_KEY:}
     model: ${APP_SPEECH_MODEL:whisper-1}
     timeout: ${APP_SPEECH_TIMEOUT:60s}
+    # PLAFORME DUREE : un envoi audio non borne est un DoS. La valeur est
+    # REELLEMENT VERIFIEE avant tout traitement ; au-dela, 413.
+    max-file-bytes: ${APP_SPEECH_MAX_FILE_BYTES:26214400}   # 25 MiB
 
   # ---------------------------------------------------------------------
   # A2 (M2) — Sauvegardes applicatives
@@ -244,7 +253,10 @@ app:
     # chat: POST /api/chat). model = modèle utilisé (ex. llama3, mistral, qwen2.5).
     # Si Ollama n'est pas joignable, un moteur de repli contextuel garantit
     # que l'assistant répond toujours (aucune panne visible côté utilisateur).
-    ollama-url: ${OLLAMA_URL:http://localhost:11434}
+    # Le timeout est REELLEMENT APPLIQUE aux appels LLM (via RestTemplateBuilder) : une
+    # cle « declaree mais non appliquee » est le meme defaut qu'une cle absente.
+    # Sans lui, un LLM lent bloque un thread de requete indefiniment.
+    timeout: ${APP_AI_TIMEOUT:30s}
     model: ${AI_MODEL:llama3}
     # LLM Providers gratuits (sans paiement, sans carte bancaire)
     # Tous ont un tiers gratuit généreux :

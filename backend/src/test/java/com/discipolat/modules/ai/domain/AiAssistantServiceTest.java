@@ -12,6 +12,8 @@ import com.discipolat.modules.platform.domain.PlatformFeatureFlagService;
 import com.discipolat.modules.reports.domain.MakerReport;
 import com.discipolat.modules.reports.domain.MakerReportRepository;
 import com.discipolat.modules.souls.domain.Soul;
+import com.discipolat.common.infrastructure.config.OllamaHealth;
+import com.discipolat.common.infrastructure.config.OllamaProperties;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.souls.domain.WorkspaceScopeService;
 import com.discipolat.modules.users.domain.User;
@@ -48,12 +50,28 @@ class AiAssistantServiceTest {
     @Mock private AiCreditsService aiCreditsService;
     @Mock private PlatformFeatureFlagService featureFlagService;
 
+    // M6 : le service lise sa configuration dans OllamaProperties/OllamaHealth et
+    // non plus dans des @Value codes en dur. Ces deux mocks representent un
+    // environnement OU l'IA est configuree, afin que ces tests restent centres sur
+    // le comportement conversationnel. L'etat « non configure » est lui aussi
+    // couvert, dans OllamaHealthTest et dans AiAssistantNotConfiguredTest.
+    @Mock private OllamaProperties ollamaProperties;
+    @Mock private OllamaHealth ollamaHealth;
+
     @InjectMocks private AiAssistantService aiService;
 
     private UUID userId;
 
     @BeforeEach
     void setUp() {
+        lenient().when(ollamaProperties.getModel()).thenReturn("llama3");
+        lenient().when(ollamaProperties.getUrl()).thenReturn("http://ollama.test:11434");
+        lenient().when(ollamaProperties.getTimeout()).thenReturn(java.time.Duration.ofSeconds(5));
+        lenient().when(ollamaProperties.maskedUrl()).thenReturn("http://ollama.test:11434");
+        // L'appel reseau reel n'est pas possible : callOllama echoue, et le
+        // service bascule sur sa reponse contextuelle — ce que ces tests verifient.
+        lenient().when(ollamaHealth.isConfigured()).thenReturn(true);
+        lenient().doNothing().when(ollamaHealth).requireConfigured();
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         userId = UUID.randomUUID();
         SecurityTestHelper.loginAs(userId);

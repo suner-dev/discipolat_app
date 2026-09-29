@@ -72,22 +72,32 @@ class OllamaHealthTest {
                 }, "app.ollama.url"),
                 new Case("modèle vide", p -> {
                     p.setEnabled(true);
+                    // URL explicitement fournie : sinon c'est elle qui est
+                    // fautive, et c'est elle que le motif doit nommer. Un motif
+                    // qui n'annoncerait qu'un défaut parmi plusieurs laisse
+                    // l'administrateur deviner le reste.
+                    p.setUrl("http://ollama.exemple:11434");
                     p.setModel("");
                 }, "app.ollama.model"),
                 new Case("timeout nul", p -> {
                     p.setEnabled(true);
+                    p.setUrl("http://ollama.exemple:11434");
                     p.setTimeout(Duration.ZERO);
                 }, "app.ollama.timeout"),
                 new Case("timeout négatif", p -> {
                     p.setEnabled(true);
+                    p.setUrl("http://ollama.exemple:11434");
                     p.setTimeout(Duration.ofSeconds(-5));
                 }, "app.ollama.timeout"),
                 new Case("timeout absent", p -> {
                     p.setEnabled(true);
+                    p.setUrl("http://ollama.exemple:11434");
                     p.setTimeout(null);
                 }, "app.ollama.timeout")
         );
 
+        // Le defaut etant desormais une URL VIDE, le premier motif encountered est
+        // celui de l'URL : c'est correct, et c'est meme l'information la plus utile.
         for (Case testCase : cases) {
             OllamaHealth health = healthWith(testCase.mutator());
             String reason = health.reason();

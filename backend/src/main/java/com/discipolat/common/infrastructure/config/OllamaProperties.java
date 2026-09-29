@@ -44,7 +44,13 @@ public class OllamaProperties {
     private static final String HTTP_URL_OR_BLANK = "^$|^https?://\\S+$";
 
     /** URL de développement par défaut — sans effet tant que {@code enabled=false}. */
-    public static final String DEFAULT_URL = "http://localhost:11434";
+    /**
+     * DEFAUT VIDE, et c'est deliberé (M6). Un défaut « localhost » en production
+     * fait que l'IA tente de joindre localhost:11434 et echoue SILENCIEUSEMENT.
+     * Vide = fail-closed : aucune tentative futile, et le moteur deterministe de
+     * repli prend le relais avec un warning clair au demarrage.
+     */
+    public static final String DEFAULT_URL = "";
 
     /** Modèle par défaut, aligné sur {@code app.ai.model}. */
     public static final String DEFAULT_MODEL = "llama3";
@@ -58,7 +64,7 @@ public class OllamaProperties {
     /** URL de base d'Ollama (health : {@code GET /api/tags}, chat : {@code POST /api/chat}). */
     @Pattern(regexp = HTTP_URL_OR_BLANK,
             message = "app.ollama.url doit être une URL http(s) valide (ex : http://localhost:11434) ou vide")
-    private String url = DEFAULT_URL;
+    private String url = DEFAULT_URL;   // vide par defaut : fail-closed
 
     /** Modèle Ollama interrogé (ex : llama3, mistral, qwen2.5). */
     @NotBlank(message = "app.ollama.model ne peut pas être vide (ex : llama3)")

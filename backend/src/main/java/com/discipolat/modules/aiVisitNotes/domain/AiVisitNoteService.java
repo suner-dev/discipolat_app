@@ -1,5 +1,7 @@
 package com.discipolat.modules.aiVisitNotes.domain;
 
+import com.discipolat.common.infrastructure.config.OllamaHealth;
+import com.discipolat.common.infrastructure.config.OllamaProperties;
 import com.discipolat.common.multitenancy.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -17,15 +20,21 @@ public class AiVisitNoteService {
 
     private static final Logger log = LoggerFactory.getLogger(AiVisitNoteService.class);
 
-    @Value("${app.ai.ollama-url:http://localhost:11434}")
-    private String ollamaUrl;
-
-    @Value("${app.ai.model:llama3}")
-    private String modelName;
+    // M6 : meme source de verite que l'assistant, sinon deux modules divergent
+    // sur l'etat « IA disponible ».
 
     private final AiVisitNoteRepository noteRepo;
 
-    public AiVisitNoteService(AiVisitNoteRepository noteRepo) { this.noteRepo = noteRepo; }
+    private final OllamaProperties ollamaProperties;
+    private final OllamaHealth ollamaHealth;
+
+    public AiVisitNoteService(AiVisitNoteRepository noteRepo,
+                              OllamaProperties ollamaProperties,
+                              OllamaHealth ollamaHealth) {
+        this.noteRepo = noteRepo;
+        this.ollamaProperties = ollamaProperties;
+        this.ollamaHealth = ollamaHealth;
+    }
 
     public AiVisitNote create(AiVisitNote note) {
         note.setTenantId(TenantContext.getCurrentTenantId());
@@ -165,13 +174,21 @@ public class AiVisitNoteService {
      * Retourne null si Ollama n'est pas disponible.
      */
     private String callOllama(String systemPrompt, String userPrompt) {
+        // M6 : sans IA configuree, pas d'appel et repli deterministe — pas de 503.
+        if (!ollamaHealth.isConfigured()) {
+            log.warn("IA locale non configurée ({}) : synthèse de repli", ollamaHealth.reason());
+            return null;
+        }
         try {
-            RestTemplate rt = new RestTemplate();
+            RestTemplate rt = new RestTemplateBuilder()
+                    .setConnectTimeout(ollamaProperties.getTimeout())
+                    .setReadTimeout(ollamaProperties.getTimeout())
+                    .build();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             Map<String, Object> body = new LinkedHashMap<>();
-            body.put("model", modelName);
+            body.put("model", ollamaProperties.getModel());
             body.put("stream", false);
             body.put("messages", List.of(
                     Map.of("role", "system", "content", systemPrompt),
@@ -179,7 +196,7 @@ public class AiVisitNoteService {
             ));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<Map> response = rt.postForEntity(ollamaUrl + "/api/chat", request, Map.class);
+            ResponseEntity<Map> response = rt.postForEntity(ollamaProperties.getUrl() + "/api/chat", request, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 @SuppressWarnings("unchecked")
