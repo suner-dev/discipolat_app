@@ -50,14 +50,18 @@ Amener Discipolat au niveau **production mondiale** :
 
 ### 1.1 Métriques réelles (mesurées, pas estimées)
 
+> **Remesuré le 2026-09-29** (branche de travail Agent A, après A1–A6) avec
+> `find` + `wc -l` — méthode : LOC main = `backend/src/main`, `frontend/src`
+> hors `*.test.*`/`*.spec.*`, `mobile/lib` ; LOC tests = `backend/src/test`,
+> tests frontend, `mobile/test` + `mobile/integration_test`.
+
 | Composant | Fichiers | LOC main | LOC tests |
 |-----------|----------|----------|-----------|
-| Backend (Spring Boot 3.4.7 / Java 21) | 1 266 `.java` | 113 709 | 27 610 |
-| Frontend (React 19 / Vite / TS strict) | 404 `.ts`/`.tsx` | 113 679 | 8 045 |
-| Mobile (Flutter 3 / Riverpod / Drift) | 386 `.dart` | 135 399 | 8 988 |
-| Migrations Flyway | 146 `.sql` | — | — |
-| Fichiers de test | ~273 (137 BE + 4 + 47 FE + 85 MB) | — | — |
-| **TOTAL** | **~2 400** | **~363 000** | **~44 600** |
+| Backend (Spring Boot 3.4.7 / Java 21) | 1 533 `.java` (1 352 main + 181 test) | 124 599 | 38 530 |
+| Frontend (React 19 / Vite / TS strict) | 409 `.ts`/`.tsx` (361 main + 48 test) | 83 385 | 8 205 |
+| Mobile (Flutter 3 / Riverpod / Drift) | 474 `.dart` (386 lib + 88 test) | 135 412 | 9 180 |
+| Migrations Flyway | 159 `V*.sql` | — | — |
+| **TOTAL** | **~2 575** | **~343 400** | **~55 900** |
 
 ### 1.2 Ce qui est DÉJÀ FAIT (ne pas refaire)
 
@@ -86,6 +90,7 @@ preuves vérifiables par grep) :**
 | Module Backup Java († M2) | `backend/src/main/java/com/discipolat/modules/backup/` + `BackupServiceTest`, `IsolationBackupCurrencyTest` |
 | Devises ISO-4217 + abstraction payout († M8 M9) | `modules/currency/domain/Iso4217CurrencyValidator`, `modules/payments/payout/PayoutProviderRegistry` + `CurrencyValidationTest`, `PayoutProviderRegistryTest` |
 | Fondations sharding/partitionnement († M7) | `common/scaling/ShardRouting`, `SingleDatabaseTenantDataSource` + `ShardingRoutingTest`, [docs/SCALING.md](docs/SCALING.md) |
+| Notifications câblées dans l'outbox († M3) | `modules/core/service/OutboxConsumers.java:184,192` — délègue à `NotificationService.create(...)` (in-app) puis `PushNotificationService.pushToUser(...)` ; l'ancien `// TODO` n'existe plus |
 | Isolation cross-tenant bout-en-bout HTTP († M13) | `backend/src/test/java/com/discipolat/security/TenantModuleIsolationEndToEndHttpTest.java` (10 tests, 9 modules + usurpation d'en-tête) |
 | CI bloquante sécurité/charge/e2e († M10 M11) | `.github/workflows/security.yml`, `perf.yml` (porte k6 P95 > 2 s → échec), `e2e.yml` + scaffold `e2/` ; `ci.yml` upload les rapports de tests en artifacts |
 | Config STT + Ollama fail-closed († M5 M6) | audits `AiConfigurationStartupAudit` (503 `AI_NOT_CONFIGURED`, aucun repli présenté comme IA) |
@@ -109,6 +114,8 @@ preuves vérifiables par grep) :**
 | M12 | **Écrans Flutter > 1000 lignes** — dette de maintenabilité. | `Etat_fonctionnalité.md:35` (depuis supprimé, `git log`) le reconnaissait | 🟡 P2 |
 | M13 | **Aucun test d'isolation inter-tenant sur le flux complet HTTP** — tests unitaires seulement, pas de test bout-en-bout cross-tenant. | `TenantIsolationIntegrationTest.java` existe (couverture réelle) mais à étendre | 🟠 P1 |
 
+**Statut de résolution (Agent A — vérifié le 2026-09-29, commits poussés sur la branche de travail)** : M1 M2 M3 M5 M6 → fermés par `edd76954` (A1/A2/A4, + suite `049edede`) ; M7 M8 M9 → fermés par `4840ee0d` (A3) ; M10 M11 M13 (côté A) → fermés par `f33ebd06` (A5). Restent ouverts côté Agent B : **M4** (B1) et **M12** (B4) ; M13 côté B (specs Playwright mobile/web dans `e2/specs/`) reste à l'initiative B4 — le CI `e2e.yml` les exécute automatiquement dès qu'elles existent.
+
 ### 1.4 MATRICE DE COUVERTURE — à vérifier avant de déclarer quoi que ce soit "terminé"
 
 Chaque constat DOIT être traité par un prompt nommé. Si tu ajoutes un constat,
@@ -116,19 +123,22 @@ ajoute sa ligne ici. Si une tâche est faite, coche la colonne **Fait**.
 
 | Constat | Prompt | Agent | Sév. | Fait |
 |---------|--------|-------|------|------|
-| M1 push FCM | **A1** | A | 🔴 P0 | ☐ |
-| M2 module Backup | **A2** | A | 🔴 P0 | ☐ |
-| M3 outbox notifications | **A1** | A | 🔴 P0 | ☐ |
-| M4 i18n qualité | **B1** | B | 🟠 P1 | ☐ |
-| M5 config STT | **A4** | A | 🟠 P1 | ☐ |
-| M6 Ollama fail-closed | **A4** | A | 🟡 P2 | ☐ |
-| M7 sharding | **A3** (partie 2) | A | 🔴 P0 | ☐ |
-| M8 paiements universels | **A3** (partie 1) | A | 🔴 P0 | ☐ |
-| M9 devises ISO-4217 | **A3** (partie 1+3) | A | 🔴 P0 | ☐ |
-| M10 E2E navigateur | **A5** | A | 🟠 P1 | ☐ |
-| M11 tests de charge | **A5** | A | 🟠 P1 | ☐ |
-| M12 écrans Flutter >1000 l. | **B4** | B | 🟡 P2 | ☐ |
-| M13 isolation cross-tenant | **A5** + **B4** | A+B | 🟠 P1 | ☐ |
+| M1 push FCM | **A1** | A | 🔴 P0 | ☑ `edd76954` |
+| M2 module Backup | **A2** | A | 🔴 P0 | ☑ `edd76954` |
+| M3 outbox notifications | **A1** | A | 🔴 P0 | ☑ `edd76954` |
+| M4 i18n qualité | **B1** | B | 🟠 P1 | ☐ (Agent B) |
+| M5 config STT | **A4** | A | 🟠 P1 | ☑ `edd76954` + `049edede` |
+| M6 Ollama fail-closed | **A4** | A | 🟡 P2 | ☑ `edd76954` + `049edede` |
+| M7 sharding | **A3** (partie 2) | A | 🔴 P0 | ☑ `4840ee0d` (fondations niveau 1-2) |
+| M8 paiements universels | **A3** (partie 1) | A | 🔴 P0 | ☑ `4840ee0d` |
+| M9 devises ISO-4217 | **A3** (partie 1+3) | A | 🔴 P0 | ☑ `4840ee0d` |
+| M10 E2E navigateur | **A5** | A | 🟠 P1 | ☑ `f33ebd06` (`e2e.yml` + scaffold `e2/`) |
+| M11 tests de charge | **A5** | A | 🟠 P1 | ☑ `f33ebd06` (`perf.yml`, porte P95 > 2 s) |
+| M12 écrans Flutter >1000 l. | **B4** | B | 🟡 P2 | ☐ (Agent B) |
+| M13 isolation cross-tenant | **A5** + **B4** | A+B | 🟠 P1 | ☑ A : `f33ebd06` (10 tests HTTP) — ☐ B : specs `e2/` |
+
+> Cocher « Fait » exige une preuve vérifiable : chaque ☑ ci-dessus renvoie au
+> commit et à la ligne §1.2 « Complété depuis » correspondante (grep).
 
 **Vérification rapide** (à relancer après toute édition de ce fichier) :
 `Select-String AGENT_ORCHESTRATION.md -Pattern "\bM1\b|\bM2\b|..." `

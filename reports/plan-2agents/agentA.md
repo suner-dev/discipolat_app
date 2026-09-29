@@ -2219,3 +2219,141 @@ Les 10 échecs restants sont **identifiés et documentés** :
 
 Aucune de ces lignes n'est un défaut de production non identifié : ce sont soit
 des erreurs de la recette, soit le constat H2 déjà documenté.
+
+---
+
+# PARTIE 2 — Plan `AGENT_ORCHESTRATION.md` (prompts A0 → A6)
+
+> Même format imposé : Statut / Commit / Fichiers / Tests / Preuve.
+> **Branche réellement utilisée** : `fix/schema-drift-h1-h5` (le worktree
+> `discipolat_app-agentA` portait déjà les travaux ONB-A1→A16 et H1–H8 non
+> fusionnés ; repartir de `feat/platform-monde` vierge aurait violé la règle 1
+> « NE SUPPRIMER RIEN »). La branche `feat/platform-monde` du plan est donc
+> l'objet de la PR qui fusionnera ce travail, pas un point de départ.
+> Migrations Flyway de cette campagne : **V190 et V191, additives uniquement**
+> (aucune migration destructive, aucun `DROP`, aucune migration existante modifiée).
+
+## ORC-A0 — Amorçage et vérification de l'état réel
+
+- **Statut** : DONE (avec une déviation de commit, documentée ci-dessous)
+- **Point 3 du prompt (état réel de M1 M2 M3 M7)** : établi par `grep`/`glob` le
+  2026-09-27 (tableau §1.3 de `AGENT_ORCHESTRATION.md`), **re-vérifié par grep le
+  2026-09-29** avant chaque cochage de la matrice §1.4 — rien coché sans preuve.
+- **Point 4 (suite complète exécutée, résultat réel)** : baseline mesurée en
+  Phase 0 (1 252 tests) ; résultat final de la campagne → § « Clôture » en bas.
+- **Déviation documentée** : le prompt A0 prescrivait un commit dédié
+  `docs(platform): etat reel verifie des manques M1-M3 M7 (rapport perime)`.
+  Le rapport de constats a été intégré dans `AGENT_ORCHESTRATION.md` §1.1–§1.4
+  et part avec le commit de clôture de la campagne (les mises à jour §1.2/§1.3
+  étaient indissociables des preuves livrées par A1–A6). Traçabilité préservée :
+  chaque constat Mx renvoie à son commit de fermeture dans la matrice.
+
+## ORC-A1 — M1 : envoi push FCM réel + M3 : câblage outbox
+
+- **Statut** : DONE
+- **Commit** : `edd76954` — `feat(A1,A2,A4): push FCM reel + module Backup + config honnete IA/STT (+125 tests)` (46 fichiers, +5 660 / −6). A1, A2 et A4 sont livrés ensemble dans ce commit ; les +125 tests couvrent les trois prompts.
+- **Fichiers principaux** (`modules/notifications/domain/`) :
+  - NEW `PushGateway.java` (interface unique `send(List<String>, PushMessage) : PushResult`), `FirebaseAdminPushGateway.java` (`com.google.firebase.messaging.FirebaseMessaging`), `NoOpPushGateway.java` (conditionné par propriété), `PushGatewayConfiguration.java`, `PushProperties.java`, `PushMessage.java`, `PushResult.java`, `PushNotificationService.java`
+  - MOD `backend/pom.xml` : dépendance `com.google.firebase:firebase-admin` (version non gérée par Spring Boot → figée explicitement, commentaire dans le pom)
+  - MOD `modules/core/service/OutboxConsumers.java` (:184, :192) — le `// TODO: Déléguer à NotificationService` (constat M3, ligne 141 de l'original) est **remplacé** par : `notificationService.create(...)` (in-app) **puis** `pushNotificationService.pushToUser(...)` (respect des préférences de canaux)
+- **Honnêteté fonctionnelle** : endpoint `GET /api/v1/notifications/push-status` (`PushTokenController:89`) — le client voit si FCM est réellement configuré ; sans `FCM_TOKEN`, `NoOpPushGateway` et **rien n'est présenté comme envoyé** alors que ce n'est pas parti.
+- **Preuve — tests** (dans les +125) : `NotificationPreferencePushTest`, `OutboxNotifyPushTest`, `PushGatewaySelectionTest`, `PushTokenCleanupTest` — sélection de gateway, respect des préférences, nettoyage des tokens morts, câblage outbox→notification→push.
+- **Note de périmètre M3** : deux `// TODO` **distincts** subsistent dans `OutboxConsumers` (lignes 285 et 290, délégations vers `FinanceService` et `AnalyticsService`). Le constat M3 ne visait que la délégation notifications ; les deux autres sont hors périmètre et **ne sont pas présentés comme faits**.
+
+## ORC-A2 — M2 : module Backup/Restore Java
+
+- **Statut** : DONE
+- **Commit** : `edd76954` (idem A1, livraison groupée)
+- **Fichiers** (`modules/backup/`, nouveau module complet) :
+  - `api/` : `BackupController.java`, `BackupResponse.java`, `BackupVerificationResponse.java` — dont `POST /backups/{id}/verify` que le cahier de charge annonçait
+  - `domain/` : `BackupService.java`, `BackupServiceImpl.java`, `BackupArchive.java`, `BackupDescriptor.java`, `BackupResult.java`, `BackupStatus.java`, `VerificationResult.java`
+  - `infrastructure/` : `BackupDescriptorRepository.java`, `JdbcBackupDescriptorRepository.java`, `BackupStorageService.java`
+- **Règle 1 respectée** : les scripts shell `scripts/backup*.sh` / `restore.sh` **existent toujours et ne sont pas remplacés** — le module ajoute la couche applicative (descripteurs en base, vérification, isolation par tenant) par-dessus, conformément au §1.5.
+- **Preuve — tests** : `BackupServiceTest`, `IsolationBackupCurrencyTest` (le backup d'un tenant ne peut pas toucher/voir un autre tenant ni imposer sa devise).
+
+## ORC-A4 — M5, M6 : durcissement configuration honnête (STT / Ollama / IA)
+
+- **Statut** : DONE
+- **Commits** : `edd76954` (posée initiale) + `049edede` — `config(A4-suite): timeout reellement applique, config-summary {key,enabled,configured}, etat push honnete` (14 fichiers, +558 / −47)
+- **Fichiers** :
+  - MOD `backend/src/main/resources/application.yml` : clé de config STT/Whisper (le constat M5 — absence totale — est levé), `OLLAMA_URL` sans repli silencieux trompeur (M6), timeout **réellement appliqué** aux clients HTTP sortants (corrigé en `049edede` : un timeout déclaré mais non branché sur le client eût été un mensonge de configuration)
+  - `AiConfigurationStartupAudit` + endpoint config-summary : chaque capacité IA exposée `{key, enabled, configured}` — si non configuré, réponse `503 AI_NOT_CONFIGURED` et **aucun repli bas de gamme présenté comme de l'IA** (règle 7 : aucun mock en production)
+- **Preuve — tests** (dans les +125 et la suite) : `ConfigSummaryTest` (181 lignes), `AiFallbackTest` (69 lignes), `OllamaHealthTest`, `OllamaPropertiesTest`, `AiConfigurationPropertiesBindingTest`, `AiAssistantServiceTest`
+
+## ORC-A3 — M7 + M8 + M9 : échelle mondiale et paiements universels
+
+- **Statut** : DONE
+- **Commit** : `4840ee0d` — `feat(scale): fondations mondiale — payout providers ISO-4217, devises auditables, sharding abstraction, partitionnement (M7 M8 M9)` (39 fichiers, +3 051 / −43)
+- **M8/M9 — abstraction payout (13 fichiers nouveaux dans `modules/payments/payout/`)** :
+  - Interface `PayoutProvider.java` + `PayoutProviderRegistry.java` + `PayoutConfiguration.java` + `PayoutProvidersProperties.java` + `PayoutRequest/PayoutResult/PayoutStatus/PayoutCrypto`
+  - Implémentations : `StripePayoutProvider`, `PayPalPayoutProvider`, `SepaDirectDebitProvider`, `BankTransferProvider`, `MobileMoneyPayoutAdapter` (l'existant MTN/Orange/M-Pesa est **adapté, pas supprimé**) — Europe/Amérique/SEPA/carte/virement couverts ; tout provider est pluggable via config (clé manquante = provider désactivé honnêtement, jamais simulé)
+- **M9 — devises ISO-4217** : `modules/currency/domain/Iso4217CurrencyValidator.java` (120 l.) + `CurrencyService` validé ; `PlatformCurrenciesController` (référentiel consultable) ; migrations **additives** `V190__multi_devises_iso4217_et_mentions_recu.sql` (mentions légales/fiscales du reçu configurables par tenant — exigence §2.1 « Fiscalité ») ; `TaxReceiptService` et `FinanceService`/`FinanceTransaction` multi-devises
+- **M7 — fondations sharding (Niveau 1-2 de §2.3)** : abstraction `common/scaling/TenantDataSource.java` + `ShardRouting.java` + `SingleDatabaseTenantDataSource.java` (implémentation actuelle mono-DB, point d'extension documenté vers le routage par shard sans refactoring des appels) ; `V191__index_composes_tables_chaudes.sql` + `scripts/partition-hot-tables.sql` (partitionnement des tables chaudes) ; `docs/SCALING.md`
+- **Neutralité géographique (§2.1)** : grep systématique des ancrages XOF/Afrique dans le code de plateforme → valeurs par défaut neutralisées, tout redevient paramétrable par tenant ; glossaire tenant (dictionnaire de termes) étendu via `DictionaryService`/`DictionaryEntryRepository` (termes « âme/faiseur/pasteur » remplaçables par tenant, jamais codés en dur)
+- **Les 4 tests obligatoires du prompt** : `CurrencyValidationTest` (172 l.), `PayoutProviderRegistryTest`, `ShardingRoutingTest` (173 l.), `IsolationBackupCurrencyTest` (244 l.) — plus `FinanceServiceTest` mis à jour sans affaiblissement
+
+## ORC-A5 — CI/CD bloquante : E2E, charge, sécurité, isolation bout-en-bout
+
+- **Statut** : DONE
+- **Commit** : `f33ebd06` — `ci: e2e + charge + securite + isolation multi-tenant bout-en-bout bloquantes (ferme M10 M11 M13)` (14 fichiers, +942 / −16)
+- **⚠️ Déclaration d'honnêteté (obligatoire)** : GitHub Actions **ne peut pas s'exécuter sur cette machine**. Les workflows sont validés par (1) **relecture** ligne à ligne, (2) parsing `yaml.safe_load` des 8 fichiers, (3) **simulation locale de tout ce qui est simulant** (voir « Validations réellement exécutées » ci-dessous). Aucun workflow n'a prétendu « vert en CI » ; le premier run sur GitHub reste à observer par l'orchestrateur.
+- **Fichiers** :
+  - NEW `.github/workflows/security.yml` — gitleaks (historique complet `fetch-depth: 0` ; vérifié : aucun secret dans l'histoire git, `keys/` ne contient que `.gitkeep` tracked), `dependency-review-action@v4` sur PR (bloquant high), `npm audit --audit-level=high` (lockfile, sans install → pas d'exécution de scripts arbitraires), Bandit sur `scripts/` + `performance-tests/` (rapport complet dans le résumé de job, **porte bloquante limitée aux HIGH** — les Medium ne sont pas encore triés, c'est écrit dans le fichier), OWASP dependency-check en `continue-on-error` avec la raison assumée (taux de requêtes NVD en free-tier) + rapport HTML en artifact
+  - NEW `.github/workflows/e2e.yml` + scaffold `e2/` (package.json, package-lock.json @playwright/test 1.63.0, playwright.config.ts, specs/README.md) — **détection automatique de specs** : 0 spec = notice « mode attente » et job vert ; dès qu'Agent B pousse un `*.spec.ts`, le job devient réellement bloquant (npm ci → install chromium → playwright test → artifacts rapport+vidéo/trace)
+  - NEW `.github/workflows/perf.yml` + `performance-tests/k6-ci-gate.js` — déclencheurs : tag `v*`, planning hebdo sam 04:00, dispatch manuel ; **la porte exigée est appliquée deux fois** : seuils k6 `p(95)<2000` + `http_req_failed rate<0.05` (exit 99 propagé via `set -o pipefail`), puis un pas de gating séparé relit `k6-summary.json` ; `k6-summary.json` + `k6-run.log` conservés 30 j en artifact (exigence « tracé ») ; preflight explicite : sans `secrets.PERF_JWT_TOKEN` le job échoue **en disant pourquoi** (le scénario authentifie réellement). Le `k6-load-test.js` d'origine n'est **pas affaibli** (il garde ses seuils stricts p95<500 pour les campagnes manuelles) — la CI passe par un wrapper qui exporte le même scénario.
+  - MOD `.github/workflows/ci.yml` — artifacts de rapports de tests : surefire XML (backend), **junit XML vitest** (`--reporter=junit --outputFile.junit=…`), `json:flutter-test-report.json` (`flutter test --file-reporter`) ; les deux options CLI ont été **vérifiées empiriquement**, pas supposées
+  - FIX `.github/workflows/ci-cd.yml` — le fichier était du **YAML invalide** (indentations cassées à 5 steps) : réparé + clés de test générées + OWASP en coordonnées complètes `org.owasp:dependency-check-maven:check` (le préfixe de plugin seul ne résoudrait pas hors ligne) avec `failBuildOnCVSS=9`
+  - NEW `backend/.dependency-check-suppressions.xml` — fichier référencé par le workflow mais absent ; référence délibérément vide (une suppression modèle qui ne peut matcher aucune package URL ; la règle d'or est écrite dans le fichier : toute suppression réelle exige notes/version/portée de revue/date d'expiration)
+  - NEW `backend/src/test/java/com/discipolat/security/TenantModuleIsolationEndToEndHttpTest.java` — **exigence n°1 « risque juridique »** : 10 tests sur 9 modules, vraie chaîne HTTP (JWT RSA réel → TenantInterceptor → filtre Hibernate → contrôleur), lecture croisée + **usurpation d'en-tête tenant** : chaque tentative inter-tenant doit finir 404/403, jamais une fuite
+- **Validations réellement exécutées localement** :
+  ```
+  python3 -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"   → 8/8 OK
+  # porte P95 de perf.yml : le script python a été EXTRACTÉ du YAML et testé sur des summaries synthétiques :
+  p95=1500 → exit 0 ; p95=2500 → exit 1 ; summary absent → exit 1
+  npx vitest run --reporter=junit …            → junit.xml réellement produit (vitest 5.0.2)
+  flutter test --help                          → --file-reporter <reporter>:<filepath> confirmé
+  find e2/specs -name '*.spec.ts' | wc -l      → 0 (mode attente correct)
+  mvn -B -o test -Dtest=TenantModuleIsolationEndToEndHttpTest
+    → Tests run: 10, Failures: 0, Errors: 0 (22,85 s) — relancé avant commit
+  ```
+
+## ORC-A6 — Documentation professionnelle véridique
+
+- **Statut** : DONE
+- **Commit** : `826016a8` — `docs: README, API, deployment, runbook professionnels et veridiques` (8 fichiers, +3 216 / −152)
+- **Règle maîtresse appliquée** : « ne promets dans la doc que ce que le code fait VRAIMENT » — chaque affirmation a une ancre grep ; trois pièges tendus par le prompt ont été évités en vérifiant d'abord :
+  1. **chemin springdoc** : `application.yml → springdoc.api-docs.path = /api-docs` (PAS `/v3/api-docs`) → le script de génération utilise le chemin réel et SecurityConfig (api-docs public seulement en dev/docker) est cité ;
+  2. **comptes de démo** : la table du README reprend les **jeux de rôles réellement injectés par `DataInitializer`** (dont le multi-rôle `paul@…`), pas ceux supposés ; mot de passe commun `password123`, seedé uniquement hors production (`demoOrBeta && seedDemoAccounts`) ;
+  3. **secrets obligatoires** : `JWT` (paire) et `ENCRYPTION_AES_KEY` (base64 → exactement 32 octets, `CryptoService` **jette à la construction**) sont documentés « refusé au démarrage » — vérifié en **démarrant réellement l'application** pour générer la doc.
+- **Fichiers** :
+  - NEW `scripts/generate-api-docs.sh` (exécutable) — GET `/api-docs` → `docs/openapi.json` + générateur Markdown intégré (fuites de tableaux échappées, compteurs réels)
+  - NEW `docs/openapi.json` (740 K) et `docs/API.md` — **générés depuis une instance réellement démarrée** : 1 251 chemins, 1 553 opérations, 216 tags, 2 861 lignes ; les 1 553 lignes de tableau validées structurellement (`awk`), échantillon vérifié à la main (auth-controller, tenant-controller)
+  - REWRITTEN `README.md` (~135 l.) — positionnement, preuve d'isolation citée, 6 langues, architecture ASCII, stack, prérequis avec colonne « Vérifié par », deux chemin de démarrage local, table de ports réelle (docker-compose : web 3000, API 8081→8080, pg 5433, mailhog 8026, nginx 8086, grafana 3001, prometheus 9090), comptes de démo véridiques, variables d'env obligatoire/optionnel, « Architecture mondiale » → `docs/SCALING.md`
+  - MOD `docs/DEPLOYMENT.md` — §6 reconstruit en **une seule table avec colonne « Obligatoire »** (source de vérité : `render.yaml` + `docker-compose.yml` + code) ; correction d'un **conseil dangereux** en §10 (« drop flyway_schema_history ») → renvoi aux nouvelles règles §12 (Flyway additif ; `mvn verify` ne valide JAMAIS les migrations — H2 `flyway.enabled:false`, fait déjà documenté en NEED-HELP-02) ; §13 rotation des clés JWT (recette `setup-keys.sh`, `base64 -w0`, piège Render `sync:false`, effet de déconnexion globale, `TokenRevocationService`) ; §14 plan de rollback (images GHCR taguées `:${github.sha}`, rollback code-avant-schéma, restauration backup, gestion compromission JWT/AES — un AES compromis **ne se re-chiffre pas tout seul**)
+  - MOD `docs/RUNBOOK.md` v1.1 — §2 table symptôme→diagnostic→résolution couvrant **les 6 incidents imposés** + 2 bonus (rotation 401 massifs, webhooks ignorés) ; ligne Redis : comportement **fail-open vérifié dans le code** (`PerIpRateLimiter` catch → `RateLimitResult.allowed(999)` + warn — Redis en panne = API debout sans throttling, documenté tel quel, pas embelli)
+  - FIX `render.yaml` — était du **YAML invalide** (2 indentations `value:` cassées, ligne 136) alors que c'est la « source de vérité » déclarée de DEPLOYMENT.md : réparé, validé (4 services, 2 db, 1 redis)
+  - MOD `AGENT_ORCHESTRATION.md` §1.2 — table « Complété depuis — livré par A1–A6 » avec preuves grep (exigence du prompt A6 point 5)
+
+## Clôture campagne ORC — suite complète finale
+
+- **Statut** : DONE — exécutée sur l'arbre final (après A0→A6 et les mises à jour §1.1–§1.4) :
+  ```
+  bash scripts/mvn-local.sh verify -DargLine="-Xmx1200m -XX:MaxMetaspaceSize=450m"
+
+  [WARNING] Tests run: 1660, Failures: 0, Errors: 0, Skipped: 13
+  [INFO] BUILD SUCCESS
+  [INFO] Total time:  01:37 min
+  EXIT=0
+  ```
+  1 252 (baseline Phase 0) → **1 660** (+408 sur les deux campagnes, aucune
+  régression, aucun test désactivé). Les 13 `Skipped` sont les cas préexistants
+  `@EnabledIf("isRedisAvailable")` — Redis n'est pas installé sur cette machine,
+  ils s'exécutent normalement en CI (ci.yml).
+- **Gate règle 4 (« rien ne part sans build vert »)** : ✅ satisfait pour toute
+  la campagne — chaque prompt A1–A6 a été commité sur une suite verte, et la
+  suite finale est verte à 1 660.
+- **Rappel d'honnêteté (A5)** : la validation des workflows GitHub n'a pu se
+  faire que par relecture + simulations locales (détail ci-dessus section
+  ORC-A5) ; le premier passage en CI réelle reste à confirmer par
+  l'orchestrateur sur GitHub.
+
