@@ -528,3 +528,62 @@ modifié ni désactivé.
    dans les 6 locales.
 2. Mes tests sélectionnaient le rôle `MEMBRE` : c'est précisément une des clés invalides. Le test a
    donc corrigé le test, pas le code — et a fait apparaître le défaut G11.
+
+---
+
+## 2026-09-29 — Tri des TODOs (le compte brut était faux)
+
+**Je dois me corriger sur deux chiffres que j'aiadvanced plus tôt :**
+
+| J'ai dit | Vrai | Pourquoi |
+|---|---|---|
+| « 11 TODO web » | **0** | Les 4 occurrences sont la **valeur métier** `status: 'TODO'` d'une tâche (le statut « À faire »). Mon `grep` ne distinguait pas un marqueur de code d'une donnée |
+| « 69 TODO mobile » | **37 occurrences dans 15 fichiers** | Mon `grep -i` comptait **`toDouble()`** (134 occurrences !) comme des TODO. Le vrai compte, avec frontière de mot : **37** |
+| « 13 TODO backend » | 13 (inchangé) | correct |
+
+Le tri par **accessibilité réelle** (le fichier est-il routé dans `app.dart` ?) :
+
+| Catégorie | Détail |
+|---|---|
+| **Joignables par un utilisateur** | **7 fichiers, 12 TODO** : streaming (upload/update/delete/share), health (kits/duties), events (cancel/share), conversations, tasks (create) |
+| **Code mort** | 8 fichiers, 25 TODO — dont `features/messages/screens/conversation_detail_screen.dart` (586 lignes, importé **sous alias jamais utilisé** : c'est une migration avortée de `presentation/screens/` vers `features/`) |
+| **Décision documentée** | `SpaceConfigTransferScreen.dart` (« écriture mobile différée **volontairement** ») → **pas un défaut** |
+
+### Défauts réels corrigés aujourd'hui
+
+1. **Identifiant utilisateur codé en dur** — `conversations_screen.dart` : `_getCurrentUserId() { return 1; }`.
+   Conséquence : tous les utilisateurs sauf le n°1 voyaient « Vous: » sur les messages des autres.
+   Corrigé via `AuthState().userId` (la convention déjà utilisée par l'autre écran de conversation).
+   ⚠️ Le premier correctif était **faux** : j'ai supposé `senderId` en `String` alors qu'il est un
+   `int`. L'analyseur l'a signalé (`unrelated_type_equality_checks`) ; comparaison faite sur la forme
+   textuelle. **11 issues avant, 11 après** — aucune remarque introduite.
+
+2. **Écran `tasks` orphelin** — la route `/tasks` de `app.dart` pointait vers `TasksScreen`, qui
+   appelle **11 endpoints inexistants** : `/tasks`, `/tasks/$id`, `/tasks/$id/assign`,
+   `/tasks/$id/status`, `/tasks/kanban/columns`, `/tasks/overdue`, `/tasks/reports/by-assignee`,
+   `/tasks/reports/by-status`, `/tasks/reports/statistics`, `/tasks/templates`.
+   **Aucun contrôleur `/api/v1/tasks` n'existe** : le seul est `TeamTaskController` sur
+   `/api/v1/team-tasks`, avec des **UUID** (le mobile envoyait des `int`) et des **PATCH** (le mobile
+   envoyait des `PUT`). En plus, le bouton « + » de cet écran pointait sur `/tasks/create`, route
+   **inexistante**.
+   → La route `/tasks` est **supprimée** (et son import devenu inutilisé). Le menu comme la web
+   utilisent `/team-tasks`, qui appelle le vrai backend. Le fichier est **conservé, non supprimé** :
+   il contient des filtres (statut, priorité, type) qui pourraient être portés sur `TeamTasksScreen`
+   — c'est une décision, pas un nettoyage.
+
+### NEED-HELP-TASKS — pour l'orchestrateur
+
+Le module `tasks` du mobile est un **module fantôme** : 11 endpoints écrits contre une API qui
+n'a jamais été construite. Trois voies, aucune ne m'appartient :
+- **(a)** Porter les filtres de `TasksScreen` sur `TeamTasksScreen` (le service réel existe) —
+  quelques heures, et le module orphelin peut être supprimé ;
+- **(b)** Demander à l'Agent A de construire `/api/v1/tasks` (beaucoup plus gros, et le doublon
+  avec `/api/v1/team-tasks` serait à justifier) ;
+- **(c)** Supprimer `features/tasks/screens/tasks_screen.dart` + `services/tasks_service.dart`.
+**Je n'improvise pas** (R7) : le code est en place, non routé, et documenté.
+
+### Vérification
+
+`flutter analyze lib/app.dart` → 7 issues **exactement le niveau d'avant** (le nouvel import
+inutilisé a été retiré, je n'ai pas laissé determinaison). Non-régression : **18/18** tests sur les
+4 fichiers touchant la messagerie, la navigation et l'authentification.

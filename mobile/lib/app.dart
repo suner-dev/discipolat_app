@@ -205,7 +205,6 @@ import 'features/events/screens/event_create_screen.dart';
 import 'features/finances/screens/finances_screen.dart';
 import 'features/health/screens/health_screen.dart';
 import 'features/assets/screens/assets_screen.dart';
-import 'features/tasks/screens/tasks_screen.dart';
 import 'features/discipleship/screens/discipleship_screen.dart';
 import 'features/messages/screens/conversations_screen.dart' as msg_conv;
 import 'features/messages/screens/conversation_detail_screen.dart'
@@ -2153,10 +2152,15 @@ final appRouter = GoRouter(
         path: '/assets',
         name: 'assets',
         builder: (ctx, s) => const AssetsScreen()),
-    GoRoute(
-        path: '/tasks',
-        name: 'tasks',
-        builder: (ctx, s) => const TasksScreen()),
+    // `/tasks` a été SUPPRIMÉ le 2026-09-29 : cet écran appelait `/tasks`,
+    // `/tasks/$id`, `/tasks/kanban/columns`, `/tasks/templates`… — 11 endpoints
+    // qui N'EXISTENT PAS dans le backend (le seul contrôleur est
+    // TeamTaskController, mappé sur `/api/v1/team-tasks`, avec des UUID et des
+    // PATCH). Le menu comme la web utilisent `/team-tasks`, qui fonctionne.
+    // Le fichier `features/tasks/screens/tasks_screen.dart` est conservé (non
+    // supprimé : il contient des filtres qui pourraient être portés) mais il
+    // n'est plus routable et son bouton « + » pointait sur une route
+    // inexistante. Voir NEED-HELP-TASKS dans reports/plan-2agents/agentB.md.
     GoRoute(
         path: '/discipleship',
         name: 'discipleship',
