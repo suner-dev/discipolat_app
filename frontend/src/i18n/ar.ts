@@ -3009,6 +3009,20 @@ const ar: Record<string, string> = {
   'subscription.cancelKeepAccess': 'يبقى الوصول نشطًا حتى نهاية الفترة المدفوعة',
   'subscription.cancelReversible': 'يمكنك إعادة التفعيل في أي وقت.',
   'subscription.confirmCancel': 'تأكيد الإلغاء',
+
+  // ── B12 — Provisioning owner (PlatformOnboardingFlowPage) ──
+  'onboarding.ownerSectionTitle': 'مالك المنظمة (مطلوب)',
+  'onboarding.ownerSectionHint': 'يُنشأ حساب الراعي/المالك مع المنظمة، ويُرسَل إليه بريد تفعيل.',
+  'onboarding.ownerEmailLabel': 'بريد المالك *',
+  'onboarding.ownerFirstNameLabel': 'الاسم الأول للمالك *',
+  'onboarding.ownerLastNameLabel': 'اسم العائلة للمالك *',
+  'onboarding.ownerRequiredHint': 'أدخل مالكًا صالحًا للمتابعة.',
+  'onboarding.ownerEmailRequired': 'بريد المالك مطلوب',
+  'onboarding.ownerEmailInvalid': 'بريد المالك غير صالح',
+  'onboarding.ownerNameRequired': 'الاسم الأول واسم العائلة للمالك مطلوبان',
+  'onboarding.ownerCardTitle': 'حساب المالك',
+  'onboarding.ownerActivationNotSent': 'لم يُرسَل بريد التفعيل، شارك الرابط يدويًا.',
+  'onboarding.ownerActivationSent': 'تم إرسال بريد التفعيل',
 };
 
 export default ar;

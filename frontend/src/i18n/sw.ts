@@ -3079,6 +3079,20 @@ const sw: Record<string, string> = {
   'subscription.cancelKeepAccess': 'Ufikiaji unabaki hai hadi mwisho wa kipindi kilicholipwa',
   'subscription.cancelReversible': 'Unaweza kuwasilisha upya wakati wowote.',
   'subscription.confirmCancel': 'Thibitisha kughairi',
+
+  // ── B12 — Provisioning owner (PlatformOnboardingFlowPage) ──
+  'onboarding.ownerSectionTitle': 'Mmiliki wa shirika (lazima)',
+  'onboarding.ownerSectionHint': 'Akaunti yomekusari/mmiliki inaundwa pamoja na shirika; barua pepe ya kutendisha imetumwa.',
+  'onboarding.ownerEmailLabel': 'Barua pepe ya mmiliki *',
+  'onboarding.ownerFirstNameLabel': 'Jina la kwanza la mmiliki *',
+  'onboarding.ownerLastNameLabel': 'Jina la familia la mmiliki *',
+  'onboarding.ownerRequiredHint': 'Weka mmiliki sahihi ili uendelee.',
+  'onboarding.ownerEmailRequired': 'Barua pepe ya mmiliki inahitajika',
+  'onboarding.ownerEmailInvalid': 'Barua pepe ya mmiliki si sahihi',
+  'onboarding.ownerNameRequired': 'Jina la kwanza na la familia la mmiliki linahitajika',
+  'onboarding.ownerCardTitle': 'Akaunti ya mmiliki',
+  'onboarding.ownerActivationNotSent': 'Barua pepe ya kutendisha haijatumwa, shiriki kiungo kwa mikono.',
+  'onboarding.ownerActivationSent': 'Barua pepe ya kutendisha imetumwa',
 };
 
 export default sw;

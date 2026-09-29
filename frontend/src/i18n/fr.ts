@@ -2975,6 +2975,20 @@ const fr = {
   'subscription.cancelKeepAccess': 'L’accès reste actif jusqu’à la fin de la période payée',
   'subscription.cancelReversible': 'Vous pourrez réactiver à tout moment.',
   'subscription.confirmCancel': 'Confirmer la résiliation',
+
+  // ── B12 — Provisioning owner (PlatformOnboardingFlowPage) ──
+  'onboarding.ownerSectionTitle': 'Propriétaire de l\'organisation (obligatoire)',
+  'onboarding.ownerSectionHint': 'Le compte pasteur/owner est créé avec l\'organisation ; un email d\'activation lui est envoyé.',
+  'onboarding.ownerEmailLabel': 'Email du propriétaire *',
+  'onboarding.ownerFirstNameLabel': 'Prénom du propriétaire *',
+  'onboarding.ownerLastNameLabel': 'Nom du propriétaire *',
+  'onboarding.ownerRequiredHint': 'Renseignez un owner valide pour continuer.',
+  'onboarding.ownerEmailRequired': 'L\'email du propriétaire est requis',
+  'onboarding.ownerEmailInvalid': 'Email du propriétaire invalide',
+  'onboarding.ownerNameRequired': 'Prénom et nom du propriétaire requis',
+  'onboarding.ownerCardTitle': 'Compte propriétaire',
+  'onboarding.ownerActivationNotSent': 'Email d\'activation non envoyé, transmettez le lien manuellement.',
+  'onboarding.ownerActivationSent': 'Email d\'activation envoyé',
 };
 
 export default fr;

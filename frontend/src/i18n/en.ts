@@ -2918,6 +2918,20 @@ const en: Record<string, string> = {
   'subscription.cancelKeepAccess': 'Access remains active until the end of the paid period',
   'subscription.cancelReversible': 'You can reactivate at any time.',
   'subscription.confirmCancel': 'Confirm cancellation',
+
+  // ── B12 — Provisioning owner (PlatformOnboardingFlowPage) ──
+  'onboarding.ownerSectionTitle': 'Organization owner (required)',
+  'onboarding.ownerSectionHint': 'The pastor/owner account is created with the organization; an activation email is sent to them.',
+  'onboarding.ownerEmailLabel': 'Owner email *',
+  'onboarding.ownerFirstNameLabel': 'Owner first name *',
+  'onboarding.ownerLastNameLabel': 'Owner last name *',
+  'onboarding.ownerRequiredHint': 'Provide a valid owner to continue.',
+  'onboarding.ownerEmailRequired': 'The owner email is required',
+  'onboarding.ownerEmailInvalid': 'Invalid owner email',
+  'onboarding.ownerNameRequired': 'Owner first and last name are required',
+  'onboarding.ownerCardTitle': 'Owner account',
+  'onboarding.ownerActivationNotSent': 'Activation email not sent, share the link manually.',
+  'onboarding.ownerActivationSent': 'Activation email sent',
 };
 
 export default en;

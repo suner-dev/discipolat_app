@@ -2864,6 +2864,20 @@ const pt: Record<string, string> = {
   'subscription.cancelKeepAccess': 'O acesso permanece ativo até o fim do período pago',
   'subscription.cancelReversible': 'Você pode reativar a qualquer momento.',
   'subscription.confirmCancel': 'Confirmar o cancelamento',
+
+  // ── B12 — Provisioning owner (PlatformOnboardingFlowPage) ──
+  'onboarding.ownerSectionTitle': 'Proprietário da organização (obrigatório)',
+  'onboarding.ownerSectionHint': 'A conta do pastor/proprietário é criada com a organização; um e-mail de ativação é enviado a ele.',
+  'onboarding.ownerEmailLabel': 'E-mail do proprietário *',
+  'onboarding.ownerFirstNameLabel': 'Nome do proprietário *',
+  'onboarding.ownerLastNameLabel': 'Sobrenome do proprietário *',
+  'onboarding.ownerRequiredHint': 'Forneça um proprietário válido para continuar.',
+  'onboarding.ownerEmailRequired': 'O e-mail do proprietário é obrigatório',
+  'onboarding.ownerEmailInvalid': 'E-mail do proprietário inválido',
+  'onboarding.ownerNameRequired': 'Nome e sobrenome do proprietário são obrigatórios',
+  'onboarding.ownerCardTitle': 'Conta do proprietário',
+  'onboarding.ownerActivationNotSent': 'E-mail de ativação não enviado, compartilhe o link manualmente.',
+  'onboarding.ownerActivationSent': 'E-mail de ativação enviado',
 };
 
 export default pt;
