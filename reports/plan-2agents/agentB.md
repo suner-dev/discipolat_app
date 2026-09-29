@@ -533,7 +533,7 @@ modifié ni désactivé.
 
 ## 2026-09-29 — Tri des TODOs (le compte brut était faux)
 
-**Je dois me corriger sur deux chiffres que j'aiadvanced plus tôt :**
+**Je dois me corriger sur deux chiffres que j'ai avancés plus tôt :**
 
 | J'ai dit | Vrai | Pourquoi |
 |---|---|---|
