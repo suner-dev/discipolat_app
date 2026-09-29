@@ -2720,7 +2720,7 @@ const pt: Record<string, string> = {
   'onboarding.v2.Motif_de_l_ignorance': 'Motivo da omissão',
   'onboarding.v2.Nombre_de_membres_importés': 'Número de membros importados',
   'onboarding.v2.Progression_de_la_configuration': 'Progresso da configuração',
-  'onboarding.v2.Retirar': 'Remover',
+  'onboarding.v2.Retirer': 'Remover',
   'onboarding.v2.Se_reconnecter': 'Entrar novamente',
   'onboarding.v2.Service_suspendu': 'Serviço suspenso',
   'onboarding.v2.Sélectionnez_entre_1_et_50_modules_': 'Selecione entre 1 e 50 módulos.',
