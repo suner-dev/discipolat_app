@@ -2542,3 +2542,56 @@ Chaque affirmation est prouvée par commande sur la stack jetable PG 16 (§5.5).
   base propre migrée V1→V193 (comme le prouve le gate), V194 s'applique sans
   risque ; sur un environnement ayant eu `ddl-auto:update`, il **échoue
   volontairement** et demande une réconciliation manuelle. À mentionner au runbook.
+
+---
+
+# PHASE 6 (reprise) — Checklist finale d'acceptation (plan §11)
+
+Verdict **honnête**, critère par critère — un point non entièrement vert n'est pas
+coché « fait », il est qualifié avec sa preuve ou son NEED-HELP.
+
+- [x] **Gate G-A (5 critères) PASS** — voir `VERIFICATION.md` §1. 0 `orElseThrow()`
+      nu dans `onboarding/**` ; 0 test désactivé (les 13 skips sont
+      `@EnabledIf(isRedisAvailable)` préexistants) ; 0 migration existante modifiée,
+      numéros libres (V193/V194) ; suite 1671 ≥ baseline ; preuves dans ce fichier.
+- [x] **Gate G-B (7 critères) PASS** — `VERIFICATION.md` §2, **provenance assumée** :
+      mesures Agent B sur l'arbre fusionné, non contredites par un delta §5.5
+      strictement backend (aucun `frontend/**`/`mobile/**` touché).
+- [~] **Contrat §3 endpoint par endpoint, 3 faces (backend=web=mobile)** : face
+      **backend** vérifiée par E2E-3c « contrat 3.1 complet » (PASS) + E2E-3d
+      (entité brute non exposée). Faces web/mobile = tâches B (agentB.md). **Pas de
+      3ᵉ face re-vérifiée par Agent A** → non coché entièrement.
+- [~] **E2E-1 → E2E-10 PASS ; E2E-11/12 recette manuelle** : E2E-1→8 **tous PASS**,
+      E2E-10 PASS (10a/10c, isolation), E2E-11 PASS (user/church/department/course).
+      **E2E-9 et E2E-10b = SKIP** (limites de fixture D5/D5-bis), jamais PASS déguisé
+      → la formulation « E2E-1→10 tous PASS » n'est **pas** atteinte sans l'arbitrage
+      D5-bis ; c'est documenté, pas maquillé. E2E-12 = hors recette backend (clients).
+- [x] **Aucune tâche IN_PROGRESS/BLOCKED sans bloc NEED-HELP** — D1→D6 + D5-bis +
+      notes d'exploitation (§5.8, ordre V194, LoadPredictionService) : § PHASE 2.
+- [x] **Migrations : que des ajouts ≥ V190, aucune existante modifiée** —
+      `git diff --name-status 72ec85d5..HEAD -- db/migration` : 0 M ; reprise =
+      V193 + V194 uniquement.
+- [x] **Aucun push, aucun tag, main intacte** — main à `72ec85d5` ; HEAD = 40 commits
+      locaux au-dessus d'origin ; les 2 tags présents datent de 2026-09-14/22
+      (préexistants, non créés ici). **Rappel de dérive** : `origin/…` contient déjà
+      `a9eed1d7` d'une campagne antérieure — signalé, aucune action.
+- [x] **Plus aucune affirmation non prouvée sur l'onboarding/tenant** — chaque
+      allégation des rapports est adossée à une commande + sortie (codes d'exxit,
+      logs run1→7, preuves rouge/verte du gate, `\d`/`pg_get_constraintdef` pour
+      D4/LoadPrediction).
+- [x] **VERIFICATION.md et INTEGRATION.md présents et argumentés** — commits
+      `4c49f61a`.
+- [x] **Aucune tâche livrée sans preuve de test exécuté (R3+R5)** — backend 1671
+      (exit 0), gate 5/5 (exit 0), recette 56/0/3 (exit 0), tous archivés.
+
+## Nettoyage de la stack jetable (fin de §5.5)
+- Conteneur de preuve `v192-proof` (55446) **supprimé** ; backend jetable 18080
+  **arrêté**. La base e2e (`onb-e2e-postgres` 55445, `onb-e2e-redis` 56380,
+  préexistants) est laissée en place — non production, aucune donnée réelle.
+- `backend/storage-e2e/` ignoré via .gitignore (racine de stockage du launch).
+
+## Clôture Agent A — cette reprise
+Worktree propre (tout commité), 5 commits §5.5/§5.7/Phase 2 (`ed599fb0`, `fc90282e`,
+`08dd12ff`, `28242e27`, `4c49f61a`). Transmis à l'orchestrateur humain **sans push
+ni tag** (§5.8). Les décisions D1→D6 restent à trancher par un humain (R7) ; D4 est
+un défaut de production **prouvé**, corrigeable sur validation (patron V193).
