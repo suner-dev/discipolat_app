@@ -119,12 +119,13 @@ class EventTableContractTest {
                 .setParameter("tenant", tenantId)
                 .getSingleResult();
 
-        // `families.nom` porte une UNIQUE GLOBALE (contrainte `uk_families_nom`,
-        // et non `(tenant_id, nom)`) : deux eglises ne peuvent pas avoir une
-        // famille du meme nom. Constat confirme a l'execution ici — c'est
-        // l'arbitrage D4 du TODO de reprise, toujours non corrige. Le nom est
-        // donc unique par test, faute de quoi le test echouerait sur une
-        // contrainte qui n'a rien a voir avec ce qu'il verifie.
+        // `families.nom` porte une UNIQUE GLOBALE (`uk_families_nom`) sur cette
+        // branche, ou l'arbitrage D4 n'est pas encore applique. Constat confirme
+        // a l'execution en ecrivant ce test. Le nom est donc unique par test,
+        // faute de quoi le test echouerait sur une contrainte sans rapport avec
+        // ce qu'il verifie. (V204, cote agent A, re-scope l'unicite en
+        // `(tenant_id, nom)` : le nom unique restera alors correct, simplement
+        // plus necessaire.)
         familleId = (UUID) em.createNativeQuery("""
                 INSERT INTO families (nom, chef_famille_id, tenant_id)
                 VALUES (:nom, :chef, :tenant)
@@ -136,7 +137,7 @@ class EventTableContractTest {
     }
 
     @Test
-    @DisplayName("V203 : la table vivante `event` porte TOUTES les colonnes mappees par l'entite")
+    @DisplayName("la table vivante `event` porte TOUTES les colonnes mappees par l'entite")
     void everyMappedColumnExistsOnTheLivingTable() {
         // Copie maintenance du @Column de Event. Si l'entite gagne une colonne
         // sans que cette liste soit mise a jour, le test echoue et le rappelle :
@@ -179,7 +180,7 @@ class EventTableContractTest {
     }
 
     @Test
-    @DisplayName("V203 : chaque colonne a le TYPE que l'entite declare (pas seulement le nom)")
+    @DisplayName("chaque colonne a le TYPE que l'entite declare (pas seulement le nom)")
     void everyMappedColumnHasTheDeclaredType() {
         // Un nom de colonne juste ne suffit pas : c'est la DIVERGENCE DE TYPE qui
         // fait demarrer Hibernate en `validate`, et c'est elle qui ferait
@@ -244,7 +245,7 @@ class EventTableContractTest {
     }
 
     @Test
-    @DisplayName("V203 : la preuve du pointage a le type que l'entite declare, lui aussi")
+    @DisplayName("V205 : la preuve du pointage a le type que l'entite declare, lui aussi")
     void preuveDuPointageHasTheDeclaredType() {
         // Meme famille de derive que `event.latitude` : V201 avait depose la
         // preuve du pointage en `NUMERIC`, alors que `EventRegistration` la
@@ -310,7 +311,7 @@ class EventTableContractTest {
     }
 
     @Test
-    @DisplayName("V203 : le perimetre famille existe et alimente la liste filtree")
+    @DisplayName("le perimetre famille existe et alimente la liste filtree")
     void perimetreEstPersisteEtFiltrable() {
         Event scoped = eventRepository.save(Event.builder()
                 .tenantId(tenantId)
@@ -343,16 +344,27 @@ class EventTableContractTest {
     }
 
     @Test
-    @DisplayName("V203 : le vocabulaire de la table est celui du produit (13 types, 4 statuts)")
-    void tableVocabularyIsTheProductOne() {
-        // Les 13 codes du dictionnaire EVENT_TYPE (V42) — dont CULTE,
-        // ETUDE_BIBLIQUE, VEILLEE et PRIERE, absents de la CHECK de V3 et qui
-        // donnaient un 500 a la creation. C'est ce que V62 avait corrige sur la
-        // table morte ; V203 le porte sur la table vivante.
-        for (String type : List.of(
+    @DisplayName("V205 : la contrainte BORNEE — vocabulaire du produit accepte, hors-dictionnaire refuse")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void contrainteEstBornee() {
+        // Arbitrage retenu : l'union des deux vocabulaires. Le FR (produit,
+        // V42/V62) est écrit par le code ; l'EN (Church OS, V158) reste accepté
+        // en lecture ET en ecriture, parce que `POST /api/v1/church-events`
+        // accepte encore un corps libre et que remplacer serait PERTEUX :
+        // `REUNION` et `VISITE` convergent tous deux vers `MEETING`, donc
+        // l'aller-retour n'est pas réversible.
+        //
+        // Ce que le test vérifie n'est donc pas « l'EN est refusé » — c'est
+        // l'inverse et il serait faux — mais que la contrainte EXISTE et reste
+        // bornée : un peu l'UN, peu l'AUTRE, et rien en dehors.
+        for (String valeur : List.of(
+                // vocabulaire du produit
                 "SORTIE", "RETRAITE", "EVANGELISATION", "REUNION", "VISITE",
-                "CONFERENCE", "FORMATION", "ANNIVERSAIRE",
-                "CULTE", "ETUDE_BIBLIQUE", "VEILLEE", "PRIERE", "AUTRE")) {
+                "CONFERENCE", "FORMATION", "ANNIVERSAIRE", "CULTE",
+                "ETUDE_BIBLIQUE", "VEILLEE", "PRIERE", "AUTRE",
+                // vocabulaire Church OS toléré pendant la transition
+                "SERVICE", "MEETING", "TRAINING", "EVANGELISM", "RETREAT",
+                "WEDDING", "BAPTISM", "FUNERAL", "OTHER")) {
             UUID id = (UUID) em.createNativeQuery("""
                     INSERT INTO event (tenant_id, organizer_id, title, type, status, start_at, visibility)
                     VALUES (:tenant, :org, 'Essai de type', :type, 'PLANIFIE',
@@ -361,12 +373,14 @@ class EventTableContractTest {
                     """)
                     .setParameter("tenant", tenantId)
                     .setParameter("org", organizerId)
-                    .setParameter("type", type)
+                    .setParameter("type", valeur)
                     .getSingleResult();
-            assertThat(id).as("type %s refuse a l'insertion", type).isNotNull();
+            assertThat(id).as("type %s devrait etre accepte", valeur).isNotNull();
         }
 
-        for (String statut : List.of("PLANIFIE", "EN_COURS", "TERMINE", "ANNULE")) {
+        for (String statut : List.of(
+                "PLANIFIE", "EN_COURS", "TERMINE", "ANNULE",
+                "DRAFT", "PUBLISHED", "COMPLETED", "CANCELLED", "ARCHIVED")) {
             UUID id = (UUID) em.createNativeQuery("""
                     INSERT INTO event (tenant_id, organizer_id, title, type, status, start_at, visibility)
                     VALUES (:tenant, :org, 'Essai de statut', 'REUNION', :statut,
@@ -377,30 +391,26 @@ class EventTableContractTest {
                     .setParameter("org", organizerId)
                     .setParameter("statut", statut)
                     .getSingleResult();
-            assertThat(id).as("statut %s refuse a l'insertion", statut).isNotNull();
+            assertThat(id).as("statut %s devrait etre accepte", statut).isNotNull();
         }
+
+        // Hors des deux dictionnaires : la contrainte doit refuser. Sans ce
+        // controle, une constraint elargie par megarde passerait inapercue.
+        assertRefused("PLANIFIE", "BROUILLON");
+        assertRefused("PLANIFIE", "EVENEMENT_SPECIAL");
+        assertRefused("BROUILLON", "REUNION");
+        assertRefused("PLANIFIE", "SOUMIS");
     }
 
-    @Test
-    @DisplayName("V203 : la contrainte REFUSE le vocabulaire etranger de V158")
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    void constraintRejectsForeignVocabulary() {
-        // Le controle doit etre effectif. Si la constraint avait ete elargie par
-        // megarde, ce test passerait malgre tout et le module accepterait des
-        // valeurs que ni le dictionnaire ni les clients ne connaissent — donc
-        // on verifie le refus, pas seulement l'acceptation.
-        //
-        // `NOT_SUPPORTED` : chaque insertion doit etre autonome. Dans une
-        // transaction, PostgreSQL abandonne des la premiere violation
-        // (« current transaction is aborted ») et les suivantes echoueraient
-        // pour cette raison-la, non parce que la contrainte les a refusees. Le
-        // test passerait alors a cote de la regle qu'il pretend verifier.
-        assertRefused("DRAFT", "REUNION");
-        assertRefused("PUBLISHED", "REUNION");
-        assertRefused("PLANIFIE", "MEETING");
-        assertRefused("PLANIFIE", "SERVICE");
-    }
-
+    /**
+     * Verifie le REFUS par la contrainte, et non par un accident.
+     *
+     * <p>`NOT_SUPPORTED` : chaque insertion doit etre autonome. Dans une
+     * transaction, PostgreSQL abandonne des la premiere violation
+     * (« current transaction is aborted ») et les suivantes echoueraient pour
+     * cette raison-la, non parce que la contrainte les a refusees — le test
+     * passerait alors a cote de la regle qu'il pretend verifier.
+     */
     private void assertRefused(String statut, String type) {
         assertThatThrownBy(() -> em.createNativeQuery("""
                 INSERT INTO event (tenant_id, organizer_id, title, type, status, start_at, visibility)

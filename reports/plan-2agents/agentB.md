@@ -901,3 +901,44 @@ colonne par colonne sur le module qui le concerne, pour rester executable.
    requeter la table a la main. Elles ont ete realignees ici, mais elles rappelent
    qu'aucun garde-fou ne les rattraperait : c'etait aussi le seul endroit ou la
    table morte etait encore referencee.
+
+### Collision avec la branche de l'agent A — et comment elle a ete levee
+
+En fin de chantier, l'agent A a produit `dbcb8563` : `V203` (colonnes de perimetre +
+vocabulaire elargi + deplacement `events` -> `event`) et `V204` (D4, unicite
+`families` par tenant). Son message annonce explicitement la suite : *« port Java
+(entite Event sur event, retrait doublon ChurchEvent, LoadPrediction, FIRST_EVENT) a la
+suite, dans le prochain commit »*. **Le travail ci-dessus est donc le complement de
+ce qu'il annonce, pas un doublon** — sauf sur trois points, arbitres par
+l'orchestrateur le 2026-09-30 :
+
+| point | decision | effet sur cette branche |
+|---|---|---|
+| numerotation | le **V203 de cette branche devient V205** | `V203` et `V204` restent ceux de l'agent A. Aucune migration deja appliquee n'est renumerotee. |
+| vocabulaire | **union FR ∪ EN**, comme l'agent A | le backfill EN -> FR de ma V203 initiale est **abandonne** : il n'y a plus de conversion a perdre. Le gate ne verifie plus que l'EN est refuse (ce serait faux), mais que la contrainte est **bornee** : les deux lexiques passes, un dehors refuse. |
+| `ChurchEvent` | **conserve** | le « retrait doublon » prevu par l'agent A n'a pas lieu. |
+
+**Correction honnete que cela impose :** la V205 repose les memes CHECK elargis que la
+V203 de l'agent A. C'est un double emploi **deliberé et idempotent** (DROP IF EXISTS
+puis ADD, meme liste) : sans lui, cette branche ne pourrait plus rien prouver — son
+gate echouerait non par defaut de code, mais parce que la V203 de l'autre branche n'y
+est pas. Apres fusion, la re-poser a l'identique est un no-op.
+
+**Ce que la V205 fait seule** (verifie : la V203 de l'agent A ne le fait pas) :
+les changements de type `NUMERIC` -> `double precision` de `event.latitude/longitude`
+et des quatre colonnes de preuve du pointage, et le `DEFAULT 'PLANIFIE'` de
+`event.status`.
+
+**Preuves mises a jour apres arbitrage :**
+
+| Fichier | Contenu |
+|---|---|
+| `gate-contract-vert.log` | 8/8 verts, `BUILD SUCCESS` |
+| `gate-contract-rouge-preuve.log` | 3 echecs sur `relation "events" does not exist` (preuve que le gate rougit) |
+| `suite-backend-complete.log` | `Tests run: 1506, Failures: 0, Errors: 0, Skipped: 13`, exit 0 |
+
+Le compte passe de 1507 a 1506 : deux tests de vocabulaire distincts
+(`tableVocabularyIsTheProductOne` et `constraintRejectsForeignVocabulary`) sont
+remplaces par un seul (`contrainteEstBornee`), puisque l'arbitrage a change. C'est un
+test de moins, pas une couverture en moins : le nouveau verifiera 22 valeurs acceptees
+et 4 refusees, contre 17 acceptees et 4 refusees avant.
