@@ -76,7 +76,7 @@ Tout est intégré sur `feat/integration-1-2-3`, puis **main fast-forwardée**
 | Frontend tests | `npx vitest run` | **EXIT 0** — 57 fichiers / **430 tests passés** |
 | Mobile | `flutter test` | **EXIT 0** — **+468 : All tests passed** |
 | `flutter analyze` | 593 issues **info/deprecated**, non bloquantes, état préexistant (mobile non touché par cette intégration) |
-| Recette `verify-tenant-onboarding.sh` | **NON rejouée** ici (état de référence : 56 PASS/0 FAIL/3 SKIP, §5.5 rejoué sur l'arbre A+B) ; les SKIP E2E-9/E2E-10b sont précisément ce que l'item 2 corrige et le test de chaîne HTTP réelle (`InvitationAdminTenantScopeRbacTest`) en est le substitut prouvé. À rejouer à la prochaine recette. |
+| Recette `verify-tenant-onboarding.sh` | **REJOUÉE sur le final** (cf. §7) : `logs/recette-apres-D5bis-73-0-2-1639.log` — **EXIT 0, 73 PASS / 0 FAIL / 2 SKIP** sur pile jetable complète (PG16:55445 base neuve migrée V1→V205, Redis:56380, backend:18080, bootstrap Super Admin par `APP_BOOTSTRAP_SUPERADMIN_*`). Les 2 SKIP restants sont hors périmètre (sélecteur d'organisation UI ; quota `space` non exposé par l'endpoint — A8). |
 
 ## 5. Preuves rouges / verts du cycle (discrimination)
 
@@ -92,17 +92,75 @@ Tout est intégré sur `feat/integration-1-2-3`, puis **main fast-forwardée**
 
 - **Develop1 n'est PAS fusionné** : lignée `v1.0-commercial-release` (tag
   conservé, poussé sur origin) antérieure à la campagne, 78 conflits mesurés
-  dont les workflows CI ; son contenu a été **redéployé** dans la lignée
-  canonique (module backup, `FirebaseAdminPushGateway`, WhatsApp/USSD, GO/NO-GO).
+  dont les workflows CI, et **collision de versions Flyway** vérifiée :
+  `V164__legacy_migration_engine.sql` / `V165__active_tenant_and_access_request.sql`
+  (Develop1) vs `V164__data_migration_engine.sql` / `V165__fix_search_export_audit_column_types.sql`
+  (canonique) — « more than one migration with version 164 », `validate()`
+  refuserait de démarrer. Inventaire exhaustif mené (§7.1) : sur 192 fichiers
+  absents de main, aucun n'est un manque réel — soit **redéployé** sous forme
+  différente (backup, WhatsApp/USSD, `LegacyMigration*`, `LowBand*`), soit
+  **écarté par arbitrage** (`ChurchEvent`, port D1), soit **artefact historique
+  périmé** (`app-debug.apk`, docs d'audit v1.0, scripts i18n à usage unique,
+  moteur de sync `/api/v1/sync` que le mobile actuel n'appelle pas).
   Restes propres à Develop1 non repris : `scripts/perf_loadseed.sql`,
   `setup-keys.sh`, le test `AiCreditsServiceTest` et sa variante de
-  `AiDashboardPage` — la version canonique d'`AiCreditsService` est un
+  `AiDashboardPage` — la version canonique d'`AiCreditsService` est une
   implémentation **différente** (snapshots d'usage), reprendre ces fichiers
   tels quels serait une régression. Décision à prendre hors campagne.
-- `D3` (bascule bout-en-bout validée par fixture « owner dans sa propre
-  église ») et `D6` (actions ops : `assetlinks.json`,
-  `apple-app-site-association`, `usesCleartextTraffic`) restent ouverts —
-  hors périmètre code de cette intégration (cf. §6 du plan de fusion).
+- `D6` (actions ops : `assetlinks.json`, `apple-app-site-association`,
+  `usesCleartextTraffic`) reste ouvert — les vrais fichiers exigent le
+  certificat de signature et le domaine de production (travail ops, hors code)
+  ; seuls les `.example` existent, correctement. `usesCleartextTraffic="true"`
+  en dur dans l'AndroidManifest principal ne se retire pas à l'aveugle
+  (risque de casse mobile selon la config TLS Render) : décision ops explicite.
 - Worktrees `discipolat_app-agentA` / `-agentB` laissés en place, propres,
   sur des branches désormais ancêtres de `main` ; leur suppression est une
   décision d'orchestration, pas une urgence d'intégrité.
+
+## 7. Clôture du reliquat recette (rejoué 2026-09-30, après la fusion finale)
+
+### 7.1 Deroulement
+
+Pile jetable reconstruite de zéro (le precedant run datait d'avant la fusion
+finale) : base PG16 `onb-e2e-postgres` remise à vide, Flyway **V1→V205 rejoué
+en install neuve**, Redis jetable, backend `8854ac51`+correctif §7.2 sur 18080,
+Super Admin par `APP_BOOTSTRAP_SUPERADMIN_*` (mot de passe de recette
+`DevOnly!2345` — la voie `DEMO_SEED_ENABLED` donne `password123`, le script
+l'ignorait ; le run de reference d'agentA utilisait evidemment la voie
+bootstrap). Recette : **73 PASS / 0 FAIL / 2 SKIP, EXIT 0** — soit +17
+assertions vs la reference 56/0/3 : E2E-9 entierement execute et vert
+(9a→9e4), E2E-10b enfin execute en vrai test d'IDOR (404 STEP_NOT_FOUND, plus
+le SKIP de limite D5), E2E-9e3 (decision **D3** : acceptation cross-tenant sans
+mot de passe) **PASS** — D3 est donc solde par la recette, retire des reliquats.
+
+### 7.2 Defaut de production revélé et corrige (masque sous H2)
+
+Le defaut : `InvitationService.registerInDirectory` construisait le `Person` au
+repertoire via `Person.builder()` **sans** `visibilityScope` ; Lombok `@Builder`
+ignorant l'initialiseur de champ (`= "CHURCH"`), l'insertion violait
+`person.visibility_scope NOT NULL` (V154) sous PostgreSQL, la transaction etait
+marquee rollback-only et le `catch` affichait un 500 `UnexpectedRollbackException`
+alors meme que son commentaire promettait « un echec du repertoire ne doit pas
+faire echouer l'acceptation ». Invisible en unites (mocks) et sous H2 : **c'est
+la recette §5.5 qui l'a revele**, des que E2E-9 a cesse d'etre SKIPpe (l'effet
+attendu de l'item 2).
+
+Corrections commitees : fourniture explicite de `.visibilityScope("CHURCH")`
+(portee par defaut du repertoire, cf. V154) + note dans le `catch` sur le piege
+rollback-only ; verrou de regression dans `InvitationDirectoryRegistrationTest`
+(**rouge sans le correctif** : `expected "CHURCH"` — **vert avec** : 5/5) ; cote
+recette : fixture `ON CONFLICT (user_id, tenant_id) DO UPDATE` (sinon la
+membership existante non-admin bloquait E2E-10b), pre-sonde E2E-9 alignee sur
+la garde-table (le test du claim JWT etait perime par D5-bis), et balayage du
+piege jq `false // "ABSENT"` generalise (`crossTenantIdentity`,
+`welcomeEmailSent`, `requiresTenantSwitch`, `owner.activationEmailSent`).
+
+### 7.3 Gates apres ce correctif
+
+| gate | resultat |
+|---|---|
+| `scripts/mvn-local.sh test` complet (`logs/backend-test-apres-fix-visibilite.log`) | **EXIT 0** — 1714 tests, 0 echec, 13 skips preexistants |
+| `InvitationDirectoryRegistrationTest` | rouge 4/5 sans correctif, **vert 5/5** avec |
+| Recette complete rejouee sur binaire corrige | **73/0/2, EXIT 0** (`logs/recette-apres-D5bis-73-0-2-1639.log`) |
+| Frontend / mobile | non touches par ce correctif (backend + script de recette seuls modifies) |
+
