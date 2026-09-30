@@ -1,0 +1,50 @@
+# Lot sécurité (hors périmètre onboarding) — vérification indépendante
+# Branche : fix/securite-webhooks-2fa-sync (1 commit, base = main HEAD 72ec85d5)
+# Commit   : 55ca8af9 "fix(securite): 2FA non serialise, webhooks fail-closed, verrou de sync mobile"
+# Vérifié  : 2026-09-30, worktree jetable /home/arise/discipolat/verify-secbranch
+
+## Périmètre du lot (net vs main)
+- backend `User.java`            : twoFactorSecret + twoFactorBackupCodes -> @JsonProperty(WRITE_ONLY)
+- backend `PaymentController`     : webhook 503 sans secret (fail-closed)
+- backend `UssdController`        : idem fail-closed
+- backend `UserSecretSerializationTest` (nouveau) : le test de non-régression §1.2
+- mobile  `sync_lock.dart` (nouveau) + `sync_service.dart` + `offline_sync_manager.dart` : verrou de sync
+- scripts `bootstrap_prod.sql` (nouveau) : amorce prod (additif)
+
+## §5.4 — exécution backend : test de sérialisation 2FA (JDK 21, mvn -o)
+$ mvn -B -o -Dtest=UserSecretSerializationTest test
+[INFO] Running com.discipolat.modules.users.domain.UserSecretSerializationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.206 s
+[INFO] BUILD SUCCESS
+-> 3/3 VERT avec le correctif.
+
+## R10 — preuve de DISCRIMINATION (le test doit être rouge sans le fix)
+Retrait temporaire des deux @JsonProperty(WRITE_ONLY) sur twoFactorSecret/
+twoFactorBackupCodes (passwordHash conservé pour isoler la régression 2FA) :
+[ERROR] Tests run: 3, Failures: 3, Errors: 0  <<< FAILURE!
+  fuite observée dans le JSON rendu :
+    "twoFactorSecret":"JBSWY3DPEHPK3PXP-TOTP-SECRET"
+    "twoFactorBackupCodes":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+  sur les 3 formes : entité seule, imbriquée dans une Map (santé/transfers), en collection.
+-> 3/3 ROUGE sans le fix, puis restauré (git checkout). Le test est donc
+   discriminant par construction : il attrape toute re-sérialisation du secret.
+
+## §5.4 — non-régression mobile (le lot touche sync_service/offline_sync_manager)
+$ flutter test   (Flutter 3.38.7)
+08:40 +376: All tests passed!
+-> 376/376 VERT sur la base main + lot sync. Aucun blocage (les warnings
+   [Push] Firebase non initialisé et hitTest tap() sont préexistants, non fatals).
+
+## Verdict
+Le coeur du lot sécurité (2FA WRITE_ONLY + webhooks fail-closed + verrou sync +
+test §1.2) est IMPLEMENTE, EXECUTE et PROUVE discriminant, sans régression mobile.
+
+## Point d'arbitrage RESTANT (décision humaine, R7)
+55ca8af9 embarque AUSSI render.yaml + .github/workflows/backup-postgres.yml.
+L'arbitrage senior enregistré disait « EXCLURE render.yaml/backup-postgres.yml
+(decision Render reportee) ». Deux options, à trancher par l'orchestrateur :
+  (a) séparer : restaurer ces 2 fichiers à l'état main dans un commit suivi sur
+      cette branche -> diff net = sécurité seule ; le diff infra reste récupérable
+      depuis 55ca8af9 (aucune perte) ;
+  (b) assumer le bundle tel quel (le commit a été fait délibérément avec).
+Non poussé, non fusionné ; la branche est dédiée, rien n'est irrévocable.
