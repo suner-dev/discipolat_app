@@ -65,12 +65,16 @@ public class UssdController {
             return ResponseEntity.ok("END Service non disponible. Réessayez plus tard.");
         }
 
-        // Validation du secret webhook (si configuré)
-        if (properties.getWebhookSecret() != null && !properties.getWebhookSecret().isBlank()) {
-            if (!properties.getWebhookSecret().equals(providedSecret)) {
-                log.warn("[USSD] Callback avec secret invalide — sessionId={}", sessionId);
-                return ResponseEntity.status(401).body("END Accès refusé.");
-            }
+        // SÉCURITÉ (fail-closed, même pattern que PaymentController#webhook) :
+        // sans secret configuré, l'endpoint refuse toute requête — jamais ouvert.
+        String expectedSecret = properties.getWebhookSecret();
+        if (expectedSecret == null || expectedSecret.isBlank()) {
+            log.warn("[USSD] Callback rejeté — app.ussd.webhook-secret non configuré (fail-closed)");
+            return ResponseEntity.status(503).body("END Service non disponible. Réessayez plus tard.");
+        }
+        if (!expectedSecret.equals(providedSecret)) {
+            log.warn("[USSD] Callback avec secret invalide — sessionId={}", sessionId);
+            return ResponseEntity.status(401).body("END Accès refusé.");
         }
 
         log.info("[USSD] Callback — session={}, phone={}, text={}, network={}",

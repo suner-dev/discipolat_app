@@ -24,7 +24,7 @@ public class PaymentController {
     private final TaxReceiptService taxReceiptService;
     private final com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService;
 
-    /** Secret partagé du webhook opérateur (vide en dev → endpoint ouvert). */
+    /** Secret partagé du webhook opérateur (vide → endpoint fermé en 503, jamais ouvert). */
     @Value("${app.payments.webhook-secret:}")
     private String webhookSecret;
 

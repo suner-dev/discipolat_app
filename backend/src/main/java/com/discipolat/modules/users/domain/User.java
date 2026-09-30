@@ -91,9 +91,15 @@ public class User {
     @Column(name = "two_factor_enabled", nullable = false)
     private boolean twoFactorEnabled;
 
+    // WRITE_ONLY : le secret TOTP ne doit JAMAIS sortir par une réponse JSON.
+    // Le secret d'activation est livré uniquement via TwoFactorSetupResponse
+    // (TwoFactorController) ; l'entité User est imbriquée dans d'autres
+    // entités sérialisées brutes (santé, transfers) → fuite sinon.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "two_factor_secret")
     private String twoFactorSecret;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "two_factor_backup_codes")
     private String twoFactorBackupCodes;
 

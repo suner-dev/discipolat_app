@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../tenant_config.dart';
 import '../services/api_service.dart';
 import 'database.dart';
+import 'sync_lock.dart';
+import 'sync_service.dart' show SyncService;
 
 /// Manages automatic sync of pending items when connectivity is restored.
 /// Handles presences, discipline, prayers, messages, and badge evaluations offline.
@@ -35,7 +37,7 @@ class OfflineSyncManager {
           r == ConnectivityResult.mobile ||
           r == ConnectivityResult.ethernet);
       if (isOnline) {
-        _syncPendingItems();
+        syncPendingItems();
       }
     });
     _refreshPendingCount();
@@ -252,7 +254,10 @@ class OfflineSyncManager {
   }
 
   /// Manually trigger sync of all pending items
-  Future<OfflineSyncResult> syncPendingItems() => _syncPendingItems();
+  /// Verrou partagé avec SyncService : les deux moteurs drainent la même
+  /// file et ne doivent jamais l'envoyer en parallèle (doubles POST).
+  Future<OfflineSyncResult> syncPendingItems() =>
+      syncFlushLock.run(_syncPendingItems);
 
   Future<OfflineSyncResult> _syncPendingItems() async {
     if (_isSyncing) return OfflineSyncResult(isSyncing: true);
@@ -281,7 +286,22 @@ class OfflineSyncManager {
 
       try {
         final payload = jsonDecode(item.payload) as Map<String, dynamic>;
-        await _api.post(item.endpoint, data: payload);
+        // Items legacy : l'ancien endpoint d'export (GET, lecture seule)
+        // est redirigé vers le vrai endpoint d'écriture POST.
+        final endpoint = SyncService.migrateEndpoint(item.endpoint);
+        // Même injection que SyncService : POST /reports/maker-weekly exige
+        // faiseurId (@NotNull) — résolu depuis le cache local des âmes.
+        if (endpoint.contains('/reports/maker-weekly') &&
+            payload['faiseurId'] == null &&
+            payload['ameId'] is String) {
+          final faiseurId = await SyncService.resolveFaiseurId(
+              _db, tenantId, payload['ameId'] as String);
+          if (faiseurId == null) {
+            throw StateError('faiseurId introuvable pour ame ${payload['ameId']}');
+          }
+          payload['faiseurId'] = faiseurId;
+        }
+        await _api.post(endpoint, data: payload);
         await _db.removeSyncItem(item.id);
         synced++;
         debugPrint('[OfflineSync] Synced: ${item.endpoint}');
