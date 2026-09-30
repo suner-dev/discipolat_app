@@ -1401,7 +1401,6 @@ final appRouter = GoRouter(
       name: 'accept-invitation',
       builder: (context, state) => AcceptInvitationScreen(
         initialToken: invitationTokenFromUri(state.uri),
-        onCompleted: () => context.go('/login'),
       ),
     ),
     GoRoute(
