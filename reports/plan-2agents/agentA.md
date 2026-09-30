@@ -2595,3 +2595,77 @@ Worktree propre (tout commité), 5 commits §5.5/§5.7/Phase 2 (`ed599fb0`, `fc9
 `08dd12ff`, `28242e27`, `4c49f61a`). Transmis à l'orchestrateur humain **sans push
 ni tag** (§5.8). Les décisions D1→D6 restent à trancher par un humain (R7) ; D4 est
 un défaut de production **prouvé**, corrigeable sur validation (patron V193).
+
+---
+
+## Reprise du 2026-09-30 — refusion A+B après l'arbitrage D1, gates rejoués
+
+**Contexte.** L'arbitrage D1 est tombé : « aligner le code sur la table vivante
+`event` » (documenté par l'Agent B dans `docs/architecture/schema-events-drift.md`,
+§ « Le plan retenu »). Depuis la clôture §5.5/§6, la branche B a produit six commits
+(recâblage mobile sur les routes réelles, V200/V201/V202, B6-B13, B10/B11) et la
+branche A était restée sur sa clôture. Les deux branches avaient donc divergé après
+la fusion `710adb59`.
+
+**Mesure écartée.** L'exécution de la suite backend lancée par l'Agent B à 09:02
+(`df3c721c` +6 min) a utilisé le JDK 25 par défaut : 670 erreurs Mockito/Byte-Buddy.
+Conformément à TODO §7, ce n'est **pas** un défaut de code ; la mesure a été rejouée
+sous JDK 21 (ci-dessous), l'ancienne est écartée, pas commentée.
+
+**Fait.** Contrôles §5.2 : un seul fichier chevauchant les deux branches
+(`Event.java`), `git merge-tree` propre. Fusion réelle : commit `2d64e1c3`
+(`git merge --no-ff origin/fix/onboarding-tenant-clients`), sans conflit, sans code
+inventé. `scripts/mvn-local.sh` rendu exécutable (le refus « Permission denied » du
+premier lancement était un défaut d'environnement, pas de build).
+
+**Gates rejoués sur l'arbre fusionné** — extraits : `run8-merged-tree.extraits.txt` ;
+logs complets archivés sur disque ( `.log` gitignorés, convention existante) :
+- backend : `mvn -B -o verify` sous JDK 21 → **BUILD SUCCESS**, 1696 tests,
+  0 échec, 0 erreur, 13 skip (les 13 `@EnabledIf(isRedisAvailable)` préexistants) ;
+  gate `FlywayMigrationChainPostgreSqlTest` **joué** (pas sauté) : V1→V202 sur
+  PostgreSQL 16 réel, chaîne + validate() + scan `@Table`/`information_schema`,
+  5/5 verts, 23,06 s.
+- frontend : `npx vitest run --maxWorkers=2` → **57 fichiers / 430 tests passés**, exit 0.
+- mobile : `flutter test` → **+468 : All tests passed!**, exit 0.
+- recette §5.5 : backend jetable 18080 sur **base PG neuve** migrée V1→V202
+  (165 migrations appliquées, « now at version v202 »), Redis jetable 56380,
+  schéma de recette **réinitialisé au préalable** (aucune donnée réelle) :
+  `verify-tenant-onboarding.sh` → **56 PASS / 0 FAIL / 3 SKIP, exit 0** — identique
+  au run7 de clôture ; les 3 SKIP restent justifiés (D5, quota space), aucun PASS
+  déguisé.
+
+**Ce que la fusion ne clôt PAS.** L'arbitrage D1 est une **direction**, pas le port.
+Sur l'arbre fusionné, `Event` mappe toujours `events` (rétablie par V194) et
+`ChurchEvent` mappe `event` : les deux modèles coexistent, exactement ce que le plan
+retenu refuse (« une seule entité sur `event` »). Le port backend reste à faire et
+se heurte à un point non tranché par l'inventaire B — voir NEED-HELP ci-dessous.
+
+### NEED-HELP — D1-backend (colonnes de scoping et vocabulaire, arbitrage requis)
+
+- L'inventaire « plan retenu » décide les colonnes **contrat** (image_url, tags,
+  géo, capacité, compte_rendu ; `is_public`→`visibility` ; `nb_inscrits`→calculé ;
+  `famille_id`→retiré). Il ne couvre **pas** les colonnes internes que l'entité
+  `Event` exige et que `event` ne possède pas : `department_id`, `resource_scope`,
+  `organization_unit_id` — ni le sort du couple FR↔EN (`statut`=`PLANIFIE`… vs
+  `ck_event_status CHECK (DRAFT,PUBLISHED,CANCELLED,COMPLETED,ARCHIVED)` ;
+  `type_evenement`=`REUNION`… vs `ck` anglais `type`).
+- Conséquences si on applique l'inventaire tel quel : la suppression de
+  `famille_id`/`department_id` **désactive l'isolation par espace métier** de
+  `/api/v1/events` (`canAccessEvent`/`canManageEvent`, 6 requêtes de
+  `EventRepository`, statistiques famille, champs du contrat `CreateEventRequest`),
+  sans quoi un CHEF_DE_FAMILLE verrait tous les événements du tenant. Ce n'est pas
+  un détail de formulaire : c'est un relâchement du contrôle d'accès multi-tenant.
+- **Résolution proposée (à valider)** : V203 ajoute à `event` les quatre colonnes
+  `famille_id UUID`, `department_id UUID`, `resource_scope VARCHAR(20) NOT NULL
+  DEFAULT 'TENANT_GLOBAL'`, `organization_unit_id UUID` (nulles = comportement
+  actuel du modèle paroissial) ; `Event` est repointée sur `event` avec les noms de
+  colonnes anglais là où ils existent (déjà mappés en Java : `titre`→`title`,
+  `date_debut`→`start_at`…) ; le vocabulaire FR du contrat §3 (figé, R2) est
+  **conservé dans la colonne** et le CHECK `event.status`/`event.type` est **élargi
+  en V203** à l'union des deux vocabulaires (le verrouiller à l'EN imposerait une
+  conversion **perte** : `SORTIE`/`VISITE`/`REUNION` → `MEETING` n'est pas
+  inversible, V158 l'a déjà perdu une fois). `deleted` boolean → `deleted_at` : la
+  propriété devient un champ lecture-écriture mappé, et `EventRepository` passe ses
+  dérivés `…DeletedFalse` en `…DeletedAtIsNull` (mécanique, testé).
+- Sans ce go, le port ne peut être entrepris sans improviser (R7). **Statut :
+  BLOCKED — décision d'orchestrateur sur V203.**

@@ -1,0 +1,17 @@
+Preuves de la reprise du 2026-09-30 — fusion df3c721c dans fix/schema-drift-h1-h5 (commit 2d64e1c3) puis gates §5.4/§5.5 rejoués sur l'arbre fusionné.
+
+== backend : mvn -B -o verify (JAVA_HOME=21.0.12+1.1-tem), log complet sur disque: /tmp/mvn-verify-merge-20260930.log (copie: mvn-verify-merged-2d64e1c3.log, gitignoré) ==
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.06 s -- in com.discipolat.migration.FlywayMigrationChainPostgreSqlTest
+[WARNING] Tests run: 1696, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+[INFO] Total time:  06:52 min
+
+== frontend : npx vitest run --maxWorkers=2 — Test Files 57 passed (57), Tests 430 passed (430), EXIT=0 ==
+== mobile : flutter test — 03:15 +468: All tests passed! PIPEEXIT=0 ==
+== recette §5.5 : scripts/verify-tenant-onboarding.sh sur backend jetable 18080, base PG neuve migrée V1..V202 (165 migrations, 'now at version v202'), Redis 56380 ==
+  PASS : 56
+  FAIL : 0
+  SKIP : 3   (non executable -- JAMAIS comptes comme PASS)
+EXIT=0; identique au run7 (56/0/3); les 3 SKIP sont justifiés (E2E-9 et 10b: limites de fixture D5; E2E-11: quota space).
+
+== gate Testcontainers détail: PostgreSQL 16-alpine, chaîne V1->V202 jouée sur schéma vierge puis validate(); scan @Table vs information_schema OK (5/5).
