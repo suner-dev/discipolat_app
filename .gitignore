@@ -61,6 +61,11 @@ token.tmp
 app-debug.apk
 *.apk
 
+# Resultats de tests navigateur (regenere a chaque execution)
+frontend/test-results/
+test-results/
+playwright-report/
+
 # Large reference documents (keep locally, not in repo)
 docs/PRMPT.pdf
 docs/PRMPT.txt
