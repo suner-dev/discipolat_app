@@ -88,3 +88,50 @@ Il n'y a pas de petite correction. Les options sont :
 
 Tant que ce point n'est pas arbitré, le module `events` ne peut pas être
 qualifié « prêt pour la production », quel que soit le nombre de tests verts.
+
+## Ce qui est DÉJÀ aligné (vérifié sur base neuve)
+
+`event_registrations` (inscriptions, présences, preuve de pointage) est
+**correcte** : sa clé étrangère `event_registrations_event_id_fkey` référence
+`event`, la table vivante. Donc le moteur de géolocalisation et le pointage sont
+persistés sur le bon modèle ; seule la lecture/écriture de l'événement est
+cassée.
+
+Et le modèle vivant n'est pas un squelette : `ChurchEvent` +
+`ChurchEventService` (package `service/`) + `ChurchEventRepository` +
+`ChurchEventController` (23 endpoints sur `/api/v1/church-events`, dont
+calendar, spaces, teams, tasks) sont câblés et fonctionnels. Cinq autres
+services le consomment.
+
+L'enflure est donc plus étroite qu'il n'y paraît :
+
+| cassé | sain |
+|---|---|
+| `Event.java` → `events` (morte) | `ChurchEvent` → `event` (vivante, câblée) |
+| `EventService` + `EventController` (`/api/v1/events`) | `event_registrations` → `event` (FK correcte) |
+
+## Le plan retenu (arbitrage : aligner sur `event`)
+
+Deux leviers réduisent le chantier sans le contourner :
+
+1. **Aligner l'entité, pas le contrat d'API.** `EventResponse` garde ses noms
+   français (`titre`, `dateDebut`, `statut`, `familleId`…). Le client mobile
+   vient d'être recâblé sur ce DTO ; le renommer le DTO serait du travail sans
+   valeur. Le DTO est le contrat public, l'entité est interne : les deux ont
+   le droit de ne pas se ressembler.
+2. **Une seule entité sur `event`.** `Event` devient l'unique entité de la
+   table vivante ; `ChurchEvent`, `ChurchEventRepository` et
+   `ChurchEventService` sont recâblés dessus puis retirés, pour ne pas laisser
+   deux entités sur la même table.
+
+Colonnes à ajouter à `event` (V202) — l'arbitrage produit, tracé :
+
+| colonnes | décision | motif |
+|---|---|---|
+| `image_url`, `tags`, `is_public`, `requires_registration`, `has_checkin`, `stream_id` | **ajouter** | contrat déjà exposé par les clients |
+| `latitude`, `longitude`, `geofence_radius_m` | **ajouter** | moteur de géolocalisation |
+| `limite_places`, `compte_rendu` | **ajouter** | fonctionnalité existante côté client ; les supprimer créerait des contrôles fantômes, exactement ce que ce chantier combat |
+| `famille_id` | **retirer** | le modèle vivant est paroissial et multi-tenant ; un événement rattaché à une famille est un autre objet métier. Le contrôle d'accès se résout par le périmètre tenant |
+| `nb_inscrits` | **calculé** | c'est un compteur, pas une colonne : à compter sur `event_registrations` |
+| `statut` | **mappé sur `status`** | le vocabulaire vit dans la table vivante |
+| `deleted` | **`deleted_at`** | la table vivante est en suppression logique horodatée |
