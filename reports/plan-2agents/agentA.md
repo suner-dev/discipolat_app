@@ -2725,7 +2725,14 @@ port Java qui les exploite.
   vs `information_schema` OK.
 - **BUILD SUCCESS**.
 
-**Statut : backend D1 vert, gate PG16 inclus.** Reste (todo `d1-verify`) : suites
-frontend puis mobile (§5.4, jamais en parallèle) + recette §5.5, puis branche
-`fix/security-webhooks-2fa` (todo `security-branch`). Aucune Poussée, aucun
-Étiquette — décision d'orchestrateur.
+**Statut : D1 TERMINÉ, gates §5.4 + recette §5.5 verts.**
+- Frontend `vitest run --maxWorkers=2` : **430/430** (57 fichiers).
+- Mobile `flutter test` : **468/468**.
+- Recette §5.5 `verify-tenant-onboarding.sh` sur pile jetable live
+  (PG 16.15:55445 / Redis:56380 / backend:18080) : **56 PASS / 0 FAIL / 3 SKIP**
+  (SKIP = limites de fixture D5 documentées, jamais déguisées en PASS). V203+V204
+  appliqués **incrémentalement** sur base v202 (`now at version v204`).
+Aucun code client modifié : le port est interne au backend, contrat §3 figé (R2).
+Preuves dans `d1-port-verify.extraits.txt`. Commit backend `ebcdc415`.
+**Poussée/tag : aucun** — décision d'orchestrateur. Prochaine todo :
+`fix/security-webhooks-2fa` (lot sécurité main).

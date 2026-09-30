@@ -30,7 +30,51 @@ Tests run: 41 -- DepartmentManagementServiceTest
 Tests run: 11 -- SpaceExportImportTest
 SchemaVerificationIntegrationTest (9 nested, tous 0 échec)          (table « event », colonnes TITLE/ORGANIZER_ID)
 
-## Verdict
+## Verdict backend
 [INFO] BUILD SUCCESS
 [INFO] Total time:  04:27 min
 Backend vert sur l'arbre du port D1, gate PG16 inclus.
+
+# ---------------------------------------------------------------------------
+# §5.4 — Suites clients rejoues SUR L'ARBRE PORT D1 (ordre backend->frontend->
+# mobile, JAMAIS en parallele : RAM bornsee). Aucun code client modifie : le
+# contrat JSON §3 etant fige (R2), le port est interne au backend.
+
+## Frontend — vitest (npx vitest run --maxWorkers=2)
+Log : reports/plan-2agents/logs/d1-frontend.log
+ Test Files  57 passed (57)
+      Tests  430 passed (430)
+   Duration  147.52s
+ -> 430/430 vert. Le port Event est transparent pour le frontend (mêmes clés FR).
+
+## Mobile — flutter test (Flutter 3.38.7)
+Log : reports/plan-2agents/logs/d1-mobile.log
+04:34 +468: All tests passed!
+ -> 468/468 vert.
+
+# ---------------------------------------------------------------------------
+# §5.5 — Recette verify-tenant-onboarding.sh rejouee sur pile jetable live
+# Backend:8080->18080 via /tmp/launch-e2e-stack.sh ; PG 16.15 (docker
+# onb-e2e-postgres:55445) ; Redis 56380 (onb-e2e-redis).
+# Log : reports/plan-2agents/logs/d1-recette-run.log (recette) + d1-recette-backend.log (démarrage)
+#
+## Migration incrémentale sur base v202 (prouve V203+V204 applicables en place)
+Migrating schema "public" to version "203 - event table vivante source unique"
+Migrating schema "public" to version "204 - families unique per tenant"
+Successfully applied 2 migrations to schema "public", now at version v204 (execution time 00:01.623s)
+Tomcat started on port 18080 / Started DiscipolatApplication in 27.802 seconds
+#
+## Recapitulatif recette
+RECAPITULATIF  (2026-09-30T11:06:29Z)
+  PASS : 56
+  FAIL : 0
+  SKIP : 3   (non executable -- JAMAIS comptes comme PASS)
+Non executes : E2E-9 Invitations ; E2E-10b etape d'autrui inaccessible ; E2E-11 quota space
+  (les 3 = limites de fixture documentees D5, jamais déguisées en PASS)
+Base URL : http://localhost:18080
+Tenant de recette : 32a34433-5dc8-4c43-9120-4af10e3b1257
+RECETTE_EXIT=0
+
+## Verdict global D1
+Gates §5.4 (backend surefire + gate PG16, frontend 430, mobile 468) + recette §5.5 (56/0/3)
+TOUS VERTS sur l'arbre du port. Commit backend ebcdc415. D1 termine.
