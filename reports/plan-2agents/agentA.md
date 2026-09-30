@@ -2758,13 +2758,16 @@ l'ai **vérifié indépendamment**, ce que demandait l'arbitrage.
 - Preuve archivée **sur la branche elle-même** : commit `b3f00a1e`
   (`reports/plan-2agents/security-branch-verify.extraits.txt`).
 
-**Point d'arbitrage RESTANT (R7, décision humaine)** — `55ca8af9` embarque aussi
-`render.yaml` + `.github/workflows/backup-postgres.yml`, alors que l'arbitrage
-senior enregistré les **excluait** (« décision Render reportée »). Les deux options
-(séparer dans un commit suivi vs assumer le bundle) sont documentées dans l'extrait.
-**Je n'ai pas touché à la config de déploiement** : réverter un commit délibéré de
-l'orchestrateur est son appel, pas le mien. Rien de poussé, rien d'irrévocable.
+**Point d'arbitrage — RESOLU** — `55ca8af9` embarquait aussi `render.yaml` +
+`.github/workflows/backup-postgres.yml`, que l'arbitrage senior **excluait**
+(« décision Render reportée »). **Tranché par l'orchestrateur : séparer.**
+Commit `ab50c392` restaure ces 2 fichiers à l'état main sur la branche ; le diff
+net de `fix/securite-webhooks-2fa-sync` = **sécurité seule**. Aucune perte : le
+diff infra reste récupérable via `git show 55ca8af9 -- render.yaml
+.github/workflows/backup-postgres.yml`. Rien de poussé, rien de fusionné.
 
-**Statut : lot sécurité VERIFIE (implémentation + exécution + discrimination +
-non-régression mobile). Toutes les todos du plan sont closes.**
+**Statut : lot sécurité VERIFIE et PROPRE (implémentation + exécution +
+discrimination + non-régression mobile + périmètre aligné). Toutes les todos du
+plan sont closes — en attente de tes directives pour poussée/fusion/Render.**
+
 
