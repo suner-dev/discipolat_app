@@ -77,6 +77,12 @@ class InvitationDirectoryRegistrationTest {
         assertThat(person.getFirstName()).isEqualTo("Jean");
         assertThat(person.getLastName()).isEqualTo("Dupont");
         assertThat(person.getEmailNormalized()).isEqualTo("jean@eglise.com");
+        // Regression lock (recette §5.5, 2026-09-30) : `@Builder` sans
+        // `@Builder.Default` IGNORE l'initialiseur `= "CHURCH"` de Person ;
+        // la portee doit etre fournie explicitement sinon l'insertion violait
+        // `person.visibility_scope NOT NULL` sous PostgreSQL et faisait
+        // echouer l'acceptation en 500 (defaut masque par les mocks/H2 ici).
+        assertThat(person.getVisibilityScope()).isEqualTo("CHURCH");
     }
 
     @Test

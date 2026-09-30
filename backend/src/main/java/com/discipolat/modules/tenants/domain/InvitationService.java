@@ -95,6 +95,14 @@ public class InvitationService {
         Person person = Person.builder()
                 .firstName(resolvedFirstName)
                 .lastName(resolvedLastName)
+                // Le @Builder Lombok IGNORE l'initialiseur de champ `= "CHURCH"` :
+                // sans cette valeur explicite, l'insertion violait la contrainte
+                // NOT NULL `person.visibility_scope` de PostgreSQL (defaut masque
+                // sous H2) et marquait la transaction rollback-only, ce qui
+                // faisait echouer l'acceptation d'invitation en 500 malgre le
+                // catch ci-dessous. La portee par defaut du repertoire est CHURCH
+                // (cf. V154__people_engine.sql).
+                .visibilityScope("CHURCH")
                 .emailNormalized(emailNormalized)
                 .build();
         try {
@@ -102,6 +110,9 @@ public class InvitationService {
         } catch (RuntimeException directoryFailure) {
             // Un échec du répertoire ne doit pas faire échouer l'acceptation :
             // le compte et la membership sont déjà créés et valides.
+            // ATTENTION : dans la même transaction, un échec d'écriture marque la
+            // transaction rollback-only et le catch seul ne suffit plus — la
+            // cohérence schéma/entité doit donc rester garantie (cf. visibilityScope).
             log.warn("Enregistrement au répertoire impossible pour {} : {}",
                     emailNormalized, directoryFailure.getMessage());
         }
