@@ -2734,5 +2734,37 @@ port Java qui les exploite.
   appliqués **incrémentalement** sur base v202 (`now at version v204`).
 Aucun code client modifié : le port est interne au backend, contrat §3 figé (R2).
 Preuves dans `d1-port-verify.extraits.txt`. Commit backend `ebcdc415`.
-**Poussée/tag : aucun** — décision d'orchestrateur. Prochaine todo :
-`fix/security-webhooks-2fa` (lot sécurité main).
+**Poussée/tag : aucun** — décision d'orchestrateur.
+
+---
+
+## [2026-09-30] Lot sécurité — vérification indépendante (`fix/securite-webhooks-2fa`)
+
+Le lot sécurité **hors périmètre onboarding** (2FA `WRITE_ONLY`, webhooks
+fail-closed, verrou de sync mobile, `bootstrap_prod.sql`) avait été **déjà
+committé** par l'orchestrateur sur une branche dédiée `fix/securite-webhooks-2fa-sync`
+(commit `55ca8af9`, base = main HEAD `72ec85d5`). Je ne l'ai **pas re-créé** : je
+l'ai **vérifié indépendamment**, ce que demandait l'arbitrage.
+
+**Vérification (§5.4), worktree jetable, JDK 21 / Flutter 3.38.7**
+- `UserSecretSerializationTest` : **3/3 VERT** avec le fix.
+- **R10 discrimination** : retrait temporaire des deux `@JsonProperty(WRITE_ONLY)`
+  des champs 2FA → **3/3 ROUGE**, le JSON rend bien
+  `"twoFactorSecret":"…-TOTP-SECRET"` + backup codes, sur les 3 formes (entité
+  seule / imbriquée dans une Map santé-transfers / en collection). Fichier restauré
+  (`git checkout`). Le test attrape donc toute re-sérialisation du secret.
+- **Non-régression mobile** (`sync_service.dart` +94, `offline_sync_manager.dart`
+  +26 touchés) : `flutter test` → **376/376 VERT** sur base main + lot sync.
+- Preuve archivée **sur la branche elle-même** : commit `b3f00a1e`
+  (`reports/plan-2agents/security-branch-verify.extraits.txt`).
+
+**Point d'arbitrage RESTANT (R7, décision humaine)** — `55ca8af9` embarque aussi
+`render.yaml` + `.github/workflows/backup-postgres.yml`, alors que l'arbitrage
+senior enregistré les **excluait** (« décision Render reportée »). Les deux options
+(séparer dans un commit suivi vs assumer le bundle) sont documentées dans l'extrait.
+**Je n'ai pas touché à la config de déploiement** : réverter un commit délibéré de
+l'orchestrateur est son appel, pas le mien. Rien de poussé, rien d'irrévocable.
+
+**Statut : lot sécurité VERIFIE (implémentation + exécution + discrimination +
+non-régression mobile). Toutes les todos du plan sont closes.**
+
