@@ -28,5 +28,8 @@ public record UpdateEventRequest(
         Boolean isPublic,
         Boolean requiresRegistration,
         Boolean hasCheckin,
-        java.util.UUID streamId
+        java.util.UUID streamId,
+        java.math.BigDecimal latitude,
+        java.math.BigDecimal longitude,
+        Integer geofenceRadiusMeters
 ) {}

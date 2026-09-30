@@ -310,6 +310,29 @@ public class EventService {
         return registrationRepository.save(registration);
     }
 
+    /**
+     * Pointage verifie par le moteur de geolocalisation, avec PREUVE.
+     *
+     * <p>On conserve position, precision et distance mesuree : sans elles, un
+     * pointage geolocalise est un pointage non contestable, donc inexistant.
+     *
+     * @param distanceMeters distance deja calculee par {@link EventGeofence}
+     */
+    @Transactional
+    public EventRegistration markAttendanceWithProof(UUID eventId, UUID userId, boolean present,
+                                                      double latitude, double longitude,
+                                                      double accuracyMeters, double distanceMeters) {
+        EventRegistration registration = markAttendance(eventId, userId, present);
+        if (present) {
+            registration.setCheckinLatitude(latitude);
+            registration.setCheckinLongitude(longitude);
+            registration.setCheckinAccuracyMeters(accuracyMeters);
+            registration.setCheckinDistanceMeters(distanceMeters);
+            return registrationRepository.save(registration);
+        }
+        return registration;
+    }
+
     @Transactional(readOnly = true)
     public List<EventRegistration> getRegistrations(UUID eventId) {
         findById(eventId); // contrôle d'accès à l'événement

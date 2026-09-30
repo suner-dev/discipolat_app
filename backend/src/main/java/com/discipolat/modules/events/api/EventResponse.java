@@ -28,6 +28,9 @@ public record EventResponse(
         Boolean requiresRegistration,
         Boolean checkinEnabled,
         java.util.UUID streamId,
+        java.math.BigDecimal latitude,
+        java.math.BigDecimal longitude,
+        Integer geofenceRadiusMeters,
         LocalDateTime createdAt,
         List<EntityAttachmentService.AttachmentItem> piecesJointes
 ) {
@@ -55,6 +58,9 @@ public record EventResponse(
                 Boolean.TRUE.equals(event.getRequiresRegistration()),
                 Boolean.TRUE.equals(event.getCheckinEnabled()),
                 event.getStreamId(),
+                event.getLatitude() == null ? null : java.math.BigDecimal.valueOf(event.getLatitude()),
+                event.getLongitude() == null ? null : java.math.BigDecimal.valueOf(event.getLongitude()),
+                event.getGeofenceRadiusMeters(),
                 event.getCreatedAt(),
                 piecesJointes != null ? piecesJointes : List.of());
     }

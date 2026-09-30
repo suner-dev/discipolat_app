@@ -128,6 +128,22 @@ public class Event {
     @Builder.Default
     private Boolean checkinEnabled = Boolean.TRUE;
 
+    /**
+     * Latitude du lieu (degres, WGS84). {@code null} = pas de geolocalisation
+     * configuree : le serveur refuse alors tout pointage geolocalise (fail-closed).
+     */
+    @Column(name = "latitude", precision = 9)
+    private Double latitude;
+
+    /** Longitude du lieu (degres, WGS84). */
+    @Column(name = "longitude", precision = 9)
+    private Double longitude;
+
+    /** Rayon d'effet du perimetre, en metres (10 a 5000, contrainte en base). */
+    @Builder.Default
+    @Column(name = "geofence_radius_m", nullable = false)
+    private int geofenceRadiusMeters = 200;
+
     /** Identifiant du direct associe (voir V200). */
     @Column(name = "stream_id")
     private UUID streamId;
