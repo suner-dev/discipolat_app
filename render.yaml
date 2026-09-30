@@ -12,31 +12,37 @@ databases:
     databaseName: discipolat
     user: discipolat
     region: frankfurt
-    # Plan Starter : backups automatiques QUOTIDIENS côté Render (plan Free :
-    # aucun backup, expiration à 30 jours). Indispensable avant tout pilote
-    # avec des données d'églises réelles.
-    plan: starter
+    # NB: `plan` est volontairement OMIS (voir DEPLOYMENT.md §8.6) :
+    # - nouvelle base → Render utilise starter par défaut ;
+    # - base existante → Render CONSERVE le type d'instance actuel.
+    # Cela évite tout conflit lors d'un re-sync Blueprint après un
+    # upgrade en Dashboard (une base payante ne peut pas repasser en free).
     version: "16"
-    postgresMajorVersion: "16"
-    # ipAllowList VOLONTAIREMENT ABSENTE → accès réservé aux services Render
-    # du même région (réseau interne). Les dumps externes (ancien workflow
-    # backup-postgres.yml) ne sont plus possibles : la sauvegarde de référence
-    # est celle de Render. Restauration = procédure documentée DEPLOYMENT.md.
+    postgresMajorVersion: 16
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
 
   # ============================================================
   # BÊTA-TESTING PUBLIC (V50) — base ISOLÉE de la production
   # ============================================================
   # Les testeurs externes n'ont JAMAIS accès aux données réelles :
   # l'environnement bêta possède sa propre base (données fictives).
-  # Même politique de sécurité que la prod : réseau interne uniquement
-  # (pas d'ipAllowList) + backups automatiques via le plan starter.
+  #
+  # ⚠️ Limite du plan Free Render : 1 base PostgreSQL gratuite par
+  # workspace. Si `discipolat-db` est déjà gratuite, cette base ne
+  # pourra pas être provisionnée gratuitement → créer la base
+  # manuellement (plan Starter ~7 $/mois recommandé) ou passer la
+  # base existante en payant (voir DEPLOYMENT.md §Bêta).
   - name: discipolat-beta-db
     databaseName: discipolat_beta
     user: discipolat_beta
     region: frankfurt
-    plan: starter
     version: "16"
-    postgresMajorVersion: "16"
+    postgresMajorVersion: 16
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
 
 redis:
   - name: discipolat-redis

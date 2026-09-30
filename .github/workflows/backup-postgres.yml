@@ -1,27 +1,30 @@
-name: Backup PostgreSQL (DÉPRÉCIÉ — ne pas exécuter)
+name: Backup PostgreSQL (mensuel)
 
 # ============================================================
-# ⛔ DÉPRÉCIÉ depuis le passage des bases en plan starter + réseau
-# interne uniquement (ipAllowList retirée de render.yaml).
+# Backup mensuel de la base PostgreSQL Render (plan Free).
 #
-# Raison : ce workflow se connectait via l'External Database URL,
-# devenue inaccessible par conception (la base n'est plus joignable
-# depuis Internet — c'était l'objectif). La sauvegarde de référence
-# est désormais celle de Render : backups automatiques QUOTIDIENS
-# du plan starter (Dashboard → Databases → Backups → Restore).
+# Contexte :
+# - Les bases Free Render expirent 30 jours après création et
+#   n'ont AUCUN backup automatique → le seul moyen de sauvegarder
+#   est un export pg_dump EXTERNE (DEPLOYMENT.md §8.6 Option B).
+# - Ce workflow effectue l'export mensuel et le stocke en tant
+#   qu'artifact GitHub Actions (90 jours de rétention).
 #
-# Conserver ce fichier comme archive de la procédure de chiffrement
-# des dumps ; ne réactiver un dump externe QUE vers un object
-# storage chiffré côté client (R2/B2), jamais via une base ouverte.
+# ⚠️ SÉCURITÉ — le dump contient des DONNÉES PERSONNELLES
+#   (âmes, familles, emails) et le dépôt est PUBLIC :
+#   le fichier est CHIFFRÉ (AES-256, openssl) AVANT l'upload.
+#   Sans la passphrase, l'artifact est inutilisable.
+#   Ne jamais logger l'URL de la base ni le contenu du dump.
 #
-# Contexte d'origine (plan Free, sans backup automatique) :
-# - Export mensuel pg_dump EXTERNE (DEPLOYMENT.md §8.6 Option B),
-#   chiffré AES-256 (openssl) AVANT upload en artifact GitHub (90 j).
-# - Le dump contenait des DONNÉES PERSONNELLES (âmes, familles,
-#   emails) et le dépôt est PUBLIC : ne jamais logger l'URL de la
-#   base ni le contenu du dump.
+# Secrets GitHub requis (Settings → Secrets and variables → Actions) :
+#   RENDER_DB_URL         : External Database URL de discipolat-db
+#     Dashboard → Databases → discipolat-db → Connect →
+#     External Database URL (⚠️ PAS l'Internal URL, inaccessible
+#     hors du réseau privé Render)
+#   BACKUP_ENCRYPTION_KEY : passphrase de chiffrement AES-256
+#     Génération : openssl rand -base64 32
 #
-# Déchiffrement d'un ancien artifact téléchargé :
+# Déchiffrement d'un artifact téléchargé :
 #   export ENC_KEY="<passphrase>"
 #   openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
 #     -pass env:ENC_KEY \
@@ -29,7 +32,10 @@ name: Backup PostgreSQL (DÉPRÉCIÉ — ne pas exécuter)
 # ============================================================
 
 on:
-  workflow_dispatch: # désactivé en pratique : l'External URL n'existe plus
+  schedule:
+    # 1er de chaque mois à 02:00 UTC
+    - cron: '0 2 1 * *'
+  workflow_dispatch: # déclenchement manuel depuis l'onglet Actions
 
 permissions:
   contents: read
