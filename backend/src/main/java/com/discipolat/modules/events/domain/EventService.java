@@ -91,8 +91,10 @@ public class EventService {
         }
         UUID currentUserId = securityUtils.getCurrentUserId();
         event.setOrganisateurId(currentUserId);
-        event.setStatut("PLANIFIE");
-        event.setNbInscrits(0);
+        event.setStatut(Event.STATUT_PLANIFIE);
+        // `publicEventFlag` est un drapeau d'écriture : il doit etre traduit en
+        // visibilite AVANT la persistance, sinon il ne disparaitrait qu'en memoire.
+        event.setPublicEvent(event.getPublicEventFlag());
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
         // ===== PROPAGATION CENTRALISÉE =====
@@ -152,15 +154,55 @@ public class EventService {
             throw new AccessDeniedException(
                     "Accès refusé à cet événement dans l'espace métier courant");
         }
-        return event;
+        return withRegistrationCount(event);
+    }
+
+    /**
+     * Nombre d'inscriptions portees par l'evenement.
+     *
+     * <p>{@code nb_inscrits} n'est pas une colonne de {@code event} : c'est un
+     * compteur derive de {@code event_registrations}, la seule source. Le garder
+     * en colonne aurait impose de le resynchroniser a chaque inscription,
+     * desinscription et pointage — c'est-a-dire de maintenir une seconde verite
+     * sur une question a laquelle la base repond deja.
+     */
+    private long countRegistrations(UUID eventId) {
+        return registrationRepository.countByEventId(eventId);
+    }
+
+    /** Renseigne le compteur derive avant serialisation. */
+    private Event withRegistrationCount(Event event) {
+        return event.withNbInscrits((int) Math.min(Integer.MAX_VALUE, countRegistrations(event.getId())));
+    }
+
+    /**
+     * Renseigne le compteur sur toute une page, avec UNE requete.
+     *
+     * <p>Un {@code count} par evenement d'une page de 50 en ferait 50 : la liste
+     * des evenements est le seul ecran ou le compteur apparait de facon
+     * repetee, et 50 requetes pour l'afficher sont un prix inacceptable.
+     */
+    private Page<Event> withRegistrationCounts(Page<Event> page) {
+        if (page.getContent().isEmpty()) {
+            return page;
+        }
+        Map<UUID, Long> counts = registrationRepository.countByEventIds(
+                        page.getContent().stream().map(Event::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(EventRegistrationRepository.EventCount::eventId, EventRegistrationRepository.EventCount::total, (a, b) -> a));
+        page.getContent().forEach(e -> e.withNbInscrits(
+                (int) Math.min(Integer.MAX_VALUE, counts.getOrDefault(e.getId(), 0L))));
+        return page;
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findAll(Pageable pageable) {
         if (workspaceScope.isSuperUser()) {
-            return eventRepository.findByStatutAndDeletedFalse("PLANIFIE", pageable);
+            return withRegistrationCounts(
+                    eventRepository.findByStatutAndDeletedAtIsNull(Event.STATUT_PLANIFIE, pageable));
         }
-        return scopeEvents(eventRepository.findByStatutAndDeletedFalse("PLANIFIE", pageable).getContent(), pageable);
+        return withRegistrationCounts(scopeEvents(
+                eventRepository.findByStatutAndDeletedAtIsNull(Event.STATUT_PLANIFIE, pageable).getContent(), pageable));
     }
 
     @Transactional(readOnly = true)
@@ -168,7 +210,8 @@ public class EventService {
         if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
-        return eventRepository.findByFamilleIdAndDeletedFalse(familleId, pageable);
+        return withRegistrationCounts(
+                eventRepository.findByFamilleIdAndDeletedAtIsNull(familleId, pageable));
     }
 
     @Transactional(readOnly = true)
@@ -176,33 +219,38 @@ public class EventService {
         if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessDepartment(departmentId)) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
-        return eventRepository.findByDepartmentIdAndDeletedFalse(departmentId, pageable);
+        return withRegistrationCounts(
+                eventRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId, pageable));
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findByStatut(String statut, Pageable pageable) {
         if (workspaceScope.isSuperUser()) {
-            return eventRepository.findByStatutAndDeletedFalse(statut, pageable);
+            return withRegistrationCounts(
+                    eventRepository.findByStatutAndDeletedAtIsNull(statut, pageable));
         }
-        return scopeEvents(eventRepository.findByStatutAndDeletedFalse(statut, pageable).getContent(), pageable);
+        return withRegistrationCounts(scopeEvents(
+                eventRepository.findByStatutAndDeletedAtIsNull(statut, pageable).getContent(), pageable));
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findByTypeEvenement(String typeEvenement, Pageable pageable) {
         if (workspaceScope.isSuperUser()) {
-            return eventRepository.findByTypeEvenementAndDeletedFalse(typeEvenement, pageable);
+            return withRegistrationCounts(
+                    eventRepository.findByTypeEvenementAndDeletedAtIsNull(typeEvenement, pageable));
         }
-        return scopeEvents(eventRepository.findByTypeEvenementAndDeletedFalse(typeEvenement, pageable).getContent(), pageable);
+        return withRegistrationCounts(scopeEvents(
+                eventRepository.findByTypeEvenementAndDeletedAtIsNull(typeEvenement, pageable).getContent(), pageable));
     }
 
     @Transactional(readOnly = true)
     public Page<Event> findUpcoming(Pageable pageable) {
         if (workspaceScope.isSuperUser()) {
-            return eventRepository.findByDateDebutBetweenAndDeletedFalse(
-                    LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable);
+            return withRegistrationCounts(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
+                    LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable));
         }
-        return scopeEvents(eventRepository.findByDateDebutBetweenAndDeletedFalse(
-                LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable).getContent(), pageable);
+        return withRegistrationCounts(scopeEvents(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
+                LocalDateTime.now(), LocalDateTime.now().plusDays(30), pageable).getContent(), pageable));
     }
 
     @Transactional(readOnly = true)
@@ -210,7 +258,8 @@ public class EventService {
         if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
             return List.of();
         }
-        return eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE");
+        return eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(
+                familleId, Event.STATUT_PLANIFIE);
     }
 
     public Event update(UUID id, Event updated, java.util.List<java.util.UUID> fichierIds) {
@@ -231,7 +280,7 @@ public class EventService {
         if (updated.getImageUrl() != null) event.setImageUrl(updated.getImageUrl());
         if (updated.getTags() != null) event.setTags(updated.getTags());
         if (updated.getStreamId() != null) event.setStreamId(updated.getStreamId());
-        if (updated.getPublicEvent() != null) event.setPublicEvent(updated.getPublicEvent());
+        event.setPublicEvent(updated.getPublicEventFlag());
         if (updated.getRequiresRegistration() != null) {
             event.setRequiresRegistration(updated.getRequiresRegistration());
         }
@@ -240,7 +289,7 @@ public class EventService {
         }
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
-        return saved;
+        return withRegistrationCount(saved);
     }
 
     public void delete(UUID id) {
@@ -248,7 +297,7 @@ public class EventService {
         if (!canManageEvent(event)) {
             throw new AccessDeniedException("Vous ne pouvez pas supprimer cet événement");
         }
-        event.setDeleted(true);
+        event.markDeleted();
         eventRepository.save(event);
     }
 
@@ -264,7 +313,10 @@ public class EventService {
         if (registrationRepository.findByEventIdAndUtilisateurId(eventId, userId).isPresent()) {
             throw new IllegalArgumentException("Already registered for this event");
         }
-        if (event.getLimitePlaces() != null && event.getNbInscrits() >= event.getLimitePlaces()) {
+        // Le compteur est une lecture de `event_registrations` : il ne peut plus
+        // deriver de l'etat observe, qui peut dater d'avant la derniere
+        // inscription. Une liste d'attente est une inscription comme une autre.
+        if (event.getLimitePlaces() != null && countRegistrations(eventId) >= event.getLimitePlaces()) {
             EventRegistration registration = EventRegistration.builder()
                     .eventId(eventId)
                     .utilisateurId(userId)
@@ -277,8 +329,6 @@ public class EventService {
                 .utilisateurId(userId)
                 .statutInscription("INSCRIT")
                 .build();
-        event.setNbInscrits(event.getNbInscrits() + 1);
-        eventRepository.save(event);
         return registrationRepository.save(registration);
     }
 
@@ -286,12 +336,12 @@ public class EventService {
         UUID userId = securityUtils.getCurrentUserId();
         EventRegistration registration = registrationRepository.findByEventIdAndUtilisateurId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Registration", eventId));
-        Event event = findById(eventId);
-        if ("PRESENT".equals(registration.getStatutInscription())) {
-            event.setNbInscrits(Math.max(0, event.getNbInscrits() - 1));
-        }
+        findById(eventId);
+        // Le compteur derive disparait avec l'inscription : plus rien a decrementer,
+        // donc plus rien qui puisse rester desynchronise. (L'ancienne version ne
+        // decrementait que si le statut etait PRESENT, ce qui laissait le compteur
+        // faux apres chaque desinscription d'un INSCRIT ou d'un ABSENT.)
         registrationRepository.delete(registration);
-        eventRepository.save(event);
     }
 
     public EventRegistration markAttendance(UUID eventId, UUID userId, boolean present) {
@@ -344,7 +394,7 @@ public class EventService {
         if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessFamily(familleId)) {
             return 0;
         }
-        return eventRepository.countByFamilleIdAndDeletedFalse(familleId);
+        return eventRepository.countByFamilleIdAndDeletedAtIsNull(familleId);
     }
 
     @Transactional(readOnly = true)
@@ -352,7 +402,7 @@ public class EventService {
         if (!workspaceScope.isSuperUser() && !workspaceScope.canAccessDepartment(departmentId)) {
             return 0;
         }
-        return eventRepository.countByDepartmentIdAndDeletedFalse(departmentId);
+        return eventRepository.countByDepartmentIdAndDeletedAtIsNull(departmentId);
     }
 
     // ======================== CONSOLIDATED VIEW (US-06) ========================
@@ -360,11 +410,34 @@ public class EventService {
     /**
      * Get all upcoming events consolidated for the Pasteur — across all departments and families.
      */
+    /**
+     * Renseigne le compteur sur toute une collection, avec UNE requete.
+     *
+     * <p>Meme raison que {@link #withRegistrationCounts(Page)} : les vues
+     * agregees (consolidation Pasteur, calendrier du membre) affichent le
+     * compteur sur chaque ligne. Sans remplissage, elles renverraient un
+     * {@code 0} systematique — un faux contrat, puisque la colonne n'existe
+     * plus et que la valeur par defaut du champ derive est zero.
+     */
+    private List<Event> withRegistrationCounts(List<Event> events) {
+        if (events.isEmpty()) {
+            return events;
+        }
+        Map<UUID, Long> counts = registrationRepository.countByEventIds(
+                        events.stream().map(Event::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(EventRegistrationRepository.EventCount::eventId, EventRegistrationRepository.EventCount::total, (a, b) -> a));
+        events.forEach(e -> e.withNbInscrits(
+                (int) Math.min(Integer.MAX_VALUE, counts.getOrDefault(e.getId(), 0L))));
+        return events;
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getConsolidatedUpcoming(int days) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime end = now.plusDays(days);
-        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, end);
+        List<Event> events = withRegistrationCounts(
+                eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(now, end));
         List<Map<String, Object>> result = new ArrayList<>();
         for (Event e : events) {
             Map<String, Object> entry = new LinkedHashMap<>();
@@ -398,7 +471,8 @@ public class EventService {
     public Map<String, Object> getConsolidatedByFamily(int days) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime end = now.plusDays(days);
-        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, end);
+        List<Event> events = withRegistrationCounts(
+                eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(now, end));
 
         Map<UUID, List<Map<String, Object>>> byFamille = new LinkedHashMap<>();
         Map<String, List<Map<String, Object>>> byType = new LinkedHashMap<>();
@@ -523,7 +597,7 @@ public class EventService {
                         : dateDebut.plusHours(2));
 
             // Check if event already exists for this date + time to avoid duplicates
-            boolean exists = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+            boolean exists = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                     dateDebut.minusMinutes(30), dateDebut.plusMinutes(30))
                     .stream()
                     .anyMatch(e -> e.getTitre().equals(template.getTitre())
@@ -538,8 +612,7 @@ public class EventService {
                     .lieu(template.getLieu())
                     .dateDebut(dateDebut)
                     .dateFin(dateFin)
-                    .statut("PLANIFIE")
-                    .nbInscrits(0)
+                    .statut(Event.STATUT_PLANIFIE)
                     .build();
             createdEvents.add(eventRepository.save(event));
         }
@@ -569,7 +642,7 @@ public class EventService {
         }
         LocalDateTime start = weekStart.atStartOfDay();
         LocalDateTime end = weekStart.plusDays(7).atStartOfDay();
-        return eventRepository.findByDateDebutBetweenAndDeletedFalse(start, end).stream()
+        return eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(start, end).stream()
                 .filter(this::canAccessEvent)
                 .sorted(Comparator.comparing(Event::getDateDebut))
                 .toList();
@@ -655,7 +728,7 @@ public class EventService {
         List<Event> events;
 
         if (familleId != null) {
-            events = eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "TERMINE");
+            events = eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(familleId, Event.STATUT_TERMINE);
         } else {
             events = eventRepository.findAll().stream()
                     .filter(e -> !e.isDeleted())
@@ -702,11 +775,14 @@ public class EventService {
         LocalDateTime from = LocalDateTime.now();
         LocalDateTime to = from.plusDays(Math.max(1, Math.min(days, 90)));
         Page<Event> upcoming = eventRepository
-                .findByTenantIdAndDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(
+                .findByTenantIdAndDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(
                         com.discipolat.common.multitenancy.TenantContext.getCurrentTenantId(), from,
                         Pageable.unpaged());
         Map<UUID, EventRegistration> myRegs = registrationRepository.findByUtilisateurId(userId).stream()
                 .collect(Collectors.toMap(EventRegistration::getEventId, r -> r, (a, b) -> a));
+        // Le calendrier affiche `nbInscrits` sur chaque ligne : il doit venir de
+        // la table des inscriptions, pas du defaut 0 du champ derive.
+        withRegistrationCounts(upcoming.getContent());
 
         List<Map<String, Object>> result = new ArrayList<>();
         for (Event e : upcoming.getContent()) {

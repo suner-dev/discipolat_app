@@ -35,6 +35,21 @@ import static org.junit.jupiter.api.Assertions.*;
  * NOTE: Some tables use jsonb columns (platform_modules, menu_entries, custom_pages,
  * custom_field_values) which H2 cannot create. These are marked as PostgreSQL-only
  * and verified in production deployments, not in H2 test mode.
+ *
+ * ⚠ CE TEST NE PEUT PAS VOIR UNE DÉRIVE DE MIGRATION — et c'est mesuré, pas
+ * supposé. Il tourne avec `ddl-auto: create-drop` et `flyway: false` : Hibernate
+ * recrée le schéma à partir des annotations, donc ce qu'il valide est le schéma
+ * que l'entité *décrit*, jamais celui que les migrations *produisent*.
+ *
+ * C'est ainsi que `Event.java` a pu pointer pendant des mois vers `events`,
+ * table que `V158` avait renommée `legacy_events` : plus d'un millier de tests
+ * verts, et un module_events mort au déploiement. Les noms de table et de
+ * colonne vérifiés ici sont donc une garantie de *cohérence du modèle*, pas de
+ * *concordance avec la production*.
+ *
+ * La concordance avec la production est couverte par
+ * `com.discipolat.modules.events.domain.EventTableContractTest`, qui migre une
+ * base PostgreSQL de zéro et fait un aller-retour Hibernate dessus.
  */
 @SpringBootTest(classes = DiscipolatApplication.class)
 @ActiveProfiles("test")
@@ -59,13 +74,17 @@ class SchemaVerificationIntegrationTest {
     class TableExistence {
 
         @Test
-        @DisplayName("Core entities: users, souls, families, departments, events")
+        @DisplayName("Core entities: users, souls, families, departments, event")
         void coreEntities() {
             assertTableExists("users");
             assertTableExists("souls");
             assertTableExists("families");
             assertTableExists("departments");
-            assertTableExists("events");
+            // `event` au singulier : c'est la table VIVANTE, celle que mappe
+            // l'entite `Event`. La table `events` a ete renommee `legacy_events`
+            // par V158 puis completee par V203. Voir
+            // EventTableContractTest pour la preuve sur base reellement migree.
+            assertTableExists("event");
         }
 
         @Test
@@ -353,10 +372,13 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
-        @DisplayName("events table has id, titre, tenant_id, organisateur_id")
-        void eventsColumns() {
-            assertColumnsExist("events", List.of(
-                    "ID", "TITRE", "TENANT_ID", "ORGANISATEUR_ID"
+        @DisplayName("event table has id, title, tenant_id, organizer_id")
+        void eventColumns() {
+            // Les noms de colonnes suivent la table vivante (V158) : `title`,
+            // `organizer_id`. Les noms de CHAMPS de l'entite restent en francais
+            // (`titre`, `organisateurId`) : un acceseur n'est pas une colonne.
+            assertColumnsExist("event", List.of(
+                    "ID", "TITLE", "TENANT_ID", "ORGANIZER_ID"
             ));
         }
 
@@ -421,7 +443,7 @@ class SchemaVerificationIntegrationTest {
         @DisplayName("All core business tables have tenant_id column")
         void coreBusinessTablesHaveTenantId() {
             List<String> tenantTables = List.of(
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     "soul_discipline_events", "evaluations", "objectives",
                     "visits", "parallel_followups", "transfer_requests",
                     "maker_reports", "family_reports", "prayers"
@@ -505,15 +527,15 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
-        @DisplayName("events.tenant_id column exists (FK to tenants)")
-        void eventsToTenant() {
-            assertColumnExists("events", "TENANT_ID");
+        @DisplayName("event.tenant_id column exists (FK to tenants)")
+        void eventToTenant() {
+            assertColumnExists("event", "TENANT_ID");
         }
 
         @Test
-        @DisplayName("events.organisateur_id column exists (FK to users)")
-        void eventsToUsers() {
-            assertColumnExists("events", "ORGANISATEUR_ID");
+        @DisplayName("event.organizer_id column exists (FK to users)")
+        void eventToUsers() {
+            assertColumnExists("event", "ORGANIZER_ID");
         }
 
         @Test
@@ -756,7 +778,7 @@ class SchemaVerificationIntegrationTest {
         @Test @DisplayName("users >= 10 columns") void usersColCount() { assertTableHasMinColumns("users", 10); }
         @Test @DisplayName("souls >= 12 columns") void soulsColCount() { assertTableHasMinColumns("souls", 12); }
         @Test @DisplayName("departments >= 5 columns") void deptColCount() { assertTableHasMinColumns("departments", 5); }
-        @Test @DisplayName("events >= 6 columns") void eventsColCount() { assertTableHasMinColumns("events", 6); }
+        @Test @DisplayName("event >= 20 columns") void eventColCount() { assertTableHasMinColumns("event", 20); }
         @Test @DisplayName("alerts >= 8 columns") void alertsColCount() { assertTableHasMinColumns("alerts", 8); }
         @Test @DisplayName("inventory_items >= 15 columns") void inventoryColCount() { assertTableHasMinColumns("inventory_items", 15); }
         @Test @DisplayName("config_revisions >= 5 columns") void configRevColCount() { assertTableHasMinColumns("config_revisions", 5); }
@@ -817,7 +839,7 @@ class SchemaVerificationIntegrationTest {
             // Exclude jsonb tables that H2 can't create
             Set<String> critical = Set.of(
                     // Core
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     // Platform (H2-compatible only)
                     "config_revisions", "church_settings",
                     // Business
@@ -869,7 +891,7 @@ class SchemaVerificationIntegrationTest {
             prefixes.put("souls", "soul");
             prefixes.put("families", "family");
             prefixes.put("departments", "department");
-            prefixes.put("events", "event");
+            prefixes.put("event", "event");
             prefixes.put("transfers", "transfer");
             prefixes.put("messaging", "conversation");
             prefixes.put("training", "course");
@@ -924,7 +946,7 @@ class SchemaVerificationIntegrationTest {
         @DisplayName("Core entity tables all have UUID primary key column named 'id'")
         void coreEntitiesHaveId() {
             List<String> coreTables = List.of(
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     "alerts", "inventory_items", "finance_transactions",
                     "conversations", "notifications", "courses"
             );
@@ -1003,7 +1025,7 @@ class SchemaVerificationIntegrationTest {
                     "department_tasks", "department_teams",
                     "dictionary_entries", "entity_attachments",
                     "evaluations", "evangelism_stage_history",
-                    "evangelism_track", "event_registrations", "events",
+                    "evangelism_track", "event", "event_registrations",
                     "families", "family_chief_history", "family_reports",
                     "family_risk_history", "favorites", "feedbacks", "files",
                     "finance_transactions", "gdpr_requests",

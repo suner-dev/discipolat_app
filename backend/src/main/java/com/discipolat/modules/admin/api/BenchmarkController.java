@@ -71,7 +71,7 @@ public class BenchmarkController {
 
         double attendanceRate = computeAttendanceRate();
 
-        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(3), LocalDateTime.now());
         int reportsSubmitted = (int) recentEvents.stream()
                 .filter(e -> e.getCompteRendu() != null && !e.getCompteRendu().isBlank())
@@ -131,7 +131,7 @@ public class BenchmarkController {
     public ResponseEntity<Map<String, Object>> getTrends() {
         List<Soul> souls = soulRepository.findByDeletedFalse();
         List<Department> departments = departmentRepository.findAll();
-        List<Event> allEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> allEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(6), LocalDateTime.now());
 
         YearMonth current = YearMonth.now();
@@ -183,7 +183,7 @@ public class BenchmarkController {
     }
 
     private double computeAttendanceRate() {
-        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(2), LocalDateTime.now());
         if (recentEvents.isEmpty()) return 50.0;
         long totalRegistered = recentEvents.stream()

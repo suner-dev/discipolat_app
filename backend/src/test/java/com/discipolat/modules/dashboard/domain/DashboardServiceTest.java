@@ -236,7 +236,7 @@ class DashboardServiceTest {
         when(userRepository.countByRole(UserRole.FAISEUR)).thenReturn(3L);
         when(makerReportRepository.findBySemaine(any(), any())).thenReturn(new PageImpl<>(List.of()));
         when(userRepository.findByRolesContaining(UserRole.FAISEUR)).thenReturn(List.of());
-        when(eventRepository.findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(any())).thenReturn(List.of());
+        when(eventRepository.findTop10ByDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(any())).thenReturn(List.of());
         when(soulRepository.countByDateIntegrationBetween(any(), any())).thenReturn(3L);
 
         var kpis = dashboardService.getPasteurKpis();

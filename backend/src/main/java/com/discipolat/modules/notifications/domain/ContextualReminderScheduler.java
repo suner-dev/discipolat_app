@@ -69,7 +69,7 @@ public class ContextualReminderScheduler {
         int sent = 0;
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         List<Event> upcomingEvents = eventRepository
-                .findByDateDebutBetweenAndDeletedFalse(
+                .findByDateDebutBetweenAndDeletedAtIsNull(
                         tomorrow.atStartOfDay(), tomorrow.atTime(23, 59));
 
         for (Event event : upcomingEvents) {

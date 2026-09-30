@@ -27,11 +27,25 @@ public class LoadPredictionService {
         LocalDate today = LocalDate.now();
         LocalDate horizon = today.plusWeeks(8);
 
+        // Ces deux requetes brutes interrogeaient `events` (`date_debut`,
+        // `deleted = false`) : une table qui n'existe plus depuis V158, si bien
+        // que la prediction de charge echouait sur toute base migree. Elles
+        // visent desormais la table vivante `event`.
+        //
+        // `start_at` est un `timestamptz` alors que l'entite manipule des
+        // `LocalDateTime` traites comme de l'UTC (voir
+        // LocalDateTimeToUtcConverter). Sans `AT TIME ZONE 'UTC'`, PostgreSQL
+        // convertirait selon le fuseau de session et un evenement changerait de
+        // jour selon le serveur qui repond — la meme divergence de date que le
+        // convertisseur evite ailleurs.
         List<Object[]> upcoming = asRows(em.createNativeQuery("""
-                SELECT date(debut) AS jour, count(*) AS nb
-                FROM events
-                WHERE date_debut >= :from AND date_debut < :to AND deleted = false
-                GROUP BY date(debut) ORDER BY date(debut)
+                SELECT date(start_at AT TIME ZONE 'UTC') AS jour, count(*) AS nb
+                FROM event
+                WHERE (start_at AT TIME ZONE 'UTC') >= :from
+                  AND (start_at AT TIME ZONE 'UTC') <  :to
+                  AND deleted_at IS NULL
+                GROUP BY date(start_at AT TIME ZONE 'UTC')
+                ORDER BY date(start_at AT TIME ZONE 'UTC')
                 """)
                 .setParameter("from", today.atStartOfDay())
                 .setParameter("to", horizon.atStartOfDay())
@@ -45,9 +59,11 @@ public class LoadPredictionService {
 
         Map<DayOfWeek, Integer> dowWeights = new EnumMap<>(DayOfWeek.class);
         List<Object[]> pastDow = asRows(em.createNativeQuery("""
-                SELECT extract(dow from date(debut))::int AS dow, count(*) AS nb
-                FROM events
-                WHERE date_debut >= :from AND date_debut < now() AND deleted = false
+                SELECT extract(dow from date(start_at AT TIME ZONE 'UTC'))::int AS dow, count(*) AS nb
+                FROM event
+                WHERE (start_at AT TIME ZONE 'UTC') >= :from
+                  AND (start_at AT TIME ZONE 'UTC') <  now()
+                  AND deleted_at IS NULL
                 GROUP BY 1
                 """)
                 .setParameter("from", today.minusWeeks(12).atStartOfDay())

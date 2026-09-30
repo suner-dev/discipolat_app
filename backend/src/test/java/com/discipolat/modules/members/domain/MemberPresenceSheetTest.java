@@ -235,9 +235,9 @@ class MemberPresenceSheetTest {
         Event evtPasse = Event.builder().id(UUID.randomUUID()).titre("Culte passé")
                 .familleId(familleId).dateDebut(LocalDateTime.now().minusDays(1)).statut("PLANIFIE").build();
 
-        when(eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE"))
+        when(eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(familleId, "PLANIFIE"))
                 .thenReturn(List.of(evtFamille, evtPasse));
-        when(eventRepository.findByDepartmentIdInAndDeletedFalse(List.of(autreDept)))
+        when(eventRepository.findByDepartmentIdInAndDeletedAtIsNull(List.of(autreDept)))
                 .thenReturn(List.of(evtDept));
 
         var events = memberService.getMyUpcomingEvents();

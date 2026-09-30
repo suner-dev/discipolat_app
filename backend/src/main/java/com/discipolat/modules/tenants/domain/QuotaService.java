@@ -163,7 +163,7 @@ public class QuotaService {
         if (!locked.enforced() || limit == null) {
             throw invalidConfiguration();
         }
-        long current = eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(
+        long current = eventRepository.countByTenantIdAndStatutNotInAndDeletedAtIsNull(
                 tenantId, CLOSED_EVENT_STATUSES);
         if (current >= limit) {
             throw exceeded(tenantId, "events", current, limit);

@@ -62,7 +62,7 @@ public class EventController {
                 .departmentId(request.departmentId())
                 .imageUrl(request.imageUrl())
                 .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
-                .publicEvent(Boolean.TRUE.equals(request.isPublic()))
+                .publicEventFlag(request.isPublic())
                 .requiresRegistration(Boolean.TRUE.equals(request.requiresRegistration()))
                 .checkinEnabled(Boolean.TRUE.equals(request.hasCheckin()))
                 .streamId(request.streamId())
@@ -144,7 +144,7 @@ public class EventController {
                 .imageUrl(request.imageUrl())
                 .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
                 // Les booleens sont des patches partiels : null = inchange.
-                .publicEvent(request.isPublic())
+                .publicEventFlag(request.isPublic())
                 .requiresRegistration(request.requiresRegistration())
                 .checkinEnabled(request.hasCheckin())
                 .streamId(request.streamId())

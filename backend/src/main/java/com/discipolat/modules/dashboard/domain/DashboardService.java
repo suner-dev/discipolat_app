@@ -956,7 +956,7 @@ public class DashboardService {
         // Événements à venir (30 jours) liés au département
         LocalDateTime now = LocalDateTime.now();
         UUID responsableId = selectedDept.getResponsableId();
-        List<Event> upcoming = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, now.plusDays(30));
+        List<Event> upcoming = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(now, now.plusDays(30));
         Set<UUID> memberUserIds = allSouls.stream().map(Soul::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
         List<Map<String, Object>> evenementsAvenir = upcoming.stream()
                 .filter(ev -> (responsableId != null && responsableId.equals(ev.getOrganisateurId()))
@@ -1171,7 +1171,7 @@ public class DashboardService {
                 .collect(Collectors.toSet());
         List<Map<String, Object>> evenements = new ArrayList<>();
         for (UUID familleId : familleIds) {
-            List<Event> familleEvents = eventRepository.findAllByFamilleIdAndDeletedFalse(familleId);
+            List<Event> familleEvents = eventRepository.findAllByFamilleIdAndDeletedAtIsNull(familleId);
             for (Event ev : familleEvents) {
                 if (ev.getDateDebut() == null || !ev.getDateDebut().isAfter(LocalDateTime.now())) continue;
                 Map<String, Object> em = new LinkedHashMap<>();
@@ -1428,7 +1428,7 @@ public class DashboardService {
 
         // ==================== ÉVÉNEMENTS À VENIR ====================
         List<Event> upcomingEvents = eventRepository
-                .findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime.now());
+                .findTop10ByDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime.now());
         List<Map<String, Object>> eventsList = new ArrayList<>();
         for (Event event : upcomingEvents) {
             long inscrits = eventRegistrationRepository.findByEventId(event.getId()).size();

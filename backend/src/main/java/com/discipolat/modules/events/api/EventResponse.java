@@ -54,7 +54,7 @@ public record EventResponse(
                 event.getCompteRendu(),
                 event.getImageUrl(),
                 event.getTags() == null ? List.of() : List.of(event.getTags()),
-                Boolean.TRUE.equals(event.getPublicEvent()),
+                event.isPublicEvent(),
                 Boolean.TRUE.equals(event.getRequiresRegistration()),
                 Boolean.TRUE.equals(event.getCheckinEnabled()),
                 event.getStreamId(),

@@ -665,7 +665,7 @@ public class MemberService {
 
         // Événements de la famille du membre
         List<Event> familleEvents = soul.getFamilleId() != null
-                ? eventRepository.findByFamilleIdAndStatutAndDeletedFalse(soul.getFamilleId(), "PLANIFIE")
+                ? eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(soul.getFamilleId(), "PLANIFIE")
                 : List.of();
 
         // Événements des départements du membre
@@ -675,7 +675,7 @@ public class MemberService {
                 .toList();
         List<Event> departementEvents = departmentIds.isEmpty()
                 ? List.of()
-                : eventRepository.findByDepartmentIdInAndDeletedFalse(departmentIds);
+                : eventRepository.findByDepartmentIdInAndDeletedAtIsNull(departmentIds);
 
         LocalDateTime now = LocalDateTime.now();
         Map<UUID, Event> byId = new LinkedHashMap<>();

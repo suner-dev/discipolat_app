@@ -144,7 +144,7 @@ class EventServiceTest {
     @Test
     void findAll_faiseurActif_filtreLesFamillesHorsEspace() {
         when(workspaceScope.isSuperUser()).thenReturn(false);
-        when(eventRepository.findByStatutAndDeletedFalse("PLANIFIE", PageRequest.of(0, 20)))
+        when(eventRepository.findByStatutAndDeletedAtIsNull("PLANIFIE", PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(evenementEglise, evenementFamille)));
         // Le faiseur voit l'événement d'église mais pas celui d'une famille hors espace
         when(workspaceScope.accessibleFamilyIds()).thenReturn(java.util.Set.of());
@@ -163,7 +163,7 @@ class EventServiceTest {
         Page<Event> result = eventService.findByFamilleId(autreFamilleId, PageRequest.of(0, 20));
 
         assertEquals(0, result.getTotalElements());
-        verify(eventRepository, never()).findByFamilleIdAndDeletedFalse(any(UUID.class), any(Pageable.class));
+        verify(eventRepository, never()).findByFamilleIdAndDeletedAtIsNull(any(UUID.class), any(Pageable.class));
     }
 
     @Test
@@ -250,7 +250,7 @@ class EventServiceTest {
         Page<Event> result = eventService.findByDepartmentId(autreDepartmentId, PageRequest.of(0, 20));
 
         assertEquals(0, result.getTotalElements());
-        verify(eventRepository, never()).findByDepartmentIdAndDeletedFalse(any(UUID.class), any(Pageable.class));
+        verify(eventRepository, never()).findByDepartmentIdAndDeletedAtIsNull(any(UUID.class), any(Pageable.class));
     }
 
     @Test
@@ -260,7 +260,7 @@ class EventServiceTest {
         Event e1 = Event.builder().id(UUID.randomUUID()).organisateurId(userId)
                 .departmentId(departmentId).titre("Répétition")
                 .dateDebut(LocalDateTime.now().plusDays(1)).build();
-        when(eventRepository.findByDepartmentIdAndDeletedFalse(departmentId, PageRequest.of(0, 20)))
+        when(eventRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId, PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(e1)));
 
         Page<Event> result = eventService.findByDepartmentId(departmentId, PageRequest.of(0, 20));
@@ -279,7 +279,7 @@ class EventServiceTest {
                 .titre("Événement d'un autre département")
                 .dateDebut(LocalDateTime.now().plusDays(2))
                 .build();
-        when(eventRepository.findByStatutAndDeletedFalse("PLANIFIE", PageRequest.of(0, 20)))
+        when(eventRepository.findByStatutAndDeletedAtIsNull("PLANIFIE", PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(evenementEglise, evenementAutreDept)));
         when(workspaceScope.accessibleFamilyIds()).thenReturn(java.util.Set.of());
         when(workspaceScope.accessibleDepartmentIds()).thenReturn(java.util.Set.of(departmentId));
@@ -399,7 +399,7 @@ class EventServiceTest {
                 .organisateurId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
                 .titre("Evenement")
                 .dateDebut(LocalDateTime.now().plusDays(1))
-                .publicEvent(Boolean.TRUE)
+                .visibility(Event.VISIBILITY_PUBLIC)
                 .requiresRegistration(Boolean.TRUE)
                 .checkinEnabled(Boolean.FALSE)
                 .tags(new String[]{"priere"})
@@ -426,7 +426,7 @@ class EventServiceTest {
                 .compteRendu(null)
                 .imageUrl("https://files.example/couverture.jpg")
                 .tags(null)
-                .publicEvent(Boolean.FALSE)
+                .publicEventFlag(Boolean.FALSE)
                 .requiresRegistration(null)
                 .checkinEnabled(null)
                 .streamId(null)
@@ -435,7 +435,10 @@ class EventServiceTest {
         Event saved = eventService.update(patch.getId(), patch, null);
 
         assertEquals("https://files.example/couverture.jpg", saved.getImageUrl());
-        assertEquals(Boolean.FALSE, saved.getPublicEvent());
+        // `isPublic` est une lecture de `visibility`, qui fait autorite : un
+        // drapeau a faux ramene PUBLIC vers CHURCH, sans jamais descendre plus bas.
+        assertFalse(saved.isPublicEvent());
+        assertEquals(Event.VISIBILITY_CHURCH, saved.getVisibility());
         // Non fournis -> conserves
         assertEquals(Boolean.TRUE, saved.getRequiresRegistration());
         assertEquals(Boolean.FALSE, saved.getCheckinEnabled());
@@ -450,7 +453,7 @@ class EventServiceTest {
                 .dateDebut(LocalDateTime.now().plusDays(2))
                 .imageUrl("https://files.example/v.png")
                 .tags(new String[]{"retraite", "jeunesse"})
-                .publicEvent(Boolean.TRUE)
+                .publicEventFlag(Boolean.TRUE)
                 .requiresRegistration(Boolean.TRUE)
                 .checkinEnabled(Boolean.TRUE)
                 .build();
@@ -458,7 +461,12 @@ class EventServiceTest {
 
         Event saved = eventService.create(nouveau, null);
 
-        assertEquals(Boolean.TRUE, saved.getPublicEvent());
+        // Le drapeau d'ecriture doit etre traduit en visibilite AVANT la
+        // persistance : un drapeau seulement pose en memoire disparaitrait a la
+        // relecture, et l'evenement resterait prive alors que le client a
+        // demande le contraire.
+        assertTrue(saved.isPublicEvent());
+        assertEquals(Event.VISIBILITY_PUBLIC, saved.getVisibility());
         assertEquals(Boolean.TRUE, saved.getRequiresRegistration());
         assertEquals(Boolean.TRUE, saved.getCheckinEnabled());
         assertArrayEquals(new String[]{"retraite", "jeunesse"}, saved.getTags());

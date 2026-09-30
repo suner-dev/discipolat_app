@@ -906,7 +906,7 @@ public class DepartmentManagementService {
 
         // Événements du département
         List<Map<String, Object>> events = eventRepository
-                .findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(departmentId, q).stream()
+                .findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedAtIsNull(departmentId, q).stream()
                 .limit(10)
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
@@ -996,7 +996,7 @@ public class DepartmentManagementService {
                     "Cette âme n'est pas un membre actif du département", "SOUL_NOT_DEPARTMENT_MEMBER");
         }
 
-        List<Event> events = eventRepository.findByDepartmentIdAndDeletedFalse(departmentId);
+        List<Event> events = eventRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId);
         Map<UUID, Boolean> statusByEvent = attendanceRepository.findBySoulId(memberId).stream()
                 .collect(Collectors.toMap(DepartmentEventAttendance::getEventId, DepartmentEventAttendance::isPresent));
 
@@ -1138,7 +1138,7 @@ public class DepartmentManagementService {
             throw new com.discipolat.common.domain.BusinessRuleException(
                     "Cette âme n'est pas un membre actif du département", "SOUL_NOT_DEPARTMENT_MEMBER");
         }
-        List<Event> events = eventRepository.findByDepartmentIdAndDeletedFalse(departmentId);
+        List<Event> events = eventRepository.findByDepartmentIdAndDeletedAtIsNull(departmentId);
         UUID userId = securityUtils.getCurrentUserId();
         int count = 0;
         for (Event e : events) {

@@ -141,7 +141,7 @@ class QuotaServiceSpacesEventsTest {
     @DisplayName("Événements : sous la limite, la création est autorisée")
     void eventBelowLimitIsAllowed() {
         givenPlan(growLimits());
-        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(
+        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedAtIsNull(
                 any(), any())).thenReturn(12L);
 
         assertThatCode(() -> service.checkCanCreateEvent(tenantId)).doesNotThrowAnyException();
@@ -151,7 +151,7 @@ class QuotaServiceSpacesEventsTest {
     @DisplayName("Événements : à la limite, refus + alerte")
     void eventAtLimitIsRefusedWithAlert() {
         givenPlan(growLimits());
-        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(any(), any()))
+        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedAtIsNull(any(), any()))
                 .thenReturn(200L);
 
         assertThatThrownBy(() -> service.checkCanCreateEvent(tenantId))
@@ -166,12 +166,12 @@ class QuotaServiceSpacesEventsTest {
     @DisplayName("Événements : seuls les statuts clos sont exclus du décompte")
     void eventCountingExcludesClosedStatuses() {
         givenPlan(growLimits());
-        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(any(), any()))
+        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedAtIsNull(any(), any()))
                 .thenReturn(0L);
 
         service.checkCanCreateEvent(tenantId);
 
-        verify(eventRepository).countByTenantIdAndStatutNotInAndDeletedFalse(
+        verify(eventRepository).countByTenantIdAndStatutNotInAndDeletedAtIsNull(
                 eq(tenantId), eq(java.util.List.of("TERMINE", "ANNULE")));
     }
 
@@ -242,7 +242,7 @@ class QuotaServiceSpacesEventsTest {
     @DisplayName("Aucune alerte n'est émise quand la création est autorisée")
     void noAlertWhenWithinLimit() {
         givenPlan(growLimits());
-        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedFalse(any(), any()))
+        when(eventRepository.countByTenantIdAndStatutNotInAndDeletedAtIsNull(any(), any()))
                 .thenReturn(1L);
 
         service.checkCanCreateEvent(tenantId);

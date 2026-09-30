@@ -238,8 +238,8 @@ class ScheduledJobsTest {
         DepartmentSetting settings = DepartmentSetting.builder()
                 .departmentId(departmentId).eventRappelJours(3).build();
         // Pas d'événement J-1 (démo générique vide)
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(any(), any()))
                 .thenReturn(List.of(event));
         when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
         when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(dept));
@@ -265,8 +265,8 @@ class ScheduledJobsTest {
                 .build();
         DepartmentSetting settings = DepartmentSetting.builder()
                 .departmentId(departmentId).eventRappelJours(0).build();
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(any(), any()))
                 .thenReturn(List.of(event));
         when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
 
@@ -289,8 +289,8 @@ class ScheduledJobsTest {
         dept.setResponsableId(responsableId);
         DepartmentSetting settings = DepartmentSetting.builder()
                 .departmentId(departmentId).eventRappelJours(3).build();
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(any(), any()))
                 .thenReturn(List.of(event));
         when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
         when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(dept));
@@ -314,8 +314,8 @@ class ScheduledJobsTest {
                 .build();
         DepartmentSetting settings = DepartmentSetting.builder()
                 .departmentId(departmentId).eventRappelJours(1).build();
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(any(), any()))
                 .thenReturn(List.of(event));
         when(departmentSettingsService.effectiveSettings(departmentId)).thenReturn(settings);
         when(departmentRepository.findById(departmentId)).thenReturn(Optional.empty());
