@@ -1039,7 +1039,7 @@ public class DepartmentDossierService {
         // (via son compte utilisateur) ou dont le responsable est l'organisateur.
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime horizon = now.plusDays(30);
-        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, horizon);
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(now, horizon);
         if (events.isEmpty()) return List.of();
         Set<UUID> memberUserIds = soulsById.values().stream()
                 .map(Soul::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());

@@ -1,0 +1,36 @@
+# D1 — Port de l'entité Event sur la table vivante « event » (retrait ChurchEvent)
+# Preuve d'exécution — backend `mvn verify` JDK 21 + gate Testcontainers PG16
+# Branche : fix/schema-drift-h1-h5 (worktree agentA)  Date : 2026-09-30
+# Log complet : reports/plan-2agents/logs/d1-port-verify.log
+
+## Suites unitaires + @SpringBootTest (surefire, profil H2)
+[WARNING] Tests run: 1698, Failures: 0, Errors: 0, Skipped: 13
+  (les 13 skip = PerIpRateLimiterIntegrationTest, préexistants, hors périmètre)
+
+## Gate Testcontainers — chaîne de migration réelle (garde-fou dérive famille H)
+o.testcontainers.DockerClientFactory - Connected to docker: UnixSocket (unix:///var/run/docker.sock)
+org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:32832/discipolat_chain_gate (PostgreSQL 16.15)
+[INFO] Running com.discipolat.migration.FlywayMigrationChainPostgreSqlTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 56.48 s
+  -> chaîne V1..V204 rejouée sur PG16 + scan @Entity/@Table vs information_schema OK :
+     l'entité Event mappe bien la table « event » migrée (colonnes FR∪EN, deleted_at, visibility).
+
+## Correction des dégâts du port (diagnostic boot Spring)
+Caused by: PropertyReferenceException: No property 'at' found for type 'boolean';
+  Traversed path: DepartmentMemberNote.deleted
+  -> le sed global …DeletedFalse→…DeletedAtIsNull avait touché des entités à boolean « deleted »
+     (DepartmentAnnouncement, DepartmentMemberNote) ; revert opéré. Les seules entités à
+     supprimer logique par « deleted_at » restent Event/ChurchEventRepository.
+
+## Résultats ciblés post-correction (les 21 échecs initiaux remis au vert)
+Tests run: 20 -- EventServiceTest                                   (visibility = autorité unique)
+Tests run: 10 -- TenantModuleIsolationEndToEndHttpTest              (TRUNCATE event)
+Tests run: 16 -- DepartmentDossierServiceTest                       (announcement/note : boolean deleted conservé)
+Tests run: 41 -- DepartmentManagementServiceTest
+Tests run: 11 -- SpaceExportImportTest
+SchemaVerificationIntegrationTest (9 nested, tous 0 échec)          (table « event », colonnes TITLE/ORGANIZER_ID)
+
+## Verdict
+[INFO] BUILD SUCCESS
+[INFO] Total time:  04:27 min
+Backend vert sur l'arbre du port D1, gate PG16 inclus.

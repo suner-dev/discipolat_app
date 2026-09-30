@@ -301,8 +301,8 @@ class SpaceExportImportTest {
         }).when(workflowTransitionRepository).deleteAll(any(List.class));
 
         lenient().when(soulRepository.findByTenantId(any())).thenAnswer(inv -> List.<Soul>of());
-        lenient().when(churchEventRepository.findByTenantIdAndDeletedAtIsNullOrderByStartAtAsc(any()))
-                .thenAnswer(inv -> List.<com.discipolat.modules.events.domain.ChurchEvent>of());
+        lenient().when(churchEventRepository.findByTenantIdAndDeletedAtIsNullOrderByDateDebutAsc(any()))
+                .thenAnswer(inv -> List.<com.discipolat.modules.events.domain.Event>of());
     }
 
     // ------------------------------------------------------------------

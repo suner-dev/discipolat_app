@@ -80,7 +80,7 @@ class BenchmarkControllerTest {
         when(alertRepository.countByStatut(StatutAlerte.ACTIVE)).thenReturn(5L);
         when(departmentRepository.findAll()).thenReturn(Collections.emptyList());
         when(departmentAssignmentRepository.findAll()).thenReturn(Collections.emptyList());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(Collections.emptyList());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(Collections.emptyList());
 
         ResponseEntity<Map<String, Object>> response = controller.getBenchmark();
 
@@ -100,7 +100,7 @@ class BenchmarkControllerTest {
         when(alertRepository.countByStatut(StatutAlerte.ACTIVE)).thenReturn(3L);
         when(departmentRepository.findAll()).thenReturn(Collections.emptyList());
         when(departmentAssignmentRepository.findAll()).thenReturn(Collections.emptyList());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(Collections.emptyList());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(Collections.emptyList());
 
         Map<String, Object> body = controller.getBenchmark().getBody();
         Map<String, Object> current = (Map<String, Object>) body.get("currentChurch");
@@ -115,7 +115,7 @@ class BenchmarkControllerTest {
     void getTrends_ReturnsAttendanceAndGrowthTrends() {
         when(soulRepository.findByDeletedFalse()).thenReturn(new ArrayList<>());
         when(departmentRepository.findAll()).thenReturn(Collections.emptyList());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(Collections.emptyList());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(Collections.emptyList());
 
         ResponseEntity<Map<String, Object>> response = controller.getTrends();
 
@@ -135,7 +135,7 @@ class BenchmarkControllerTest {
         when(alertRepository.countByStatut(StatutAlerte.ACTIVE)).thenReturn(0L);
         when(departmentRepository.findAll()).thenReturn(Collections.emptyList());
         when(departmentAssignmentRepository.findAll()).thenReturn(Collections.emptyList());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(Collections.emptyList());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(Collections.emptyList());
 
         Map<String, Object> body = controller.getBenchmark().getBody();
         Map<String, Object> percentiles = (Map<String, Object>) body.get("percentile");

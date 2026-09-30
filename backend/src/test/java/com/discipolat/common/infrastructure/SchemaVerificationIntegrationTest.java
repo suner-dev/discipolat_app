@@ -59,13 +59,16 @@ class SchemaVerificationIntegrationTest {
     class TableExistence {
 
         @Test
-        @DisplayName("Core entities: users, souls, families, departments, events")
+        @DisplayName("Core entities: users, souls, families, departments, event")
         void coreEntities() {
             assertTableExists("users");
             assertTableExists("souls");
             assertTableExists("families");
             assertTableExists("departments");
-            assertTableExists("events");
+            // ARBITRAGE D1 (V203) : l'entite Event mappe la table vivante
+            // « event » (singulier), plus « events ». La verification de
+            // schema H2 — generatee depuis les entites — doit suivre ce nom.
+            assertTableExists("event");
         }
 
         @Test
@@ -353,10 +356,12 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
-        @DisplayName("events table has id, titre, tenant_id, organisateur_id")
+        @DisplayName("event table has id, title, tenant_id, organizer_id")
         void eventsColumns() {
-            assertColumnsExist("events", List.of(
-                    "ID", "TITRE", "TENANT_ID", "ORGANISATEUR_ID"
+            // D1 : colonnes anglaises de la table vivante « event »
+            // (titre->title, organisateur_id->organizer_id).
+            assertColumnsExist("event", List.of(
+                    "ID", "TITLE", "TENANT_ID", "ORGANIZER_ID"
             ));
         }
 
@@ -421,7 +426,7 @@ class SchemaVerificationIntegrationTest {
         @DisplayName("All core business tables have tenant_id column")
         void coreBusinessTablesHaveTenantId() {
             List<String> tenantTables = List.of(
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     "soul_discipline_events", "evaluations", "objectives",
                     "visits", "parallel_followups", "transfer_requests",
                     "maker_reports", "family_reports", "prayers"
@@ -505,15 +510,15 @@ class SchemaVerificationIntegrationTest {
         }
 
         @Test
-        @DisplayName("events.tenant_id column exists (FK to tenants)")
+        @DisplayName("event.tenant_id column exists (FK to tenants)")
         void eventsToTenant() {
-            assertColumnExists("events", "TENANT_ID");
+            assertColumnExists("event", "TENANT_ID");
         }
 
         @Test
-        @DisplayName("events.organisateur_id column exists (FK to users)")
+        @DisplayName("event.organizer_id column exists (FK to users)")
         void eventsToUsers() {
-            assertColumnExists("events", "ORGANISATEUR_ID");
+            assertColumnExists("event", "ORGANIZER_ID");
         }
 
         @Test
@@ -756,7 +761,7 @@ class SchemaVerificationIntegrationTest {
         @Test @DisplayName("users >= 10 columns") void usersColCount() { assertTableHasMinColumns("users", 10); }
         @Test @DisplayName("souls >= 12 columns") void soulsColCount() { assertTableHasMinColumns("souls", 12); }
         @Test @DisplayName("departments >= 5 columns") void deptColCount() { assertTableHasMinColumns("departments", 5); }
-        @Test @DisplayName("events >= 6 columns") void eventsColCount() { assertTableHasMinColumns("events", 6); }
+        @Test @DisplayName("event >= 6 columns") void eventsColCount() { assertTableHasMinColumns("event", 6); }
         @Test @DisplayName("alerts >= 8 columns") void alertsColCount() { assertTableHasMinColumns("alerts", 8); }
         @Test @DisplayName("inventory_items >= 15 columns") void inventoryColCount() { assertTableHasMinColumns("inventory_items", 15); }
         @Test @DisplayName("config_revisions >= 5 columns") void configRevColCount() { assertTableHasMinColumns("config_revisions", 5); }
@@ -817,7 +822,7 @@ class SchemaVerificationIntegrationTest {
             // Exclude jsonb tables that H2 can't create
             Set<String> critical = Set.of(
                     // Core
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     // Platform (H2-compatible only)
                     "config_revisions", "church_settings",
                     // Business
@@ -924,7 +929,7 @@ class SchemaVerificationIntegrationTest {
         @DisplayName("Core entity tables all have UUID primary key column named 'id'")
         void coreEntitiesHaveId() {
             List<String> coreTables = List.of(
-                    "users", "souls", "families", "departments", "events",
+                    "users", "souls", "families", "departments", "event",
                     "alerts", "inventory_items", "finance_transactions",
                     "conversations", "notifications", "courses"
             );
@@ -1003,7 +1008,7 @@ class SchemaVerificationIntegrationTest {
                     "department_tasks", "department_teams",
                     "dictionary_entries", "entity_attachments",
                     "evaluations", "evangelism_stage_history",
-                    "evangelism_track", "event_registrations", "events",
+                    "evangelism_track", "event_registrations", "event",
                     "families", "family_chief_history", "family_reports",
                     "family_risk_history", "favorites", "feedbacks", "files",
                     "finance_transactions", "gdpr_requests",

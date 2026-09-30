@@ -71,7 +71,7 @@ public class BenchmarkController {
 
         double attendanceRate = computeAttendanceRate();
 
-        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(3), LocalDateTime.now());
         int reportsSubmitted = (int) recentEvents.stream()
                 .filter(e -> e.getCompteRendu() != null && !e.getCompteRendu().isBlank())
@@ -131,7 +131,7 @@ public class BenchmarkController {
     public ResponseEntity<Map<String, Object>> getTrends() {
         List<Soul> souls = soulRepository.findByDeletedFalse();
         List<Department> departments = departmentRepository.findAll();
-        List<Event> allEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> allEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(6), LocalDateTime.now());
 
         YearMonth current = YearMonth.now();
@@ -183,11 +183,13 @@ public class BenchmarkController {
     }
 
     private double computeAttendanceRate() {
-        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> recentEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 LocalDateTime.now().minusMonths(2), LocalDateTime.now());
         if (recentEvents.isEmpty()) return 50.0;
         long totalRegistered = recentEvents.stream()
-                .mapToLong(e -> e.getNbInscrits() != null ? e.getNbInscrits() : 0).sum();
+                // nbInscrits est un compteur calcule (V202/D1) : la colonne
+                // nb_inscrits n'existe plus sur la table vivante.
+                .mapToLong(e -> eventRegistrationRepository.countByEventId(e.getId())).sum();
         // Présences réelles issues des émargements (statut PRESENT) : aucune
         // valeur inventée — chaque présence est un enregistrement persisté.
         long totalPresent = recentEvents.stream()

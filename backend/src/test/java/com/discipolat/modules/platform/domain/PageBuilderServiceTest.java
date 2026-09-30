@@ -402,7 +402,7 @@ class PageBuilderServiceTest {
         when(pageRepository.findBySlug("events-chart")).thenReturn(Optional.of(existing));
         when(scopeService.isSuperUser()).thenReturn(true);
         when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any()))
                 .thenReturn(List.of(event, event2));
 
         ResolvedPage resolved = service.resolve("events-chart");
@@ -426,7 +426,7 @@ class PageBuilderServiceTest {
         when(pageRepository.findBySlug("cal")).thenReturn(Optional.of(existing));
         when(scopeService.isSuperUser()).thenReturn(true);
         when(securityUtils.getAllUserRoles()).thenReturn(List.of("PASTEUR"));
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any()))
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any()))
                 .thenReturn(List.of(event));
 
         ResolvedPage resolved = service.resolve("cal");

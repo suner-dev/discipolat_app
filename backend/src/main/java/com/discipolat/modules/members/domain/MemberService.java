@@ -52,6 +52,7 @@ public class MemberService {
     private final MemberPresenceRepository memberPresenceRepository;
     private final MemberRequestRepository memberRequestRepository;
     private final EventRepository eventRepository;
+    private final com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository;
     private final SecurityUtils securityUtils;
     private final EntityAttachmentService attachmentService;
     private final EntityPropagationPublisher propagationPublisher;
@@ -65,6 +66,7 @@ public class MemberService {
                          MemberPresenceRepository memberPresenceRepository,
                          MemberRequestRepository memberRequestRepository,
                          EventRepository eventRepository,
+                         com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository,
                          SecurityUtils securityUtils,
                          EntityAttachmentService attachmentService,
                          EntityPropagationPublisher propagationPublisher) {
@@ -77,6 +79,7 @@ public class MemberService {
         this.memberPresenceRepository = memberPresenceRepository;
         this.memberRequestRepository = memberRequestRepository;
         this.eventRepository = eventRepository;
+        this.eventRegistrationRepository = eventRegistrationRepository;
         this.securityUtils = securityUtils;
         this.attachmentService = attachmentService;
         this.propagationPublisher = propagationPublisher;
@@ -665,7 +668,7 @@ public class MemberService {
 
         // Événements de la famille du membre
         List<Event> familleEvents = soul.getFamilleId() != null
-                ? eventRepository.findByFamilleIdAndStatutAndDeletedFalse(soul.getFamilleId(), "PLANIFIE")
+                ? eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(soul.getFamilleId(), "PLANIFIE")
                 : List.of();
 
         // Événements des départements du membre
@@ -675,7 +678,7 @@ public class MemberService {
                 .toList();
         List<Event> departementEvents = departmentIds.isEmpty()
                 ? List.of()
-                : eventRepository.findByDepartmentIdInAndDeletedFalse(departmentIds);
+                : eventRepository.findByDepartmentIdInAndDeletedAtIsNull(departmentIds);
 
         LocalDateTime now = LocalDateTime.now();
         Map<UUID, Event> byId = new LinkedHashMap<>();
@@ -695,7 +698,10 @@ public class MemberService {
                     em.put("statut", ev.getStatut());
                     em.put("familleId", ev.getFamilleId());
                     em.put("departmentId", ev.getDepartmentId());
-                    em.put("nbInscrits", ev.getNbInscrits());
+                    // nbInscrits : compteur calcule sur event_registrations
+                    // (V202/D1 — la colonne nb_inscrits n'existe plus).
+                    em.put("nbInscrits", eventRegistrationRepository
+                            .countByEventIdAndStatutInscriptionIn(ev.getId(), java.util.List.of("INSCRIT", "PRESENT")));
                     em.put("limitePlaces", ev.getLimitePlaces());
                     return em;
                 })

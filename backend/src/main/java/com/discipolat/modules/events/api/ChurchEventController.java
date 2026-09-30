@@ -30,47 +30,53 @@ public class ChurchEventController {
     }
 
     // ========== CHURCH EVENT CRUD ==========
+    // Contrat anglais fige sur DTO (ChurchEventDto) depuis l'arbitrage D1 :
+    // l'entite unique « event » est Event, a proprietes francaises.
 
     @GetMapping
-    public ResponseEntity<PageResponse<ChurchEvent>> getEvents(
+    public ResponseEntity<PageResponse<ChurchEventDto>> getEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String status) {
         UUID tenantId = TenantContext.requireTenantId();
-        Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("startAt"));
-        Page<ChurchEvent> result = churchEventService.getEvents(tenantId, pageable);
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("dateDebut"));
+        Page<ChurchEventDto> result = churchEventService.getChurchEvents(tenantId, pageable)
+                .map(ChurchEventDto::from);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/calendar")
-    public ResponseEntity<List<ChurchEvent>> getCalendar(
+    public ResponseEntity<List<ChurchEventDto>> getCalendar(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(churchEventService.getEventsCalendar(tenantId, from, to));
+        return ResponseEntity.ok(churchEventService.getChurchEventsCalendar(tenantId, from, to)
+                .stream().map(ChurchEventDto::from).toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ChurchEvent> getEvent(@PathVariable UUID id) {
+    public ResponseEntity<ChurchEventDto> getEvent(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(churchEventService.getEvent(tenantId, id));
+        return ResponseEntity.ok(ChurchEventDto.from(churchEventService.getChurchEvent(tenantId, id)));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
-    public ResponseEntity<ChurchEvent> createEvent(@RequestBody ChurchEvent event) {
+    public ResponseEntity<ChurchEventDto> createEvent(@RequestBody ChurchEventDto event) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(churchEventService.createEvent(tenantId, actorId, event));
+        return ResponseEntity.ok(ChurchEventDto.from(
+                churchEventService.createChurchEvent(tenantId, actorId, event.toEntity())));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
-    public ResponseEntity<ChurchEvent> updateEvent(@PathVariable UUID id, @RequestBody ChurchEvent event) {
+    public ResponseEntity<ChurchEventDto> updateEvent(@PathVariable UUID id, @RequestBody ChurchEventDto event) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(churchEventService.updateEvent(tenantId, actorId, id, event));
+        return ResponseEntity.ok(ChurchEventDto.from(
+                churchEventService.updateChurchEvent(tenantId, actorId, id, event.toPatch())));
     }
 
     @DeleteMapping("/{id}")
@@ -78,7 +84,7 @@ public class ChurchEventController {
     public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        churchEventService.deleteEvent(tenantId, actorId, id);
+        churchEventService.deleteChurchEvent(tenantId, actorId, id);
         return ResponseEntity.noContent().build();
     }
 

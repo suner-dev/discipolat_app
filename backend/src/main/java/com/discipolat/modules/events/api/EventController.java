@@ -62,7 +62,10 @@ public class EventController {
                 .departmentId(request.departmentId())
                 .imageUrl(request.imageUrl())
                 .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
-                .publicEvent(Boolean.TRUE.equals(request.isPublic()))
+                // is_public du contrat §3 = lecture de la colonne vivante
+                // « visibility » (V203/D1) : PUBLIC si demandé, sinon defaut
+                // d'église (l'ancien false de la colonne is_public).
+                .visibility(Boolean.TRUE.equals(request.isPublic()) ? "PUBLIC" : "CHURCH")
                 .requiresRegistration(Boolean.TRUE.equals(request.requiresRegistration()))
                 .checkinEnabled(Boolean.TRUE.equals(request.hasCheckin()))
                 .streamId(request.streamId())
@@ -144,7 +147,11 @@ public class EventController {
                 .imageUrl(request.imageUrl())
                 .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
                 // Les booleens sont des patches partiels : null = inchange.
-                .publicEvent(request.isPublic())
+                // is_public -> visibility : false ne fait retrograder que
+                // PUBLIC vers l'eglise, les granularites TEAM/PRIVATE sont
+                // reservees au modele vivant (aucune ecriture depuis le contrat).
+                .visibility(request.isPublic() == null ? null
+                        : Boolean.TRUE.equals(request.isPublic()) ? "PUBLIC" : "CHURCH")
                 .requiresRegistration(request.requiresRegistration())
                 .checkinEnabled(request.hasCheckin())
                 .streamId(request.streamId())

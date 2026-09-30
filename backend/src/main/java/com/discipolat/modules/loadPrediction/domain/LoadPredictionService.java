@@ -27,11 +27,20 @@ public class LoadPredictionService {
         LocalDate today = LocalDate.now();
         LocalDate horizon = today.plusWeeks(8);
 
+        // D1/V203 : lecture de la table vivante « event » (source unique).
+        // L'ancienne requête visait « events » avec des colonnes fantômes
+        // (« debut », là où l'héritée avait « date_debut ») — elle ne pouvait
+        // tourner que sur le H2 ddl-auto des tests, jamais sur PostgreSQL
+        // migré : exactement la classe du defaut famille H masqué par H2.
+        // « naive = UTC » (V158) : les parametres LocalDateTime sont coulés
+        // en TIMESTAMPTZ par le serveur UTC.
         List<Object[]> upcoming = asRows(em.createNativeQuery("""
-                SELECT date(debut) AS jour, count(*) AS nb
-                FROM events
-                WHERE date_debut >= :from AND date_debut < :to AND deleted = false
-                GROUP BY date(debut) ORDER BY date(debut)
+                SELECT date(start_at) AS jour, count(*) AS nb
+                FROM event
+                WHERE start_at >= CAST(:from AS TIMESTAMPTZ)
+                  AND start_at < CAST(:to AS TIMESTAMPTZ)
+                  AND deleted_at IS NULL
+                GROUP BY date(start_at) ORDER BY date(start_at)
                 """)
                 .setParameter("from", today.atStartOfDay())
                 .setParameter("to", horizon.atStartOfDay())
@@ -45,9 +54,9 @@ public class LoadPredictionService {
 
         Map<DayOfWeek, Integer> dowWeights = new EnumMap<>(DayOfWeek.class);
         List<Object[]> pastDow = asRows(em.createNativeQuery("""
-                SELECT extract(dow from date(debut))::int AS dow, count(*) AS nb
-                FROM events
-                WHERE date_debut >= :from AND date_debut < now() AND deleted = false
+                SELECT extract(dow from date(start_at))::int AS dow, count(*) AS nb
+                FROM event
+                WHERE start_at >= CAST(:from AS TIMESTAMPTZ) AND start_at < now() AND deleted_at IS NULL
                 GROUP BY 1
                 """)
                 .setParameter("from", today.minusWeeks(12).atStartOfDay())

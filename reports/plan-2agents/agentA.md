@@ -2669,3 +2669,63 @@ se heurte à un point non tranché par l'inventaire B — voir NEED-HELP ci-dess
   dérivés `…DeletedFalse` en `…DeletedAtIsNull` (mécanique, testé).
 - Sans ce go, le port ne peut être entrepris sans improviser (R7). **Statut :
   BLOCKED — décision d'orchestrateur sur V203.**
+
+
+---
+
+## [2026-09-30] D1 — Port de l'entité `Event` sur la table vivante « event » (FAIT)
+
+**Levée du NEED-HELP** : l'orchestrateur a validé l'arbitrage D1 (« Go selon la
+résolution proposée »). V203/V204 sont posés (commit `dbcb8563`) ; ce lot est le
+port Java qui les exploite.
+
+**Périmètre réalisé**
+- `Event` mappe désormais la table **`event`** (singulier) : propriétés du contrat
+  §3 **conservées en français** (`titre`, `dateDebut`, `statut`, `organisateurId`,
+  `familleId`, `departmentId`, `resourceScope`, `organizationUnitId`, `nbInscrits`),
+  seul le **mappage** suit l'anglais vivant (`title`/`start_at`/`status`/
+  `organizer_id`). Absorption des champs du modèle vivant : `timezone`,
+  `is_recurring`+`recurrence_rule`, `created_by`.
+- **Suppression logique** : `deleted` boolean → `deleted_at` (`TIMESTAMPTZ`), avec
+  `isDeleted()`/`setDeleted()` conservés comme vues transitoires. Tous les dérivés
+  d'`EventRepository` passent de `…DeletedFalse` à `…DeletedAtIsNull`.
+- **Visibilité** : la colonne `visibility` (PRIVATE/TEAM/CHURCH/PUBLIC) est
+  l'**unique autorité** ; `is_public`/`publicEvent` du contrat n'en est que la
+  lecture (== `PUBLIC`). `@Builder.Default = CHURCH` réplique le `DEFAULT 'CHURCH'`
+  de V158 (faute de quoi toute création complète insère NULL dans une NOT NULL).
+- **Compteur calculé** : `nb_inscrits` n'existant pas sur la table vivante,
+  `nbInscrits` devient `@Transient`, renseigné par `EventService` depuis
+  `event_registrations` (statuts `INSCRIT`/`PRESENT`).
+- **Retrait du doublon** : l'entité `ChurchEvent` est **supprimée** ; une seule
+  entité mappe `event`. `ChurchEventRepository` devient `JpaRepository<Event,UUID>`.
+  Un DTO de traduction EN↔FR (`ChurchEventDto`) fait foi du fil JSON de
+  `/api/v1/church-events`, figé lui aussi.
+- **Appelants** : `LoadPredictionService` (SQL natif `FROM event`, `start_at`,
+  `deleted_at IS NULL`, `CAST AS TIMESTAMPTZ` — c'était un défaut colonne-fantôme
+  famille H masqué par H2) ; `FIRST_EVENT` du wizard ; `SpaceExportService`,
+  `MemberService`, `BenchmarkController`, `EventController` rebranchés sur la
+  sémantique `visibility` + compteur calculé.
+
+**Dégâts collatéraux du sed global, diagnostiqués et corrigés**
+- Le remplacement mécanique `…DeletedFalse→…DeletedAtIsNull` avait touché des
+  entités à **boolean `deleted`** (`DepartmentAnnouncement`,
+  `DepartmentMemberNote`) → échec de boot Spring
+  (`No property 'at' found for type 'boolean'`). Revert ciblé opéré : seules
+  `Event`/`ChurchEventRepository` passent par `deleted_at`.
+- Les tests d'H2 physique alignés sur le renommage : `SchemaVerification…`
+  (table `event`, colonnes `TITLE`/`ORGANIZER_ID`) ; `TenantModuleIsolation…`
+  (`TRUNCATE TABLE event`). Ces tests vérifient le **schéma généré par les
+  entités**, pas le contrat JSON §3 — ce dernier reste figé (R2).
+
+**Exécution & preuve** (voir `logs/d1-port-verify.extraits.txt`, log complet
+`logs/d1-port-verify.log`)
+- `mvn verify` JDK 21 : **1698 tests, 0 échec, 0 erreur, 13 skip** (préexistants).
+- Gate Testcontainers : `FlywayMigrationChainPostgreSqlTest` **7/7 vert** sur
+  **PostgreSQL 16.15** réel — chaîne V1..V204 rejouée + scan `@Entity`/`@Table`
+  vs `information_schema` OK.
+- **BUILD SUCCESS**.
+
+**Statut : backend D1 vert, gate PG16 inclus.** Reste (todo `d1-verify`) : suites
+frontend puis mobile (§5.4, jamais en parallèle) + recette §5.5, puis branche
+`fix/security-webhooks-2fa` (todo `security-branch`). Aucune Poussée, aucun
+Étiquette — décision d'orchestrateur.

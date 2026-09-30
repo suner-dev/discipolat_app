@@ -11,15 +11,39 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-// Dérive de schéma corrigée (famille H, attrapée par le replay de recette
-// §5.5 sur PostgreSQL réel le 2026-09-29) : V158 avait renommé la table
-// physique « events » en « legacy_events » sans publier de mappage pour
-// l'entité — toute la surface /api/v1/events (dont FIRST_EVENT du wizard)
-// répondait 500 « relation events does not exist » sur les bases migrées.
-// Le profil de test H2 (ddl-auto create-drop) masquait la dérive. V194
-// remplace le nom réel en « events » pour rejoindre le contrat du code.
-// La table Church OS « event » (V158) reste propriété exclusive de ChurchEvent.
-@Table(name = "events")
+// ARBITRAGE D1 (orchestrateur, 2026-09-30) — source unique : la table vivante
+// « event ». Historique de la dérive : V158 avait renommé « events » en
+// « legacy_events » sans publier de mappage — tout /api/v1/events (dont
+// FIRST_EVENT du wizard) répondait 500 sur les bases migrées, le profil H2
+// (ddl-auto create-drop) masquant la dérive. V194 avait rebaptisé la table
+// physique en « events » ; V203 a ramené sur « event » les colonnes d'isolation
+// (famille_id, department_id, resource_scope, organization_unit_id), les
+// options du contrat (V200/V202) et des CHECK élargis FR ∪ EN. L'entité
+// double ChurchEvent est retirée : UNE seule entité mappe « event ».
+//
+// Vocabulaire : les propriétés Java et les colonnes conservent les noms
+// français du contrat §3 (figé, R2) — seul le mappage suit l'anglais vivant
+// (titre→title, date_debut→start_at…). Les valeurs FR (statut PLANIFIE,
+// type REUNIO…N) restent telles quelles : la conversion FR→EN de V158 était
+// AVEC PERTE (REUNION/SORTIE/VISITE→MEETING non inversible), d'où les CHECK
+// en union V203.
+//
+// Horodatages : colonnes TIMESTAMPTZ, propriétés LocalDateTime — convention
+// V158 « naive = UTC » (date_debut AT TIME ZONE 'UTC'), identique à celle de
+// l'ex-ChurchEvent (OffsetDateTime/TIMESTAMPTZ rendu par le même driver).
+// L'autorité de visibilité est la colonne « visibility » (PRIVATE/TEAM/
+// CHURCH/PUBLIC) : is_public du contrat n'en est que la lecture (== PUBLIC).
+// nbInscrits est un compteur CALCULÉ sur event_registrations (la colonne
+// nb_inscrits n'existe pas sur la table vivante) ; il est porté par le
+// champ transitoire ci-dessous, renseigné par EventService à chaque lecture.
+@Table(name = "event", indexes = {
+    @Index(name = "idx_event_tenant", columnList = "tenant_id"),
+    @Index(name = "idx_event_status", columnList = "status"),
+    @Index(name = "idx_event_start", columnList = "start_at"),
+    @Index(name = "idx_event_tenant_start", columnList = "tenant_id, start_at"),
+    @Index(name = "idx_event_deleted", columnList = "deleted_at"),
+    @Index(name = "idx_event_organizer", columnList = "organizer_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,7 +59,9 @@ public class Event {
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
 
-    @Column(name = "organisateur_id", nullable = false)
+    // Organizer du modèle vivant (colonne « organizer_id ») ; le contrat §3
+    // expose ce même organisateur sous le nom « organisateurId ».
+    @Column(name = "organizer_id")
     private UUID organisateurId;
 
     @Column(name = "famille_id")
@@ -53,10 +79,10 @@ public class Event {
     @Column(name = "organization_unit_id")
     private UUID organizationUnitId;
 
-    @Column(name = "type_evenement", nullable = false)
+    @Column(name = "type", nullable = false)
     private String typeEvenement;
 
-    @Column(name = "titre", nullable = false)
+    @Column(name = "title", nullable = false)
     private String titre;
 
     @Column(name = "description")
@@ -65,20 +91,41 @@ public class Event {
     @Column(name = "lieu")
     private String lieu;
 
-    @Column(name = "date_debut", nullable = false)
+    @Column(name = "start_at", nullable = false)
     private LocalDateTime dateDebut;
 
-    @Column(name = "date_fin")
+    @Column(name = "end_at")
     private LocalDateTime dateFin;
+
+    /** Fuseau du modèle vivant (absorbé de ChurchEvent, V203/D1). */
+    @Column(name = "timezone", length = 64)
+    private String timezone;
+
+    /** Récurrence du modèle vivant (absorbée de ChurchEvent, V203/D1). */
+    @Column(name = "is_recurring", nullable = false)
+    @Builder.Default
+    private Boolean isRecurring = false;
+
+    @Column(name = "recurrence_rule", columnDefinition = "text")
+    private String recurrenceRule;
+
+    /** Auteur technique (absorbé de ChurchEvent, V203/D1). */
+    @Column(name = "created_by")
+    private UUID createdBy;
 
     @Column(name = "limite_places")
     private Integer limitePlaces;
 
+    /**
+     * Compteur CALCULÉ sur event_registrations (décision V202/D1 : la colonne
+     * nb_inscrits n'existe pas sur la table vivante). Transitoire : renseigné à
+     * chaque lecture par EventService avant exposition du contrat §3.
+     */
+    @Transient
     @Builder.Default
-    @Column(name = "nb_inscrits", nullable = false)
     private Integer nbInscrits = 0;
 
-    @Column(name = "statut", nullable = false)
+    @Column(name = "status", nullable = false)
     private String statut = "PLANIFIE";
 
     /** Image de couverture (URL d'un fichier televersé). */
@@ -104,16 +151,50 @@ public class Event {
     private String[] tags = new String[0];
 
     /**
-     * Visible dans les listes publiques de l'API.
+     * Autorité de visibilité du modèle vivant (PRIVATE/TEAM/CHURCH/PUBLIC).
+     * Defaut {@code CHURCH} — c'est exactement le {@code DEFAULT 'CHURCH'} de
+     * la colonne vivante (V158) : l'evenement est interne a l'eglise tant que
+     * le contrat ne demande pas la publicite (equivalent de {@code is_public =
+     * false} avant V203). {@code @Builder.Default} est indispensable ici : les
+     * creations completes (controller FR, generation de programme hebdo,
+     * FIRST_EVENT) construisent via builder SANS nommer la visibilite ; sans
+     * defaut, Hibernate insererait NULL dans une colonne NOT NULL et H2 (comme
+     * PostgreSQL) rejetterait la ligne.
      *
-     * <p>Wrapper et non primitif : sur une mise a jour partielle, {@code null}
-     * signifie « non fourni » et ne doit donc pas écraser la valeur existante
-     * (un primitif serait déballé et lèverait un NPE, ou pire,.remettrait
-     * `false` par défaut). La colonne reste NOT NULL avec un defaut en base.
+     * <p>Le patch partiel n'est pas casse pour autant : les appelants de mise
+     * a jour ({@code EventController#update}, {@code ChurchEventDto#toPatch}）
+     * passent TOUJOURS {@code visibility} explicitement — {@code null} quand le
+     * requeteur ne la touche pas (et {@code @Builder.Default} ne s'applique que
+     * sur omission de l'appel). EventService#update applique alors
+     * {@code if (updated.getVisibility() != null)} : un null reste « muet ».
      */
-    @Column(name = "is_public", nullable = false)
+    @Column(name = "visibility", nullable = false, length = 30)
     @Builder.Default
-    private Boolean publicEvent = Boolean.FALSE;
+    private String visibility = "CHURCH";
+
+    // ARBITRAGE D1 — « is_public »/« publicEvent » du contrat §3 n'est plus un
+    // champ stocke : la colonne « visibility » en est l'unique autorite, et
+    // ces accesseurs la traduisent (PUBLIC <-> le reste). Volontairement
+    // depourvus de champ transitoire : le builder Lombok ecrirait directement
+    // ce champ et court-circuiterait setPublicEvent, creant deux sources de
+    // verite. Le contrat passe donc par visibility (le controller traduit
+    // isPublic -> PUBLIC/CHURCH a la frontiere).
+    public Boolean getPublicEvent() {
+        return visibility == null ? null : "PUBLIC".equals(visibility);
+    }
+
+    public void setPublicEvent(Boolean isPublic) {
+        if (isPublic == null) return;
+        // Le contrat ne connaît que deux états. « true » promeut PUBLIC ;
+        // « false » ne rétrograde que depuis PUBLIC (retour au defaut
+        // d'église) et laisse intactes les granularités TEAM/PRIVATE posées
+        // par le modèle vivant — comme la colonne is_public le faisait.
+        if (Boolean.TRUE.equals(isPublic)) {
+            this.visibility = "PUBLIC";
+        } else if ("PUBLIC".equals(this.visibility)) {
+            this.visibility = "CHURCH";
+        }
+    }
 
     /**
      * Le serveur refuse l'inscription tant que faux (voir EventService#register).
@@ -165,8 +246,26 @@ public class Event {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted", nullable = false)
+    /**
+     * Suppression logique alignée sur le modèle vivant (colonne « deleted_at »
+     * de V158) : remplace le boolean « deleted » de la table héritée. Les
+     * accesseurs {@code isDeleted()}/{@code setDeleted()} du contrat sont
+     * conservés comme vues transitoires de {@code deletedAt} ; le champ
+     * support n'est ni mappé ni persisté.
+     */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Transient
     private boolean deleted;
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deletedAt = deleted ? LocalDateTime.now() : null;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -2,8 +2,9 @@ package com.discipolat.modules.exports.domain;
 
 import com.discipolat.modules.customfields.domain.CustomFieldDefinition;
 import com.discipolat.modules.customfields.domain.CustomFieldDefinitionRepository;
-import com.discipolat.modules.events.domain.ChurchEvent;
+import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.repository.ChurchEventRepository;
+import com.discipolat.modules.events.service.ChurchEventService;
 import com.discipolat.modules.exports.domain.SpaceExportBundle.CustomFieldConfig;
 import com.discipolat.modules.exports.domain.SpaceExportBundle.ModuleConfig;
 import com.discipolat.modules.exports.domain.SpaceExportBundle.SpaceConfig;
@@ -283,17 +284,20 @@ public class SpaceExportService {
     }
 
     private List<Map<String, Object>> eventsData(UUID tenantId) {
-        List<ChurchEvent> events =
-                churchEventRepository.findByTenantIdAndDeletedAtIsNullOrderByStartAtAsc(tenantId);
+        // D1/V203 : entite unique Event (proprietes FR) ; les cles du bundle
+        // restent EN — fil fige — et les dates gardent le rendu ISO décalé
+        // qu'avant (convention naive = UTC, cf. ChurchEventService.offsetUtc).
+        List<Event> events =
+                churchEventRepository.findByTenantIdAndDeletedAtIsNullOrderByDateDebutAsc(tenantId);
         List<Map<String, Object>> out = new ArrayList<>();
-        for (ChurchEvent e : events) {
+        for (Event e : events) {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", e.getId() == null ? null : e.getId().toString());
-            m.put("title", e.getTitle());
-            m.put("type", e.getType());
-            m.put("status", e.getStatus());
-            m.put("startAt", e.getStartAt() == null ? null : e.getStartAt().toString());
-            m.put("endAt", e.getEndAt() == null ? null : e.getEndAt().toString());
+            m.put("title", e.getTitre());
+            m.put("type", e.getTypeEvenement());
+            m.put("status", e.getStatut());
+            m.put("startAt", e.getDateDebut() == null ? null : ChurchEventService.offsetUtc(e.getDateDebut()).toString());
+            m.put("endAt", e.getDateFin() == null ? null : ChurchEventService.offsetUtc(e.getDateFin()).toString());
             m.put("visibility", e.getVisibility());
             out.add(m);
         }

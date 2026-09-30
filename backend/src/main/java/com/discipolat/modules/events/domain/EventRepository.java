@@ -12,38 +12,40 @@ import java.util.UUID;
 @Repository
 public interface EventRepository extends JpaRepository<Event, UUID> {
 
+    // Suppression logique « deleted_at » du modèle vivant (V158/V203) : les
+    // dérivés « …DeletedFalse » de la table héritée deviennent « …DeletedAtIsNull ».
     /** P3 #113 — Événements à venir (calendrier personnel du membre). */
-    Page<Event> findByTenantIdAndDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(
+    Page<Event> findByTenantIdAndDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(
             UUID tenantId, java.time.LocalDateTime from, org.springframework.data.domain.Pageable pageable);
-    Page<Event> findByFamilleIdAndDeletedFalse(UUID familleId, Pageable pageable);
-    Page<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId, Pageable pageable);
-    List<Event> findByDepartmentIdAndDeletedFalse(UUID departmentId);
-    List<Event> findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(UUID departmentId, String titre);
-    Page<Event> findByOrganisateurIdAndDeletedFalse(UUID organisateurId, Pageable pageable);
-    Page<Event> findByTypeEvenementAndDeletedFalse(String typeEvenement, Pageable pageable);
-    Page<Event> findByStatutAndDeletedFalse(String statut, Pageable pageable);
-    Page<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end, Pageable pageable);
-    List<Event> findByFamilleIdAndStatutAndDeletedFalse(UUID familleId, String statut);
-    List<Event> findByDepartmentIdInAndDeletedFalse(List<UUID> departmentIds);
-    List<Event> findByDateDebutBetweenAndDeletedFalse(LocalDateTime start, LocalDateTime end);
-    List<Event> findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
-    long countByFamilleIdAndDeletedFalse(UUID familleId);
+    Page<Event> findByFamilleIdAndDeletedAtIsNull(UUID familleId, Pageable pageable);
+    Page<Event> findByDepartmentIdAndDeletedAtIsNull(UUID departmentId, Pageable pageable);
+    List<Event> findByDepartmentIdAndDeletedAtIsNull(UUID departmentId);
+    List<Event> findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedAtIsNull(UUID departmentId, String titre);
+    Page<Event> findByOrganisateurIdAndDeletedAtIsNull(UUID organisateurId, Pageable pageable);
+    Page<Event> findByTypeEvenementAndDeletedAtIsNull(String typeEvenement, Pageable pageable);
+    Page<Event> findByStatutAndDeletedAtIsNull(String statut, Pageable pageable);
+    Page<Event> findByDateDebutBetweenAndDeletedAtIsNull(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    List<Event> findByFamilleIdAndStatutAndDeletedAtIsNull(UUID familleId, String statut);
+    List<Event> findByDepartmentIdInAndDeletedAtIsNull(List<UUID> departmentIds);
+    List<Event> findByDateDebutBetweenAndDeletedAtIsNull(LocalDateTime start, LocalDateTime end);
+    List<Event> findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
+    long countByFamilleIdAndDeletedAtIsNull(UUID familleId);
 
     /**
      * Constat M3 — comptage des événements NON clos d'un tenant.
      *
      * <p>Colonnes vérifiées sur l'entité {@code Event} : {@code tenant_id},
-     * {@code statut} (String, défaut {@code PLANIFIE}), {@code deleted} (boolean).
-     * Les statuts de clôture réellement utilisés par l'application sont
-     * {@code TERMINE} et {@code ANNULE} : seuls eux sont exclus du quota, un
-     * événement planifié compte même s'il est passé.
+     * {@code statut} (String, défaut {@code PLANIFIE}), {@code deleted_at}
+     * (suppression logique, null = actif). Les statuts de clôture réellement
+     * utilisés par l'application sont {@code TERMINE} et {@code ANNULE} : seuls
+     * eux sont exclus du quota, un événement planifié compte même s'il est passé.
      */
-    long countByTenantIdAndStatutNotInAndDeletedFalse(UUID tenantId, java.util.Collection<String> closedStatuts);
-    long countByDepartmentIdAndDeletedFalse(UUID departmentId);
+    long countByTenantIdAndStatutNotInAndDeletedAtIsNull(UUID tenantId, java.util.Collection<String> closedStatuts);
+    long countByDepartmentIdAndDeletedAtIsNull(UUID departmentId);
 
     /** Sources du Page Builder : événements à venir (non supprimés). */
-    long countByDeletedFalseAndDateDebutAfter(LocalDateTime dateDebut);
+    long countByDeletedAtIsNullAndDateDebutAfter(LocalDateTime dateDebut);
 
-    List<Event> findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime dateDebut);
-    List<Event> findAllByFamilleIdAndDeletedFalse(UUID familleId);
+    List<Event> findTop10ByDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime dateDebut);
+    List<Event> findAllByFamilleIdAndDeletedAtIsNull(UUID familleId);
 }

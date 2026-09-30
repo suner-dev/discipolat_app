@@ -335,7 +335,7 @@ public class PageBuilderService {
             case "SOULS_ACTIFS" -> value(countSoulsByStatut(superUser ? null : soulIds, StatutAme.ACTIF));
             case "FAMILIES_TOTAL" -> value(superUser ? familyRepository.countByDeletedFalse() : familyIds.size());
             case "DEPARTMENTS_TOTAL" -> value(superUser ? departmentRepository.countByDeletedFalse() : deptIds.size());
-            case "EVENTS_UPCOMING" -> value(eventRepository.countByDeletedFalseAndDateDebutAfter(LocalDateTime.now()));
+            case "EVENTS_UPCOMING" -> value(eventRepository.countByDeletedAtIsNullAndDateDebutAfter(LocalDateTime.now()));
             case "ALERTS_OPEN" -> value(superUser
                     ? alertRepository.countByStatut(StatutAlerte.ACTIVE)
                     : (soulIds.isEmpty() ? 0 : alertRepository.countByStatutAndAmeIdIn(StatutAlerte.ACTIVE, soulIds)));
@@ -434,7 +434,7 @@ public class PageBuilderService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime start = now.withDayOfMonth(1);
         LocalDateTime end = now.plusMonths(6);
-        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(start, end);
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(start, end);
         Map<String, Long> counts = events.stream()
                 .filter(e -> e.getDateDebut() != null)
                 .collect(Collectors.groupingBy(e -> e.getDateDebut().format(DATE_MONTH_FMT), Collectors.counting()));
@@ -485,7 +485,7 @@ public class PageBuilderService {
     /** Événements des 60 prochains jours pour le calendrier. */
     private Map<String, Object> calendarEvents() {
         LocalDateTime now = LocalDateTime.now();
-        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedFalse(now, now.plusDays(60));
+        List<Event> events = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(now, now.plusDays(60));
         List<Map<String, Object>> items = events.stream()
                 .filter(e -> e.getDateDebut() != null)
                 .sorted(Comparator.comparing(Event::getDateDebut))
@@ -603,7 +603,7 @@ public class PageBuilderService {
     }
 
     private Map<String, Object> upcomingEventsTable() {
-        List<Event> events = eventRepository.findTop10ByDeletedFalseAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime.now());
+        List<Event> events = eventRepository.findTop10ByDeletedAtIsNullAndDateDebutAfterOrderByDateDebutAsc(LocalDateTime.now());
         List<List<Object>> rows = events.stream()
                 .map(e -> Arrays.<Object>asList(e.getTitre(),
                         e.getDateDebut() != null ? e.getDateDebut().format(DATE_TIME_FMT) : "—",

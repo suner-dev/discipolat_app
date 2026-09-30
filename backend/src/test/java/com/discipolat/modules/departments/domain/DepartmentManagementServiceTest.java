@@ -685,7 +685,7 @@ class DepartmentManagementServiceTest {
                 .build();
         when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId)).thenReturn(List.of(task));
         when(positionRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(deptId, "joh"))
+        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedAtIsNull(deptId, "joh"))
                 .thenReturn(List.of());
 
         Map<String, Object> result = service.searchAll(deptId, "Joh");
@@ -722,7 +722,7 @@ class DepartmentManagementServiceTest {
         when(taskRepository.findByDepartmentIdOrderByEcheanceAsc(deptId)).thenReturn(List.of(cancelledTask));
         when(positionRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
-        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedFalse(deptId, "joh"))
+        when(eventRepository.findByDepartmentIdAndTitreContainingIgnoreCaseAndDeletedAtIsNull(deptId, "joh"))
                 .thenReturn(List.of());
 
         Map<String, Object> result = service.searchAll(deptId, "Joh");
@@ -831,7 +831,7 @@ class DepartmentManagementServiceTest {
         UUID event2 = UUID.randomUUID();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
-        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(
+        when(eventRepository.findByDepartmentIdAndDeletedAtIsNull(deptId)).thenReturn(List.of(
                 deptEvent(event1),
                 com.discipolat.modules.events.domain.Event.builder()
                         .id(event2).departmentId(deptId).titre("Sortie évangélisation")
@@ -929,7 +929,7 @@ class DepartmentManagementServiceTest {
         UUID event2 = UUID.randomUUID();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
-        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(
+        when(eventRepository.findByDepartmentIdAndDeletedAtIsNull(deptId)).thenReturn(List.of(
                 deptEvent(event1),
                 com.discipolat.modules.events.domain.Event.builder()
                         .id(event2).departmentId(deptId).titre("Sortie")
@@ -951,7 +951,7 @@ class DepartmentManagementServiceTest {
         UUID event1 = UUID.randomUUID();
         when(soulDepartmentRepository.findByDepartmentIdAndActifTrue(deptId))
                 .thenReturn(List.of(SoulDepartment.builder().soulId(soulId).build()));
-        when(eventRepository.findByDepartmentIdAndDeletedFalse(deptId)).thenReturn(List.of(deptEvent(event1)));
+        when(eventRepository.findByDepartmentIdAndDeletedAtIsNull(deptId)).thenReturn(List.of(deptEvent(event1)));
         when(attendanceRepository.findBySoulId(soulId)).thenReturn(List.of(
                 DepartmentEventAttendance.builder().departmentId(deptId).eventId(event1).soulId(soulId)
                         .present(true).markedBy(UUID.randomUUID()).build()));

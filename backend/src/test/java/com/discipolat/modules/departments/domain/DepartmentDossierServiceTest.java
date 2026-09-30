@@ -211,7 +211,7 @@ class DepartmentDossierServiceTest {
         when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
         when(disciplineRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(any(UUID.class))).thenReturn(List.of());
         when(assignmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
         when(departmentService.findById(deptId)).thenReturn(Department.builder().id(deptId).responsableId(UUID.randomUUID()).build());
 
         Map<String, Object> stats = service.getDepartmentStats(deptId);
@@ -260,7 +260,7 @@ class DepartmentDossierServiceTest {
         when(teamRepository.findByDepartmentIdOrderByNomAsc(deptId)).thenReturn(List.of());
         when(disciplineRepository.findByAmeIdAndDeletedFalseOrderByCreatedAtDesc(any(UUID.class))).thenReturn(List.of());
         when(assignmentRepository.findByDepartmentIdAndActifTrue(deptId)).thenReturn(List.of());
-        when(eventRepository.findByDateDebutBetweenAndDeletedFalse(any(), any())).thenReturn(List.of());
+        when(eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(any(), any())).thenReturn(List.of());
         when(departmentService.findById(deptId)).thenReturn(Department.builder().id(deptId).responsableId(UUID.randomUUID()).build());
 
         // Période : dernier mois — l'ancienne présence et l'ancienne tâche sortent du périmètre

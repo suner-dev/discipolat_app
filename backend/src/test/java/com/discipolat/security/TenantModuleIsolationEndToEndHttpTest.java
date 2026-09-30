@@ -108,7 +108,7 @@ class TenantModuleIsolationEndToEndHttpTest {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         for (String table : List.of(
                 "soul_history", "soul_departments", "soul_notes", "soul_tags",
-                "souls", "families", "departments", "events", "maker_reports",
+                "souls", "families", "departments", "event", "maker_reports",
                 "payment_intents", "users", "user_roles", "tenant_settings")) {
             jdbcTemplate.execute("TRUNCATE TABLE " + table);
         }

@@ -4,7 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.Payloads;
 import com.discipolat.modules.audit.service.AuditEventService;
 import com.discipolat.modules.core.service.OutboxPublisher;
-import com.discipolat.modules.events.domain.ChurchEvent;
+import com.discipolat.modules.events.domain.Event;
 import com.discipolat.modules.events.domain.EventSpace;
 import com.discipolat.modules.events.domain.EventTeam;
 import com.discipolat.modules.events.domain.EventTask;
@@ -25,7 +25,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 @Service
@@ -49,50 +51,55 @@ public class ChurchEventService {
     private final OutboxPublisher outboxPublisher;
 
     // ========== CHURCH EVENT CRUD ==========
+    // Depuis l'arbitrage D1 (V203), l'entité unique de la table « event » est
+    // Event (propriétés françaises). Les méthodes sont renommées côté EN
+    // (createChurchEvent…) pour lever toute ambiguïté avec EventService, et
+    // les horodatages OffsetDateTime du modèle vivant sont convertus à la
+    // frontière dans la convention « naive = UTC » de V158.
 
-    public ChurchEvent createEvent(UUID tenantId, UUID actorId, ChurchEvent event) {
+    public Event createChurchEvent(UUID tenantId, UUID actorId, Event event) {
         event.setTenantId(tenantId);
         event.setCreatedBy(actorId);
-        ChurchEvent saved = churchEventRepository.save(event);
+        Event saved = churchEventRepository.save(event);
 
         auditEventService.log(tenantId, actorId, null, "CHURCH_EVENT_CREATED", "CHURCH_EVENT", saved.getId(),
-                Map.of(), Map.of("title", saved.getTitle()), null, null);
+                Map.of(), Map.of("title", saved.getTitre()), null, null);
 
         outboxPublisher.publish("CHURCH_EVENT", saved.getId(), "EventCreated",
-                Map.of("eventId", saved.getId().toString(), "title", saved.getTitle(), "startAt", saved.getStartAt().toString()));
+                Map.of("eventId", saved.getId().toString(), "title", saved.getTitre(), "startAt", saved.getDateDebut().toString()));
 
         return saved;
     }
 
-    public ChurchEvent updateEvent(UUID tenantId, UUID actorId, UUID eventId, ChurchEvent updates) {
-        ChurchEvent event = getEvent(tenantId, eventId);
-        if (updates.getTitle() != null) event.setTitle(updates.getTitle());
+    public Event updateChurchEvent(UUID tenantId, UUID actorId, UUID eventId, Event updates) {
+        Event event = getChurchEvent(tenantId, eventId);
+        if (updates.getTitre() != null) event.setTitre(updates.getTitre());
         if (updates.getDescription() != null) event.setDescription(updates.getDescription());
-        if (updates.getType() != null) event.setType(updates.getType());
-        if (updates.getStatus() != null) event.setStatus(updates.getStatus());
-        if (updates.getStartAt() != null) event.setStartAt(updates.getStartAt());
-        if (updates.getEndAt() != null) event.setEndAt(updates.getEndAt());
+        if (updates.getTypeEvenement() != null) event.setTypeEvenement(updates.getTypeEvenement());
+        if (updates.getStatut() != null) event.setStatut(updates.getStatut());
+        if (updates.getDateDebut() != null) event.setDateDebut(updates.getDateDebut());
+        if (updates.getDateFin() != null) event.setDateFin(updates.getDateFin());
         if (updates.getTimezone() != null) event.setTimezone(updates.getTimezone());
         if (updates.getVisibility() != null) event.setVisibility(updates.getVisibility());
-        if (updates.getOrganizerId() != null) event.setOrganizerId(updates.getOrganizerId());
+        if (updates.getOrganisateurId() != null) event.setOrganisateurId(updates.getOrganisateurId());
         if (updates.getIsRecurring() != null) event.setIsRecurring(updates.getIsRecurring());
         if (updates.getRecurrenceRule() != null) event.setRecurrenceRule(updates.getRecurrenceRule());
 
-        ChurchEvent saved = churchEventRepository.save(event);
+        Event saved = churchEventRepository.save(event);
 
         auditEventService.log(tenantId, actorId, null, "CHURCH_EVENT_UPDATED", "CHURCH_EVENT", saved.getId(),
-                Map.of(), Map.of("title", saved.getTitle()), null, null);
+                Map.of(), Map.of("title", saved.getTitre()), null, null);
 
         outboxPublisher.publish("CHURCH_EVENT", saved.getId(), "EventUpdated",
-                Map.of("eventId", saved.getId().toString(), "title", saved.getTitle()));
+                Map.of("eventId", saved.getId().toString(), "title", saved.getTitre()));
 
         return saved;
     }
 
-    public void deleteEvent(UUID tenantId, UUID actorId, UUID eventId) {
-        ChurchEvent event = getEvent(tenantId, eventId);
-        event.setDeletedAt(OffsetDateTime.now());
-        event.setStatus("ARCHIVED");
+    public void deleteChurchEvent(UUID tenantId, UUID actorId, UUID eventId) {
+        Event event = getChurchEvent(tenantId, eventId);
+        event.setDeletedAt(LocalDateTime.now());
+        event.setStatut("ARCHIVED");
         churchEventRepository.save(event);
 
         auditEventService.log(tenantId, actorId, null, "CHURCH_EVENT_DELETED", "CHURCH_EVENT", eventId,
@@ -103,19 +110,30 @@ public class ChurchEventService {
     }
 
     @Transactional(readOnly = true)
-    public ChurchEvent getEvent(UUID tenantId, UUID eventId) {
+    public Event getChurchEvent(UUID tenantId, UUID eventId) {
         return churchEventRepository.findByIdAndTenantIdAndDeletedAtIsNull(eventId, tenantId)
-                .orElseThrow(() -> new EntityNotFoundException("ChurchEvent", eventId));
+                .orElseThrow(() -> new EntityNotFoundException("Event", eventId));
     }
 
     @Transactional(readOnly = true)
-    public Page<ChurchEvent> getEvents(UUID tenantId, Pageable pageable) {
+    public Page<Event> getChurchEvents(UUID tenantId, Pageable pageable) {
         return churchEventRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public List<ChurchEvent> getEventsCalendar(UUID tenantId, OffsetDateTime from, OffsetDateTime to) {
-        return churchEventRepository.findByTenantIdAndStartAtBetween(tenantId, from, to);
+    public List<Event> getChurchEventsCalendar(UUID tenantId, OffsetDateTime from, OffsetDateTime to) {
+        return churchEventRepository.findCalendarByTenantId(tenantId,
+                naiveUtc(from), naiveUtc(to));
+    }
+
+    /** OffsetDateTime -> LocalDateTime « naive = UTC » (convention V158). */
+    public static LocalDateTime naiveUtc(OffsetDateTime odt) {
+        return odt == null ? null : odt.withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    }
+
+    /** LocalDateTime « naive = UTC » -> OffsetDateTime du fil EN (rendu +00:00). */
+    public static OffsetDateTime offsetUtc(LocalDateTime ldt) {
+        return ldt == null ? null : ldt.atOffset(ZoneOffset.UTC);
     }
 
     // ========== EVENT SPACES ==========
@@ -143,7 +161,7 @@ public class ChurchEventService {
     // ========== EVENT TEAMS ==========
 
     public EventTeam createTeam(UUID tenantId, UUID eventId, EventTeam team) {
-        getEvent(tenantId, eventId);
+        getChurchEvent(tenantId, eventId);
         team.setTenantId(tenantId);
         team.setChurchEventId(eventId);
         return eventTeamRepository.save(team);
@@ -157,7 +175,7 @@ public class ChurchEventService {
     // ========== EVENT TASKS ==========
 
     public EventTask createTask(UUID tenantId, UUID eventId, EventTask task) {
-        getEvent(tenantId, eventId);
+        getChurchEvent(tenantId, eventId);
         task.setTenantId(tenantId);
         task.setChurchEventId(eventId);
         return eventTaskRepository.save(task);
@@ -182,7 +200,7 @@ public class ChurchEventService {
     // ========== ATTENDANCE / CHECK-IN ==========
 
     public EventAttendance checkIn(UUID tenantId, UUID eventId, UUID personId, String method, UUID spaceId, UUID actorId) {
-        ChurchEvent event = getEvent(tenantId, eventId);
+        Event event = getChurchEvent(tenantId, eventId);
         Person person = personRepository.findById(personId)
                 .orElseThrow(() -> new EntityNotFoundException("Person", personId));
 
@@ -203,7 +221,7 @@ public class ChurchEventService {
         outboxPublisher.publish("CHURCH_EVENT_ATTENDANCE", saved.getId(), "AttendanceRecorded",
                 Payloads.of(
                         "eventId", eventId.toString(),
-                        "eventTitle", event.getTitle(),
+                        "eventTitle", event.getTitre(),
                         "personId", personId.toString(),
                         "personName", person.getFullName(),
                         "method", method,
@@ -243,7 +261,7 @@ public class ChurchEventService {
     // ========== EVENT SCHEDULE ==========
 
     public EventSchedule addScheduleItem(UUID tenantId, UUID eventId, EventSchedule item) {
-        getEvent(tenantId, eventId);
+        getChurchEvent(tenantId, eventId);
         item.setTenantId(tenantId);
         item.setChurchEventId(eventId);
         return eventScheduleRepository.save(item);

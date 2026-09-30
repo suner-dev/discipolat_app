@@ -255,7 +255,7 @@ public class ScheduledJobs {
         LocalDateTime dayAfterTomorrow = LocalDateTime.now().plusDays(2);
 
         // Rappel J-1 générique aux inscrits (comportement historique conservé).
-        List<Event> upcomingEvents = eventRepository.findByDateDebutBetweenAndDeletedFalse(
+        List<Event> upcomingEvents = eventRepository.findByDateDebutBetweenAndDeletedAtIsNull(
                 tomorrow, dayAfterTomorrow);
         for (Event event : upcomingEvents) {
             List<EventRegistration> registrations = eventRegistrationRepository.findByEventId(event.getId());
@@ -276,7 +276,7 @@ public class ScheduledJobs {
         LocalDateTime now = LocalDateTime.now();
         // Fenêtre maximale : délai configurable jusqu'à 30 jours.
         List<Event> departmentEvents = eventRepository
-                .findByDepartmentIdIsNotNullAndDeletedFalseAndDateDebutBetween(
+                .findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(
                         now.plusDays(1), now.plusDays(31));
         for (Event event : departmentEvents) {
             try {

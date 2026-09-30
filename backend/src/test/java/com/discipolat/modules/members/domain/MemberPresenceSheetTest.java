@@ -54,6 +54,7 @@ class MemberPresenceSheetTest {
     @Mock private MemberPresenceRepository memberPresenceRepository;
     @Mock private MemberRequestRepository memberRequestRepository;
     @Mock private com.discipolat.modules.events.domain.EventRepository eventRepository;
+    @Mock private com.discipolat.modules.events.domain.EventRegistrationRepository eventRegistrationRepository;
     @Mock private SecurityUtils securityUtils;
     @Mock private EntityAttachmentRepository attachmentRepository;
     @Mock private FileEntityRepository fileEntityRepository;
@@ -71,7 +72,8 @@ class MemberPresenceSheetTest {
         memberService = new MemberService(
                 userRepository, soulRepository, familyRepository, departmentRepository,
                 memberDepartmentRepository, soulDepartmentRepository,
-                memberPresenceRepository, memberRequestRepository, eventRepository, securityUtils,
+                memberPresenceRepository, memberRequestRepository, eventRepository,
+                eventRegistrationRepository, securityUtils,
                 new EntityAttachmentService(attachmentRepository, fileEntityRepository, securityUtils),
                 propagationPublisher);
         responsableId = UUID.randomUUID();
@@ -235,9 +237,9 @@ class MemberPresenceSheetTest {
         Event evtPasse = Event.builder().id(UUID.randomUUID()).titre("Culte passé")
                 .familleId(familleId).dateDebut(LocalDateTime.now().minusDays(1)).statut("PLANIFIE").build();
 
-        when(eventRepository.findByFamilleIdAndStatutAndDeletedFalse(familleId, "PLANIFIE"))
+        when(eventRepository.findByFamilleIdAndStatutAndDeletedAtIsNull(familleId, "PLANIFIE"))
                 .thenReturn(List.of(evtFamille, evtPasse));
-        when(eventRepository.findByDepartmentIdInAndDeletedFalse(List.of(autreDept)))
+        when(eventRepository.findByDepartmentIdInAndDeletedAtIsNull(List.of(autreDept)))
                 .thenReturn(List.of(evtDept));
 
         var events = memberService.getMyUpcomingEvents();
