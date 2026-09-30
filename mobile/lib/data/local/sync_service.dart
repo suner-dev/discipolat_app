@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../services/api_service.dart';
 import 'database.dart';
+import 'sync_lock.dart';
 import '../../tenant_config.dart';
 
 class SyncService {
@@ -107,6 +108,28 @@ class SyncService {
     return draftId;
   }
 
+  /// Résout le faiseur assigné à une âme depuis le cache local Drift.
+  /// Requis par POST /reports/maker-weekly (champ `faiseurId` @NotNull).
+  /// Statique et publique : partagée avec OfflineSyncManager.
+  static Future<String?> resolveFaiseurId(
+      AppDatabase db, String tenantId, String ameId) async {
+    final souls = await db.getLocalSouls(tenantId);
+    for (final s in souls) {
+      if (s.id == ameId) return s.faiseurId;
+    }
+    return null;
+  }
+
+  Future<String?> _resolveFaiseurId(String tenantId, String ameId) =>
+      resolveFaiseurId(_db, tenantId, ameId);
+
+  /// Normalise l'endpoint d'un item en file : les items legacy pointaient
+  /// vers GET /reports/export/maker-weekly (un export CSV LECTURE SEULE —
+  /// les rapports n'étaient jamais persistés). Ils sont redirigés vers le
+  /// vrai endpoint d'écriture POST /reports/maker-weekly.
+  static String migrateEndpoint(String endpoint) =>
+      endpoint.replaceAll('/reports/export/maker-weekly', '/reports/maker-weekly');
+
   Future<void> _submitToApi({
     required String ameId,
     required String semaine,
@@ -119,14 +142,25 @@ class SyncService {
     int nbMaintenus = 0,
     List<String>? fichierIds,
   }) async {
-    await _api.get('/reports/export/maker-weekly', params: {
+    final tenantId = await _tenant();
+    final faiseurId = await _resolveFaiseurId(tenantId, ameId);
+    if (faiseurId == null) {
+      // Sans faiseur connu (âme pas encore en cache local), on refuse le
+      // send direct : l'appelant met l'item en file, qui sera rejouée
+      // une fois les âmes synchronisées. Jamais de perte silencieuse.
+      throw StateError('faiseurId introuvable pour ame $ameId — rapport en file');
+    }
+    await _api.post('/reports/maker-weekly', data: {
+      'faiseurId': faiseurId,
       'ameId': ameId,
       'semaine': semaine,
-      'presencesParCulte': jsonEncode(presencesParCulte),
-      'absenceRaison': absenceRaison,
-      'absenceCommentaire': absenceCommentaire?.isNotEmpty == true ? absenceCommentaire : null,
-      'difficultes': difficultes?.isNotEmpty == true ? difficultes : null,
-      'notesComplementaires': notesComplementaires?.isNotEmpty == true ? notesComplementaires : null,
+      'presencesParCulte': presencesParCulte,
+      if (absenceRaison != null && absenceRaison.isNotEmpty) 'absenceRaison': absenceRaison,
+      if (absenceCommentaire != null && absenceCommentaire.isNotEmpty)
+        'absenceCommentaire': absenceCommentaire,
+      if (difficultes != null && difficultes.isNotEmpty) 'difficultes': difficultes,
+      if (notesComplementaires != null && notesComplementaires.isNotEmpty)
+        'notesComplementaires': notesComplementaires,
       'nbSorties': nbSorties,
       'nbMaintenus': nbMaintenus,
       if (fichierIds != null && fichierIds.isNotEmpty) 'fichierIds': fichierIds,
@@ -137,11 +171,7 @@ class SyncService {
   Future<bool> submitQueuedItem(SyncQueueItem item) async {
     try {
       final payload = jsonDecode(item.payload) as Map<String, dynamic>;
-      if (item.endpoint.contains('/reports/export')) {
-        await _api.get(item.endpoint, params: payload);
-      } else {
-        await _api.post(item.endpoint, data: payload);
-      }
+      await _submitPayload(item, payload, await _tenant());
       await _db.removeSyncItem(item.id);
       return true;
     } catch (e) {
@@ -150,13 +180,40 @@ class SyncService {
     }
   }
 
+  /// Envoie la payload d'un item en file vers le bon endpoint.
+  /// Cas des rapports : legacy `/reports/export/...` → POST maker-weekly,
+  /// avec injection du `faiseurId` résolu depuis le cache local si absent.
+  Future<void> _submitPayload(
+      SyncQueueItem item, Map<String, dynamic> payload, String tenantId) async {
+    var endpoint = migrateEndpoint(item.endpoint);
+    if (endpoint.contains('/reports/maker-weekly') &&
+        payload['faiseurId'] == null &&
+        payload['ameId'] is String) {
+      final faiseurId = await _resolveFaiseurId(tenantId, payload['ameId'] as String);
+      if (faiseurId == null) {
+        // retryCount ≥ 3 → l'item reste en file « définitivement en échec »
+        // au lieu d'être supprimé : aucune perte silencieuse.
+        throw StateError('faiseurId introuvable pour ame ${payload['ameId']}');
+      }
+      payload['faiseurId'] = faiseurId;
+    }
+    await _api.post(endpoint, data: payload);
+  }
+
   Future<void> _queueForSync(String draftId, Map<String, dynamic> payload) async {
     final tenantId = await _tenant();
+    // Injecter le faiseur dès la mise en file quand le cache local le permet :
+    // la rejouée ultérieure n'aura pas à le re-résoudre.
+    final ameId = payload['ameId'] as String?;
+    if (ameId != null && payload['faiseurId'] == null) {
+      final faiseurId = await _resolveFaiseurId(tenantId, ameId);
+      if (faiseurId != null) payload['faiseurId'] = faiseurId;
+    }
     await _db.addToSyncQueue(SyncQueueItem(
       id: const Uuid().v4(),
       tenantId: tenantId,
       operation: 'CREATE',
-      endpoint: '/reports/export/maker-weekly',
+      endpoint: '/reports/maker-weekly',
       payload: jsonEncode(payload),
       createdAt: DateTime.now().toIso8601String(),
       retryCount: 0,
@@ -169,7 +226,12 @@ class SyncService {
   /// Synchronise la file d'attente du tenant courant uniquement.
   ///
   /// Handles retry logic, exponential backoff, and tenant-aware filtering.
-  Future<SyncResult> syncPending() async {
+  Future<SyncResult> syncPending() =>
+      // Verrou partagé avec OfflineSyncManager : empêche le double envoi
+      // des mêmes items par les deux moteurs simultanés.
+      syncFlushLock.run(_syncPendingLocked);
+
+  Future<SyncResult> _syncPendingLocked() async {
     if (_isSyncing) return SyncResult(isSyncing: true);
     _isSyncing = true;
 
@@ -203,11 +265,7 @@ class SyncService {
           payload['orgId'] = TenantConfig.currentOrgId;
         }
 
-        if (item.endpoint.contains('/reports/export')) {
-          await _api.get(item.endpoint, params: payload);
-        } else {
-          await _api.post(item.endpoint, data: payload);
-        }
+        await _submitPayload(item, payload, tenantId);
         await _db.removeSyncItem(item.id);
         synced++;
       } catch (e) {
