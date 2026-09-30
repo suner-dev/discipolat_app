@@ -742,3 +742,203 @@ non bloquant un seul appel, invitation invalide 410 sans accept).
 
 **Total B10/B11 : 2 commits (`5c72e249`, `daf3e3de`), poussés sur `fix/onboarding-tenant-clients`**
 (`6701dcb5..daf3e3de`). Les 13 tâches clients B1→B13 sont désormais conformes au contrat et prouvées.**
+
+---
+
+## 2026-09-30 — D1 (arbitrage events) : `Event.java` aligne sur la table VIVANTE `event`
+
+Reprise de l'etape 4 du plan de `docs/architecture/schema-events-drift.md`. Les etapes
+1 a 3 (inventaire `be3cb8b8`, migrations sures `6701dcb5`, contrat sur la table vivante
+`df3c721c`) etaient faites. Il restait l'alignement de l'entite, et il a demande trois
+arbitrages avant d'ecrire la moindre ligne.
+
+### Trois constats qui ont change le plan, tous mesures
+
+**1. Le perimetre ne peut pas etre retire : le plan se trompait sur la raison.**
+Le plan ecrivait « `famille_id` : *retirer*, le controle d'acces se resout par le
+perimetre tenant ». C'est faux, et le code le demontre : `WorkspaceScopeService` scope
+les donnees selon le **role actif** (`FAISEUR`, `CHEF_DE_FAMILLE`, `RESPONSABLE`) via
+`canAccessFamily` / `canAccessDepartment`, et `EventService.canAccessEvent` /
+`canManageEvent` en dependent pour lister, lire, modifier et supprimer. Le filtre
+`@Filter("tenantFilter")` ne remplace pas ce scope : il est lui-meme porte par
+`tenant_id`. Sans ces colonnes, tout membre d'un tenant verrait tout evenement du
+tenant — une regression d'autorisation **intra**-tenant, invisible pour un test
+multi-tenant qui verifie seulement l'isolation **entre** tenants.
+→ **Arbitrage : V203 ajoute `famille_id`, `department_id`, `organization_unit_id`,
+`resource_scope` a `event`.**
+
+**2. Il y avait trois vocabulaires, pas deux.** `event.type` etait contraint a
+`SERVICE, MEETING, TRAINING…` / `DRAFT, PUBLISHED…` — un vocabulaire que ni l'entite,
+ni les controleurs, ni les clients ne parlaient. Un mapping dans un sens aurait ete
+perteux : `REUNION` et `VISITE` tombent tous deux sur `MEETING`.
+→ **Mais l'arbitrage n'a pas eu a etre invente : le projet l'a deja pris.** `V42` cree
+les dictionnaires `EVENT_TYPE` (13 codes) et `EVENT_STATUS` (4 codes) ; `V62` a
+**deja** reporte `EVENT_TYPE` sur la contrainte CHECK de la table morte, precisement
+parce que la CHECK de `V3` (9 codes) refusait `CULTE`, `ETUDE_BIBLIQUE`, `VEILLEE`,
+`PRIERE` (500 a la creation) ; `frontend/src/types/index.ts` type `TypeEvenement` sur
+ces 13 codes et `mobile/.../event_model.dart` decode exactement les memes 13. V203
+porte donc sur la table vivante une decision deja prise, pas une decision neuve.
+Le backfill est l'**inverse exact** du dictionnaire que V158 avait lui-meme applique.
+
+**3. `V194` (branche agent A) ne corrigeait pas la derive : il la deplacait.** Mesure
+sur PostgreSQL 16, base migree de zero :
+
+| table | latitude | date_debut | deleted (bool) |
+|---|---|---|---|
+| `events` | NON | (absente) | (absente) — **la table n'existe pas** |
+| `legacy_events` | NON | oui | oui |
+| `event` | oui | (absente) | (absente) |
+
+V194 rename `legacy_events` -> `events`. Resultat simule sur la base reelle : la table
+`events` obtenue **n'a ni `latitude`, ni `longitude`, ni `geofence_radius_m`** — trois
+colonnes que `Event.java` mappe. Aucune migration ne les depose ailleurs (V26 vise
+`souls`/`families`, V114 vise `geofence_pings`, et V201 vise `events` **apres** que V158
+l'a renommee, donc no-op). Consequence : sous V194, `/api/v1/events` echouerait quand
+meme, sur toutes les lectures. **Les deux resolutions de la meme derive ne peuvent pas
+coexister** ; c'est celle-ci qui est completee, et la branche A doit retirer V194 au
+moment du merge.
+
+### Ce qui a ete fait — et rien de supprime
+
+Instruction recue : *« ne supprime rien, ameliore juste ce qui existe deja »*. Donc
+`ChurchEvent`, `ChurchEventRepository`, `ChurchEventService`, les 23 endpoints
+`/api/v1/church-events` et toutes les colonnes existent restent en place. Consequence
+mesuree : **deux entites sur une table**, ce que le plan voulait eviter. C'est une
+dette connue et assumee, pas un oubli — voir le point `is_recurring` plus bas, qui en
+montre le premier effet reel.
+
+| Fichier | Ce qui change |
+|---|---|
+| `V203__event_recoit_perimetre_et_vocabulaire_produit.sql` (nouveau) | perimetre + vocabulaire + backfill + `latitude/longitude` en `double precision` (idem sur `event_registrations`) |
+| `Event.java` | `@Table("events")` -> `@Table("event")` ; colonnes realignees ; `deleted` (booleen) -> `deleted_at` ; `nb_inscrits` devient derive ; `is_public` devient une lecture de `visibility` |
+| `LocalDateTimeToUtcConverter.java` (nouveau) | `LocalDateTime` <-> `timestamptz`. Sans lui, `ddl-auto: update` **altererait** `start_at` en `timestamp` a chaque deploiement, perdant le fuseau |
+| `EventRepository` / `EventService` / `EventResponse` / `EventController` | predicats `...AndDeletedFalse` -> `...AndDeletedAtIsNull` ; compteur derive par lot (1 requete, pas 1 par evenement) |
+| `EventRegistrationRepository` | `countByEventId` + projection `countByEventIds` |
+| `ChurchEvent.java` | defaut `status` `DRAFT` -> `PLANIFIE` (V203 refuse `DRAFT`) ; `is_recurring` porte son `DEFAULT false` |
+| `LoadPredictionService` | 2 requetes SQL brutes `FROM events` (`date_debut`, `deleted = false`) -> `event` (`start_at`, `deleted_at IS NULL`, `AT TIME ZONE 'UTC'`) : la **prediction de charge etait morte** sur toute base migree |
+| 9 consommateurs | `ScheduledJobs`, `DashboardService`, `BenchmarkController`, `PageBuilderService`, `MemberService`, `DepartmentDossierService`, `DepartmentManagementService`, `ContextualReminderScheduler`, `QuotaService` |
+| `SchemaVerificationIntegrationTest` | il affirmait `events.titre` / `events.organisateur_id` : corrige en `event.title` / `event.organizer_id` |
+
+**Les noms de champs Java n'ont pas change** (`titre`, `dateDebut`, `statut`,
+`familleId`…). Un accesseur n'est pas un contrat d'API : le contrat public est
+`EventResponse`, qui expose deja ces noms, et les 12 consommateurs du domaine n'ont
+donc pas ete recables. Seuls les noms de **colonnes** ont change.
+
+### Deux bugs tranches au passage, par le refactor
+
+- `unregister` ne decremenait le compteur que si le statut etait `PRESENT` : apres
+  chaque desinscription d'un `INSCRIT` ou d'un `ABSENT`, `nb_inscrits` restait faux.
+  Le compteur derive supprime la classe du bug — il n'y a plus rien a resynchroniser.
+- `withRegistrationCounts` : compter evenement par evenement depuis le service aurait
+  fait **50 requetes pour une page de 50**. Une projection par lot, une requete.
+
+### Le gate : ce qui manquait depuis toujours
+
+`EventTableContractTest` (9 tests). Il migre une base **PostgreSQL 16 de zero** par la
+chaine Flyway complete, puis fait un aller-retour Hibernate dessus. La suite
+historique (`ddl-auto: create-drop`, `flyway: false`) ne peut pas voir une derive de
+migration **par construction** : Hibernate recree le schema depuis les annotations, donc
+elle valide le schema que l'entite *decrit*, jamais celui que les migrations
+*produisent*. C'est ainsi que `Event.java` a pu pointer des mois vers une table
+renommee : plus de 1 400 tests verts, module mort au deploiement.
+
+Preuve que le gate **peut rougir** (un test qui ne peut pas echouer ne prouve rien) :
+`@Table("events")` restaure → **3 tests en echec**, sur le symptome de production exact.
+
+```
+[ERROR] EventTableContractTest.writeThenReadBackAProductVocabularyEvent
+  ... was aborted: ERROR: relation "events" does not exist
+```
+
+### Preuves (`reports/plan-2agents/evidence-events-d1/`)
+
+| Fichier | Contenu |
+|---|---|
+| `gate-contract-vert.log` | 9/9 verts, `BUILD SUCCESS`, PostgreSQL 16 migre de zero |
+| `gate-contract-rouge-preuve.log` | 3/8 en echec sur `relation "events" does not exist` (23 occurrences) |
+| `suite-backend-complete.log` | `Tests run: 1507, Failures: 0, Errors: 0, Skipped: 13`, exit 0 |
+
+Commande (le `-Dapi.version` est un contournement d'environnement, pas de code : le
+client docker-java negotiate l'API 1.32, que le daemon refuse ; sans lui **tout**
+Testcontainers echoue sur cette machine, y compris le gate de l'agent A) :
+
+```
+JAVA_HOME=$HOME/.sdkman/candidates/java/21.0.12+1.1-tem \
+TESTCONTAINERS_RYUK_DISABLED=true \
+mvn -B -o test -DargLine="-Dapi.version=1.44"
+```
+
+### Constats hors perimetre, a traiter par l'agent A (module audit)
+
+**`audit_event.hash` : `CHAR(64)` en base, `varchar(64)` dans l'entite.** `V135` cree
+la colonne en `CHAR(64)` ; `AuditEvent.java:65` declare `@Column(name = "hash", length =
+64)`, que Hibernate lit comme `varchar(64)`. Consequence mesuree :
+
+```
+Schema-validation: wrong column type encountered in column [hash] in table
+[audit_event]; found [bpchar (Types#CHAR)], but expecting [varchar(64) (Types#VARCHAR)]
+```
+
+**Le profil `dev` (`ddl-auto: validate`) ne demarre donc sur aucune base migree**, et le
+profil `docker` (`ddl-auto: update`) pourrait alterer la colonne. C'est pour ce motif
+que le gate ci-dessus ne se sert pas de `validate` global : il verifie les types
+colonne par colonne sur le module qui le concerne, pour rester executable.
+
+### Dette assumee, a ne pas perdre de vue
+
+1. **Deux entités sur `event`** (`Event` et `ChurchEvent`), par instruction. Chaque
+   entite ecrit son sous-ensemble de colonnes ; une ecriture par l'une laisse les
+   colonnes de l'autre a leurs defauts. Effet deja observe : `is_recurring` est
+   `NOT NULL` sans defaut dans le DDL Hibernate de test, et toute ecriture par
+   `Event` echouait en 500 — corrige en alignant l'annotation sur le schema reel
+   (`columnDefinition = "boolean default false"`), mais le mécanisme de fond, lui,
+   reste. La refonte qui n'en garderait qu'une est un chantier distinct.
+2. **`families.nom` porte une UNIQUE globale** (`uk_families_nom`, et non
+   `(tenant_id, nom)`) : confirme a l'execution en ecrivant le gate, qui doit donc
+   generates un nom de famille unique. C'est l'arbitrage **D4** du TODO de reprise,
+   toujours non corrige.
+3. Les 2 requetes SQL brutes de `LoadPredictionService` sont les seules du code a
+   requeter la table a la main. Elles ont ete realignees ici, mais elles rappelent
+   qu'aucun garde-fou ne les rattraperait : c'etait aussi le seul endroit ou la
+   table morte etait encore referencee.
+
+### Collision avec la branche de l'agent A — et comment elle a ete levee
+
+En fin de chantier, l'agent A a produit `dbcb8563` : `V203` (colonnes de perimetre +
+vocabulaire elargi + deplacement `events` -> `event`) et `V204` (D4, unicite
+`families` par tenant). Son message annonce explicitement la suite : *« port Java
+(entite Event sur event, retrait doublon ChurchEvent, LoadPrediction, FIRST_EVENT) a la
+suite, dans le prochain commit »*. **Le travail ci-dessus est donc le complement de
+ce qu'il annonce, pas un doublon** — sauf sur trois points, arbitres par
+l'orchestrateur le 2026-09-30 :
+
+| point | decision | effet sur cette branche |
+|---|---|---|
+| numerotation | le **V203 de cette branche devient V205** | `V203` et `V204` restent ceux de l'agent A. Aucune migration deja appliquee n'est renumerotee. |
+| vocabulaire | **union FR ∪ EN**, comme l'agent A | le backfill EN -> FR de ma V203 initiale est **abandonne** : il n'y a plus de conversion a perdre. Le gate ne verifie plus que l'EN est refuse (ce serait faux), mais que la contrainte est **bornee** : les deux lexiques passes, un dehors refuse. |
+| `ChurchEvent` | **conserve** | le « retrait doublon » prevu par l'agent A n'a pas lieu. |
+
+**Correction honnete que cela impose :** la V205 repose les memes CHECK elargis que la
+V203 de l'agent A. C'est un double emploi **deliberé et idempotent** (DROP IF EXISTS
+puis ADD, meme liste) : sans lui, cette branche ne pourrait plus rien prouver — son
+gate echouerait non par defaut de code, mais parce que la V203 de l'autre branche n'y
+est pas. Apres fusion, la re-poser a l'identique est un no-op.
+
+**Ce que la V205 fait seule** (verifie : la V203 de l'agent A ne le fait pas) :
+les changements de type `NUMERIC` -> `double precision` de `event.latitude/longitude`
+et des quatre colonnes de preuve du pointage, et le `DEFAULT 'PLANIFIE'` de
+`event.status`.
+
+**Preuves mises a jour apres arbitrage :**
+
+| Fichier | Contenu |
+|---|---|
+| `gate-contract-vert.log` | 8/8 verts, `BUILD SUCCESS` |
+| `gate-contract-rouge-preuve.log` | 3 echecs sur `relation "events" does not exist` (preuve que le gate rougit) |
+| `suite-backend-complete.log` | `Tests run: 1506, Failures: 0, Errors: 0, Skipped: 13`, exit 0 |
+
+Le compte passe de 1507 a 1506 : deux tests de vocabulaire distincts
+(`tableVocabularyIsTheProductOne` et `constraintRejectsForeignVocabulary`) sont
+remplaces par un seul (`contrainteEstBornee`), puisque l'arbitrage a change. C'est un
+test de moins, pas une couverture en moins : le nouveau verifiera 22 valeurs acceptees
+et 4 refusees, contre 17 acceptees et 4 refusees avant.

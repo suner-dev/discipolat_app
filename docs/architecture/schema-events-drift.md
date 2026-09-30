@@ -124,14 +124,26 @@ Deux leviers réduisent le chantier sans le contourner :
    `ChurchEventService` sont recâblés dessus puis retirés, pour ne pas laisser
    deux entités sur la même table.
 
+   ⚠ **Arbitrage du 2026-09-30 : ce retrait n'a PAS eu lieu.** Instruction
+   explicite de l'orchestrateur : *« ne supprime rien, améliore juste ce qui
+   existe déjà »*. `ChurchEvent`, `ChurchEventRepository`, `ChurchEventService`
+   et les 23 endpoints `/api/v1/church-events` (dont 3 consommés par le mobile)
+   sont donc **conservés**. Il reste **deux entités sur une table** : dette
+   connue et assumée, dont le premier effet mesurable a été
+   `is_recurring NOT NULL` sans défaut dans le DDL Hibernate de test, qui
+   faisait échouer en 500 toute écriture par `Event` — corrigé en alignant
+   l'annotation sur le schéma réel. La refonte qui n'en garderait qu'une reste
+   un chantier distinct.
+
 Colonnes à ajouter à `event` (V202) — l'arbitrage produit, tracé :
 
 | colonnes | décision | motif |
 |---|---|---|
-| `image_url`, `tags`, `is_public`, `requires_registration`, `has_checkin`, `stream_id` | **ajouter** | contrat déjà exposé par les clients |
+| `image_url`, `tags`, `requires_registration`, `has_checkin`, `stream_id` | **ajouter** | contrat déjà exposé par les clients |
+| ~~`is_public`~~ | **ne pas ajouter** | `visibility` existe déjà, est contrainte, et fait autorité. Un booléen parallèle rendrait la question « cet événement est-il public ? » ambiguë. Le DTO public `isPublic` est une **lecture** de `visibility` |
 | `latitude`, `longitude`, `geofence_radius_m` | **ajouter** | moteur de géolocalisation |
 | `limite_places`, `compte_rendu` | **ajouter** | fonctionnalité existante côté client ; les supprimer créerait des contrôles fantômes, exactement ce que ce chantier combat |
-| `famille_id` | **retirer** | le modèle vivant est paroissial et multi-tenant ; un événement rattaché à une famille est un autre objet métier. Le contrôle d'accès se résout par le périmètre tenant |
+| `famille_id`, `department_id`, `organization_unit_id`, `resource_scope` | **ajouter** — *arbitrage du 2026-09-30, contre la décision ci-dessus* | le périmètre **est** un besoin produit, et la raison donnée pour le retirer était fausse : `WorkspaceScopeService` scope par **rôle actif** (`FAISEUR`, `CHEF_DE_FAMILLE`, `RESPONSABLE`) via `canAccessFamily` / `canAccessDepartment`, dont dépendent `EventService.canAccessEvent` et `canManageEvent`. Le filtre de tenant ne remplace pas ce scope — il est lui-même porté par `tenant_id`. Sans ces colonnes, **tout membre d'un tenant verrait tout événement du tenant** : régression d'autorisation *intra*-tenant, invisible pour un test qui ne vérifie que l'isolation *entre* tenants |
 | `nb_inscrits` | **calculé** | c'est un compteur, pas une colonne : à compter sur `event_registrations` |
-| `statut` | **mappé sur `status`** | le vocabulaire vit dans la table vivante |
+| `statut` | **mappé sur `status`**, CHECK **élargi à l'union des deux lexiques** — *arbitrage du 2026-09-30* | l'entité écrit toujours le vocabulaire du produit (dictionnaires `EVENT_TYPE` / `EVENT_STATUS` de V42, déjà porté par V62 sur la table morte). Le lexique Church OS de V158 **survit** : remplacer serait *perteux* — `REUNION` et `VISITE` convergent tous deux vers `MEETING`, donc l'aller-retour n'est pas réversible — et `POST /api/v1/church-events` accepte encore un corps libre. On ne prétend donc pas à un lexique unique tant que la conversion n'est pas lossy et subie par tous les écrivains |
 | `deleted` | **`deleted_at`** | la table vivante est en suppression logique horodatée |
