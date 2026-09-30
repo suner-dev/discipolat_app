@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app.dart';
 import '../../../core/invitation_token.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
@@ -39,6 +40,11 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
   bool _loading = false;
   bool _accepting = false;
   bool _obscurePassword = true;
+
+  // B11 — écran de fin après acceptation d'un compte existant (pas de login
+  // automatique) ou échec non bloquant du login auto.
+  bool _manualLogin = false;
+  String? _notice;
 
   bool get _accountExists => _invitation?['accountExists'] == true;
 
@@ -109,8 +115,9 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       _accepting = true;
       _error = null;
     });
+    final submittedPassword = !_accountExists;
     try {
-      await _api.post(
+      final response = await _api.post(
         '/admin/invitations/accept/${Uri.encodeComponent(token)}',
         data: _accountExists
             ? <String, dynamic>{}
@@ -121,11 +128,16 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
               },
       );
       if (mounted) setState(() => _accepting = false);
-      _complete();
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      final crossTenant = data['crossTenantIdentity'] == true;
+      await _finish(
+          submittedPassword: submittedPassword, crossTenant: crossTenant);
     } on DioException catch (error) {
       if (_isAlreadyAccepted(error)) {
         if (mounted) setState(() => _accepting = false);
-        _complete();
+        await _finish(submittedPassword: submittedPassword, crossTenant: false);
         return;
       }
       if (!mounted) return;
@@ -150,14 +162,72 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
     return details is Map && details['status'] == 'ACCEPTED';
   }
 
-  void _complete() {
+  /// B11 — clôture de l'acceptation.
+  ///
+  /// - Compte nouvellement créé (mot de passe saisi) → login automatique :
+  ///   `POST /auth/login` + `saveTokens` + `AuthState`, puis redirection vers
+  ///   l'espace du rôle (ou `/tenant-selection` si `crossTenantIdentity`).
+  /// - Compte déjà existant (aucun mot de passe) → AUCUNE tentative de login ;
+  ///   on invite l'utilisateur à se connecter manuellement.
+  /// - Échec du login auto → repli non bloquant vers `/login` (jamais de boucle).
+  Future<void> _finish({
+    required bool submittedPassword,
+    required bool crossTenant,
+  }) async {
     _tokenController.clear();
     _activeToken = null;
+    final email = (_invitation?['email'] ?? '').toString().trim();
+
+    if (submittedPassword && email.isNotEmpty) {
+      try {
+        final login = await _api.post('/auth/login', data: <String, dynamic>{
+          'email': email,
+          'password': _passwordController.text,
+        });
+        final data = login.data is Map
+            ? Map<String, dynamic>.from(login.data as Map)
+            : <String, dynamic>{};
+        await _api.saveTokens(data);
+        if (!mounted) return;
+        AuthState().setAuthenticated(true, userData: data);
+      } catch (_) {
+        // Jamais de boucle : le compte est créé, la connexion se finalise à la main.
+        _manualLoginNotice(
+            "Compte créé. Finalisez la connexion depuis l'écran de connexion.");
+        return;
+      }
+      _navigate(crossTenant);
+      return;
+    }
+
+    // Compte existant, pas de mot de passe saisi → pas de login automatique.
+    _manualLoginNotice('Invitation acceptée. Connectez-vous avec votre mot de passe.');
+  }
+
+  void _navigate(bool crossTenant) {
     if (widget.onCompleted != null) {
       widget.onCompleted!();
-    } else if (mounted) {
-      context.go('/login');
+      return;
     }
+    if (!mounted) return;
+    final destination = crossTenant
+        ? '/tenant-selection'
+        : roleHome(AuthState().activeRole,
+            isPlatformSuperAdmin: AuthState().isPlatformSuperAdmin);
+    context.go(destination);
+  }
+
+  void _manualLoginNotice(String message) {
+    if (widget.onCompleted != null) {
+      widget.onCompleted!();
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _manualLogin = true;
+      _notice = message;
+      _accepting = false;
+    });
   }
 
   String _messageForError(Object error) {
@@ -255,9 +325,40 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
         ),
       );
     }
+    if (_manualLogin) return _buildManualLogin();
     final invitation = _invitation;
     if (invitation == null) return _buildTokenEntry();
     return _buildInvitationForm(invitation);
+  }
+
+  /// Écran de confirmation après acceptation — sans login automatique (compte
+  /// existant ou échec du login auto). Propose le bouton `/login`, jamais bloquant.
+  Widget _buildManualLogin() {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(Icons.check_circle_outline,
+              color: Colors.greenAccent, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            _notice ?? 'Invitation acceptée.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: () => context.go('/login'),
+            icon: const Icon(Icons.login),
+            label: const Text('Se connecter'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTokenEntry() {

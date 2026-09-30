@@ -6,6 +6,7 @@ import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/invitations/accept_invitation_screen.dart';
+import 'presentation/screens/invitations/invitation_management_screen.dart';
 import 'core/invitation_token.dart';
 import 'presentation/screens/main_scaffold.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
@@ -1212,6 +1213,7 @@ Map<String, List<String>> _routeRoles = {
   '/tenant/roles': const [],
   '/tenant/users': const [],
   '/tenant/onboarding': ['ADMIN', 'PASTEUR', 'TENANT_OWNER'],
+  '/tenant/invitations': ['ADMIN', 'PASTEUR', 'TENANT_OWNER'],
   '/compliance/consents': ['ADMIN', 'PASTEUR', 'TENANT_OWNER', 'MEMBER'],
   '/space-config-transfer': ['ADMIN', 'PASTEUR'],
   '/tenant/organizations': const [],
@@ -1399,7 +1401,6 @@ final appRouter = GoRouter(
       name: 'accept-invitation',
       builder: (context, state) => AcceptInvitationScreen(
         initialToken: invitationTokenFromUri(state.uri),
-        onCompleted: () => context.go('/login'),
       ),
     ),
     GoRoute(
@@ -2455,6 +2456,12 @@ final appRouter = GoRouter(
         path: '/tenant/onboarding',
         name: 'tenant-onboarding',
         builder: (ctx, s) => const TenantOnboardingScreen()),
+    // B9 — gestion complète des invitations (constat MO3). Route ADDITIVE,
+    // garde déclarée dans `_routeRoles` (ADMIN / PASTEUR / TENANT_OWNER).
+    GoRoute(
+        path: '/tenant/invitations',
+        name: 'tenant-invitations',
+        builder: (ctx, s) => const InvitationManagementScreen()),
     // RGPD — gestion des consentements (art. 7.1 / 7.3) via les endpoints
     // /compliance/consents réellement fournis par le backend.
     GoRoute(

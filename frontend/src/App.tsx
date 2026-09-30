@@ -106,6 +106,7 @@ const TenantAdminInvitationsPage = lazy(() => import('@/pages/TenantAdminInvitat
 const TenantAdminModulesPage = lazy(() => import('@/pages/TenantAdminModulesPage'));
 const TenantAdminSettingsPage = lazy(() => import('@/pages/TenantAdminSettingsPage'));
 const TenantAdminBrandingPage = lazy(() => import('@/pages/TenantAdminBrandingPage'));
+const TenantAdminSubscriptionPage = lazy(() => import('@/pages/TenantAdminSubscriptionPage'));
 const DressCodePage = lazy(() => import('@/pages/DressCodePage'));
 const TenantSwitcherPage = lazy(() => import('@/pages/TenantSwitcherPage'));
 const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
@@ -1146,6 +1147,10 @@ export default function App() {
           } />
           <Route path="/admin/branding" element={
             <ProtectedRoute scope="tenant"><TenantAdminBrandingPage /></ProtectedRoute>
+          } />
+          {/* B6 — Abonnement & quotas du tenant (contrat SubscriptionController, scope tenant) */}
+          <Route path="/admin/subscription" element={
+            <ProtectedRoute scope="tenant"><TenantAdminSubscriptionPage /></ProtectedRoute>
           } />
           <Route path="/admin/dress-codes" element={
             <ProtectedRoute scope="tenant"><DressCodePage /></ProtectedRoute>

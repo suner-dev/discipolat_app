@@ -5,8 +5,9 @@ import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
   Rocket, Building2, Users, Home as HomeIcon, ArrowLeft, ArrowRight,
-  CheckCircle2, Circle, Loader2, Sparkles, ClipboardList,
+  CheckCircle2, Circle, Loader2, Sparkles, ClipboardList, AlertTriangle, UserCog,
 } from 'lucide-react';
+import { tText } from '@/i18n';
 
 /* ============================================================================
  * Super Admin — Flux de provisionnement guidé (pas à pas, 100 % cliquable) :
@@ -25,6 +26,7 @@ interface TenantResult { id: string; name: string; slug: string; plan: string; s
 interface ChurchResult { id: string; tenantId: string; name: string; code: string; path: string }
 interface DepartmentResult { id: string; tenantId: string; nom: string; responsableId: string | null }
 interface FamilyResult { id: string; tenantId: string; nom: string; chefFamilleId: string | null }
+interface OwnerResult { userId?: string; email?: string; activationEmailSent?: boolean }
 interface PlanOption { key: string; name: string }
 
 const slugify = (value: string) =>
@@ -50,6 +52,9 @@ export default function PlatformOnboardingFlowPage() {
     timezone: 'Africa/Douala', locale: 'fr',
   });
   const [slugTouched, setSlugTouched] = useState(false);
+  // B12 — owner obligatoire (contrat §3.5) : sans owner valide, aucun tenant n'est créé.
+  const [ownerForm, setOwnerForm] = useState({ email: '', firstName: '', lastName: '' });
+  const [owner, setOwner] = useState<OwnerResult | null>(null);
   const [churchForm, setChurchForm] = useState({ name: '' });
   const [deptForm, setDeptForm] = useState({
     nom: '', description: '', mode: 'new' as 'new' | 'existing',
@@ -77,10 +82,19 @@ export default function PlatformOnboardingFlowPage() {
     setTenantForm((prev) => ({ ...prev, name: value, slug: slugTouched ? prev.slug : slugify(value) }));
   };
 
+  const isEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value.trim());
+  // B12 — l'owner est une condition d'accès à l'étape « Organisation » : le bouton
+  // « Continuer » reste bloqué tant que l'email / les noms ne sont pas valides.
+  const ownerValid =
+    isEmail(ownerForm.email) && ownerForm.firstName.trim() !== '' && ownerForm.lastName.trim() !== '';
+
   const validateStep = (index: number): string | null => {
     if (index === 0) {
       if (!tenantForm.name.trim()) return "Le nom de l'organisation est requis";
       if (!/^[a-z0-9-]+$/.test(effectiveSlug)) return 'Slug invalide (lettres minuscules, chiffres, tirets)';
+      if (!ownerForm.email.trim()) return tText("L'email du propriétaire est requis");
+      if (!isEmail(ownerForm.email)) return tText('Email du propriétaire invalide');
+      if (!ownerForm.firstName.trim() || !ownerForm.lastName.trim()) return tText('Prénom et nom du propriétaire requis');
       return null;
     }
     if (index === 1) {
@@ -143,6 +157,9 @@ export default function PlatformOnboardingFlowPage() {
       const { data } = await api.post('/platform/admin/provisioning', {
         ...tenantForm,
         slug: effectiveSlug,
+        ownerEmail: ownerForm.email.trim(),
+        ownerFirstName: ownerForm.firstName.trim(),
+        ownerLastName: ownerForm.lastName.trim(),
         churchName: churchForm.name.trim(),
         departmentName: deptForm.nom.trim(),
         departmentDescription: deptForm.description.trim() || null,
@@ -173,6 +190,7 @@ export default function PlatformOnboardingFlowPage() {
       setChurch(data.church as ChurchResult);
       setDepartment(data.department as DepartmentResult);
       setFamily(data.family as FamilyResult);
+      setOwner((data.owner as OwnerResult | undefined) ?? null);
       toast.success('Organisation provisionnée !');
       setStep(4);
     } catch (e) {
@@ -183,8 +201,9 @@ export default function PlatformOnboardingFlowPage() {
   };
 
   const resetAll = () => {
-    setStep(0); setTenant(null); setChurch(null); setDepartment(null); setFamily(null);
+    setStep(0); setTenant(null); setChurch(null); setDepartment(null); setFamily(null); setOwner(null);
     setTenantForm({ name: '', slug: '', plan: 'free', country: 'CM', currency: 'XAF', timezone: 'Africa/Douala', locale: 'fr' });
+    setOwnerForm({ email: '', firstName: '', lastName: '' });
     setSlugTouched(false);
     setChurchForm({ name: '' });
     setDeptForm({ nom: '', description: '', mode: 'new', newRespFirstName: '', newRespLastName: '', newRespEmail: '', newRespPhone: '', responsableId: '' });
@@ -329,8 +348,43 @@ export default function PlatformOnboardingFlowPage() {
               </select>
             </div>
           </div>
-          <div className="flex justify-end mt-6">
-            <button onClick={submitStep} disabled={submitting} className="btn-primary inline-flex items-center gap-2">
+
+          {/* ── B12 — Owner (pasteur) obligatoire, contrat §3.5 ── */}
+          <div className="mt-6 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/40 dark:bg-violet-900/10 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <UserCog className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{tText("Propriétaire de l'organisation (obligatoire)")}</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              {tText("Le compte pasteur/owner est créé avec l'organisation ; un email d'activation lui est envoyé.")}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className={labelCls}>{tText("Email du propriétaire *")}</label>
+                <input className={inputCls} type="email" value={ownerForm.email}
+                  onChange={(e) => setOwnerForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="pasteur@eglise.com" aria-label={tText("Email du propriétaire *")} />
+              </div>
+              <div>
+                <label className={labelCls}>{tText('Prénom du propriétaire *')}</label>
+                <input className={inputCls} value={ownerForm.firstName}
+                  onChange={(e) => setOwnerForm((p) => ({ ...p, firstName: e.target.value }))}
+                  aria-label={tText('Prénom du propriétaire *')} />
+              </div>
+              <div>
+                <label className={labelCls}>{tText('Nom du propriétaire *')}</label>
+                <input className={inputCls} value={ownerForm.lastName}
+                  onChange={(e) => setOwnerForm((p) => ({ ...p, lastName: e.target.value }))}
+                  aria-label={tText('Nom du propriétaire *')} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mt-6">
+            {!ownerValid && (
+              <span className="text-xs text-gray-400">{tText('Renseignez un owner valide pour continuer.')}</span>
+            )}
+            <button onClick={submitStep} disabled={submitting || !ownerValid} className="btn-primary inline-flex items-center gap-2 ml-auto">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
               Continuer
             </button>
@@ -581,6 +635,30 @@ export default function PlatformOnboardingFlowPage() {
               <p className="text-[11px] text-gray-400 mt-1 font-mono break-all">id : {family?.id}</p>
             </div>
           </div>
+
+          {/* ── B12 — Récapitulatif owner + avertissement si email d'activation non envoyé ── */}
+          {owner && (
+            <div className="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 text-violet-600 dark:text-violet-400 mb-2">
+                <UserCog className="w-4 h-4" />
+                <span className="text-xs font-semibold uppercase tracking-wide">{tText('Compte propriétaire')}</span>
+              </div>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 break-all">{owner.email}</p>
+              {owner.activationEmailSent === false ? (
+                <div
+                  role="alert"
+                  className="mt-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+                >
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{tText("Email d'activation non envoyé, transmettez le lien manuellement.")}</span>
+                </div>
+              ) : (
+                <p className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="w-3 h-3" /> {tText("Email d'activation envoyé")}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
             <button onClick={resetAll}

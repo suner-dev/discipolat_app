@@ -22,9 +22,9 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLive = event.status == EventStatus.live;
-    final isUpcoming = event.status == EventStatus.published;
-    final isPast = event.status == EventStatus.completed || event.status == EventStatus.cancelled;
+    final isLive = event.statut == EventStatus.live;
+    final isUpcoming = event.statut == EventStatus.published;
+    final isPast = event.statut == EventStatus.completed || event.statut == EventStatus.cancelled;
     final typeColor = event.type.getColorHex().toColor();
 
     return Card(
@@ -45,13 +45,9 @@ class EventCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   child: AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: event.thumbnailUrl != null
-                        ? Image.network(
-                            event.thumbnailUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildPlaceholder(typeColor),
-                          )
-                        : _buildPlaceholder(typeColor),
+                    // `EventResponse` n'expose aucune vignette : on affiche le
+                    // placeholder colore plutot qu'une image qui n'existe pas.
+                    child: _buildPlaceholder(typeColor),
                   ),
                 ),
                 Positioned(
@@ -60,7 +56,7 @@ class EventCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(event.status),
+                      color: _getStatusColor(event.statut),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -78,7 +74,7 @@ class EventCard extends StatelessWidget {
                           const SizedBox(width: 4),
                         ],
                         Text(
-                          event.status.displayName,
+                          event.statut.displayName,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -120,7 +116,7 @@ class EventCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          event.title,
+                          event.titre,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -128,7 +124,7 @@ class EventCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (event.maxAttendees != null && event.maxAttendees! > 0)
+                      if (event.limitePlaces != null && event.limitePlaces! > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -136,7 +132,7 @@ class EventCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '${event.currentAttendees}/${event.maxAttendees}',
+                            '${event.nbInscrits}/${event.limitePlaces}',
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: typeColor),
                           ),
                         ),
@@ -161,19 +157,19 @@ class EventCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         showTime
-                            ? '${DateFormat('dd/MM/yyyy HH:mm').format(event.startAt.toLocal())} - ${DateFormat('HH:mm').format(event.endAt.toLocal())}'
-                            : DateFormat('dd/MM/yyyy HH:mm').format(event.startAt.toLocal()),
+                            ? DateFormat('dd/MM/yyyy HH:mm').format(event.dateDebut.toLocal())
+                            : DateFormat('dd/MM/yyyy').format(event.dateDebut.toLocal()),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.surface.withOpacity(0.7),
                         ),
                       ),
-                      if (event.location != null) ...[
+                      if (event.lieu != null) ...[
                         const SizedBox(width: 16),
                         Icon(Icons.location_on_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            event.location!,
+                            event.lieu!,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.surface.withOpacity(0.7),
                             ),
@@ -184,28 +180,7 @@ class EventCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  // Tags
-                  if (event.tags != null && event.tags!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: event.tags!.take(3).map((tag) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: typeColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '#$tag',
-                            style: TextStyle(fontSize: 10, color: typeColor),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                  // Actions
+// Actions
                   if (onRegister != null || onCheckIn != null) ...[
                     const SizedBox(height: 12),
                     Row(

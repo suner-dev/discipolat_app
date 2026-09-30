@@ -2,6 +2,8 @@ package com.discipolat.modules.events.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.modules.events.domain.Event;
+import com.discipolat.modules.events.domain.EventGeofence;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.files.domain.EntityAttachment;
 import com.discipolat.modules.files.domain.EntityAttachmentService;
 import com.discipolat.modules.events.domain.EventRegistration;
@@ -40,6 +42,11 @@ public class EventController {
                 attachmentService.itemsFor(EntityAttachment.EntityType.EVENT, event.getId()));
     }
 
+    /** BigDecimal (JSON) vers Double (entite), en preservant l'absence. */
+    private static Double toDouble(java.math.BigDecimal value) {
+        return value == null ? null : value.doubleValue();
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<EventResponse> create(@Valid @RequestBody CreateEventRequest request) {
@@ -53,6 +60,16 @@ public class EventController {
                 .limitePlaces(request.limitePlaces())
                 .familleId(request.familleId())
                 .departmentId(request.departmentId())
+                .imageUrl(request.imageUrl())
+                .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
+                .publicEvent(Boolean.TRUE.equals(request.isPublic()))
+                .requiresRegistration(Boolean.TRUE.equals(request.requiresRegistration()))
+                .checkinEnabled(Boolean.TRUE.equals(request.hasCheckin()))
+                .streamId(request.streamId())
+                .latitude(toDouble(request.latitude()))
+                .longitude(toDouble(request.longitude()))
+                .geofenceRadiusMeters(request.geofenceRadiusMeters() == null
+                        ? 200 : request.geofenceRadiusMeters())
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(toResponse(eventService.create(event, request.fichierIds())));
@@ -124,6 +141,17 @@ public class EventController {
                 .statut(request.statut())
                 .compteRendu(request.compteRendu())
                 .departmentId(request.departmentId())
+                .imageUrl(request.imageUrl())
+                .tags(request.tags() == null ? null : request.tags().toArray(new String[0]))
+                // Les booleens sont des patches partiels : null = inchange.
+                .publicEvent(request.isPublic())
+                .requiresRegistration(request.requiresRegistration())
+                .checkinEnabled(request.hasCheckin())
+                .streamId(request.streamId())
+                .latitude(toDouble(request.latitude()))
+                .longitude(toDouble(request.longitude()))
+                .geofenceRadiusMeters(request.geofenceRadiusMeters() == null
+                        ? 200 : request.geofenceRadiusMeters())
                 .build();
         return ResponseEntity.ok(toResponse(eventService.update(id, event, request.fichierIds())));
     }
@@ -159,6 +187,77 @@ public class EventController {
         boolean present = (Boolean) body.get("present");
         return ResponseEntity.ok(EventRegistrationResponse.from(
                 eventService.markAttendance(eventId, userId, present)));
+    }
+
+    // ==================== POINTAGE GEOLOCALISE ====================
+
+    /**
+     * Pointage verifie par le serveur.
+     *
+     * <p>C'est le SEUL pointage dont la regle est opposable : le client transmet
+     * sa position, le serveur detient le lieu et le rayon, et statue. Le controle
+     * fait sur l'appareil (deja present dans l'app) n'est qu'un confort.
+     *
+     * <p>Codes : 201 accepte, 422 refuse (le corps porte le motif et les
+     * chiffres, pour que l'ecran puisse expliquer et que la contestation soit
+     * arbitrable), 403 pointage desactive sur l'evenement.
+     */
+    @PostMapping("/{eventId}/checkin")
+    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    public ResponseEntity<GeofenceCheckinResponse> checkin(
+            @PathVariable UUID eventId,
+            @RequestBody GeofenceCheckinRequest request) {
+
+        Event event = eventService.findById(eventId);
+
+        if (!Boolean.TRUE.equals(event.getCheckinEnabled())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    GeofenceCheckinResponse.of(false, "POINTAGE_DESACTIVE", 0, 0,
+                            event.getGeofenceRadiusMeters(), 0,
+                            "Le pointage n'est pas active pour cet evenement"));
+        }
+
+        if (request == null || request.latitude() == null || request.longitude() == null) {
+            return ResponseEntity.unprocessableEntity().body(
+                    GeofenceCheckinResponse.of(false, "POSITION_MANQUANTE", 0, 0,
+                            event.getGeofenceRadiusMeters(), 0,
+                            "Position manquante : activez la geolocalisation pour pointer"));
+        }
+
+        EventGeofence.Verdict verdict = EventGeofence.evaluate(
+                event.getLatitude(), event.getLongitude(),
+                event.getGeofenceRadiusMeters(),
+                request.latitude(), request.longitude(), request.accuracyMeters());
+
+        if (!verdict.accepted()) {
+            return ResponseEntity.unprocessableEntity().body(
+                    GeofenceCheckinResponse.of(false, verdict.reason().name(),
+                            verdict.distanceMeters(), verdict.accuracyMeters(),
+                            verdict.radiusMeters(), verdict.marginMeters(),
+                            messageFor(verdict)));
+        }
+
+        // Pointage accepte : on enregistre la PREUVE (position, precision, distance).
+        UUID userId = SecurityUtils.getCurrentUserId();
+        eventService.markAttendanceWithProof(eventId, userId, true,
+                request.latitude(), request.longitude(),
+                verdict.accuracyMeters(), verdict.distanceMeters());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                GeofenceCheckinResponse.of(true, verdict.reason().name(),
+                        verdict.distanceMeters(), verdict.accuracyMeters(),
+                        verdict.radiusMeters(), verdict.marginMeters(),
+                        "Pointage enregistre"));
+    }
+
+    private String messageFor(EventGeofence.Verdict verdict) {
+        return switch (verdict.reason()) {
+            case DANS_LE_PERIMETRE -> "Dans le perimetre";
+            case HORS_PERIMETRE -> "Trop loin du lieu de l'evenement";
+            case PRECISION_INSUFFISANTE -> "Position trop imprecise : essayez dehors";
+            case LIEU_NON_CONFIGURE -> "Geolocalisation non configuree pour cet evenement";
+            case COORDONNEES_INVALIDES -> "Position invalide";
+        };
     }
 
     @GetMapping("/{eventId}/registrations")

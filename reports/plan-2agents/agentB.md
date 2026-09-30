@@ -587,3 +587,158 @@ n'a jamais été construite. Trois voies, aucune ne m'appartient :
 `flutter analyze lib/app.dart` → 7 issues **exactement le niveau d'avant** (le nouvel import
 inutilisé a été retiré, je n'ai pas laissé determinaison). Non-régression : **18/18** tests sur les
 4 fichiers touchant la messagerie, la navigation et l'authentification.
+
+---
+
+## 2026-09-29 — B6 · B12 · B9 · B7 (fin) · B13 — clôture des tâches clients
+
+Passage en rôle **Agent frontend + Agent mobile**. Les tâches B restantes (réellement
+absentes du worktree, vérifiées à l'exécution) sont écrites, testées et commitées une par
+une (R6). **Rien de supprimé** : ajouts additifs uniquement.
+
+### B6 — Page « Abonnement & quotas » du tenant (web) — commit `eab0895d`
+
+- NEW `frontend/src/pages/TenantAdminSubscriptionPage.tsx`, tests `src/__tests__/TenantAdminSubscriptionPage.test.tsx` (10 cas), MOD `App.tsx` + `workspaces.ts` (routage + entrée workspace admin).
+- Consomme enfin `GET /platform/admin/quota-usage/tenants/{id}` (écart G6) : plan, cycle,
+  prix, prochaine échéance + consommation/limites par métrique avec `LinearProgressIndicator`.
+- Actions : réactiver / cancel-at-end / changer de plan (le changement est appliqué au prochain
+  période ; un downgrade refusé au-delà de la consommation est affiché honnêtement).
+- **5 états** (§5.0.2) : chargement, vide (« aucune assinatura »), erreur + retry, succès,
+  interdit. Catalogue de plans lu via API (repli annoncé), **aucune donnée en dur**.
+- i18n : clés `subscription.*` dans les **6 locales**. Deux corrections de test : le libellé
+  « Cycle : Mensuel » est un texte fractionné (regex `/Mensuel/`) ; la mutation de changement
+  de plan doit être mockée (`post.mockResolvedValue`) pour déclencher `onSuccess`.
+- Preuve : `vitest TenantAdminSubscriptionPage.test.tsx` **10/10** ; `tsc -b` 0 ; `eslint` 0.
+
+### B12 — Champs owner obligatoires au provisioning web — commit `e21e43c8`
+
+- MOD `frontend/src/pages/PlatformOnboardingFlowPage.tsx` + NEW `src/__tests__/PlatformOnboardingFlow.test.tsx` (7 cas) + NEW `scripts/i18n_b12_owner.py` (12 clés `onboarding.owner*` × 6 locales).
+- Étape « Organisation » : `ownerEmail` (validé email), `ownerFirstName`, `ownerLastName` requis ;
+  bouton « Continuer » **verrouillé** tant que l'owner n'est pas valide ; envoi conforme §3.5
+  (`ownerEmail`/`ownerFirstName`/`ownerLastName`).
+- Récapitulatif : carte owner avec `owner.email` + `owner.activationEmailSent` (si `false` →
+  **avertissement `role="alert"`** de partage manuel du lien).
+- Périmètre : **seules les nouvelles chaînes** passent par `tText` (le reste de la page legacy
+  reste en français brut — R12, aucune amélioration opportuniste hors tâche).
+- Preuve : `vitest PlatformOnboardingFlow.test.tsx` **7/7** ; `tsc -b` 0 ; `eslint` 0.
+
+### B9 — Gestion complète des invitations (mobile) — commit `2c4ba74a`
+
+- NEW `mobile/lib/data/services/invitation_admin_service.dart` (list/create/resend/cancel/validate/accept,
+  décodage tolérant des **deux** formes `PageResponse`/tableau, ids/tokens `Uri.encodeComponent`).
+- NEW `mobile/lib/presentation/screens/invitations/invitation_management_screen.dart`
+  (liste, filtre statut, renvoi, annulation via `AlertDialog` — **jamais d'`alert` natif**,
+  copie du lien si `emailSent=false`, création avec scope, issues `requiresTenantSwitch`/ajout direct).
+- MOD `users_screen.dart` : l'envoi d'invitation **délègue au service** (conservé, non réécrit).
+- MOD `app.dart` : route `/tenant/invitations` (`tenant-invitations`) + garde `ADMIN/PASTEUR/TENANT_OWNER`.
+- Tests NEW : `invitation_admin_service_test.dart` (contrat verrouillé, fake `ApiService`) +
+  `invitation_management_screen_test.dart` (6 cas : liste/vide/erreur+retry/création→copier/renvoi/annulation).
+- **Deux bugs de cycle de vie widget corrigés par l'exécution** : (1) `TextEditingController used
+  after disposed` — la feuille de création est refactorée en **`StatefulWidget` autonome** qui
+  possède et détruit son contrôleur à son démontage réel ; (2) `RenderFlex overflow` — colonne
+  en `SingleChildScrollView` + `SafeArea`. L'erreur « wrong build scope » de la 3ᵉ suite était
+  une **cascade** de (1), disparue après correction.
+- Preuve : `flutter test invitation_admin_service_test.dart invitation_management_screen_test.dart`
+  → **16/16** ; `flutter analyze` (5 fichiers B9) → **No issues**.
+
+### B7 (fin) — Bannière + écrans de test mobiles — commit `d6b22fb8`
+
+- NEW `mobile/lib/presentation/widgets/onboarding_banner.dart` : bannière informative auto-suffisante
+  (lit `fetchStatus`, visible uniquement si `completed == false`, **masquée sur erreur réseau** —
+  on ne nagge pas sur un état inconnu), dismissible en session, navigation injectable (`onNavigate`)
+  pour découplage go_router + testabilité.
+- MOD `tenant_admin_dashboard_screen.dart` : `OnboardingBanner` insérée en tête du tableau de bord
+  (`onNavigate: context.push`).
+- MOD `tenant_onboarding_screen.dart` : **les libellés passaient par `_msg(key)` qui renvoyait la
+  clé brute** (l'écran affichait littéralement `onboarding.allDone`). Conformément au §B7
+  (« afficher « Configuration terminée » »), `_msg` renvoie désormais de vrais libellés français
+  via une table centralisée (fallback sur la clé si inconnue). Amélioration, rien de supprimé.
+- Tests NEW : `onboarding_banner_test.dart` (5 cas : affichée/masquée/erreur/navigation/dismissible)
+  + `tenant_onboarding_screen_test.dart` (7 cas : rendu 7 étapes, complétion avec data, skip avec
+  motif, skip bloqué sans motif, **erreur 409 `STEP_ORDER_VIOLATION`**, reprise, fin de parcours).
+  Le service est remplacé par un faux (Riverpod `overrideWithValue`) → **aucun appel réseau**.
+- Preuve : `flutter test tenant_onboarding_service_test tenant_onboarding_screen_test onboarding_banner_test`
+  → **25/25** ; `flutter analyze` (5 fichiers B7) → **No issues**.
+
+### B13 — Qualité clients (i18n, lint, build, analyse) — commit `f4b58efd`
+
+**Frontend :**
+- `npm run lint` → **0 erreur** (343 warnings pré-existants ; `eslint` ciblé sur mes 4 fichiers
+  B6/B12 → 0 problème). `npm run build` → succès. `npx tsc -b` → **0 erreur**. `npm test -- --run`
+  → **430/430** (57 fichiers ; ≥ 325 de référence + nouveaux).
+- **Parité i18n 6 locales** : extraction texte des fichiers → chaque locale contient les
+  **2769 clés `fr`** (missing = 0). **Défaut réel trouvé et corrigé** : dans `pt.ts`, la clé
+  `onboarding.v2.Retirar` était **mal orthographiée** (devait être `Retirer`) → orpheline, la
+  valeur aurait fui en français pour les utilisateurs pt. Corrigée → parité rétablie.
+
+**Mobile :**
+- `flutter analyze` (projet complet) → **0 erreur**, **593 issues** = **exactement le niveau de
+  baseline** : **aucune nouvelle remarque** introduite par B7/B9. Les fichiers livrés sont
+  individuellement « No issues ».
+- `flutter test` (projet complet) → **466/466** (baseline 438 + 16 B9 + 12 B7), EXIT 0.
+
+**Total B de cette session : 5 commits (B6, B12, B9, B7-fin, B13), 454 → 466 tests mobiles et
+430 tests web, tous verts, gates G-B respectés.**
+
+---
+
+## Session de re-audit — clôture des lacunes mobiles B10 / B11
+
+À la relecture rigoureuse du plan (§B10 ligne 819, §B11 ligne 833, contrat §3.5 owner, gates
+G-B.5 / décision D12), **deux tâches mobiles étaient marquées « faites » par des tests verts mais
+N'ÉTAIENT PAS conformes au contrat**. Tests verts ≠ contrat respecté. Elles ont été reprises.
+
+### B10 — Provisioning mobile complet (plans API + géo + owner) — commit `5c72e249`
+
+**Défaut trouvé :** l'écran forçait `plan='free'`, `country='CM'`, `currency='XAF'`,
+`timezone='Africa/Douala'`, `locale='fr'` en dur (violation G-B.5 + D12), n'appelait **aucun**
+endpoint de plans, n'avait **aucun** champ owner (contrat §3.5 absent).
+
+**Corrections :**
+- Plans réellement tirés de `GET /platform/admin/plans` (SuperAdminController:462, `toPlanSummary`),
+  repli documentaire `DISCOVERY/STARTUP/GROWTH/NETWORK` **+ message « Liste minimale (API
+  indisponible) »** si absent — jamais de plan forcé, la valeur par défaut reste sélectionnable.
+- Devises via `GET /platform/currencies` (réutilise `CurrencyCatalogService`, décodage strict),
+  fuseaux via `GET /currencies/timezones` (`CurrencyController`, `{id,name}` IANA). Pays : **aucune
+  API pays** dans le backend → saisie libre (helperText explicite), conformément au piège §6.
+- Champs **owner obligatoires** (`ownerEmail`/`ownerFirstName`/`ownerLastName`, contrat §3.5) :
+  validation e-mail + prénom/nom ; bouton « Continuer » bloqué à l'étape 0 tant qu'incomplets.
+- Récapitulatif affiche `owner.activationEmailSent` : alerte `role=alert` si `false`
+  (« transmettez le lien d'activation manuellement »).
+
+**Preuve :** `flutter analyze` fichier → 0 erreur ; `flutter test test/super_admin_provisioning_screen_test.dart`
+→ **+4/4 verts** (référentiels via API observés dans `getPaths`, blocage owner, payload conforme
+avec `ownerEmail`+plan/devise/fuseau sélectionnés, échec plans → fallback + message).
+
+### B11 — Auto-login après acceptation d'invitation mobile — commit `daf3e3de`
+
+**Défaut trouvé :** `accept_invitation_screen.dart` ne faisait **aucun** échange de jeton ; la
+route montait l'écran avec `onCompleted: () => context.go('/login')`, ce qui **forcait** un retour
+à l'écran de connexion et bloquait l'auto-connexion prévue par §B11.
+
+**Corrections :**
+- Nouveau compte (mot de passe saisi) → `POST /auth/login` (un **seul** appel) + `saveTokens` +
+  `AuthState().setAuthenticated` puis redirection `roleHome(activeRole)`.
+- Compte existant (`accountExists`) → **aucun** login, panneau « connectez-vous » non bloquant.
+- `crossTenantIdentity` (contrat §3.4) → redirection `/tenant-selection` après login.
+- Échec du login auto → repli **non bloquant** vers `/login`, message explicite, jamais de boucle.
+- Retrait du `onCompleted` forcé dans la route (`app.dart`) pour que l'écran navigue lui-même.
+
+**Preuve :** harnais GoRouter réel (routes /login, /tenant-selection, /dashboard/membre) + mock du
+canal natif `FlutterSecureStorage` ; `flutter test test/accept_invitation_screen_test.dart` →
+**+5/5 verts** (auto-login + destination, compte-existant sans login, crossTenant, échec login
+non bloquant un seul appel, invitation invalide 410 sans accept).
+
+### Gate G-B re-joué (mobile, complet)
+
+- `flutter analyze` (projet) → **593 issues = baseline exact, 0 erreur** (les fichiers livrés sont
+  individuellement « No issues » ; les 7 warnings de `app.dart` sont pré-existants, laissés per R12).
+- `flutter test` (projet) → **468/468 verts**, EXIT 0 (466 baseline + 4 B10 + 5 B11 − 7 tests
+  remplacés par leurs réécritures conformes).
+- Backend vérifié **déjà conforme** (Agent A) : `PlatformProvisioningController` accepte
+  `ownerEmail/ownerFirstName/ownerLastName`, renvoie `owner{userId,email,activationEmailSent}`,
+  fail-closed `OWNER_REQUIRED` ; `GET /platform/admin/plans` + `/currencies/timezones` existent ;
+  `/platform/currencies` (PlatformCurrenciesController) porte sur la branche A, fusion §5.3.
+
+**Total B10/B11 : 2 commits (`5c72e249`, `daf3e3de`), poussés sur `fix/onboarding-tenant-clients`**
+(`6701dcb5..daf3e3de`). Les 13 tâches clients B1→B13 sont désormais conformes au contrat et prouvées.**

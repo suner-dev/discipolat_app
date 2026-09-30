@@ -42,23 +42,15 @@ class _EventCreateScreenState extends ConsumerState<EventCreateScreen> {
   void initState() {
     super.initState();
     if (widget.event != null) {
-      _titleController.text = widget.event!.title;
+      // Reprise en mode edition : uniquement ce que le serveur renvoie.
+      _titleController.text = widget.event!.titre;
       _descriptionController.text = widget.event!.description ?? '';
-      _locationController.text = widget.event!.location ?? '';
-      _streamUrlController.text = widget.event!.streamUrl ?? '';
-      _tagsController.text = widget.event!.tags?.join(', ') ?? '';
-      _startAt = widget.event!.startAt;
-      _endAt = widget.event!.endAt;
-      _selectedType = widget.event!.type;
-      _selectedStatus = widget.event!.status;
-      _thumbnailUrl = widget.event!.thumbnailUrl;
-      _requiresRegistration = widget.event!.requiresRegistration;
-      _maxAttendees = widget.event!.maxAttendees;
-      _hasCheckIn = widget.event!.hasCheckIn;
-      _hasGeofencing = widget.event!.hasGeofencing;
-      _hasFaceCheckIn = widget.event!.hasFaceCheckIn;
-      _isPublic = widget.event!.isPublic;
-      _selectedDressCodeId = widget.event!.dressCodeId != null ? int.tryParse(widget.event!.dressCodeId!) : null;
+      _locationController.text = widget.event!.lieu ?? '';
+      _startAt = widget.event!.dateDebut;
+      _endAt = widget.event!.dateFin;
+      _selectedType = EventTypeWire.decode(widget.event!.typeEvenement);
+      _selectedStatus = widget.event!.statut;
+      _maxAttendees = widget.event!.limitePlaces;
     } else {
       _startAt = DateTime.now().add(const Duration(days: 1));
       _endAt = DateTime.now().add(const Duration(days: 1, hours: 2));
@@ -523,22 +515,23 @@ class _EventCreateScreenState extends ConsumerState<EventCreateScreen> {
         // A la creation, l'identifiant est attribue par le backend (UUID) :
         // la valeur locale n'est jamais envoyee comme reference.
         id: widget.event?.id ?? '',
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
-        startAt: _startAt!,
-        endAt: _endAt!,
-        location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-        streamUrl: _streamUrlController.text.trim().isEmpty ? null : _streamUrlController.text.trim(),
-        thumbnailUrl: _thumbnailUrl,
-        status: _selectedStatus,
-        requiresRegistration: _requiresRegistration,
-        maxAttendees: _maxAttendees,
-        hasCheckIn: _hasCheckIn,
-        hasGeofencing: _hasGeofencing,
-        hasFaceCheckIn: _hasFaceCheckIn,
-        isPublic: _isPublic,
-        type: _selectedType,
-        tags: _tagsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        // `CreateEventRequest` : typeEvenement, titre, dateDebut et lieu sont
+        // les seuls champs que le serveur accepte en creation. Tout ce que le
+        // formulaire affiche ici existe dans le contrat.
+        titre: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        lieu: _locationController.text.trim().isEmpty
+            ? null
+            : _locationController.text.trim(),
+        typeEvenement: _selectedType.name,
+        dateDebut: _startAt!,
+        dateFin: _endAt,
+        limitePlaces: _maxAttendees,
+        // A la creation, le serveur impose PLANIFIE (`EventService.create`) :
+        // on ne tente pas de lui envoyer un statut.
+        statut: widget.event?.statut ?? EventStatus.published,
         createdAt: DateTime.now(),
       );
 

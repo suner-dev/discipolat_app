@@ -228,6 +228,16 @@ public class EventService {
         if (updated.getStatut() != null) event.setStatut(updated.getStatut());
         if (updated.getCompteRendu() != null) event.setCompteRendu(updated.getCompteRendu());
         if (updated.getDepartmentId() != null) event.setDepartmentId(updated.getDepartmentId());
+        if (updated.getImageUrl() != null) event.setImageUrl(updated.getImageUrl());
+        if (updated.getTags() != null) event.setTags(updated.getTags());
+        if (updated.getStreamId() != null) event.setStreamId(updated.getStreamId());
+        if (updated.getPublicEvent() != null) event.setPublicEvent(updated.getPublicEvent());
+        if (updated.getRequiresRegistration() != null) {
+            event.setRequiresRegistration(updated.getRequiresRegistration());
+        }
+        if (updated.getCheckinEnabled() != null) {
+            event.setCheckinEnabled(updated.getCheckinEnabled());
+        }
         Event saved = eventRepository.save(event);
         attachmentService.replace(EntityAttachment.EntityType.EVENT, saved.getId(), fichierIds);
         return saved;
@@ -244,6 +254,12 @@ public class EventService {
 
     public EventRegistration register(UUID eventId) {
         Event event = findById(eventId);
+        // Option V200 appliquee : sans inscription, l'evenement est ouvert et
+        // l'inscription n'a pas de sens. Fail-closed sur `null`.
+        if (!Boolean.TRUE.equals(event.getRequiresRegistration())) {
+            throw new IllegalStateException(
+                    "Les inscriptions ne sont pas ouvertes pour cet evenement");
+        }
         UUID userId = securityUtils.getCurrentUserId();
         if (registrationRepository.findByEventIdAndUtilisateurId(eventId, userId).isPresent()) {
             throw new IllegalArgumentException("Already registered for this event");
@@ -279,7 +295,12 @@ public class EventService {
     }
 
     public EventRegistration markAttendance(UUID eventId, UUID userId, boolean present) {
-        findById(eventId); // contrôle d'accès à l'événement
+        Event event = findById(eventId); // contrôle d'accès à l'événement
+        // Option V200 appliquee : sans pointage active, impossible d'emarger.
+        if (!Boolean.TRUE.equals(event.getCheckinEnabled())) {
+            throw new IllegalStateException(
+                    "Le pointage n'est pas active pour cet evenement");
+        }
         EventRegistration registration = registrationRepository.findByEventIdAndUtilisateurId(eventId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Registration", eventId));
         registration.setStatutInscription(present ? "PRESENT" : "ABSENT");
@@ -287,6 +308,29 @@ public class EventService {
             registration.setDateEmargement(LocalDateTime.now());
         }
         return registrationRepository.save(registration);
+    }
+
+    /**
+     * Pointage verifie par le moteur de geolocalisation, avec PREUVE.
+     *
+     * <p>On conserve position, precision et distance mesuree : sans elles, un
+     * pointage geolocalise est un pointage non contestable, donc inexistant.
+     *
+     * @param distanceMeters distance deja calculee par {@link EventGeofence}
+     */
+    @Transactional
+    public EventRegistration markAttendanceWithProof(UUID eventId, UUID userId, boolean present,
+                                                      double latitude, double longitude,
+                                                      double accuracyMeters, double distanceMeters) {
+        EventRegistration registration = markAttendance(eventId, userId, present);
+        if (present) {
+            registration.setCheckinLatitude(latitude);
+            registration.setCheckinLongitude(longitude);
+            registration.setCheckinAccuracyMeters(accuracyMeters);
+            registration.setCheckinDistanceMeters(distanceMeters);
+            return registrationRepository.save(registration);
+        }
+        return registration;
     }
 
     @Transactional(readOnly = true)

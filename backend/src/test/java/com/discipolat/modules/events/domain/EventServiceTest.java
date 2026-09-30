@@ -328,4 +328,139 @@ class EventServiceTest {
         assertEquals("PLANIFIE", saved.getStatut());
         verify(eventRepository).save(nouveau);
     }
+
+    // ==================================================================
+    // Options d'evenement (V200) — elles doivent etre APPLIQUEES, pas decoratives
+    // ==================================================================
+
+    @Test
+    void register_refuse_quandLesInscriptionsNeSontPasOuvertes() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        Event ouvert = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(UUID.randomUUID())
+                .titre("Evenement libre")
+                .dateDebut(LocalDateTime.now().plusDays(1))
+                .requiresRegistration(Boolean.FALSE)
+                .build();
+        when(eventRepository.findById(ouvert.getId())).thenReturn(Optional.of(ouvert));
+
+        // Fail-closed : `null` est traite comme « non ouvert ».
+        IllegalStateException refus = assertThrows(IllegalStateException.class,
+                () -> eventService.register(ouvert.getId()));
+        assertTrue(refus.getMessage().contains("inscriptions"));
+    }
+
+    @Test
+    void register_accepte_quandLesInscriptionsSontOuvertes() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        // Pas de `requiresRegistration` explicite : on verifie que le DEFAUT
+        // preserve le comportement d'avant V200 (inscription ouverte).
+        Event ouvert = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(UUID.randomUUID())
+                .titre("Conference")
+                .dateDebut(LocalDateTime.now().plusDays(1))
+                .build();
+        when(eventRepository.findById(ouvert.getId())).thenReturn(Optional.of(ouvert));
+        when(registrationRepository.findByEventIdAndUtilisateurId(
+                any(UUID.class), any(UUID.class))).thenReturn(Optional.empty());
+        when(registrationRepository.save(any(EventRegistration.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        EventRegistration registration = eventService.register(ouvert.getId());
+
+        assertEquals(ouvert.getId(), registration.getEventId());
+    }
+
+    @Test
+    void markAttendance_refuse_quandLePointageEstDesactive() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        Event sansPointage = Event.builder()
+                .id(UUID.randomUUID())
+                .organisateurId(UUID.randomUUID())
+                .titre("Evenement sans pointage")
+                .dateDebut(LocalDateTime.now())
+                .checkinEnabled(Boolean.FALSE)
+                .build();
+        when(eventRepository.findById(sansPointage.getId())).thenReturn(Optional.of(sansPointage));
+
+        assertThrows(IllegalStateException.class,
+                () -> eventService.markAttendance(sansPointage.getId(), userId, true));
+    }
+
+    @Test
+    void update_appliqueLesOptionsSansEcraserLesAbsentes() {
+        when(workspaceScope.isSuperUser()).thenReturn(false);
+        Event existant = Event.builder()
+                .id(UUID.randomUUID())
+                // L'organisateur doit etre l'utilisateur connecte : c'est la
+                // regle `canManageEvent` qui autorise la modification.
+                .organisateurId(UUID.fromString("00000000-0000-0000-0000-000000000001"))
+                .titre("Evenement")
+                .dateDebut(LocalDateTime.now().plusDays(1))
+                .publicEvent(Boolean.TRUE)
+                .requiresRegistration(Boolean.TRUE)
+                .checkinEnabled(Boolean.FALSE)
+                .tags(new String[]{"priere"})
+                .build();
+        when(eventRepository.findById(existant.getId())).thenReturn(Optional.of(existant));
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Patch partiel : seuls `imageUrl` et `isPublic` sont fournis.
+        // On passe explicitement `null` sur les absents, comme le fait
+        // l'EventController en traduisant `UpdateEventRequest` : un composant
+        // absent y vaut `null`. (Construire le patch par le builder SANS
+        // rappeler les setters poserait les @Builder.Default, ce qui
+        // n'est pas un patch mais un remplacement.)
+        Event patch = Event.builder()
+                .id(existant.getId())
+                .titre(null)
+                .description(null)
+                .lieu(null)
+                .dateDebut(null)
+                .dateFin(null)
+                .limitePlaces(null)
+                .typeEvenement(null)
+                .statut(null)
+                .compteRendu(null)
+                .imageUrl("https://files.example/couverture.jpg")
+                .tags(null)
+                .publicEvent(Boolean.FALSE)
+                .requiresRegistration(null)
+                .checkinEnabled(null)
+                .streamId(null)
+                .build();
+
+        Event saved = eventService.update(patch.getId(), patch, null);
+
+        assertEquals("https://files.example/couverture.jpg", saved.getImageUrl());
+        assertEquals(Boolean.FALSE, saved.getPublicEvent());
+        // Non fournis -> conserves
+        assertEquals(Boolean.TRUE, saved.getRequiresRegistration());
+        assertEquals(Boolean.FALSE, saved.getCheckinEnabled());
+        assertArrayEquals(new String[]{"priere"}, saved.getTags());
+    }
+
+    @Test
+    void create_conserveLesOptionsRecues() {
+        Event nouveau = Event.builder()
+                .organisateurId(userId)
+                .titre("Evenement avec options")
+                .dateDebut(LocalDateTime.now().plusDays(2))
+                .imageUrl("https://files.example/v.png")
+                .tags(new String[]{"retraite", "jeunesse"})
+                .publicEvent(Boolean.TRUE)
+                .requiresRegistration(Boolean.TRUE)
+                .checkinEnabled(Boolean.TRUE)
+                .build();
+        when(eventRepository.save(any(Event.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Event saved = eventService.create(nouveau, null);
+
+        assertEquals(Boolean.TRUE, saved.getPublicEvent());
+        assertEquals(Boolean.TRUE, saved.getRequiresRegistration());
+        assertEquals(Boolean.TRUE, saved.getCheckinEnabled());
+        assertArrayEquals(new String[]{"retraite", "jeunesse"}, saved.getTags());
+    }
 }

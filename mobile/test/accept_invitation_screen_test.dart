@@ -1,7 +1,16 @@
+// B11 — Auto-login après acceptation d'invitation (constat MO3/mineur).
+//
+// Couvre le parcours réel :
+// - compte créé (mot de passe saisi) → POST /auth/login + saveTokens + AuthState,
+//   puis redirection vers l'espace du rôle (roleHome) ;
+// - compte existant (aucun mot de passe) → AUCUN login, écran « connectez-vous » ;
+// - crossTenantIdentity → redirection /tenant-selection après login ;
+// - échec du login auto → repli non bloquant (jamais de boucle, un seul appel).
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/invitations/accept_invitation_screen.dart';
@@ -13,21 +22,21 @@ class _FakeApiService extends ApiService {
   final List<String> postPaths = [];
   final List<Map<String, dynamic>> postData = [];
   DioException? getError;
-  DioException? postError;
+
   bool accountExists = false;
+  bool crossTenant = false;
+  bool loginShouldFail = false;
 
   @override
-  Future<Response> get(
-    String path, {
-    Map<String, dynamic>? params,
-    Map<String, dynamic>? queryParameters,
-  }) async {
+  Future<Response> get(String path,
+      {Map<String, dynamic>? params,
+      Map<String, dynamic>? queryParameters}) async {
     getPaths.add(path);
     if (getError != null) throw getError!;
     return _json(path, {
       'valid': true,
       'email': 'invitee@example.com',
-      'role': 'MEMBER',
+      'role': 'MEMBRE',
       'scopeType': 'TENANT',
       'tenantName': 'Église Bethel',
       'organizationName': 'Département Accueil',
@@ -41,7 +50,37 @@ class _FakeApiService extends ApiService {
     postPaths.add(path);
     postData.add(
         data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{});
-    if (postError != null) throw postError!;
+
+    if (path.startsWith('/admin/invitations/accept/')) {
+      return _json(path, {
+        'success': true,
+        'email': 'invitee@example.com',
+        'crossTenantIdentity': crossTenant,
+      });
+    }
+    if (path == '/auth/login') {
+      if (loginShouldFail) {
+        throw DioException(
+          requestOptions: RequestOptions(path: path),
+          response: Response(
+            requestOptions: RequestOptions(path: path),
+            statusCode: 401,
+            data: {'detail': 'identifiants invalides'},
+          ),
+        );
+      }
+      // Réponse de login conforme au contrat mobile (accessToken + rôle actif).
+      return _json(path, {
+        'accessToken': 'jwt-access',
+        'refreshToken': 'jwt-refresh',
+        'userId': 'u-1',
+        'email': 'invitee@example.com',
+        'role': 'MEMBRE',
+        'roles': ['MEMBRE'],
+        'activeRole': 'MEMBRE',
+        'platformSuperAdmin': false,
+      });
+    }
     return _json(path, {'success': true});
   }
 
@@ -52,174 +91,149 @@ class _FakeApiService extends ApiService {
       );
 }
 
-DioException _httpError(int status, Object data) => DioException(
-      requestOptions: RequestOptions(path: '/invitation'),
-      response: Response(
-        requestOptions: RequestOptions(path: '/invitation'),
-        statusCode: status,
-        data: data,
+const String token = 'abcdef0123456789abcdef0123456789';
+
+/// Monte l'écran dans un vrai GoRouter pour observer la destination finale.
+Future<void> pumpScreen(WidgetTester tester, ApiService api) async {
+  await tester.binding.setSurfaceSize(const Size(900, 1800));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  final router = GoRouter(
+    initialLocation: '/accept',
+    routes: [
+      GoRoute(
+        path: '/accept',
+        builder: (_, __) =>
+            AcceptInvitationScreen(initialToken: token, apiService: api),
       ),
-    );
+      GoRoute(
+          path: '/login',
+          builder: (_, __) => const Scaffold(body: Text('LOGIN_PAGE'))),
+      GoRoute(
+          path: '/tenant-selection',
+          builder: (_, __) => const Scaffold(body: Text('SELECT_PAGE'))),
+      GoRoute(
+          path: '/dashboard/membre',
+          builder: (_, __) => const Scaffold(body: Text('MEMBRE_HOME'))),
+    ],
+  );
+  await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+  await tester.pumpAndSettle();
+}
+
+Future<void> fillNewAccountForm(WidgetTester tester) async {
+  await tester.enterText(find.widgetWithText(TextFormField, 'Prénom'), ' Jean ');
+  await tester.enterText(find.widgetWithText(TextFormField, 'Nom'), ' Dupont ');
+  await tester.enterText(
+      find.widgetWithText(TextFormField, 'Mot de passe'), 'password123');
+  await tester.enterText(find.widgetWithText(TextFormField, 'Confirmer le mot de passe'),
+      'password123');
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    // FlutterSecureStorage (utilisé par saveTokens) est un canal natif :
+    // on le neutralise pour les tests widget.
+    const channel =
+        MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async => null);
   });
 
-  Future<void> pumpScreen(
-    WidgetTester tester,
-    ApiService api, {
-    String? token,
-    VoidCallback? onCompleted,
-  }) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1800));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AcceptInvitationScreen(
-          initialToken: token,
-          apiService: api,
-          onCompleted: onCompleted,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> fillNewAccountForm(WidgetTester tester) async {
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Prénom'),
-      ' Jean ',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Nom'),
-      ' Dupont ',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Mot de passe'),
-      'password123',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Confirmer le mot de passe'),
-      'password123',
-    );
-  }
-
-  testWidgets('validates without accepting and never renders the token',
+  testWidgets('compte créé → login automatique + redirection roleHome',
       (tester) async {
-    const token = 'abcdef0123456789abcdef0123456789';
     final api = _FakeApiService();
-    await pumpScreen(tester, api, token: token);
+    await pumpScreen(tester, api);
 
-    expect(api.getPaths, ['/admin/invitations/validate/$token']);
-    expect(api.postPaths, isEmpty);
-    expect(find.text('invitee@example.com'), findsOneWidget);
-    expect(find.textContaining('Église Bethel'), findsWidgets);
-    expect(find.text('Département Accueil'), findsOneWidget);
-    expect(find.text(token), findsNothing);
-  });
-
-  testWidgets('creates a new account with the exact acceptance payload',
-      (tester) async {
-    const token = 'abcdef0123456789abcdef0123456789';
-    final api = _FakeApiService();
-    var completed = false;
-    await pumpScreen(
-      tester,
-      api,
-      token: token,
-      onCompleted: () => completed = true,
-    );
     await fillNewAccountForm(tester);
-
     await tester.tap(find.text('Créer mon compte'));
     await tester.pumpAndSettle();
 
-    expect(api.postPaths, ['/admin/invitations/accept/$token']);
-    expect(api.postData.single, {
-      'firstName': 'Jean',
-      'lastName': 'Dupont',
+    // contrat §3.4 : acceptation, puis login automatique (un seul appel).
+    expect(api.postPaths, [
+      '/admin/invitations/accept/$token',
+      '/auth/login',
+    ]);
+    expect(api.postPaths.where((p) => p == '/auth/login').length, 1);
+    // Corps de login : email de l'invitation + mot de passe saisi.
+    expect(api.postData[1], {
+      'email': 'invitee@example.com',
       'password': 'password123',
     });
-    expect(completed, isTrue);
+    // Destination : espace du rôle actif.
+    expect(find.text('MEMBRE_HOME'), findsOneWidget);
   });
 
-  testWidgets('accepts an existing account without asking for credentials',
+  testWidgets('compte existant → aucun login, écran « connectez-vous »',
       (tester) async {
-    const token = 'abcdef0123456789abcdef0123456789';
     final api = _FakeApiService()..accountExists = true;
-    var completed = false;
-    await pumpScreen(
-      tester,
-      api,
-      token: token,
-      onCompleted: () => completed = true,
-    );
+    await pumpScreen(tester, api);
 
+    // Aucun champ de créance pour un compte existant.
     expect(find.text('Prénom'), findsNothing);
     expect(find.text('Mot de passe'), findsNothing);
     await tester.tap(find.text('Accepter l’invitation'));
     await tester.pumpAndSettle();
 
-    expect(api.postData.single, isEmpty);
-    expect(completed, isTrue);
+    // Pas de tentative de login automatique.
+    expect(api.postPaths, ['/admin/invitations/accept/$token']);
+    expect(find.text('Invitation acceptée. Connectez-vous avec votre mot de passe.'),
+        findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
   });
 
-  testWidgets('rejects a malformed manual token without an API call',
+  testWidgets('crossTenantIdentity → redirection /tenant-selection après login',
       (tester) async {
-    final api = _FakeApiService();
+    final api = _FakeApiService()..crossTenant = true;
     await pumpScreen(tester, api);
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Code d’invitation'),
-      'invalid',
-    );
-    await tester.tap(find.text('Vérifier l’invitation'));
-    await tester.pump();
-
-    expect(api.getPaths, isEmpty);
-    expect(find.text('Code d’invitation invalide.'), findsOneWidget);
-  });
-
-  testWidgets('maps expired invitations to a generic terminal error',
-      (tester) async {
-    const token = 'abcdef0123456789abcdef0123456789';
-    final api = _FakeApiService()
-      ..getError = _httpError(410, {
-        'title': 'INVITATION_EXPIRED',
-        'detail': 'Invitation expirée',
-      });
-    await pumpScreen(tester, api, token: token);
-
-    expect(
-      find.text('Cette invitation est invalide, expirée ou déjà utilisée.'),
-      findsOneWidget,
-    );
-    expect(find.textContaining(token), findsNothing);
-  });
-
-  testWidgets('treats a lost acceptance response as completed after commit',
-      (tester) async {
-    const token = 'abcdef0123456789abcdef0123456789';
-    final api = _FakeApiService()
-      ..postError = _httpError(410, {
-        'title': 'INVITATION_NOT_PENDING',
-        'details': {'status': 'ACCEPTED'},
-      });
-    var completed = false;
-    await pumpScreen(
-      tester,
-      api,
-      token: token,
-      onCompleted: () => completed = true,
-    );
     await fillNewAccountForm(tester);
-
     await tester.tap(find.text('Créer mon compte'));
     await tester.pumpAndSettle();
 
-    expect(completed, isTrue);
+    expect(api.postPaths, [
+      '/admin/invitations/accept/$token',
+      '/auth/login',
+    ]);
+    expect(find.text('SELECT_PAGE'), findsOneWidget);
+  });
+
+  testWidgets('échec du login auto → repli non bloquant, un seul appel',
+      (tester) async {
+    final api = _FakeApiService()..loginShouldFail = true;
+    await pumpScreen(tester, api);
+
+    await fillNewAccountForm(tester);
+    await tester.tap(find.text('Créer mon compte'));
+    await tester.pumpAndSettle();
+
+    // Un unique appel /auth/login, puis repli (jamais de boucle).
+    expect(api.postPaths.where((p) => p == '/auth/login').length, 1);
+    expect(find.textContaining('Finalisez la connexion depuis'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+  });
+
+  testWidgets('invitation invalide → erreur terminale, aucun accept',
+      (tester) async {
+    final api = _FakeApiService()
+      ..getError = DioException(
+        requestOptions: RequestOptions(path: '/validate'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/validate'),
+          statusCode: 410,
+          data: {'title': 'INVITATION_EXPIRED'},
+        ),
+      );
+    await tester.binding.setSurfaceSize(const Size(900, 1800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: AcceptInvitationScreen(initialToken: token, apiService: api),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cette invitation est invalide, expirée ou déjà utilisée.'),
+        findsOneWidget);
+    expect(api.postPaths, isEmpty);
   });
 }

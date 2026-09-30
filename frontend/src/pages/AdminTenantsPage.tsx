@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
+import axios from 'axios';
 import {
-  Plus, Pencil, Trash2, Building2, Loader2, Save, Globe, Calendar,
-  Search, Filter, Users, Activity, Eye,
-  Shield, X, RefreshCw, BarChart3,
+  Plus, Pencil, Building2, Loader2, Save, Globe, Calendar,
+  Search, Filter, Users, Activity, Eye, AlertTriangle,
+  Shield, X, RefreshCw, BarChart3, Ban, RotateCcw, CheckCircle2,
 } from 'lucide-react';
 import type { Tenant, TenantStatus } from '@/types';
+import { QuotaUsageCards } from '@/components/admin/QuotaUsageCards';
+import { normalizeQuotaUsage } from '@/types/quota';
+import { EmptyState, SkeletonDashboard, VisuallyHidden } from '@/components/ui/UXComponents';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
@@ -18,12 +22,92 @@ const STATUS_OPTIONS: { value: TenantStatus; label: string; color: string; dot: 
   { value: 'PENDING_SETUP', label: 'En attente', color: 'badge-info', dot: 'bg-blue-500' },
 ];
 
-const PLAN_OPTIONS = [
-  { value: 'free', label: 'Free', color: 'text-gray-500', badge: 'badge-gray' },
-  { value: 'starter', label: 'Starter', color: 'text-blue-500', badge: 'badge-info' },
-  { value: 'pro', label: 'Pro', color: 'text-primary-500', badge: 'badge-primary' },
-  { value: 'enterprise', label: 'Enterprise', color: 'text-purple-500', badge: 'badge-purple' },
+/**
+ * Plans SaaS — source de vérité : `GET /api/v1/platform/admin/plans`
+ * (`SuperAdminController.listPlans()`, ligne 462, protégé par isPlatformSuperAdmin).
+ *
+ * Le fallback ci-dessous est le jeu de clés CANONIQUE seedé par
+ * `V144__seed_saas_plans.sql` puis purgé par `V177__complete_canonical_saas_plans.sql`
+ * (`WHERE key NOT IN ('DISCOVERY','STARTUP','GROWTH','NETWORK')`).
+ * Il ne sert QU'À éviter un écran vide si l'appel échoue ; en ce cas un avertissement
+ * visible est affiché (un fallback silencieux serait un mensonge).
+ */
+const CANONICAL_PLAN_KEYS = ['DISCOVERY', 'STARTUP', 'GROWTH', 'NETWORK'] as const;
+
+interface PlanOption {
+  value: string;
+  label: string;
+  badge: string;
+  color: string;
+}
+
+const PLAN_BADGES = ['badge-gray', 'badge-info', 'badge-primary', 'badge-purple'];
+
+/**
+ * Couleurs décoratives attribuées par position dans le catalogue renvoyé par le
+ * backend. Elles n'ont aucune valeur sémantique : un plan n'est « mieux » qu'un
+ * autre sous prétexte de couleur. Elles tournent simplement (modulo) pour que la
+ * carte de répartition reste lisible quel que soit le nombre de plans publiés.
+ */
+const PLAN_TEXT_COLORS = [
+  'text-gray-700 dark:text-gray-200',
+  'text-blue-600 dark:text-blue-400',
+  'text-primary-600 dark:text-primary-400',
+  'text-purple-600 dark:text-purple-400',
 ];
+
+const buildPlanOptions = (payload: unknown): { options: PlanOption[]; usedFallback: boolean } => {
+  const rows = Array.isArray(payload)
+    ? payload
+    : Array.isArray((payload as { content?: unknown } | null)?.content)
+      ? (payload as { content: unknown[] }).content
+      : [];
+
+  const parsed = rows.reduce<PlanOption[]>((acc, row) => {
+    const record = (row ?? {}) as Record<string, unknown>;
+    const key = typeof record.key === 'string' && record.key.trim() !== '' ? record.key : null;
+    if (!key) return acc;
+    const name = typeof record.name === 'string' && record.name.trim() !== '' ? record.name : key;
+    acc.push({ value: key, label: name, badge: 'badge-gray', color: 'text-gray-700 dark:text-gray-200' });
+    return acc;
+  }, []);
+
+  const usedFallback = parsed.length === 0;
+  const source = usedFallback
+    ? CANONICAL_PLAN_KEYS.map((key) => ({
+        value: key,
+        label: key,
+        badge: 'badge-gray',
+        color: 'text-gray-700 dark:text-gray-200',
+      }))
+    : parsed;
+
+  return {
+    usedFallback,
+    options: source.map((option, index) => ({
+      ...option,
+      badge: PLAN_BADGES[index % PLAN_BADGES.length],
+      color: PLAN_TEXT_COLORS[index % PLAN_TEXT_COLORS.length],
+    })),
+  };
+};
+
+/**
+ * Un tenant porte toujours un plan, mais le backend peut introduire une clé que
+ * cette version du front ne connaît pas. On affiche alors la clé BRUTE : retomber
+ * sur le premier plan de la liste afficherait « Free » pour une clé inconnue,
+ * c'est-à-dire un mensonge visible.
+ */
+const planInfoFor = (plan: string, options: PlanOption[]): PlanOption => {
+  const known = options.find((option) => option.value === plan);
+  return known ?? { value: plan, label: plan, badge: 'badge-gray', color: 'text-gray-700 dark:text-gray-200' };
+};
+
+/** Même principe côté statut : une valeur inconnue est affichée brute, jamais « Active ». */
+const statusInfoFor = (status: string): { label: string; color: string; dot: string } => {
+  const known = STATUS_OPTIONS.find((option) => option.value === status);
+  return known ?? { label: status, color: 'badge-gray', dot: 'bg-gray-400' };
+};
 
 interface TenantForm {
   name: string;
@@ -32,7 +116,7 @@ interface TenantForm {
   status?: TenantStatus;
 }
 
-const EMPTY_FORM: TenantForm = { name: '', slug: '', plan: 'free' };
+const EMPTY_FORM: TenantForm = { name: '', slug: '', plan: '' };
 
 export default function AdminTenantsPage() {
   const queryClient = useQueryClient();
@@ -44,26 +128,129 @@ export default function AdminTenantsPage() {
   const [planFilter, setPlanFilter] = useState('');
   const [detailTenant, setDetailTenant] = useState<Tenant | null>(null);
 
-  const { data: tenants = [], isLoading, refetch } = useQuery({
+  const {
+    data: tenants = [],
+    isLoading,
+    isError: tenantsFailed,
+    error: tenantsError,
+    refetch,
+  } = useQuery({
     queryKey: ['admin', 'tenants'],
     queryFn: async () => {
       const res = await api.get('/tenants');
       return res.data as Tenant[];
     },
+    retry: false,
   });
 
-  const { data: _tenantStats } = useQuery({
-    queryKey: ['admin', 'tenants', 'stats'],
+  /**
+   * 403 sur une page super-admin = session expirée ou rôle révoqué, pas un bug.
+   * Le message le dit explicitement pour ne pas envoyer l'utilisateur chercher
+   * un défaut front qui n'existe pas.
+   */
+  const describeError = (error: unknown): string => {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 403) {
+      return tText('Accès refusé : votre session a expiré ou votre rôle super-admin a été révoqué.');
+    }
+    return getErrorMessage(error);
+  };
+
+  // ── Plans SaaS : source de vérité = backend ──────────────────────────────
+  const { data: planPayload, isError: plansFailed } = useQuery({
+    queryKey: ['platform', 'admin', 'plans'],
     queryFn: async () => {
-      const res = await api.get('/admin/system-health');
-      return res.data as any;
+      const res = await api.get('/platform/admin/plans');
+      return res.data as unknown;
     },
+    // Un 403 sur cette page signifie session expirée ou rôle révoqué : on ne
+    // réessaie pas (retry:false) pour éviter de marteler l'API.
+    retry: false,
+  });
+
+  const { options: planOptions, usedFallback: plansFallback } = useMemo(
+    () => buildPlanOptions(planPayload),
+    [planPayload],
+  );
+
+  // ── Usage réel des tenants (remplace l'appel mort à /admin/system-health) ──
+  // `GET /api/v1/platform/admin/quota-usage/tenants` (PlatformQuotaUsageController:38)
+  // renvoie un `PageResponse<TenantUsageOverview>` : 1 requête pour tout le tableau,
+  // là où un appel par tenant en ferait N. L'échec est isolé : le tableau s'affiche
+  // quand même et affiche « — » (jamais 0, qui serait un mensonge).
+  interface TenantUsageOverview {
+    tenantId: string;
+    users?: number;
+    aiCredits?: number;
+    storageBytes?: number;
+    subscriptionStatus?: string | null;
+  }
+
+  const { data: usageByTenant } = useQuery({
+    queryKey: ['platform', 'admin', 'quota-usage', 'tenants'],
+    queryFn: async () => {
+      const res = await api.get('/platform/admin/quota-usage/tenants', {
+        params: { page: 0, size: 100 },
+      });
+      const content = (res.data as { content?: unknown })?.content;
+      return Array.isArray(content) ? (content as TenantUsageOverview[]) : [];
+    },
+    retry: false,
+  });
+
+  const usageIndex = useMemo(() => {
+    const index = new Map<string, TenantUsageOverview>();
+    (usageByTenant ?? []).forEach((row) => {
+      if (row && typeof row.tenantId === 'string') index.set(row.tenantId, row);
+    });
+    return index;
+  }, [usageByTenant]);
+
+  // Détail : snapshot complet d'un tenant (limites + application côté serveur).
+  // `GET /api/v1/platform/admin/quota-usage/tenants/{tenantId}`
+  // (PlatformQuotaUsageController:33). La réponse est déjà au format attendu par
+  // `normalizeQuotaUsage`, donc on RÉUTILISE QuotaUsageCards au lieu d'en écrire
+  // un second (§5.0.1 du plan).
+  const { data: detailUsage, isLoading: detailUsageLoading } = useQuery({
+    queryKey: ['platform', 'admin', 'quota-usage', 'tenant', detailTenant?.id],
+    queryFn: async () => {
+      const res = await api.get(`/platform/admin/quota-usage/tenants/${detailTenant?.id}`);
+      return normalizeQuotaUsage(res.data);
+    },
+    enabled: !!detailTenant,
+    retry: false,
   });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin', 'tenants'] });
-    queryClient.invalidateQueries({ queryKey: ['admin', 'tenants', 'stats'] });
+    queryClient.invalidateQueries({ queryKey: ['platform', 'admin', 'quota-usage'] });
   };
+
+  /**
+   * ⚠️ `DELETE /api/v1/tenants/{id}` appelle `TenantService.deactivate(id)` côté
+   * backend (TenantController:68) : ce n'est PAS une suppression. L'ancienne UI
+   * annonçait « Supprimer l'église » puis « action irréversible », ce qui était
+   * faux. On parle donc de suspension, et la réactivation est proposée en miroir.
+   */
+  const suspendMutation = useMutation({
+    mutationFn: async (id: string) => api.delete(`/tenants/${id}`),
+    onSuccess: () => {
+      invalidate();
+      setDetailTenant(null);
+      toast.success(tText('Église suspendue'));
+    },
+    onError: (err: unknown) => toast.error(describeError(err)),
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: async (id: string) => api.post(`/tenants/${id}/reactivate`),
+    onSuccess: () => {
+      invalidate();
+      setDetailTenant(null);
+      toast.success(tText('Église réactivée'));
+    },
+    onError: (err: unknown) => toast.error(describeError(err)),
+  });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -79,20 +266,16 @@ export default function AdminTenantsPage() {
       setEditId(null);
       toast.success(editId ? 'Église mise à jour' : 'Église créée');
     },
-    onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onError: (err: unknown) => toast.error(describeError(err)),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => api.delete(`/tenants/${id}`),
-    onSuccess: () => {
-      invalidate();
-      setDetailTenant(null);
-      toast.success(tText('Église supprimée'));
-    },
-    onError: (err: unknown) => toast.error(getErrorMessage(err)),
-  });
-
-  const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setModalOpen(true); };
+  // Le plan par défaut est le PREMIER plan réellement publié par le backend :
+  // plus aucune clé de plan n'est devinée par le front.
+  const openCreate = () => {
+    setEditId(null);
+    setForm({ ...EMPTY_FORM, plan: planOptions[0]?.value ?? '' });
+    setModalOpen(true);
+  };
   const openEdit = (t: Tenant) => {
     setEditId(t.id);
     setForm({ name: t.name, slug: t.slug, plan: t.plan, status: t.status });
@@ -117,18 +300,51 @@ export default function AdminTenantsPage() {
     count: tenants.filter((t) => t.status === s.value).length,
   }));
 
-  const statsByPlan = PLAN_OPTIONS.map((p) => ({
+  const statsByPlan = planOptions.map((p) => ({
     ...p,
     count: tenants.filter((t) => t.plan === p.value).length,
   }));
 
-  const getPlanInfo = (plan: string) => PLAN_OPTIONS.find((p) => p.value === plan) || PLAN_OPTIONS[0];
-  const getStatusInfo = (status: TenantStatus) => STATUS_OPTIONS.find((s) => s.value === status) || STATUS_OPTIONS[0];
+  const getPlanInfo = (plan: string) => planInfoFor(plan, planOptions);
+  const getStatusInfo = (status: string) => statusInfoFor(status);
+
+  /** Badge d'onboarding : absent du type ⇒ rendu sans crash (§6.2 du plan). */
+  const onboardingBadge = (tenant: Tenant) => {
+    if (tenant.onboardingCompletedAt) {
+      return {
+        tone: 'badge-success',
+        icon: <CheckCircle2 className="w-3 h-3" />,
+        text: `${tText('Onboarding terminé le')} ${new Date(tenant.onboardingCompletedAt)
+          .toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}`,
+      };
+    }
+    return { tone: 'badge-warning', icon: null, text: tText('Onboarding en configuration') };
+  };
+
+  const formatCount = (value: number | undefined): string =>
+    typeof value === 'number' && Number.isFinite(value)
+      ? new Intl.NumberFormat(getI18nLocale()).format(value)
+      : '—';
 
   if (isLoading) {
     return (
-      <div className="min-h-[40vh] flex items-center justify-center">
-        <div className="spinner h-8 w-8" />
+      <div className="page-container max-w-6xl" role="status" aria-busy="true" aria-live="polite">
+        <VisuallyHidden>{tText('Chargement des églises…')}</VisuallyHidden>
+        <SkeletonDashboard />
+      </div>
+    );
+  }
+
+  // État d'erreur (§5.0.2) : message actionnable + retry, jamais un toast qui disparaît.
+  if (tenantsFailed) {
+    return (
+      <div className="page-container max-w-6xl">
+        <EmptyState
+          icon={<AlertTriangle className="w-8 h-8 text-red-400" />}
+          title={tText('Impossible de charger les églises')}
+          description={describeError(tenantsError)}
+          action={{ label: tText('Réessayer'), onClick: () => { void refetch(); } }}
+        />
       </div>
     );
   }
@@ -156,6 +372,22 @@ export default function AdminTenantsPage() {
           </button>
         </div>
       </div>
+
+      {/* Un plan indisponible est annoncé : un repli silencieux sur les clés
+          canoniques afficherait des plans que le backend ne publie peut-être pas. */}
+      {plansFallback && (
+        <div
+          role="status"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300"
+        >
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>
+            {plansFailed
+              ? tText("Catalogue des plans indisponible : les clés canoniques sont affichées à titre provisoire.")
+              : tText("Catalogue des plans vide : les clés canoniques sont affichées à titre provisoire.")}
+          </span>
+        </div>
+      )}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -251,26 +483,32 @@ export default function AdminTenantsPage() {
 
       {/* Tenant list */}
       {filtered.length === 0 ? (
-        <div className="glass-card p-10 text-center animate-scale-in">
-          <Building2 className="w-10 h-10 text-gray-300 mb-3 mx-auto" />
-          <p className="text-gray-500 font-medium">
-            {tenants.length === 0 ? 'Aucune église configurée.' : 'Aucune église ne correspond aux filtres.'}
-          </p>
-          {tenants.length === 0 ? (
-            <button className="text-primary-500 hover:underline text-sm mt-2" onClick={openCreate}>
-              {tText('Créer la première église')}
-            </button>
-          ) : (
-            <button className="text-primary-500 hover:underline text-sm mt-2" onClick={() => { setSearchTerm(''); setStatusFilter(''); setPlanFilter(''); }}>
-              {tText('Réinitialiser les filtres')}
-            </button>
-          )}
-        </div>
+        tenants.length === 0 ? (
+          <EmptyState
+            icon={<Building2 className="w-8 h-8 text-gray-400" />}
+            title={tText('Aucune église configurée')}
+            description={tText("Créez la première église de la plateforme. Chaque église possède ses propres données et utilisateurs isolés.")}
+            action={{ label: tText('Créer la première église'), onClick: openCreate }}
+          />
+        ) : (
+          <EmptyState
+            icon={<Search className="w-8 h-8 text-gray-400" />}
+            title={tText('Aucune église ne correspond aux filtres')}
+            description={tText('Modifiez la recherche ou réinitialisez les filtres pour revoir toutes les églises.')}
+            action={{
+              label: tText('Réinitialiser les filtres'),
+              onClick: () => { setSearchTerm(''); setStatusFilter(''); setPlanFilter(''); },
+            }}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {filtered.map((t, i) => {
             const statusInfo = getStatusInfo(t.status);
             const planInfo = getPlanInfo(t.plan);
+            // undefined = donnée non disponible (échec de l'appel agrégé OU tenant
+            // hors de la première page) → « — », jamais 0.
+            const usage = usageIndex.get(t.id);
             return (
               <div
                 key={t.id}
@@ -288,6 +526,15 @@ export default function AdminTenantsPage() {
                       {statusInfo.label}
                     </span>
                     <span className={`badge text-[10px] ${planInfo.badge}`}>{planInfo.label}</span>
+                    {(() => {
+                      const badge = onboardingBadge(t);
+                      return (
+                        <span className={`badge text-[10px] ${badge.tone}`} title={badge.text}>
+                          {badge.icon}
+                          {badge.text}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
@@ -297,10 +544,18 @@ export default function AdminTenantsPage() {
                       <Calendar className="w-3 h-3" />
                       Créée le {new Date(t.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
+                    <span className="flex items-center gap-1" title={tText('Utilisateurs et crédits IA consommés')}>
+                      <Users className="w-3 h-3" />
+                      {tText('Utilisateurs')} : {formatCount(usage?.users)}
+                      {' · '}
+                      {tText('Crédits IA')} : {formatCount(usage?.aiCredits)}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
+                    aria-label={tText('Voir le détail')}
                     className="btn-icon text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     onClick={() => setDetailTenant(t)}
                     title="Voir le détail"
@@ -308,19 +563,45 @@ export default function AdminTenantsPage() {
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
+                    aria-label={tText('Modifier')}
                     className="btn-icon text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100/70"
                     onClick={() => openEdit(t)}
                     title="Modifier"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
-                  <button
-                    className="btn-icon text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    onClick={() => { if (confirm(`Supprimer l'église « ${t.name} » ? Cette action est irréversible.`)) deleteMutation.mutate(t.id); }}
-                    title="Supprimer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {t.status === 'SUSPENDED' ? (
+                    <button
+                      type="button"
+                      aria-label={tText('Réactiver l\u2019église')}
+                      disabled={reactivateMutation.isPending}
+                      className="btn-icon text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
+                      onClick={() => reactivateMutation.mutate(t.id)}
+                      title={tText('Réactiver l\u2019église')}
+                    >
+                      {reactivateMutation.isPending
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <RotateCcw className="w-4 h-4" />}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={tText('Suspendre l\u2019église')}
+                      disabled={suspendMutation.isPending}
+                      className="btn-icon text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
+                      onClick={() => {
+                        if (confirm(`${tText("Suspendre l\u2019église")} « ${t.name} » ? ${tText("Ses utilisateurs ne pourront plus se connecter.")}`)) {
+                          suspendMutation.mutate(t.id);
+                        }
+                      }}
+                      title={tText('Suspendre l\u2019église')}
+                    >
+                      {suspendMutation.isPending
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Ban className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -380,7 +661,7 @@ export default function AdminTenantsPage() {
                 <div>
                   <label className="label">Plan</label>
                   <select className="input" value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })}>
-                    {PLAN_OPTIONS.map((p) => (
+                    {planOptions.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </select>
@@ -389,6 +670,13 @@ export default function AdminTenantsPage() {
                   <div>
                     <label className="label">Statut</label>
                     <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as TenantStatus })}>
+                      {/* Résilience : si le backend renvoie un statut que cette version
+                          ne connaît pas, il reste sélectionnable tel quel. Sans cette
+                          option, le <select> afficherait « Active » et l'enregistrement
+                          silently réécrirait le statut réel — une perte de données. */}
+                      {form.status && !STATUS_OPTIONS.some((s) => s.value === form.status) && (
+                        <option value={form.status}>{form.status}</option>
+                      )}
                       {STATUS_OPTIONS.map((s) => (
                         <option key={s.value} value={s.value}>{s.label}</option>
                       ))}
@@ -402,7 +690,12 @@ export default function AdminTenantsPage() {
               <button
                 className="btn-primary btn-sm"
                 onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending || !form.name.trim() || (!editId && !form.slug.trim())}
+                disabled={
+                  saveMutation.isPending
+                  || !form.name.trim()
+                  || !form.plan
+                  || (!editId && !form.slug.trim())
+                }
               >
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {editId ? 'Enregistrer' : 'Créer'}
@@ -481,8 +774,35 @@ export default function AdminTenantsPage() {
                     <Shield className="w-4 h-4" />
                     Cette église est suspendue — les utilisateurs ne peuvent pas se connecter.
                   </p>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm mt-2"
+                    disabled={reactivateMutation.isPending}
+                    onClick={() => reactivateMutation.mutate(detailTenant.id)}
+                  >
+                    {reactivateMutation.isPending
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <RotateCcw className="w-3.5 h-3.5" />}
+                    {tText('Réactiver cette église')}
+                  </button>
                 </div>
               )}
+
+              {/* Onboarding + usage réel */}
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-700/40">
+                <p className="text-[10px] text-gray-400 uppercase font-semibold mb-2">{tText('Onboarding')}</p>
+                <span className={`badge text-[10px] ${onboardingBadge(detailTenant).tone}`}>
+                  {onboardingBadge(detailTenant).icon}
+                  {onboardingBadge(detailTenant).text}
+                </span>
+              </div>
+
+              <QuotaUsageCards
+                metrics={detailUsage?.metrics ?? []}
+                title={tText('Quotas et usage de cette église')}
+                loading={detailUsageLoading}
+                onRetry={() => { void queryClient.invalidateQueries({ queryKey: ['platform', 'admin', 'quota-usage', 'tenant', detailTenant.id] }); }}
+              />
             </div>
             <div className="modal-footer">
               <button className="btn-ghost btn-sm" onClick={() => setDetailTenant(null)}>Fermer</button>

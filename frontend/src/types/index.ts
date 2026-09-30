@@ -2027,6 +2027,12 @@ export interface Tenant {
   plan: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Date de fin d'onboarding (ajout backend A4, `TenantResponse`).
+   * Optionnel : un tenant créé avant la migration l'aura à `null`/absent, et
+   * l'UI doit alors afficher « en configuration » sans planter.
+   */
+  onboardingCompletedAt?: string | null;
 }
 
 // API Error
