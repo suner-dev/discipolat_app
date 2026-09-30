@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code spring.flyway.enabled:false} et {@code ddl-auto:create-drop} — les
  * migrations ne sont donc <b>jamais</b> exécutées par la suite unitaire, et un
  * script valide seulement sur H2, ou jamais testé, peut casser le déploiement
- * réel. Ce test ferme ce trou : il applique V1..V194 sur un PostgreSQL 16 neuf
+ * réel. Ce test ferme ce trou : il applique V1..V204 sur un PostgreSQL 16 neuf
  * via Testcontainers, puis exige (1) la chaîne complète sans erreur et son
  * idempotence au second passage, (2) la version cible atteinte, (3) la
  * neutralisation effective des comptes de démonstration en bout de chaîne
@@ -43,7 +43,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * entité→schéma : chaque table {@code @Table} du code doit exister dans le
  * PostgreSQL réellement migré — garde systématique de la famille H (le
  * renommage events→legacy_events de V158, invisible sous H2, est exactement
- * le défaut que cette passe attrape ; V194 le résout).
+ * le défaut que cette passe attrape ; V194 le résout), (7) l'arbitrage D1 côté
+ * schéma : la table vivante {@code event} accepte le vocabulaire français du
+ * contrat §3 et porte les colonnes d'isolation (V203), (8) l'unicité des
+ * familles réellement portée par tenant (V204, arbitrage D4 — le doublon de nom
+ * entre deux églises, prouvé sur PG réel).
  *
  * <p>Honnêteté d'exécution : {@code disabledWithoutDocker=true} — sans daemon
  * Docker (CI sans runner containerisé), le test est <b>skip comptabilisé</b>,
@@ -55,7 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FlywayMigrationChainPostgreSqlTest {
 
     /** Version minimale attendue en bout de chaîne (incrémenter à chaque vague). */
-    private static final int EXPECTED_MIN_VERSION = 194;
+    private static final int EXPECTED_MIN_VERSION = 204;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
@@ -78,7 +82,7 @@ class FlywayMigrationChainPostgreSqlTest {
     }
 
     @Test
-    @DisplayName("La chaîne Flyway V1→V194 s'applique intégralement sur PostgreSQL 16 neuf")
+    @DisplayName("La chaîne Flyway V1→V204 s'applique intégralement sur PostgreSQL 16 neuf")
     void fullMigrationChainAppliesOnRealPostgres() {
         assertThat(firstPass.success)
                 .as("la chaîne complète V1..V%d doit s'appliquer sans erreur", EXPECTED_MIN_VERSION)
@@ -145,6 +149,105 @@ class FlywayMigrationChainPostgreSqlTest {
                         + tenantA + "','" + tenantB + "')");
                 statement.executeUpdate("DELETE FROM tenants WHERE id IN ('" + tenantA + "','" + tenantB + "')");
             }
+        }
+    }
+
+    @Test
+    @DisplayName("V203 : la table vivante event accepte le vocabulaire FR du contrat et porte l'isolation métier")
+    void eventVivanteCarriesFrenchContractAndScoping() throws Exception {
+        // Discriminants D1 (schéma) : avant V203, un INSERT avec status='PLANIFIE'
+        // ou type='REUNION' était REFUSÉ par les CHECK de V158 (anglais only), et
+        // les colonnes famille_id/department_id/resource_scope n'existaient pas —
+        // sans elles le port de l'entité Event serait un relâchement d'accès.
+        // On vérifie aussi que le verrouillage reste réel : un vocabulaire
+        // inventé de part ni d'autre doit être refusé.
+        String tenantGate = "00000000-0000-0000-0000-0000000000b1";
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO tenants (id, name, slug) VALUES "
+                    + "('" + tenantGate + "', 'Gate Event FR', 'gate-event-fr')");
+            try {
+                String organizer = scalar(statement, "SELECT id FROM users LIMIT 1");
+                // Vocabulaire FR du contrat §3 + colonne d'isolation : accepté.
+                statement.executeUpdate("INSERT INTO event (id, tenant_id, title, type, status,"
+                        + " start_at, organizer_id, famille_id, department_id, visibility) VALUES ("
+                        + "uuid_generate_v4(), '" + tenantGate + "', 'Événement gate', 'REUNION',"
+                        + " 'PLANIFIE', NOW(), '" + organizer + "', NULL, NULL, 'CHURCH')");
+                try (ResultSet rs = statement.executeQuery(
+                        "SELECT status, type, resource_scope FROM event WHERE tenant_id = '"
+                                + tenantGate + "'")) {
+                    rs.next();
+                    assertThat(rs.getString(1)).isEqualTo("PLANIFIE");
+                    assertThat(rs.getString(2)).isEqualTo("REUNION");
+                    assertThat(rs.getString(3))
+                            .as("resource_scope défaut posé par V203 (isolation plateforme)")
+                            .isEqualTo("TENANT_GLOBAL");
+                }
+                // Vocabulaire anglais (Church OS) : toujours accepté — union, pas remplacement.
+                statement.executeUpdate("INSERT INTO event (id, tenant_id, title, type, status,"
+                        + " start_at, organizer_id, visibility) VALUES ("
+                        + "uuid_generate_v4(), '" + tenantGate + "', 'EN gate', 'MEETING',"
+                        + " 'DRAFT', NOW(), '" + organizer + "', 'CHURCH')");
+                // Vocabulaire inventé : refusé (les CHECK protègent encore).
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        java.sql.SQLException.class,
+                        () -> statement.executeUpdate("INSERT INTO event (id, tenant_id, title,"
+                                + " type, status, start_at, organizer_id, visibility) VALUES ("
+                                + "uuid_generate_v4(), '" + tenantGate + "', ' hors contrat',"
+                                + " 'KARAOKE', 'PLANIFIE', NOW(), '" + organizer + "', 'CHURCH')"),
+                        "un type hors des deux vocabulaires doit rester bloquant");
+            } finally {
+                statement.executeUpdate("DELETE FROM event WHERE tenant_id = '" + tenantGate + "'");
+                statement.executeUpdate("DELETE FROM tenants WHERE id = '" + tenantGate + "'");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("V204 : l'unicité des familles est par tenant, plus mondiale (arbitrage D4)")
+    void familyUniquenessIsTenantScoped() throws Exception {
+        // Discriminant : avec l'UNIQUE (nom) mondial de V6, le second INSERT
+        // (autre tenant, même nom) levait uk_families_nom — comportement prouvé
+        // en erreur sur PG réel le 2026-09-29 (NEED-HELP D4). Mêmes fixtures
+        // réelles que le test V193 : un users seedé par la chaîne (NOT NULL + FK
+        // chef_famille_id de families ; departement_id a été retiré par V27).
+        String tenantA = "00000000-0000-0000-0000-0000000000c1";
+        String tenantB = "00000000-0000-0000-0000-0000000000c2";
+        String insertFamily = "INSERT INTO families (id, tenant_id, nom,"
+                + " chef_famille_id) VALUES (uuid_generate_v4(), '" + "%s" + "', "
+                + "'DupGate Famille', '%s')";
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("INSERT INTO tenants (id, name, slug) VALUES "
+                    + "('" + tenantA + "', 'Gate Fam A', 'gate-fam-a'), "
+                    + "('" + tenantB + "', 'Gate Fam B', 'gate-fam-b')");
+            String chef = scalar(statement, "SELECT id FROM users LIMIT 1");
+            String sqlA = String.format(insertFamily, tenantA, chef);
+            String sqlB = String.format(insertFamily, tenantB, chef);
+            try {
+                // Deux tenants distincts, même nom : doit passer (défaut D4 corrigé).
+                statement.executeUpdate(sqlA);
+                statement.executeUpdate(sqlB);
+                // Même tenant, même nom : doit rester refusé.
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        java.sql.SQLException.class,
+                        () -> statement.executeUpdate(sqlA),
+                        "la collision doit rester bloquante À L'INTÉRIEUR d'un tenant");
+            } finally {
+                statement.executeUpdate("DELETE FROM families WHERE tenant_id IN ('"
+                        + tenantA + "','" + tenantB + "')");
+                statement.executeUpdate("DELETE FROM tenants WHERE id IN ('"
+                        + tenantA + "','" + tenantB + "')");
+            }
+        }
+    }
+
+    private static String scalar(Statement statement, String query) throws java.sql.SQLException {
+        try (ResultSet rs = statement.executeQuery(query)) {
+            rs.next();
+            return rs.getString(1);
         }
     }
 
