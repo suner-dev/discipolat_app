@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code spring.flyway.enabled:false} et {@code ddl-auto:create-drop} — les
  * migrations ne sont donc <b>jamais</b> exécutées par la suite unitaire, et un
  * script valide seulement sur H2, ou jamais testé, peut casser le déploiement
- * réel. Ce test ferme ce trou : il applique V1..V204 sur un PostgreSQL 16 neuf
+ * réel. Ce test ferme ce trou : il applique V1..V205 sur un PostgreSQL 16 neuf
  * via Testcontainers, puis exige (1) la chaîne complète sans erreur et son
  * idempotence au second passage, (2) la version cible atteinte, (3) la
  * neutralisation effective des comptes de démonstration en bout de chaîne
@@ -47,7 +47,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * schéma : la table vivante {@code event} accepte le vocabulaire français du
  * contrat §3 et porte les colonnes d'isolation (V203), (8) l'unicité des
  * familles réellement portée par tenant (V204, arbitrage D4 — le doublon de nom
- * entre deux églises, prouvé sur PG réel).
+ * entre deux églises, prouvé sur PG réel), (9) les coordonnées géographiques et
+ * les preuves de pointage réellement en {@code double precision} — le type que
+ * mappe l'entité (V205, dérive NUMERIC→float8 rattrapée par le gate de contrat
+ * EventTableContractTest, invisible sous H2 et bloquante en {@code validate}).
  *
  * <p>Honnêteté d'exécution : {@code disabledWithoutDocker=true} — sans daemon
  * Docker (CI sans runner containerisé), le test est <b>skip comptabilisé</b>,
@@ -59,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FlywayMigrationChainPostgreSqlTest {
 
     /** Version minimale attendue en bout de chaîne (incrémenter à chaque vague). */
-    private static final int EXPECTED_MIN_VERSION = 204;
+    private static final int EXPECTED_MIN_VERSION = 205;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
@@ -82,7 +85,7 @@ class FlywayMigrationChainPostgreSqlTest {
     }
 
     @Test
-    @DisplayName("La chaîne Flyway V1→V204 s'applique intégralement sur PostgreSQL 16 neuf")
+    @DisplayName("La chaîne Flyway V1→V205 s'applique intégralement sur PostgreSQL 16 neuf")
     void fullMigrationChainAppliesOnRealPostgres() {
         assertThat(firstPass.success)
                 .as("la chaîne complète V1..V%d doit s'appliquer sans erreur", EXPECTED_MIN_VERSION)
@@ -200,6 +203,37 @@ class FlywayMigrationChainPostgreSqlTest {
             } finally {
                 statement.executeUpdate("DELETE FROM event WHERE tenant_id = '" + tenantGate + "'");
                 statement.executeUpdate("DELETE FROM tenants WHERE id = '" + tenantGate + "'");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("V205 : lat/long et preuves de pointage reellement en double precision")
+    void geolocationColumnsAreDoublePrecision() throws Exception {
+        // Discriminant : V201/V202 deposaient ces colonnes en NUMERIC alors que
+        // Event/EventRegistration les mappent Double — `ddl-auto: validate` refuse
+        // de demarrer sur PG reel, invisible sous H2 (create-drop). V205 convertit ;
+        // ce gate le verrouille pour que la derive ne revienne pas.
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement()) {
+            try (ResultSet rs = statement.executeQuery(
+                    "SELECT table_name, column_name, data_type FROM information_schema.columns "
+                            + "WHERE table_schema='public' AND ("
+                            + "(table_name='event' AND column_name IN ('latitude','longitude')) OR "
+                            + "(table_name='event_registrations' AND column_name IN "
+                            + "('checkin_latitude','checkin_longitude','checkin_accuracy_m','checkin_distance_m')))")) {
+                int checked = 0;
+                while (rs.next()) {
+                    checked++;
+                    assertThat(rs.getString(3))
+                            .as("%s.%s doit etre double precision (type mappe par l'entite)",
+                                    rs.getString(1), rs.getString(2))
+                            .isEqualTo("double precision");
+                }
+                assertThat(checked)
+                        .as("les 6 colonnes geolocalisees doivent exister")
+                        .isEqualTo(6);
             }
         }
     }

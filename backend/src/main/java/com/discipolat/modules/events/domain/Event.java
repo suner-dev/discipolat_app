@@ -52,6 +52,15 @@ import java.util.UUID;
 @Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Event {
 
+    // Vocabulaire du statut (contrat FR). La contrainte CHECK de la table
+    // vivante (V203) accepte l'union FR ∪ EN ; ces constantes portent le
+    // sous-ensemble FR écrit par le produit, référençable depuis les tests de
+    // contrat comme depuis le service, pour éviter les littéraux dispersés.
+    public static final String STATUT_PLANIFIE = "PLANIFIE";
+    public static final String STATUT_EN_COURS = "EN_COURS";
+    public static final String STATUT_TERMINE = "TERMINE";
+    public static final String STATUT_ANNULE = "ANNULE";
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -126,7 +135,7 @@ public class Event {
     private Integer nbInscrits = 0;
 
     @Column(name = "status", nullable = false)
-    private String statut = "PLANIFIE";
+    private String statut = STATUT_PLANIFIE;
 
     /** Image de couverture (URL d'un fichier televersé). */
     @Column(name = "image_url", length = 500)
