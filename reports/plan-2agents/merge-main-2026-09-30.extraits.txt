@@ -1,0 +1,42 @@
+# Fusion generale -> main — preuve d'integration (2026-09-30)
+
+## Ce qui a ete fusionne dans main
+Base de depart : main = 72ec85d5 (feat A14), en AVANCE de 5 / RETARD 0 sur origin/main.
+
+1. Fast-forward main -> fix/schema-drift-h1-h5 (1911237c).
+   Ligne canonique de campagne : A+B fusionnes (2d64e1c3/2540606d), port D1
+   Event sur la table vivante `event` (V203 + V204), recette §5.5, gates clients.
+   -> fast-forward pur (main etait ancetre), zero conflit.
+2. Merge no-ff fix/securite-webhooks-2fa-sync (a92a47f6) -> commit 0de1d1eb.
+   Lot securite : User 2FA WRITE_ONLY, webhooks fail-closed (Payment/Ussd),
+   UserSecretSerializationTest, verrou sync mobile, bootstrap_prod.sql.
+   Fichiers DISJOINTS du port D1 -> merge "ort" sans aucun conflit.
+   render.yaml + backup-postgres.yml EXCLUS (ab50c392, decision Render reportee).
+
+## agentB (fix/onboarding-tenant-clients) — non fusionne, decision motivee
+Ses seuls commits uniques (ce630e6e, 15f7dfc7) sont un RE-PORT concurrent du meme
+arbitrage D1 : migration V205 + une variante d'Event.java/EventTableContractTest.
+- Aucun fichier frontend/ ni mobile/ unique (verifie) : tout le travail CLIENT de
+  B est DEJA dans main via les commits de fusion A+B.
+- Fusionner le backend D1 de B par-dessus celui d'A = DEUX migrations sur la table
+  `event` + deux entites Event concurrentes -> chaine Flyway cassee sur un main
+  partage. Choix : le D1 canonique d'A (validite par recette 56/0/3 + gate PG16)
+  PREMIER ; le re-port de B est frappe "supersede". Rien d'irreversible : les
+  commits B restent sur leur branche, reconciliables plus tard si besoin.
+
+## Gates rejoues sur l'ARBRE FUSIONNE (main @ 0de1d1eb)
+- Backend `mvn -o clean ...` :
+  * surefire (run complet) : 1694 tests verts (0 echec) + 13 skip preexistants ;
+  * gate Flyway Testcontainers PG16 : FlywayMigrationChainPostgreSqlTest 7/7,
+    167 migrations rejouees, "now at version v204". VERT.
+    NB : le 1er `verify` (sans clean) avait signale "more than one migration with
+    version 164" = ARTIFACT PERIME dans target/classes (V164__legacy_migration_engine.sql)
+    herite d'un ancien build de ce worktree ; la SOURCE n'a qu'un seul V164.
+    apres `clean` -> plus qu'un V164, gate 7/7.
+- Mobile `flutter test` : 468/468 verts (le lot sync merge ne casse rien).
+- Frontend `vitest run` : 430/430. (Le 1er run a remonte "2 errors" = timeouts de
+  spawn de worker forks sous contention, PAS des echecs d'assertion ; les 2
+  fichiers re-lances seuls -> 54/54 verts.)
+
+## Verdict
+main = A(canonique) + securite, vert sur les 3 gates. Pret a pousser sur origin.
