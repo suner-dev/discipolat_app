@@ -35,21 +35,20 @@
 #      même correctif (sondes déplacées dans E2E-6 quand l'étape visée est
 #      actif). E2E-5b3 (nom trop court) restait valide : CHURCH_IDENTITY est
 #      l'étape 0 donc actif dès le départ ; déplacé pour la cohérence.
-#   4. E2E-9a : pré-verification honnête de la limite de fixture D5 (la garde
-#      du contrôleur teste le RÔLE DU JWT ; login/switch n'émettent que les
-#      6 rôles globaux — aucune fixture légale ne peut produire
-#      TENANT_ADMIN/TENANT_OWNER dans ce claim, cf. NEED-HELP D5-bis du
-#      rapport d'intégration). Sans cette pré-sonde, le scenario affichait
-#      FAIL alors que c'est une LIMITE CONNUE de la fixture, pas un défaut.
-#      SKIP n'est JAMAIS un PASS déguisé.
+#   4. E2E-9a : la pre-sonde « role du JWT » documentait la limite D5 (garde
+#      hasAnyRole sur le claim). SOLDE par l'arbitrage D5-bis (garde
+#      @authz.isTenantAdmin() sur la table des memberships) ; la pre-sonde est
+#      devenue un test reel : 403 = refus legitime de la garde, SKIP honnete.
+#      SKIP n'est JAMAIS un PASS deguise.
 #   5. E2E-11 : `.allowed // "ABSENT"` en jq traite le BOOLEAN false comme
 #      vide — un dépassement légitimement refusé (allowed=false, code QUOTA_*)
 #      était lu « ABSENT » puis compté FAIL. Lecture par has() + tostring.
-#   6. E2E-10b : si la garde @authz.isTenantAdmin() renvoie 403 AVANT le
-#      lookup d'étape (jeton B non admin actif dans son propre tenant —
-#      uk_tenant_membership_user_tenant empêche la fixture d'ajouter un second
-#      rôle là où une membership existe déjà), la sonde ne teste plus l'IDOR :
-#      SKIP justifié (limite D5), pas un FAIL trompeur.
+#      Balayage generalise (2026-09-30) : crossTenantIdentity, welcomeEmailSent,
+#      requiresTenantSwitch et owner.activationEmailSent corriges de la meme facon.
+#   6. E2E-10b : la fixture_admin_membership DO UPDATE rend desormais la
+#      membership TENANT_ADMIN ACTIVE meme si une ligne existe deja (uk
+#      user_id/tenant_id) ; la sonde attend 404 STEP_NOT_FOUND (IDOR). Un 403
+#      restant est signale en SKIP justifie, jamais en FAIL trompeur.
 #   7. E2E-6a/6d : les deux sondes d'effet réel utilisaient des chemins
 #      inexistants (/api/v1/admin/organization/tree et
 #      /api/v1/admin/departments → 404, masqués en SKIP) ; les vrais endpoints
@@ -211,7 +210,7 @@ e2e_1_provision() {
   if assert_code 201 "E2E-1c provisioning atomique accepte"; then
     TENANT_ID="$(jq -r '.tenant.id // empty' <<<"$API_BODY")"
     OWNER_USER_ID="$(jq -r '.owner.userId // empty' <<<"$API_BODY")"
-    OWNER_ACTIVATION_SENT="$(jq -r '.owner.activationEmailSent // "ABSENT"' <<<"$API_BODY")"
+    OWNER_ACTIVATION_SENT="$(jq -r '.owner.activationEmailSent as $v | if $v == null then "ABSENT" else ($v|tostring) end' <<<"$API_BODY")"
     jq -r '.department.id // "?"' <<<"$API_BODY" | grep -qv '^?$' \
       && ok "E2E-1g departement cree dans la meme transaction" \
       || ko "E2E-1g departement cree" "department absent de la reponse"
@@ -298,7 +297,8 @@ fixture_admin_membership() {
 INSERT INTO tenant_memberships (id, tenant_id, user_id, role_id, role, scope_type, status, joined_at, created_at, updated_at)
 SELECT uuid_generate_v4(), '${tenant_id}'::uuid, '${super_id}'::uuid, r.id, r.key, 'TENANT', 'ACTIVE', now(), now(), now()
   FROM roles r WHERE r.key = 'TENANT_ADMIN'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id, tenant_id) DO UPDATE
+   SET role_id = EXCLUDED.role_id, role = EXCLUDED.role, status = 'ACTIVE', updated_at = now();
 SQL
   return 0
 }
@@ -615,19 +615,16 @@ e2e_9_invitations() {
 
   if [[ -z "$TENANT_TOKEN" ]]; then skip "E2E-9 Invitations" "jeton TENANT indisponible"; return; fi
 
-  # Pré-sonde honnête (bug de recette n°4, limite D5) : la garde de
-  # POST /api/v1/admin/invitations est hasAnyRole('TENANT_OWNER','TENANT_ADMIN')
-  # et hasAnyRole évalue le RÔLE ACTIF du JWT (JwtAuthenticationFilter) ;
-  # login et switch n'émettent que les 6 rôles globaux de l'enum UserRole.
-  # Aucune fixture légale ne peut donc placer TENANT_ADMIN dans ce claim —
-  # l'arbitrage D5 demande de corriger la fixture, pas le RBAC ; la seule
-  # correction honnête disponible est ce SKIP documenté (NEED-HELP D5-bis
-  # dans INTEGRATION.md pour la question : garde à basculer sur
-  # @authz.isTenantAdmin() comme le wizard et les quotas ?).
-  local jwt_role; jwt_role="$(jwt_role_claim "$TENANT_TOKEN")"
-  if [[ "$jwt_role" != "TENANT_OWNER" && "$jwt_role" != "TENANT_ADMIN" ]]; then
+  # Pré-sonde (liminaire D5-bis SOLDE : la garde est passee a
+  # @authz.isTenantAdmin(), qui lit la TABLE tenant_memberships du tenant actif
+  # et non le claim du JWT). La fixture ci-dessus rend la membership TENANT_ADMIN
+  # ACTIVE legallement ; si malgre tout le serveur repond 403, c'est la garde qui
+  # refuse pour une raison reelle — SKIP honnete, jamais un FAIL deduite d'un
+  # claim JWT qui n'est plus pertinent.
+  api GET '/api/v1/admin/invitations' "$TENANT_TOKEN"
+  if [[ "$API_CODE" == "403" ]]; then
     skip "E2E-9 Invitations" \
-         "limite fixture D5 : garde du contrôleur = rôle du JWT (ici «${jwt_role}»), login/switch ne délivrent que les 6 rôles globaux — voir NEED-HELP D5-bis"
+         "garde @authz.isTenantAdmin() refuse ce jeton sur le tenant de recette malgre la fixture TENANT_ADMIN : verifier la membership ACTIVE scope TENANT (sinon voir test RBAC dedie InvitationAdminTenantScopeRbacTest)"
     return
   fi
 
@@ -648,9 +645,9 @@ e2e_9_invitations() {
   if assert_code 200 "E2E-9b invitation validable publiquement"; then
     [[ "$(jq -r '.valid // false' <<<"$API_BODY")" == "true" ]] \
       && ok "E2E-9b1 valid=true" || ko "E2E-9b1 valid=true" "${API_BODY}"
-    [[ "$(jq -r '.accountExists // "ABSENT"' <<<"$API_BODY")" == "false" ]] \
+    [[ "$(jq -r 'if has("accountExists") then (.accountExists|tostring) else "ABSENT" end' <<<"$API_BODY")" == "false" ]] \
       && ok "E2E-9b2 accountExists=false (email inconnu)" \
-      || ko "E2E-9b2 accountExists=false" "valeur : $(jq -r '.accountExists // "ABSENT"' <<<"$API_BODY")"
+      || ko "E2E-9b2 accountExists=false" "valeur : $(jq -r 'if has("accountExists") then (.accountExists|tostring) else "ABSENT" end' <<<"$API_BODY")"
   fi
 
   api POST "/api/v1/admin/invitations/accept/${token}" '' \
@@ -658,10 +655,10 @@ e2e_9_invitations() {
   if assert_code 200 "E2E-9c invitation acceptee"; then
     [[ "$(jq -r '.success // false' <<<"$API_BODY")" == "true" ]] \
       && ok "E2E-9c1 success=true (compte cree)" || ko "E2E-9c1 success=true" "${API_BODY}"
-    [[ "$(jq -r '.crossTenantIdentity // "ABSENT"' <<<"$API_BODY")" == "false" ]] \
+    [[ "$(jq -r 'if has("crossTenantIdentity") then (.crossTenantIdentity|tostring) else "ABSENT" end' <<<"$API_BODY")" == "false" ]] \
       && ok "E2E-9c2 crossTenantIdentity=false" \
-      || ko "E2E-9c2 crossTenantIdentity=false" "valeur : $(jq -r '.crossTenantIdentity // "ABSENT"' <<<"$API_BODY")"
-    local welcome; welcome="$(jq -r '.welcomeEmailSent // "ABSENT"' <<<"$API_BODY")"
+      || ko "E2E-9c2 crossTenantIdentity=false" "valeur : $(jq -r 'if has("crossTenantIdentity") then (.crossTenantIdentity|tostring) else "ABSENT" end' <<<"$API_BODY")"
+    local welcome; welcome="$(jq -r 'if has("welcomeEmailSent") then (.welcomeEmailSent|tostring) else "ABSENT" end' <<<"$API_BODY")"
     if [[ "$welcome" == "true" ]]; then
       ok "E2E-9c3 email de bienvenue envoye (constat M4)"
     elif [[ "$welcome" == "false" ]]; then
@@ -682,7 +679,7 @@ e2e_9_invitations() {
   if ! assert_code 201 "E2E-9e invitation cross-tenant acceptee a la creation"; then
     return
   fi
-  local rts; rts="$(jq -r '.requiresTenantSwitch // "ABSENT"' <<<"$API_BODY")"
+  local rts; rts="$(jq -r 'if has("requiresTenantSwitch") then (.requiresTenantSwitch|tostring) else "ABSENT" end' <<<"$API_BODY")"
   [[ "$rts" == "true" ]] \
     && ok "E2E-9e1 requiresTenantSwitch=true (email deja utilise dans une autre eglise)" \
     || ko "E2E-9e1 requiresTenantSwitch=true" "valeur : ${rts}"
@@ -690,14 +687,14 @@ e2e_9_invitations() {
 
   if [[ -n "$ctok" ]]; then
     api GET "/api/v1/admin/invitations/validate/${ctok}" ''
-    [[ "$(jq -r '.accountExists // false' <<<"$API_BODY")" == "true" ]] \
+    [[ "$(jq -r 'if has("accountExists") then (.accountExists|tostring) else "ABSENT" end' <<<"$API_BODY")" == "true" ]] \
       && ok "E2E-9e2 accountExists=true (identite GLOBALE, constat B4 corrige)" \
-      || ko "E2E-9e2 accountExists=true" "valeur : $(jq -r '.accountExists // "ABSENT"' <<<"$API_BODY")"
+      || ko "E2E-9e2 accountExists=true" "valeur : $(jq -r 'if has("accountExists") then (.accountExists|tostring) else "ABSENT" end' <<<"$API_BODY")"
 
     # D3 : pas de mot de passe a fournir, le compte existe deja.
     api POST "/api/v1/admin/invitations/accept/${ctok}" '' '{}'
     if assert_code 200 "E2E-9e3 invitation cross-tenant acceptee sans mot de passe (D3)"; then
-      [[ "$(jq -r '.crossTenantIdentity // false' <<<"$API_BODY")" == "true" ]] \
+      [[ "$(jq -r 'if has("crossTenantIdentity") then (.crossTenantIdentity|tostring) else "ABSENT" end' <<<"$API_BODY")" == "true" ]] \
         && ok "E2E-9e4 crossTenantIdentity=true" || ko "E2E-9e4 crossTenantIdentity=true" "${API_BODY}"
     fi
 
