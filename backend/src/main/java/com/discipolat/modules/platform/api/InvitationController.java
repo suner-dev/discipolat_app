@@ -26,6 +26,19 @@ import org.springframework.data.domain.Pageable;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Administration des invitations (ARBITRAGE D5-bis).
+ *
+ * <p>Les gardes étaient {@code hasAnyRole('TENANT_OWNER','TENANT_ADMIN')} : cette
+ * expression n'évalue QUE l'autorité issue du claim « role » du JWT, indépendamment
+ * du tenant réellement visé par la requête. Avec le multi-appartenance (constat B2),
+ * un admin de l'église A portant un jeton dont le tenant actif est B franchissait
+ * la garde et listait/créait des invitations dans B — fuite d'autorité inter-tenant
+ * (SKIP E2E-9/E2E-10b de la recette). Les cinq endpoints sont donc basculés sur
+ * {@code @authz.isTenantAdmin()}, qui lit la table des appartenances : membership
+ * ACTIVE de portée TENANT avec un rôle admin POUR LE TENANT COURANT. Même migration
+ * que celle déjà appliquée aux mutations du wizard d'onboarding.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/invitations")
 public class InvitationController {
@@ -72,7 +85,7 @@ public class InvitationController {
     // ==================== CREATE INVITATION ====================
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<Map<String, Object>> createInvitation(@RequestBody Map<String, Object> request) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID currentUserId = SecurityUtils.getCurrentUserId();
@@ -176,7 +189,7 @@ public class InvitationController {
      * insensible à la casse sur l'email).
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<?> listInvitations(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
@@ -232,7 +245,7 @@ public class InvitationController {
     // ==================== GET INVITATION DETAILS ====================
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<Map<String, Object>> getInvitation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         Optional<Invitation> invitation = invitationRepository.findById(id);
@@ -247,7 +260,7 @@ public class InvitationController {
     // ==================== CANCEL INVITATION ====================
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     @Transactional
     public ResponseEntity<?> cancelInvitation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -276,7 +289,7 @@ public class InvitationController {
     // ==================== RESEND INVITATION ====================
 
     @PostMapping("/{id}/resend")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     @Transactional
     public ResponseEntity<Map<String, Object>> resendInvitation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();

@@ -209,14 +209,20 @@ public class TenantSwitcherController {
         // aucun accessToken/refreshToken n'est produit.
         tenantStatusGuard.assertAccessible(newTenantId);
 
-        // H4 (2e cran) : l'IDENTITE de l'utilisateur ne change pas lorsqu'on
-        // change d'eglise. Il faut donc le lire AVANT de basculer le contexte :
-        // `TenantAwareSimpleJpaRepository.findById` ajoute explicitement
-        // `tenant_id = TenantContext.getTenantId()`, et apres la bascule on
-        // chercherait un utilisateur dont `users.tenant_id` est encore son tenant
-        // d'origine -> "Utilisateur introuvable", 500. Lire avant evite d'avoir a
-        // contourner l'isolation pour un acces cross-tenant.
-        User user = userRepository.findById(userId)
+        // H4 (2e cran) / D2 : l'IDENTITE de l'utilisateur ne change pas quand on
+        // change d'eglise. `TenantAwareSimpleJpaRepository.findById` ajoute un
+        // predicat EXPLICITE `tenant_id = TenantContext` (independant du @Filter
+        // Hibernate, donc insensible a `crossTenantRead`), or `users.tenant_id`
+        // porte le tenant d'ORIGINE : des que l'utilisateur agit deja dans un
+        // tenant qui n'est pas son origine (bascule en chaine A->B->C), ce
+        // `findById` renvoyait vide -> 500 « Utilisateur introuvable ».
+        // On lit donc sa propre identite par la voie membership-scoped canonicale
+        // (lecture native par id, exigeant une membership ACTIVE dans le tenant
+        // COURANT) : c'est le tenant du JWT presenting, donc l'appartenance y est
+        // garantie par la bascule precedente. Ca ne relaxe aucune isolation --
+        // l'acces au tenant cible a deja ete verifie ci-dessus (hasAccess).
+        UUID currentTenantId = TenantContext.getTenantId();
+        User user = userRepository.findByIdWithActiveMembershipInTenant(userId, currentTenantId)
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
 
         // Set new tenant context
