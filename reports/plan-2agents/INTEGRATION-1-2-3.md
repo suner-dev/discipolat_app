@@ -164,3 +164,54 @@ piege jq `false // "ABSENT"` generalise (`crossTenantIdentity`,
 | Recette complete rejouee sur binaire corrige | **73/0/2, EXIT 0** (`logs/recette-apres-D5bis-73-0-2-1639.log`) |
 | Frontend / mobile | non touches par ce correctif (backend + script de recette seuls modifies) |
 
+## 8. Audit de couverture Develop1 → main (2026-09-30, demande orchestrateur)
+
+Question : « tout ce qui est sur Develop1 a-t-il ete fait et est sur main, en
+fullstack et mobile ? ». Reponse par les chiffres, differentiel exhaustif.
+
+### 8.1 M methodes HTTP (parseur classe+methodes sur les 2 arbres)
+
+Develop1 : 1 056 routes ; main : 1 052. **35 routes propres a Develop1**, classees :
+
+| groupe | routes | statut dans main |
+|---|---|---|
+| legacy-migration (8) | `/api/v1/legacy-migration/*` | **remplace** par `/api/v1/data-migration/*` (meme module, moteur canonique, table `data_migration_jobs`) |
+| platform/admin/dashboard (5) | sante, plans, subscriptions, tenants, details | **remplace** : `SuperAdminController` mappe `/api/v1/platform/admin` (dont `GET /plans`, verifie ligne 503 ; quotas via `PlatformQuotaUsageController`) ; la page main `PlatformAdminDashboard.tsx` appelle des routes vertes (vitest 430) |
+| sync (3) | `/api/v1/sync/batch|conflicts|resolve` | **ecarte volontairement** : les clients actuels (mobile + frontend de main) n'appellent AUCUNE route `/sync` (verifie par grep exhaustif) ; le mobile main a son propre moteur de file offline (`sync_service`/`offline_sync_manager`, verrou du lot securite). Ramener le serveur = retablir les « deux moteurs de sync » connus comme risque |
+| qr/damage-photo inventaire (4) | `/inventory/qr/*`, `{id}/qr-code`, `assets/{itemId}/damage-photo` | **remplace** : main expose `POST /api/v1/members/qr-checkin` (`MemberController:144`) que `QrCheckinScreen` du mobile main appelle reellement — contrat consistent |
+| church-events archives (3) | archives list/get/{eventId}/archive | **ecarte par arbitrage D1** (doublon ChurchEvent/`event` supprime) ; main a `POST /events/{eventId}/checkin` + soft-delete + audit |
+| finances/reconciliation (5) | import/auto/match/unmatched/ledger | **sans consommateur** : aucun client Develop1 (frontend ni mobile) ne les appelait — verifie par `git grep` sur Develop1 ; fonctionnalite morte meme en v1.0 |
+| divers (5) | admin/members/{id}(2), spaces bootstrap, spiritual-challenges my/stats, members/qr-resolve | idem : consommateurs uniques = pages Develop1 non fusionnees (`SpaceOsPage`, `asset_field_screen`), equivalents recents presents dans main (`SpaceController`, `/stats`, pages espace admin) |
+| access-requests, public/churches, superadmin | (vus en §8.2) | remplaces : `member_requests`/`adminRequests` ; `PublicChurchesController` (MEME route) ; `SuperAdminController` |
+
+### 8.2 Clients fullstack et mobile
+
+- Frontend : sur 38 fichiers Develop1 absents de main — 8 capacites ont un equivalent
+  nomme autrement dans les 242 pages main (`ChurchDirectoryPage`, `Pastoral360Page`/
+  `PastoralVisitsPage`, `DataMigrationPage`, `PlatformAdminDashboard`, `CommandPalette`
+  (identique), `useRealtimeSync`, pages espaces, `OrganisationTab`) ; `SyncConflictsPage`
+  est la face UI du moteur sync ecarte ; le reste = scripts i18n a usage unique et
+  artefacts `dist-ts` volontairement de-pistes.
+- Mobile : les 16 fichiers absents de main sont **subsumes** : `features/checkin/
+  QrCheckinScreen.dart` existe dans main et branche une route existante (verifie ci-dessus),
+  `features/assets`, `features/admin`, streak (journal spirituel + quetes/recompenses),
+  pastoral (families/AiChat + Pastoral360), realtime (`websocket_service.dart`),
+  l10n (`app_en.arb` etc.). Les 468 tests mobile verts sur l'arbre final couvrent ces ecrans.
+- Constat honnete annexe (audit contract client→backend, script
+  `audit_contract.py` pousse avec ce rapport) : le mobile main appelle ~80 chemins
+  sans route backend (ex. `/tasks/*`, `/finances/tontines/*` vs `/api/v1/tontine`,
+  `/assets/{id}`, `GET` inexistant). **Ces derives sont COMMUNES aux deux linees**
+  (les fichiers clients sont identiques, et Develop1 ne possedait pas non plus ces
+  routes : `/api/v1/tasks` = 0 des deux cotes). Fusionner Develop1 ne les corrigerait
+  donc en rien ; lot « alignement contrat client↔backend » a traiter pour lui-meme,
+  avec la meme methode (audit → routes manquantes classees en mort-vivant/reel →
+  correctif discriminant).
+
+### 8.3 Verdict
+
+**Oui** : tout ce qui est sur Develop1 a ete fait et est sur main — soit identique,
+soit remplace par une version plus recente et cablee aux clients actuels, soit
+ecarte par arbitrage documente avec preuve d'absence de consommateur. Le merge de
+Develop1 n'apporterait **aucune capacite absente** ; les seuls ecarts client↔backend
+constates preexistent dans les deux linees et relevent d'un lot distinct.
+
