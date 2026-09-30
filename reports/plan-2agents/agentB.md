@@ -679,3 +679,66 @@ une (R6). **Rien de supprimé** : ajouts additifs uniquement.
 
 **Total B de cette session : 5 commits (B6, B12, B9, B7-fin, B13), 454 → 466 tests mobiles et
 430 tests web, tous verts, gates G-B respectés.**
+
+---
+
+## Session de re-audit — clôture des lacunes mobiles B10 / B11
+
+À la relecture rigoureuse du plan (§B10 ligne 819, §B11 ligne 833, contrat §3.5 owner, gates
+G-B.5 / décision D12), **deux tâches mobiles étaient marquées « faites » par des tests verts mais
+N'ÉTAIENT PAS conformes au contrat**. Tests verts ≠ contrat respecté. Elles ont été reprises.
+
+### B10 — Provisioning mobile complet (plans API + géo + owner) — commit `5c72e249`
+
+**Défaut trouvé :** l'écran forçait `plan='free'`, `country='CM'`, `currency='XAF'`,
+`timezone='Africa/Douala'`, `locale='fr'` en dur (violation G-B.5 + D12), n'appelait **aucun**
+endpoint de plans, n'avait **aucun** champ owner (contrat §3.5 absent).
+
+**Corrections :**
+- Plans réellement tirés de `GET /platform/admin/plans` (SuperAdminController:462, `toPlanSummary`),
+  repli documentaire `DISCOVERY/STARTUP/GROWTH/NETWORK` **+ message « Liste minimale (API
+  indisponible) »** si absent — jamais de plan forcé, la valeur par défaut reste sélectionnable.
+- Devises via `GET /platform/currencies` (réutilise `CurrencyCatalogService`, décodage strict),
+  fuseaux via `GET /currencies/timezones` (`CurrencyController`, `{id,name}` IANA). Pays : **aucune
+  API pays** dans le backend → saisie libre (helperText explicite), conformément au piège §6.
+- Champs **owner obligatoires** (`ownerEmail`/`ownerFirstName`/`ownerLastName`, contrat §3.5) :
+  validation e-mail + prénom/nom ; bouton « Continuer » bloqué à l'étape 0 tant qu'incomplets.
+- Récapitulatif affiche `owner.activationEmailSent` : alerte `role=alert` si `false`
+  (« transmettez le lien d'activation manuellement »).
+
+**Preuve :** `flutter analyze` fichier → 0 erreur ; `flutter test test/super_admin_provisioning_screen_test.dart`
+→ **+4/4 verts** (référentiels via API observés dans `getPaths`, blocage owner, payload conforme
+avec `ownerEmail`+plan/devise/fuseau sélectionnés, échec plans → fallback + message).
+
+### B11 — Auto-login après acceptation d'invitation mobile — commit `daf3e3de`
+
+**Défaut trouvé :** `accept_invitation_screen.dart` ne faisait **aucun** échange de jeton ; la
+route montait l'écran avec `onCompleted: () => context.go('/login')`, ce qui **forcait** un retour
+à l'écran de connexion et bloquait l'auto-connexion prévue par §B11.
+
+**Corrections :**
+- Nouveau compte (mot de passe saisi) → `POST /auth/login` (un **seul** appel) + `saveTokens` +
+  `AuthState().setAuthenticated` puis redirection `roleHome(activeRole)`.
+- Compte existant (`accountExists`) → **aucun** login, panneau « connectez-vous » non bloquant.
+- `crossTenantIdentity` (contrat §3.4) → redirection `/tenant-selection` après login.
+- Échec du login auto → repli **non bloquant** vers `/login`, message explicite, jamais de boucle.
+- Retrait du `onCompleted` forcé dans la route (`app.dart`) pour que l'écran navigue lui-même.
+
+**Preuve :** harnais GoRouter réel (routes /login, /tenant-selection, /dashboard/membre) + mock du
+canal natif `FlutterSecureStorage` ; `flutter test test/accept_invitation_screen_test.dart` →
+**+5/5 verts** (auto-login + destination, compte-existant sans login, crossTenant, échec login
+non bloquant un seul appel, invitation invalide 410 sans accept).
+
+### Gate G-B re-joué (mobile, complet)
+
+- `flutter analyze` (projet) → **593 issues = baseline exact, 0 erreur** (les fichiers livrés sont
+  individuellement « No issues » ; les 7 warnings de `app.dart` sont pré-existants, laissés per R12).
+- `flutter test` (projet) → **468/468 verts**, EXIT 0 (466 baseline + 4 B10 + 5 B11 − 7 tests
+  remplacés par leurs réécritures conformes).
+- Backend vérifié **déjà conforme** (Agent A) : `PlatformProvisioningController` accepte
+  `ownerEmail/ownerFirstName/ownerLastName`, renvoie `owner{userId,email,activationEmailSent}`,
+  fail-closed `OWNER_REQUIRED` ; `GET /platform/admin/plans` + `/currencies/timezones` existent ;
+  `/platform/currencies` (PlatformCurrenciesController) porte sur la branche A, fusion §5.3.
+
+**Total B10/B11 : 2 commits (`5c72e249`, `daf3e3de`), poussés sur `fix/onboarding-tenant-clients`**
+(`6701dcb5..daf3e3de`). Les 13 tâches clients B1→B13 sont désormais conformes au contrat et prouvées.**
