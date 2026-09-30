@@ -39,12 +39,15 @@ $ flutter test   (Flutter 3.38.7)
 Le coeur du lot sécurité (2FA WRITE_ONLY + webhooks fail-closed + verrou sync +
 test §1.2) est IMPLEMENTE, EXECUTE et PROUVE discriminant, sans régression mobile.
 
-## Point d'arbitrage RESTANT (décision humaine, R7)
-55ca8af9 embarque AUSSI render.yaml + .github/workflows/backup-postgres.yml.
-L'arbitrage senior enregistré disait « EXCLURE render.yaml/backup-postgres.yml
-(decision Render reportee) ». Deux options, à trancher par l'orchestrateur :
-  (a) séparer : restaurer ces 2 fichiers à l'état main dans un commit suivi sur
-      cette branche -> diff net = sécurité seule ; le diff infra reste récupérable
-      depuis 55ca8af9 (aucune perte) ;
-  (b) assumer le bundle tel quel (le commit a été fait délibérément avec).
-Non poussé, non fusionné ; la branche est dédiée, rien n'est irrévocable.
+## Point d'arbitrage — RESOLU (décision orchestrateur)
+55ca8af9 embarquait AUSSI render.yaml + .github/workflows/backup-postgres.yml,
+alors que l'arbitrage senior enregistré les **excluait** (decision Render reportee).
+Decision : **séparer** -> commit `ab50c392` restaure ces 2 fichiers à l'état main.
+Diff net de la branche = sécurité seule (User 2FA, PaymentController +
+UssdController fail-closed, UserSecretSerializationTest, sync_lock/sync_service/
+offline_sync_manager, bootstrap_prod.sql). Aucune perte : le diff infra reste
+récupérable via `git show 55ca8af9 -- render.yaml .github/workflows/backup-postgres.yml`.
+
+## Verdict final
+Lot sécurité propre : coeur vérifié (3/3 + R10 discriminant + mobile 376/376),
+périmètre aligné sur l'arbitrage (infra exclue). Non poussé, non fusionné.
