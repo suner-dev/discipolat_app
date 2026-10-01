@@ -69,6 +69,15 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
     /** JWKS Google : clés de signature des {@code id_token}. */
     static final String GOOGLE_JWKS_URI = "https://www.googleapis.com/oauth2/v3/certs";
 
+    /**
+     * JWKS Facebook : clés de signature des {@code id_token} Facebook Login.
+     * (Deux clés RSA en rotation, vérifiées en direct sur le endpoint officiel.)
+     */
+    static final String FACEBOOK_JWKS_URI = "https://www.facebook.com/.well-known/oauth/openid/jwks/";
+
+    /** Émetteur unique des {@code id_token} Facebook. */
+    static final String FACEBOOK_ISSUER = "https://www.facebook.com";
+
     /** Émetteurs acceptés pour un jeton Google. */
     static final Set<String> GOOGLE_ISSUERS =
             Set.of("https://accounts.google.com", "accounts.google.com");
@@ -123,9 +132,11 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
         }
 
         Jwt jwt = decode(provider, credential);
-        return provider == SocialProvider.GOOGLE
-                ? toGoogleIdentity(jwt)
-                : toMicrosoftIdentity(jwt);
+        return switch (provider) {
+            case GOOGLE -> toGoogleIdentity(jwt);
+            case MICROSOFT -> toMicrosoftIdentity(jwt);
+            case FACEBOOK -> toFacebookIdentity(jwt);
+        };
     }
 
     private Jwt decode(SocialProvider provider, String credential) {
@@ -165,6 +176,67 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
                 email,
                 Boolean.TRUE.equals(emailVerified),
                 value(jwt, "name"),
+                value(jwt, "picture"));
+    }
+
+    // ------------------------------------------------------------------
+    // Facebook
+    // ------------------------------------------------------------------
+
+    /**
+     * Facebook Login (OIDC).
+     *
+     * <h3>La particularité qui décide de toute la politique :</h3>
+     * Facebook <b>n'émet pas de claim {@code email_verified}</b> — il n'est pas
+     * dans la liste des claims du document de découverte de Facebook, contrairement
+     * à Google et Microsoft. Appliquer aveuglément la règle «
+     * {@code email_verified} obligatoire » rendrait donc <b>toute</b> connexion
+     * Facebook impossible.
+     *
+     * <p>La confiance repose alors sur ce que garantit réellement le fournisseur :
+     * l'adresse provient du profil Facebook, que Facebook a lui-même vérifiée à
+     * l'inscription. La politique appliquée est donc :
+     * <ul>
+     *   <li>{@code email_verified} explicitement {@code false} → <b>refusé</b>
+     *       (le fournisseur a dit ne pas garantir l'adresse) ;</li>
+     *   <li>{@code email_verified} absent → <b>accepté</b> ;</li>
+     *   <li>{@code email} absent → <b>refusé</b>, car notre modèle indexe les
+     *       comptes par email global (index unique sur {@code LOWER(email)}) :
+     *       une identité sans email n'a rien où se rattacher.</li>
+     * </ul>
+     */
+    private VerifiedIdentity toFacebookIdentity(Jwt jwt) {
+        requireIssuer(jwt, Set.of(FACEBOOK_ISSUER));
+        requireAudience(jwt, Set.of(properties.getFacebook().getAppId()));
+
+        Boolean emailVerified = claimAsBoolean(jwt, "email_verified");
+        if (Boolean.FALSE.equals(emailVerified)) {
+            throw SocialCredentialException.forbidden("SOCIAL_EMAIL_NOT_VERIFIED",
+                    "Facebook signale cette adresse comme non verifiee");
+        }
+
+        String email = value(jwt, "email");
+        if (email.isBlank()) {
+            // Cause réelle la plus fréquente : permission `email` non accordée,
+            // ou compte Facebook sans adresse. Message honnête et actionnable.
+            throw SocialCredentialException.forbidden("SOCIAL_EMAIL_MISSING",
+                    "Facebook n'a pas partage d'adresse email pour ce compte");
+        }
+
+        // Facebook fournit normalement `name` ; `given_name`/`family_name` sont
+        // le repli. On RECOMPOSE les deux : ne garder que le prénom ferait
+        // apparaître « Paul » seul dans toute l'application.
+        String givenName = value(jwt, "given_name");
+        String familyName = value(jwt, "family_name");
+        String composedName = (givenName + " " + familyName).trim();
+        String name = firstNonBlank(value(jwt, "name"), composedName);
+
+        return new VerifiedIdentity(
+                SocialProvider.FACEBOOK,
+                jwt.getSubject(),
+                email,
+                !Boolean.FALSE.equals(emailVerified),
+                name,
                 value(jwt, "picture"));
     }
 
@@ -293,6 +365,7 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
         return switch (provider) {
             case GOOGLE -> properties.isGoogleActive();
             case MICROSOFT -> properties.isMicrosoftActive();
+            case FACEBOOK -> properties.isFacebookActive();
         };
     }
 
@@ -307,6 +380,7 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
         String jwksUri = switch (provider) {
             case GOOGLE -> GOOGLE_JWKS_URI;
             case MICROSOFT -> microsoftJwksUri(properties.getMicrosoft().getTenantId());
+            case FACEBOOK -> FACEBOOK_JWKS_URI;
         };
         log.info("Vérification {} : JWKS {}", provider.wireName(), jwksUri);
         return NimbusJwtDecoder.withJwkSetUri(jwksUri)
@@ -328,6 +402,7 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
     Map<SocialProvider, Boolean> activeProviders() {
         return Map.of(
                 SocialProvider.GOOGLE, properties.isGoogleActive(),
-                SocialProvider.MICROSOFT, properties.isMicrosoftActive());
+                SocialProvider.MICROSOFT, properties.isMicrosoftActive(),
+                SocialProvider.FACEBOOK, properties.isFacebookActive());
     }
 }

@@ -9,7 +9,7 @@
  */
 
 /** Fournisseurs acceptés par l'API. La liste est fermée côté serveur. */
-export type SocialProviderId = 'google' | 'microsoft';
+export type SocialProviderId = 'google' | 'microsoft' | 'facebook';
 
 /** Réponse de `GET /api/v1/auth/social/providers`. */
 export interface SocialProvidersState {

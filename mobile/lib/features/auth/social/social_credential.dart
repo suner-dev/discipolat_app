@@ -11,7 +11,8 @@ import 'package:flutter/foundation.dart';
 /// l'instant ; l'énumération s'étend sans changement d'architecture.
 enum SocialProvider {
   google('google', 'Google'),
-  microsoft('microsoft', 'Microsoft');
+  microsoft('microsoft', 'Microsoft'),
+  facebook('facebook', 'Facebook');
 
   const SocialProvider(this.wireName, this.label);
 

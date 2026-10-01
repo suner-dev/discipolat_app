@@ -237,6 +237,10 @@ const ar: Record<string, string> = {
   'auth.social.rateLimited': 'محاولات كثيرة. انتظر قليلاً قبل إعادة المحاولة.',
   'auth.social.networkError': 'تعذّر تسجيل الدخول. تحقّق من اتصالك بالإنترنت.',
   'auth.social.genericError': 'تعذّر تسجيل الدخول. حاول مرة أخرى.',
+  'auth.social.facebookNoEmail': 'لم يشارك فيسبوك عنوان بريد إلكتروني. اسمح بالوصول إلى البريد في نافذة فيسبوك ثم أعد المحاولة.',
+  'auth.social.cannotComplete': 'تعذّر إكمال تسجيل الدخول',
+  'auth.social.completing': 'جارٍ تسجيل الدخول…',
+  'auth.backToLogin': 'العودة إلى تسجيل الدخول',
   'auth.orContinueWith': 'أو تابع بـ',
 
   // Dashboard

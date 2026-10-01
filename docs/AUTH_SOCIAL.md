@@ -1,9 +1,10 @@
 # Connexion par identité externe — Google & Microsoft
 
 > Statut : implémenté sur `feat/social-auth-google-microsoft`.
-> Fournisseurs retenus : **Google** et **Microsoft** — les deux **gratuits et
-> sans plafond**. Apple et le téléphone sont volontairement hors périmètre
-> (payants), voir §7.
+> Fournisseurs retenus : **Google**, **Microsoft** et **Facebook** — tous
+> **gratuits et sans plafond côté serveur** (vérification locale du JWT).
+> Apple et le téléphone sont volontairement hors périmètre (payants), voir §7.
+> LinkedIn, Telegram et VK ont été **évalués et écartés**, raisons en §7.1.
 
 ---
 
@@ -69,6 +70,69 @@ contrôlée avec les clés publiques du fournisseur (JWKS), via
 
 Microsoft sans claim `email` : repli sur `preferred_username` **uniquement** si
 la forme est un email et que le fournisseur n'a pas dit « non vérifié ».
+
+### 3 bis. Facebook — deux différences à connaître
+
+**1) Facebook n'émet PAS de claim `email_verified`.**
+
+Il n'est pas dans le document de découverte OIDC de Facebook (contrairement à
+Google et Microsoft). Appliquer la règle « `email_verified` obligatoire »
+rendrait **toute** connexion Facebook impossible. La politique appliquée est
+donc, explicitement :
+
+| Claim | Décision | Justification |
+|---|---|---|
+| `email_verified: false` | **refusé** (403) | le fournisseur a dit ne pas garantir l'adresse |
+| `email_verified` absent | **accepté** | Facebook a vérifié l'adresse à l'inscription du compte |
+| `email` absent | **refusé** (403 `SOCIAL_EMAIL_MISSING`) | cause réelle la plus fréquente : permission `email` non accordée, ou profil sans adresse. Notre modèle indexe les comptes par email global : une identité sans email n'a rien où se rattacher. |
+
+L'utilisateur qui refuse l'accès à son email voit donc un message actionnable
+(`auth.social.facebookNoEmail`), pas une erreur opaque.
+
+**2) Le SDK JavaScript de Facebook ne renvoie PAS d'`id_token`.**
+
+`FB.login()` renvoie un *access token* — donc non vérifiable localement, ce qui
+nous ramènerait au modèle « un appel réseau par connexion » que cette
+architecture a précisément écarté. L'unique moyen d'obtenir un **JWT signé par
+Facebook** est le flux OIDC implicite (`response_type=id_token`).
+
+Ce flux est **acceptable ici** (et seulement ici) parce que :
+- notre backend émet la session Discipolat → **aucun refresh token
+  fournisseur** n'est nécessaire ;
+- le jeton est court-lived et lié à notre App ID (audience vérifiée) ;
+- la signature est validée **côté serveur**, jamais dans le navigateur.
+
+Implémentation : **redirection de page entière** avec relais par `sessionStorage`
+(et non popup), car `postMessage` casse avec
+`Cross-Origin-Opener-Policy: same-origin` et Meta impose son propre
+`X-Frame-Options`. La route `/auth/social/callback` :
+1. vérifie le relais — `state` aléatoire de 32 octets + **fenêtre de 5 minutes** ;
+2. refuse tout `state` non concordant (protection CSRF) ;
+3. consomme le relais et **nettoie le fragment** de l'URL, pour qu'aucun
+   `id_token` ne reste dans l'historique du navigateur.
+
+> **Mobile** : le SDK Flutter `flutter_facebook_auth` est **abandonné** (non
+> maintenu depuis 2023). Utiliser un SDK non maintenu sur un flux
+> d'authentification est un risque de sécurité. Le même flux OIDC par
+> redirection est donc utilisé sur mobile, via `flutter_web_auth_2` (officiel,
+> maintenu), sans dépendance Meta.
+
+### 3 ter. Ce qu'il faut obtenir de Meta (⚠️ le point bloquant réel)
+
+Facebook est gratuit, mais **ce n'est pas le même genre de gratuité que Google
+ou Microsoft** : il y a une **revue** à passer.
+
+| Étape | Conséquence |
+|---|---|
+| Créer l'application Meta (Consumer) | `email` + `public_profile` sontGranted en **Standard Access** |
+| **Standard Access** | fonctionne **uniquement pour les personnes ayant un rôle sur l'application** (développeurs, testeurs). Pas un membre de l'église. |
+| **Advanced Access** | Business Verification + **App Review** Meta : cas d'usage, captures d'écran et **au moins un appel API réussi dans les 30 jours** ; app en mode **Live** |
+| **Data Use Checkup** | annuel, obligatoire pour conserver l'Advanced Access |
+
+**Conséquence à assumer :** tant que la revue n'est pas passée, Facebook
+fonctionne en *test* mais **pas pour de vrais membres**. Ce n'est pas contournable
+— et le code ne le contourne pas : il reste fail-closed, l'API répond 503 tant
+que l'App ID n'est pas configuré, et la documentation est explicite.
 
 ---
 
@@ -253,7 +317,17 @@ frame-src  'self' https://accounts.google.com;
 
 Les deux sont ajoutables **sans changement d'architecture** : il suffit d'étendre
 `SocialProvider`, `SocialAuthProperties` et `SocialIdentityVerifier`, qui sont
-déjà pilotés par fournisseur. Pour le téléphone, `SmsGateway` (Twilio) existe
+déjà pilotés par fournisseur.
+
+### 7.1 Réseaux sociaux écartés — et pourquoi (décisions assumées)
+
+| Réseau | Verdict | Raison concrète |
+|---|---|---|
+| **Telegram** | écarté | **Gratuit, sans revue, OIDC standard** (JWKS `https://oauth.telegram.org/.well-known/jwks.json`, RS256, issuer `https://oauth.telegram.org`). Techniquement idéal pour l'audience francophone africaine… mais son `id_token` **ne contient aucun claim `email`** (claims : `sub`, `id`, `name`, `preferred_username`, `picture`, `phone_number`). Or notre modèle indexe les comptes par **email global unique** (`V185`) : une identité Telegram n'a donc **rien où se rattacher**. Il faudrait introduire une identité liée au **numéro de téléphone**, sans contrainte d'unicité sur `users.phone` → risque qu'un numéro partagé fasse entrer quelqu'un chez un autre. Risque de sécurité supérieur au bénéfice, donc **non fait**. |
+| **LinkedIn** | écarté | son document de découverte annonce `response_types_supported: ["code"]` **uniquement** : pas d'`id_token` implicite. Il faudrait échanger le `code` côté serveur, donc **stocker un `client_secret`** dans l'API — ce que nous avons délibérément évité (un secret dans le backend, c'est un secret à faire tourner). Revendique par ailleurs une revue d'app. |
+| **WhatsApp** | écarté | Ce n'est **pas un fournisseur d'identité** : c'est de la messagerie (Cloud API). Aucune authentification de compte utilisateur. |
+| **TikTok** | écarté | OAuth existant mais **claim email absent** de son flux public, et usage très faible pour une église. Même blocage que Telegram, sans l'avantage du OIDC propre. |
+| **VK** | écarté | Très présent en Afrique francophone, mais OAuth **non-OIDC** : échange du code avec un secret serveur, donc même objection que LinkedIn. | Pour le téléphone, `SmsGateway` (Twilio) existe
 déjà mais sert aux notifications ; l'authentification OTP reste à écrire
 (code 6 chiffres haché, TTL 5 min, 3 tentatives, quotas par IP **et** par
 numéro).

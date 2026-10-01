@@ -26,15 +26,32 @@ let cached: SocialProvidersState | null = null;
 let inFlight: Promise<SocialProvidersState> | null = null;
 
 function isSocialProviderId(value: unknown): value is SocialProviderId {
-  return value === 'google' || value === 'microsoft';
+  return value === 'google' || value === 'microsoft' || value === 'facebook';
 }
 
 /** Identifiants présents dans le build (non secrets, publics par nature). */
-export function buildTimeClientIds(): { google?: string; microsoft?: string } {
+export function buildTimeClientIds(): {
+  google?: string;
+  microsoft?: string;
+  facebook?: string;
+} {
   return {
     google: import.meta.env.VITE_GOOGLE_CLIENT_ID || undefined,
     microsoft: import.meta.env.VITE_MICROSOFT_CLIENT_ID || undefined,
+    facebook: import.meta.env.VITE_FACEBOOK_APP_ID || undefined,
   };
+}
+
+/** Nom de marque affiché : jamais traduit (Facebook reste Facebook). */
+export function providerLabel(provider: SocialProviderId): string {
+  switch (provider) {
+    case 'google':
+      return 'Google';
+    case 'microsoft':
+      return 'Microsoft';
+    case 'facebook':
+      return 'Facebook';
+  }
 }
 
 /**
@@ -55,10 +72,7 @@ export async function fetchSocialProviders(
         providers: rawProviders
           .map((entry) => (entry as { provider?: unknown })?.provider)
           .filter(isSocialProviderId)
-          .map((provider) => ({
-            provider,
-            label: provider === 'google' ? 'Google' : 'Microsoft',
-          })),
+          .map((provider) => ({ provider, label: providerLabel(provider) })),
         accountLinkingEnabled: response.data?.accountLinkingEnabled !== false,
       };
       cached = state;
@@ -69,8 +83,11 @@ export async function fetchSocialProviders(
       // qu'une fonctionnalité manquante.
       const ids = buildTimeClientIds();
       const providers: SocialProvidersState['providers'] = [];
-      if (ids.google) providers.push({ provider: 'google', label: 'Google' });
-      if (ids.microsoft) providers.push({ provider: 'microsoft', label: 'Microsoft' });
+      if (ids.google) providers.push({ provider: 'google', label: providerLabel('google') });
+      if (ids.microsoft)
+        providers.push({ provider: 'microsoft', label: providerLabel('microsoft') });
+      if (ids.facebook)
+        providers.push({ provider: 'facebook', label: providerLabel('facebook') });
       return { providers, accountLinkingEnabled: true };
     })
     .finally(() => {
