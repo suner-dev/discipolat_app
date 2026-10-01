@@ -27,17 +27,20 @@ public class AuthController {
     private final AuthService authService;
     private final PerIpRateLimiter rateLimiter;
     private final AuthorizationService authorizationService;
+    private final AuthResponseFactory authResponseFactory;
     private final com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService;
 
     public AuthController(
             AuthService authService,
             PerIpRateLimiter rateLimiter,
             AuthorizationService authorizationService,
+            AuthResponseFactory authResponseFactory,
             com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService
     ) {
         this.authService = authService;
         this.rateLimiter = rateLimiter;
         this.authorizationService = authorizationService;
+        this.authResponseFactory = authResponseFactory;
         this.tenantRegistrationService = tenantRegistrationService;
     }
 
@@ -275,29 +278,8 @@ public class AuthController {
     }
 
     private AuthResponse toAuthResponse(AuthService.AuthResult result) {
-        List<String> roles = result.user().getRoles() != null
-                ? result.user().getRoles().stream().map(Enum::name).collect(Collectors.toList())
-                : List.of(result.user().getRole().name());
-        String activeRole = result.activeRole() != null
-                ? result.activeRole()
-                : result.user().getRole().name();
-
-        List<String> platformRoles = List.copyOf(authorizationService.getPlatformRoleKeys(result.user().getId()));
-        return new AuthResponse(
-                result.accessToken(),
-                result.refreshToken(),
-                "Bearer",
-                result.user().getId(),
-                result.user().getEmail(),
-                result.user().getRole().name(),
-                roles,
-                activeRole,
-                result.user().isEstChefDeFamille(),
-                result.user().getFirstName(),
-                result.user().getLastName(),
-                result.user().isTwoFactorEnabled(),
-                platformRoles,
-                platformRoles.contains("PLATFORM_SUPER_ADMIN")
-        );
+        // Construction factorisée dans AuthResponseFactory : la réponse est
+        // rigoureusement identique à celle des connexions Google / Microsoft.
+        return authResponseFactory.from(result);
     }
 }

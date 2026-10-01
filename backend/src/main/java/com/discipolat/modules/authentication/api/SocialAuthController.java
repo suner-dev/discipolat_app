@@ -1,136 +1,256 @@
 package com.discipolat.modules.authentication.api;
 
 import com.discipolat.common.domain.Payloads;
-import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.common.infrastructure.config.PerIpRateLimiter;
+import com.discipolat.common.infrastructure.config.RateLimitResult;
+import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.modules.authentication.config.SocialAuthProperties;
 import com.discipolat.modules.authentication.domain.AuthService;
-import com.discipolat.modules.security.domain.RefreshTokenSessionService;
-import com.discipolat.modules.users.domain.User;
-import com.discipolat.modules.users.domain.UserService;
+import com.discipolat.modules.authentication.domain.SocialIdentityService;
+import com.discipolat.modules.authentication.domain.SocialProvider;
+import com.discipolat.modules.authentication.domain.SocialIdentityVerifier;
+import com.discipolat.modules.users.domain.UserIdentity;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Authentification sociale — Google OAuth + Magic Link.
+ * Authentification par identité externe (Google, Microsoft) et par lien magique.
  *
- * Google OAuth : le frontend envoie le token Google, le backend le valide
- * et crée/connecte l'utilisateur.
+ * <p><b>Ce qui est conservé tel quel</b> (aucune suppression) :
+ * {@code POST /api/v1/auth/google} et {@code POST /api/v1/auth/magic-link} +
+ * {@code GET /api/v1/auth/magic-link/verify} répondent toujours, avec les mêmes
+ * URLs et les mêmes formes de réponse, afin qu'aucun client existant ne casse.
  *
- * Magic Link : le backend envoie un lien par email, l'utilisateur clique
- * et est connecté sans mot de passe.
+ * <p><b>Ce qui est corrigé</b> dans {@code /google} : la création de compte
+ * supprimée. Elle construisait un {@code User} sans tenant alors que
+ * {@code users.tenant_id} est NOT NULL, et ignorait l'approbation Super Admin.
+ * L'endpoint délègue désormais à {@link SocialIdentityService}, qui
+ * <b>n'authentifie que des comptes existants</b> et renvoie 403 sinon.
+ *
+ * <p><b>Nouveaux endpoints</b> :
+ * <ul>
+ *   <li>{@code GET /social/providers} — public. Le frontend s'en sert pour
+ *       n'afficher un bouton que si le serveur l'accepte réellement : pas de
+ *       bouton mort, pas d'appel qui se termine en 503.</li>
+ *   <li>{@code POST /social/{provider}} — public, rate-limité. Connexion.</li>
+ *   <li>{@code POST /social/link} — <b>authentifié</b>. Rattache une identité au
+ *       compte connecté (Super Admin, comptes créés par mot de passe).</li>
+ *   <li>{@code GET /social/identities} — <b>authentifié</b>. Identités du compte.</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class SocialAuthController {
 
     private static final Logger log = LoggerFactory.getLogger(SocialAuthController.class);
+    private static final String HEADER_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
+    private static final String HEADER_RETRY_AFTER = "Retry-After";
 
     private final AuthService authService;
-    private final UserService userService;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshTokenSessionService refreshTokenSessionService;
-
-    @Value("${app.auth.google-client-id:}")
-    private String googleClientId;
+    private final SocialIdentityService socialIdentityService;
+    private final SocialAuthProperties properties;
+    private final AuthResponseFactory authResponseFactory;
+    private final PerIpRateLimiter rateLimiter;
 
     public SocialAuthController(AuthService authService,
-                                 UserService userService,
-                                 JwtTokenProvider jwtTokenProvider,
-                                 RefreshTokenSessionService refreshTokenSessionService) {
+                                SocialIdentityService socialIdentityService,
+                                SocialAuthProperties properties,
+                                AuthResponseFactory authResponseFactory,
+                                PerIpRateLimiter rateLimiter) {
         this.authService = authService;
-        this.userService = userService;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.refreshTokenSessionService = refreshTokenSessionService;
+        this.socialIdentityService = socialIdentityService;
+        this.properties = properties;
+        this.authResponseFactory = authResponseFactory;
+        this.rateLimiter = rateLimiter;
+    }
+
+    // ==================================================================
+    // Fournisseurs disponibles (public, mis en cache court)
+    // ==================================================================
+
+    /**
+     * État réel des fournisseurs côté serveur.
+     *
+     * <p>Réponse sans secret : uniquement le nom du fournisseur et s'il est
+     * actif. Le frontend masque un bouton non servi, au lieu d'afficher une
+     * erreur au clic.
+     */
+    @GetMapping("/social/providers")
+    public ResponseEntity<Map<String, Object>> providers() {
+        List<Map<String, Object>> active = java.util.Arrays.stream(
+                        SocialProvider.values())
+                .filter(provider -> isActive(provider))
+                .map(provider -> Map.<String, Object>of(
+                        "provider", provider.wireName(),
+                        "label", labelOf(provider)))
+                .toList();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("providers", active);
+        body.put("accountLinkingEnabled", properties.isAllowAccountLinking());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(body);
+    }
+
+    // ==================================================================
+    // Connexion par identité externe
+    // ==================================================================
+
+    /**
+     * Connexion (et première liaison) par Google ou Microsoft.
+     *
+     * <p>Refuse de créer un compte : un compte Discipolat existe toujours,
+     * soit parce qu'il a été créé par une invitation, soit parce qu'un compte
+     * antérieur porte la même adresse vérifiée.
+     */
+    @PostMapping("/social/{provider}")
+    public ResponseEntity<?> socialLogin(@PathVariable String provider,
+                                         @RequestBody(required = false) Map<String, String> body,
+                                         HttpServletRequest httpRequest) {
+        RateLimitResult rl = rateLimiter.tryConsumeSocialLogin(
+                PerIpRateLimiter.extractClientIp(httpRequest));
+        if (!rl.allowed()) {
+            return rateLimitedResponse(rl);
+        }
+
+        SocialProviderRequest request = SocialProviderRequest.from(provider, body);
+        SocialIdentityService.SocialLoginResult result =
+                socialIdentityService.login(request.provider(), request.credential());
+
+        AuthResponse response = authResponseFactory.from(result.session());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HEADER_RATE_LIMIT_REMAINING, String.valueOf(rl.remainingTokens()))
+                .body(response);
     }
 
     /**
-     * Google OAuth — valider l'id_token Google côté serveur et connecter/créer
-     * l'utilisateur.
+     * Rattache une identité externe au compte <b>déjà connecté</b>.
      *
-     * SÉCURITÉ : le credential (id_token JWT émis par Google Identity Services)
-     * est TOUJOURS validé auprès de Google (tokeninfo) :
-     *  - signature et expiration vérifiées par Google ;
-     *  - `aud` doit correspondre au client-id configuré ;
-     *  - `email_verified` doit être true.
-     *
-     * Aucun email nu n'est jamais accepté : sans configuration
-     * (`app.auth.google-client-id` vide), l'endpoint répond 503 (désactivé).
+     * <p>Route protégée par Spring Security ({@code authenticated()}), et
+     * refusée si l'email vérifié du credential diffère de celui du compte —
+     * sans quoi un compte Google tiers pourrait s'approprier un compte
+     * Discipolat.
      */
-    @PostMapping("/google")
-    public ResponseEntity<Map<String, Object>> googleLogin(@RequestBody Map<String, String> body) {
-        if (googleClientId == null || googleClientId.isBlank()) {
-            return ResponseEntity.status(503).body(Map.of(
-                    "error", "Google sign-in is not configured on this server"));
-        }
-        String credential = body.get("credential");
-        if (credential == null || credential.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Google credential is required"));
+    @PostMapping("/social/link")
+    public ResponseEntity<?> linkIdentity(@RequestBody(required = false) Map<String, String> body,
+                                          HttpServletRequest httpRequest) {
+        RateLimitResult rl = rateLimiter.tryConsumeSocialLink(
+                PerIpRateLimiter.extractClientIp(httpRequest));
+        if (!rl.allowed()) {
+            return rateLimitedResponse(rl);
         }
 
-        Map<String, Object> claims = verifyGoogleIdToken(credential);
-        if (claims == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid Google token"));
-        }
+        SocialProviderRequest request = SocialProviderRequest.from(
+                body == null ? null : body.get("provider"), body);
+        SocialIdentityService.SocialLinkResult result = socialIdentityService.linkToCurrentUser(
+                SecurityUtils.getCurrentUserId(),
+                request.provider(),
+                request.credential(),
+                properties.isAllowAccountLinking());
 
-        String email = (String) claims.get("email");
-        String name = claims.get("name") != null ? claims.get("name").toString() : "";
-        String picture = claims.get("picture") != null ? claims.get("picture").toString() : "";
-
-        try {
-            // Chercher ou créer l'utilisateur (rôle par défaut MEMBRE, mot de passe
-            // aléatoire non communiqué : la connexion passe exclusivement par Google).
-            User user = userService.findByEmail(email);
-            if (user == null) {
-                user = User.builder()
-                        .email(email)
-                        .firstName(name.contains(" ") ? name.split(" ")[0] : name)
-                        .lastName(name.contains(" ") ? name.substring(name.indexOf(' ') + 1) : "")
-                        .photoUrl(picture)
-                        .role(com.discipolat.common.domain.UserRole.MEMBRE)
-                        .build();
-                user = userService.create(user, UUID.randomUUID().toString());
-                 log.info("New user created via Google OAuth: {}", email);
-             }
-
-            String accessToken = jwtTokenProvider.generateAccessToken(
-                    user.getId(), user.getEmail(), user.getRole().name(),
-                    java.util.Set.of(user.getRole().name()),
-                    user.isEstChefDeFamille(), user.getTenantId());
-            UUID familyId = UUID.randomUUID();
-            String refreshToken = jwtTokenProvider.generateRefreshToken(
-                    user.getId(), user.getEmail(), user.getRole().name(),
-                    java.util.Set.of(user.getRole().name()),
-                    user.getTenantId(), familyId);
-            refreshTokenSessionService.register(
-                    refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
-            return ResponseEntity.ok(Payloads.of(
-                    "token", accessToken,
-                    "refreshToken", refreshToken,
-                    "user", Payloads.of(
-                            "id", user.getId().toString(),
-                            "email", user.getEmail(),
-                            "firstName", user.getFirstName(),
-                            "lastName", user.getLastName(),
-                            "role", user.getRole().name()
-                    )
-            ));
-
-        } catch (Exception e) {
-            log.error("Google OAuth failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", "Google authentication failed"));
-        }
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HEADER_RATE_LIMIT_REMAINING, String.valueOf(rl.remainingTokens()))
+                .body(Map.of(
+                        "provider", result.provider().wireName(),
+                        "linked", true,
+                        "newlyLinked", result.created(),
+                        "message", result.created()
+                                ? "Identite rattachee a votre compte"
+                                : "Cette identite etait deja rattachee a votre compte"));
     }
+
+    /** Identités externes du compte connecté. */
+    @GetMapping("/social/identities")
+    public ResponseEntity<Map<String, Object>> identities() {
+        List<Map<String, Object>> identities = socialIdentityService
+                .identitiesOf(SecurityUtils.getCurrentUserId())
+                .stream()
+                .map(this::describe)
+                .toList();
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(Map.of("identities", identities));
+    }
+
+    private Map<String, Object> describe(UserIdentity identity) {
+        Map<String, Object> described = new LinkedHashMap<>();
+        described.put("provider", identity.getProvider().wireName());
+        described.put("label", labelOf(identity.getProvider()));
+        described.put("emailAtLink", identity.getEmailAtLink());
+        described.put("linkedAt", identity.getCreatedAt());
+        described.put("lastUsedAt", identity.getLastLoginAt());
+        return described;
+    }
+
+    // ==================================================================
+    // Compatibilité : endpoint historique /auth/google
+    // ==================================================================
+
+    /**
+     * Connexion Google historique — conservée pour ne casser aucun client.
+     *
+     * @deprecated Utiliser {@code POST /api/v1/auth/social/google} (charge utile
+     *     {@code AuthResponse}, identique à {@code /auth/login}). Cette route est
+     *     conservée avec son ancien format {@code {token, refreshToken, user}}
+     *     et délègue désormais au même service : la création de compte
+     *     automatique, impossible à cause de {@code users.tenant_id NOT NULL},
+     *     a disparu.
+     */
+    @Deprecated
+    @PostMapping("/google")
+    public ResponseEntity<Map<String, Object>> googleLogin(@RequestBody(required = false) Map<String, String> body,
+                                                           HttpServletRequest httpRequest) {
+        RateLimitResult rl = rateLimiter.tryConsumeSocialLogin(
+                PerIpRateLimiter.extractClientIp(httpRequest));
+        if (!rl.allowed()) {
+            throw new com.discipolat.common.exception.DomainException(
+                    "Trop de tentatives, réessayez plus tard", HttpStatus.TOO_MANY_REQUESTS,
+                    "RATE_LIMITED");
+        }
+
+        SocialProviderRequest request = SocialProviderRequest.from("google", body);
+        SocialIdentityService.SocialLoginResult result =
+                socialIdentityService.login(request.provider(), request.credential());
+
+        AuthService.AuthResult session = result.session();
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .header(HEADER_RATE_LIMIT_REMAINING, String.valueOf(rl.remainingTokens()))
+                .body(Payloads.of(
+                        "token", session.accessToken(),
+                        "refreshToken", session.refreshToken(),
+                        "user", Payloads.of(
+                                "id", session.user().getId().toString(),
+                                "email", session.user().getEmail(),
+                                "firstName", session.user().getFirstName(),
+                                "lastName", session.user().getLastName(),
+                                "role", session.user().getRole().name()
+                        )
+                ));
+    }
+
+    // ==================================================================
+    // Magic link (inchangé)
+    // ==================================================================
 
     /**
      * Magic Link — envoyer un lien de connexion par email.
      *
-     * L'utilisateur reçoit un email avec un lien unique.
+     * <p>L'utilisateur reçoit un email avec un lien unique.
      * Clique sur le lien → connecté sans mot de passe.
      */
     @PostMapping("/magic-link")
@@ -163,67 +283,103 @@ public class SocialAuthController {
     @GetMapping("/magic-link/verify")
     public ResponseEntity<Map<String, Object>> verifyMagicLink(@RequestParam String token) {
         try {
-            User user = authService.verifyMagicLink(token);
-            String accessToken = jwtTokenProvider.generateAccessToken(
-                    user.getId(), user.getEmail(), user.getRole().name(),
-                    java.util.Set.of(user.getRole().name()),
-                    user.isEstChefDeFamille(), user.getTenantId());
-            UUID familyId = UUID.randomUUID();
-            String refreshToken = jwtTokenProvider.generateRefreshToken(
-                    user.getId(), user.getEmail(), user.getRole().name(),
-                    java.util.Set.of(user.getRole().name()),
-                    user.getTenantId(), familyId);
-            refreshTokenSessionService.register(
-                    refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
-            return ResponseEntity.ok(Payloads.of(
-                    "token", accessToken,
-                    "refreshToken", refreshToken,
-                    "user", Payloads.of(
-                            "id", user.getId().toString(),
-                            "email", user.getEmail(),
-                            "firstName", user.getFirstName(),
-                            "lastName", user.getLastName(),
-                            "role", user.getRole().name()
-                    )
-            ));
+            // verifyMagicLink renvoie le compte ; issueSession() applique la garde de
+            // statut du tenant et la synchronisation des roles avant d'emettre la session.
+            AuthService.AuthResult session = authService.issueSession(authService.verifyMagicLink(token));
+            AuthResponse response = authResponseFactory.from(session);
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noStore())
+                    .body(Payloads.of(
+                            "token", response.accessToken(),
+                            "refreshToken", response.refreshToken(),
+                            "user", Payloads.of(
+                                    "id", response.userId().toString(),
+                                    "email", response.email(),
+                                    "firstName", response.firstName(),
+                                    "lastName", response.lastName(),
+                                    "role", response.role()
+                            )
+                    ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired magic link"));
         }
     }
 
-    /**
-     * Valide un id_token Google auprès du endpoint tokeninfo de Google.
-     * Retourne les claims si le token est authentique, non expiré, émis pour
-     * notre client-id et avec un email vérifié ; sinon null.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> verifyGoogleIdToken(String idToken) {
-        try {
-            RestTemplate rt = new RestTemplate();
-            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
-            Map<String, Object> claims = rt.getForObject(url, Map.class);
-            if (claims == null) return null;
+    // ==================================================================
+    // Interne
+    // ==================================================================
 
-            // Audience : le token doit avoir été émis pour NOTRE application.
-            if (!googleClientId.equals(claims.get("aud"))) {
-                log.warn("Google token rejected: audience mismatch");
-                return null;
+    /**
+     * Erreur d'un credential externe, traduite en réponse HTTP explicite.
+     *
+     * <p>Le client a besoin de distinguer « credential refusé » (il doit
+     * recommencer), « fournisseur non configuré » (il doit masquer le bouton)
+     * et « aucun compte pour cette adresse » (il doit proposer l'invitation).
+     */
+    @ExceptionHandler(SocialIdentityVerifier.SocialCredentialException.class)
+    public ProblemDetail handleCredentialException(
+            SocialIdentityVerifier.SocialCredentialException exception) {
+        log.warn("Credential social refuse : {} ({})", exception.code(), exception.getMessage());
+        // Même forme que les DomainException traitées par GlobalExceptionHandler
+        // (RFC 7807 : code dans `title`) : le client(web et mobile) n'a ainsi
+        // qu'un seul contrat d'erreur à lire sur ces endpoints.
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                org.springframework.http.HttpStatus.resolve(exception.httpStatus()),
+                exception.getMessage());
+        problem.setTitle(exception.code());
+        problem.setType(URI.create("https://api.discipolat.com/errors/" + exception.code()));
+        problem.setProperty("provider", "social");
+        return problem;
+    }
+
+    private boolean isActive(SocialProvider provider) {
+        return switch (provider) {
+            case GOOGLE -> properties.isGoogleActive();
+            case MICROSOFT -> properties.isMicrosoftActive();
+        };
+    }
+
+    private String labelOf(SocialProvider provider) {
+        return switch (provider) {
+            case GOOGLE -> "Google";
+            case MICROSOFT -> "Microsoft";
+        };
+    }
+
+    private ResponseEntity<?> rateLimitedResponse(RateLimitResult rl) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .cacheControl(CacheControl.noStore())
+                .header(HEADER_RETRY_AFTER, String.valueOf(rl.retryAfterSeconds()))
+                .header(HEADER_RATE_LIMIT_REMAINING, "0")
+                .body(Map.of(
+                        "error", "Too many requests. Please try again later.",
+                        "code", "RATE_LIMITED",
+                        "retryAfter", rl.retryAfterSeconds() + " seconds"));
+    }
+
+    /**
+     * Extraction et validation du fournisseur + du credential.
+     *
+     * <p>Un fournisseur inconnu est rejeté <b>avant</b> toute vérification de
+     * jeton et sans révéler la liste des fournisseurs pris en charge.
+     */
+    record SocialProviderRequest(
+            SocialProvider provider,
+            String credential) {
+
+        static SocialProviderRequest from(String providerName, Map<String, String> body) {
+            String credential = body == null ? null : body.get("credential");
+            SocialProvider provider;
+            try {
+                provider = SocialProvider.fromWireName(providerName);
+            } catch (IllegalArgumentException unsupported) {
+                throw SocialIdentityVerifier.SocialCredentialException.invalid(
+                        "Fournisseur d'identite non pris en charge");
             }
-            // Email vérifié chez Google (sinon usurpation d'adresse possible).
-            if (!"true".equals(String.valueOf(claims.get("email_verified")))) {
-                log.warn("Google token rejected: email not verified");
-                return null;
+            if (credential == null || credential.isBlank()) {
+                throw SocialIdentityVerifier.SocialCredentialException.invalid("Credential absent");
             }
-            // Expiration (tokeninfo valide déjà la signature ; double contrôle).
-            Object exp = claims.get("exp");
-            if (exp instanceof String s && Long.parseLong(s) < System.currentTimeMillis() / 1000) {
-                return null;
-            }
-            if (claims.get("email") == null) return null;
-            return claims;
-        } catch (Exception e) {
-            log.warn("Google token validation failed: {}", e.getMessage());
-            return null;
+            return new SocialProviderRequest(provider, credential);
         }
     }
 }

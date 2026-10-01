@@ -96,6 +96,44 @@ app:
     public-key-path: ${JWT_PUBLIC_KEY_PATH:}
     access-token-expiration-minutes: 15
     refresh-token-expiration-days: 7
+  # ---------------------------------------------------------------------
+  # Authentification par identite externe (Google, Microsoft)
+  # ---------------------------------------------------------------------
+  # Les deux fournisseurs retenus sont GRATUITS et sans plafond : les
+  # `id_token` sont verifies LOCALEMENT contre les cles publiques (JWKS),
+  # donc aucun appel a un service payant de verification et aucun quota.
+  #
+  # REGLE DE NOMMAGE (critique) : uniquement des segments en minuscules.
+  # Spring lie `app.auth.social.google.web.client.id` a
+  # `APP_AUTH_SOCIAL_GOOGLE_WEB_CLIENT_ID`. Un TIRET dans le nom de propriete
+  # (`web-client-id`) ne serait PAS lie depuis cette variable, et le
+  # fail-closed renverrait 503 : c'est le piege classique du binding Spring.
+  #
+  # Apple (99 $/an) et le telephone (SMS facture par message) sont
+  # volontairement hors perimetre pour l'instant.
+  auth:
+    social:
+      google:
+        enabled: ${SOCIAL_GOOGLE_ENABLED:false}
+        # Les trois clients sont distincts : web, Android, iOS. Sans les trois,
+        # le mobile ne peut pas se connecter (l'audience du jeton est le client
+        # id de la plateforme qui l'a emis).
+        web.client.id: ${SOCIAL_GOOGLE_WEB_CLIENT_ID:}
+        android.client.id: ${SOCIAL_GOOGLE_ANDROID_CLIENT_ID:}
+        ios.client.id: ${SOCIAL_GOOGLE_IOS_CLIENT_ID:}
+      microsoft:
+        enabled: ${SOCIAL_MICROSOFT_ENABLED:false}
+        client.id: ${SOCIAL_MICROSOFT_CLIENT_ID:}
+        # `common` = tous les tenants acceptes. Renseigner l'ID de son tenant
+        # pour restreindre (l'audit de demarrage le signale en jaune).
+        tenant.id: ${SOCIAL_MICROSOFT_TENANT_ID:common}
+        allowed.tenant.ids: ${SOCIAL_MICROSOFT_ALLOWED_TENANT_IDS:}
+      # Permet de rattacher une identite a un compte deja connecte (Super Admin,
+      # comptes crees par mot de passe). Sans cela, ces comptes ne pourraient
+      # jamais utiliser la connexion sociale.
+      allow.account.linking: ${SOCIAL_ALLOW_ACCOUNT_LINKING:true}
+      # Refuse toute identite dont l'email n'est pas confirme par le fournisseur.
+      require.verified.email: ${SOCIAL_REQUIRE_VERIFIED_EMAIL:true}
   cors:
     # Wildcards supportés via setAllowedOriginPatterns (ex. tunnels ngrok / cloudflared)
     allowed-origins: ${FRONTEND_URL:http://localhost:3000,http://localhost:5173,https://*.ngrok-free.dev,https://*.ngrok.io,https://*.trycloudflare.com}

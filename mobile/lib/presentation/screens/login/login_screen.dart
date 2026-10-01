@@ -8,6 +8,7 @@ import '../../../data/services/providers.dart';
 import '../../../app.dart';
 import '../../widgets/beta_badge.dart';
 import '../../widgets/glass_theme.dart';
+import '../../widgets/social_login_buttons.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,6 +87,16 @@ class _LoginScreenState extends State<LoginScreen>
                 'Si cet email existe, un lien de réinitialisation a été envoyé.')),
       );
     }
+  }
+
+  /// Session ouverte par Google / Microsoft : meme traitement qu'un login
+  /// par mot de passe, donc aucun chemin de session sp\u00e9cial.
+  Future<void> _onSocialAuthenticated(Map<String, dynamic> data) async {
+    await _apiService.saveTokens(data);
+    if (!mounted) return;
+    AuthState().setAuthenticated(true, userData: data);
+    context.go(roleHome(AuthState().activeRole,
+        isPlatformSuperAdmin: AuthState().isPlatformSuperAdmin));
   }
 
   Future<void> _login() async {
@@ -292,6 +303,24 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Connexion par identite externe (Google / Microsoft) : les
+                    // deux sont gratuits et sans plafond cote serveur. Aucun
+                    // mot de passe a creer, et le bouton n'apparait que si le
+                    // serveur sert reellement le fournisseur.
+                    SocialLoginButtons(
+                      apiService: _apiService,
+                      googleServerClientId:
+                          const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
+                      microsoftClientId:
+                          const String.fromEnvironment('MICROSOFT_CLIENT_ID'),
+                      microsoftTenantId:
+                          const String.fromEnvironment('MICROSOFT_TENANT_ID',
+                              defaultValue: 'common'),
+                      onAuthenticated: _onSocialAuthenticated,
+                    ),
+
                     const SizedBox(height: 16),
 
                     // Forgot password

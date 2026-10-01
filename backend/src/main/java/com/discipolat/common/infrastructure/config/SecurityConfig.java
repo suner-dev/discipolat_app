@@ -73,12 +73,22 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> {
-                auth.requestMatchers("/api/v1/auth/**").permitAll()
+                // Connexion/liens d'identité externe : ces deux routes exigent une
+                // session ALORS QUE /api/v1/auth/** est public juste après. L'ordre
+                // compte (premier motif gagnant) : sans cette ligne, n'importe
+                // pourrait rattacher une identité à un compte.
+                auth.requestMatchers("/api/v1/auth/social/link", "/api/v1/auth/social/identities")
+                    .authenticated()
+                    .requestMatchers("/api/v1/auth/**").permitAll()
                     // §G1.6 — Cycle de vie d'invitation : la page publique d'acceptation
                     // doit être accessible sans session (l'invité n'a pas encore de compte).
                     // Sécurité : secret de token + expiration + rate-limit par IP
                     // (PerIpRateLimiter.tryConsumeInvitationAccept dans InvitationController).
-                    .requestMatchers("/api/v1/admin/invitations/validate/*", "/api/v1/admin/invitations/accept/*").permitAll()
+                    // `/accept-identity/*` = même accès public que `/accept/*` (invité
+                    // sans compte), avec en plus le contrôle d'email vérifié.
+                    .requestMatchers("/api/v1/admin/invitations/validate/*",
+                                     "/api/v1/admin/invitations/accept/*",
+                                     "/api/v1/admin/invitations/accept-identity/*").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                     // Demande de démonstration depuis la landing (public, rate-limitée
                     // par IP : 3 req / 10 min — cf. PerIpRateLimiter.tryConsumeDemoRequest)

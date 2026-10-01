@@ -29,6 +29,18 @@ dependencies:
   drift: ^2.23.1
   sqlite3_flutter_libs: ^0.5.28
   
+  # Connexion par identite externe (Google / Microsoft) — les deux sont
+  # gratuits et sans plafond cote serveur : l'id_token est valide localement
+  # contre les cles publiques (JWKS).
+  # Apple (99 $/an) et le SMS (facture par message) restent hors perimetre.
+  google_sign_in: ^7.2.0
+  # Client HTTP pour l'echange du code OAuth (PKCE) Microsoft.
+  http: ^1.2.2
+  # Flux OAuth 2.0 code + PKCE via le navigateur systeme : necessaire pour
+  # Microsoft sur mobile, qui ne fournit pas de SDK natif.
+  flutter_web_auth_2: ^5.1.0
+  oauth2: ^2.0.3
+
   # Firebase
   firebase_core: ^3.11.0
   firebase_messaging: ^15.2.0

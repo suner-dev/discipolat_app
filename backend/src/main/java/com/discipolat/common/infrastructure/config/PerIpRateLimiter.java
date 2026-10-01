@@ -113,6 +113,27 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.registration-status-period-minutes:5}")
     private int registrationStatusPeriodMinutes;
 
+    // Connexion par identité externe (Google / Microsoft). Endpoint public : le
+    // credential est costly à produire mais l'endpoint est unauthentifié, donc
+    // quota serré — sur le modèle de /auth/login (10/min) plutôt que du quota
+    // d'invitation : ici l'utilisateur se reconnecte légitimement plusieurs fois
+    // par heure.
+    @Value("${app.rate-limiting.social-login-capacity:10}")
+    private int socialLoginCapacity;
+    @Value("${app.rate-limiting.social-login-refill:10}")
+    private int socialLoginRefill;
+    @Value("${app.rate-limiting.social-login-period-minutes:1}")
+    private int socialLoginPeriodMinutes;
+
+    // Rattachement d'une identité à un compte DÉJÀ connecté : même rare et
+    // légitime, il modifie la sécurité du compte, donc encore plus borné.
+    @Value("${app.rate-limiting.social-link-capacity:5}")
+    private int socialLinkCapacity;
+    @Value("${app.rate-limiting.social-link-refill:5}")
+    private int socialLinkRefill;
+    @Value("${app.rate-limiting.social-link-period-minutes:5}")
+    private int socialLinkPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -125,6 +146,8 @@ public class PerIpRateLimiter {
     private Counter counterRegisterTotal;
     private Counter counterInvitationAcceptTotal;
     private Counter counterRegistrationStatusTotal;
+    private Counter counterSocialLoginTotal;
+    private Counter counterSocialLinkTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
@@ -132,6 +155,8 @@ public class PerIpRateLimiter {
     private Counter counterRegisterDenied;
     private Counter counterInvitationAcceptDenied;
     private Counter counterRegistrationStatusDenied;
+    private Counter counterSocialLoginDenied;
+    private Counter counterSocialLinkDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -160,6 +185,8 @@ public class PerIpRateLimiter {
         counterRegisterTotal = buildCounter("register", "total");
         counterInvitationAcceptTotal = buildCounter("invitation_accept", "total");
         counterRegistrationStatusTotal = buildCounter("registration_status", "total");
+        counterSocialLoginTotal = buildCounter("social_login", "total");
+        counterSocialLinkTotal = buildCounter("social_link", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -172,6 +199,8 @@ public class PerIpRateLimiter {
         counterRegisterDenied = buildCounter("register", "denied");
         counterInvitationAcceptDenied = buildCounter("invitation_accept", "denied");
         counterRegistrationStatusDenied = buildCounter("registration_status", "denied");
+        counterSocialLoginDenied = buildCounter("social_login", "denied");
+        counterSocialLinkDenied = buildCounter("social_link", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -241,6 +270,18 @@ public class PerIpRateLimiter {
      * Consultation du statut d'une demande d'inscription (endpoint public) :
      * 3 requêtes / 5 minutes / IP (contrat §3.3).
      */
+    /** Quota de connexion par identite externe (Google / Microsoft). */
+    public RateLimitResult tryConsumeSocialLogin(String ip) {
+        return consume("social_login", socialLoginCapacity, socialLoginRefill, socialLoginPeriodMinutes, ip,
+                counterSocialLoginTotal, counterSocialLoginDenied);
+    }
+
+    /** Quota de rattachement d'une identite externe a un compte connecte. */
+    public RateLimitResult tryConsumeSocialLink(String ip) {
+        return consume("social_link", socialLinkCapacity, socialLinkRefill, socialLinkPeriodMinutes, ip,
+                counterSocialLinkTotal, counterSocialLinkDenied);
+    }
+
     public RateLimitResult tryConsumeRegistrationStatus(String ip) {
         return consume("registration_status",
                 registrationStatusCapacity, registrationStatusRefill, registrationStatusPeriodMinutes, ip,

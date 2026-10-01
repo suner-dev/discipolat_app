@@ -56,6 +56,8 @@ class InvitationControllerTest {
     @Mock AuditService auditService;
     @Mock EmailService emailService;
     @Mock PerIpRateLimiter rateLimiter;
+    @Mock com.discipolat.modules.authentication.domain.SocialInvitationAcceptanceService socialInvitationAcceptanceService;
+    @Mock com.discipolat.modules.authentication.api.AuthResponseFactory authResponseFactory;
 
     @BeforeEach
     void authenticate() {
@@ -167,6 +169,8 @@ class InvitationControllerTest {
                 rateLimiter,
                 // PORT Develop1 — l'acceptation d'invitation enregistre aussi la personne.
                 mock(com.discipolat.modules.people.service.PeopleService.class),
+                socialInvitationAcceptanceService,
+                authResponseFactory,
                 "https://app.example.com"
         );
     }
