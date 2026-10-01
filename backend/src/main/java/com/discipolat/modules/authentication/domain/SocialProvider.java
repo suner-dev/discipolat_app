@@ -30,7 +30,25 @@ public enum SocialProvider {
     GOOGLE("google"),
 
     /** Microsoft Entra ID (tenant de travail ou compte personnel). */
-    MICROSOFT("microsoft");
+    MICROSOFT("microsoft"),
+
+    /**
+     * Facebook (Facebook Login, OpenID Connect).
+     *
+     * <p>Gratuit et sans plafond comme les deux autres, mais avec une
+     * <b>contrainte de déploiement propre</b> : une application Meta récente
+     * n'obtient {@code email} et {@code public_profile} qu'en
+     * <b>Standard Access</b>, c'est-à-dire pour les personnes qui ont un rôle
+     * sur l'application (développeurs, testeurs). Pour servir de vrais membres,
+     * il faut un <b>Advanced Access</b> : Business Verification + revue Meta
+     * (captures d'écran, et au moins un appel API réussi dans les 30 jours).
+     *
+     * <p>Cette contrainte est <b>documentée, pas contournée</b> : le code est
+     *.fail-closed, donc tant que la revue n'est pas passée, seuls les comptes
+     * ayant un rôle sur l'application peuvent se connecter — et l'interface
+     * affiche un message honnête plutôt qu'un échec opaque.
+     */
+    FACEBOOK("facebook");
 
     private final String wireName;
 

@@ -46,6 +46,9 @@ public class SocialAuthProperties {
     /** Microsoft Entra ID (gratuit jusqu'à ~50 000 utilisateurs/mois). */
     private Microsoft microsoft = new Microsoft();
 
+    /** Facebook Login (OIDC) — gratuit, mais revue Meta requise (cf. SocialProvider). */
+    private Facebook facebook = new Facebook();
+
     /**
      * Permet de rattacher une identité externe à un compte DÉJÀ connecté
      * ({@code POST /api/v1/auth/social/link}).
@@ -157,6 +160,38 @@ public class SocialAuthProperties {
     /** Microsoft est-il prêt à servir du trafic ? */
     public boolean isMicrosoftActive() {
         return microsoft.isConfigured();
+    }
+
+    /** Facebook est-il prêt à servir du trafic ? */
+    public boolean isFacebookActive() {
+        return facebook.isConfigured();
+    }
+
+    @Getter
+    @Setter
+    public static class Facebook {
+
+        private boolean enabled = false;
+
+        /**
+         * Identifiant de l'application Meta (App ID), qui joue le rôle de
+         * {@code client_id} ET d'audience du {@code id_token}.
+         *
+         * <p>Unlike Google, il n'y a <b>qu'un seul</b> identifiant : la même
+         * application Meta sert le web et le mobile, donc une seule audience.
+         */
+        private String appId = "";
+
+        /** Version de l'API Graph utilisée dans les URL d'autorisation. */
+        private String apiVersion = "v21.0";
+
+        public boolean isConfigured() {
+            return enabled && appId != null && !appId.isBlank();
+        }
+
+        public boolean isMisconfigured() {
+            return enabled && (appId == null || appId.isBlank());
+        }
     }
 
     private static void addIfPresent(Set<String> target, String value) {
