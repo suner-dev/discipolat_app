@@ -123,6 +123,12 @@ services:
         sync: false
       - key: SOCIAL_MICROSOFT_TENANT_ID
         value: common
+      # Facebook (gratuit, mais revue Meta requise pour servir les vrais
+      # membres : voir docs/AUTH_SOCIAL.md). Desactive par defaut.
+      - key: SOCIAL_FACEBOOK_ENABLED
+        value: "false"
+      - key: SOCIAL_FACEBOOK_APP_ID
+        sync: false
       - key: SOCIAL_ALLOW_ACCOUNT_LINKING
         value: "true"
       - key: SOCIAL_REQUIRE_VERIFIED_EMAIL
@@ -167,6 +173,10 @@ services:
         sync: false
       - key: VITE_MICROSOFT_TENANT_ID
         value: common
+      # App ID Meta (public) : sert a construire l'URL du dialogue Facebook.
+      # Le serveur reste l'autorite sur ce qu'il accepte.
+      - key: VITE_FACEBOOK_APP_ID
+        sync: false
     # En-têtes de sécurité (équivalents à frontend/nginx.conf)
     headers:
       - path: /*
@@ -272,6 +282,10 @@ services:
         sync: false
       - key: SOCIAL_MICROSOFT_TENANT_ID
         value: common
+      - key: SOCIAL_FACEBOOK_ENABLED
+        value: "false"
+      - key: SOCIAL_FACEBOOK_APP_ID
+        sync: false
     image:
       registry: ghcr.io
       repository: suner-dev/discipolat_app/backend
@@ -303,6 +317,10 @@ services:
         sync: false
       - key: VITE_MICROSOFT_TENANT_ID
         value: common
+      # App ID Meta (public) : sert a construire l'URL du dialogue Facebook.
+      # Le serveur reste l'autorite sur ce qu'il accepte.
+      - key: VITE_FACEBOOK_APP_ID
+        sync: false
     headers:
       - path: /*
         name: X-Frame-Options

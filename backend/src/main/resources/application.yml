@@ -116,6 +116,12 @@ app:
         # pour restreindre (l'audit de demarrage le signale en jaune).
         tenant.id: ${SOCIAL_MICROSOFT_TENANT_ID:common}
         allowed.tenant.ids: ${SOCIAL_MICROSOFT_ALLOWED_TENANT_IDS:}
+      facebook:
+        enabled: ${SOCIAL_FACEBOOK_ENABLED:false}
+        # App ID Meta : joue le role de client_id ET d'audience du id_token.
+        # Unlike Google, un seul identifiant sert le web et le mobile.
+        app.id: ${SOCIAL_FACEBOOK_APP_ID:}
+        api.version: ${SOCIAL_FACEBOOK_API_VERSION:v21.0}
       # Permet de rattacher une identite a un compte deja connecte (Super Admin,
       # comptes crees par mot de passe). Sans cela, ces comptes ne pourraient
       # jamais utiliser la connexion sociale.

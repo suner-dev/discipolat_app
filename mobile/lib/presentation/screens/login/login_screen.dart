@@ -318,6 +318,8 @@ class _LoginScreenState extends State<LoginScreen>
                       microsoftTenantId:
                           const String.fromEnvironment('MICROSOFT_TENANT_ID',
                               defaultValue: 'common'),
+                      facebookAppId:
+                          const String.fromEnvironment('FACEBOOK_APP_ID'),
                       onAuthenticated: _onSocialAuthenticated,
                     ),
 

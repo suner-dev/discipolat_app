@@ -33,6 +33,7 @@ class OidcSocialIdentityVerifierTest {
     private static final String IOS_CLIENT_ID = "1234567890-ios.apps.googleusercontent.com";
     private static final String MS_CLIENT_ID = "ms-client-id-uuid";
     private static final String MS_TENANT = "contoso-tenant-id";
+    private static final String FB_APP_ID = "1234567890123456";
 
     private static SocialAuthProperties properties() {
         SocialAuthProperties properties = new SocialAuthProperties();
@@ -48,6 +49,11 @@ class OidcSocialIdentityVerifierTest {
         microsoft.setClientId(MS_CLIENT_ID);
         microsoft.setTenantId(MS_TENANT);
         properties.setMicrosoft(microsoft);
+
+        SocialAuthProperties.Facebook facebook = new SocialAuthProperties.Facebook();
+        facebook.setEnabled(true);
+        facebook.setAppId(FB_APP_ID);
+        properties.setFacebook(facebook);
         return properties;
     }
 
@@ -77,6 +83,23 @@ class OidcSocialIdentityVerifierTest {
                 "email_verified", true,
                 "name", "Paul Koffi",
                 "picture", "https://lh3.googleusercontent.com/a/photo");
+    }
+
+    /**
+     * Claims d'un `id_token` Facebook. Volontairement SANS `email_verified` :
+     * ce claim n'existe pas chez Facebook (absent du document de découverte) —
+     * le reproduire ici testerait un jeton qui n'existe pas dans la réalité.
+     */
+    private static Map<String, Object> facebookClaims(String... audience) {
+        return Map.of(
+                "iss", "https://www.facebook.com",
+                "aud", List.of(audience),
+                "sub", "fb-sub-789",
+                "email", "Paul@Exemple.com",
+                "name", "Paul Koffi",
+                "given_name", "Paul",
+                "family_name", "Koffi",
+                "picture", "https://scontent.xx.fbcdn.net/photo");
     }
 
     private static Map<String, Object> microsoftClaims(String tenantId, String... audience) {
@@ -370,6 +393,129 @@ class OidcSocialIdentityVerifierTest {
 
     // ==================================================================
     @Nested
+    @DisplayName("Facebook")
+    class FacebookBehaviour {
+
+        @Test
+        @DisplayName("accepte un credential valide et expose une identité")
+        void acceptsValidCredential() {
+            SocialIdentityVerifier verifier =
+                    verifierFor(properties(), jwt(facebookClaims(FB_APP_ID)));
+
+            SocialIdentityVerifier.VerifiedIdentity identity =
+                    verifier.verify(SocialProvider.FACEBOOK, "credential");
+
+            assertEquals(SocialProvider.FACEBOOK, identity.provider());
+            assertEquals("fb-sub-789", identity.subject());
+            assertEquals("Paul@Exemple.com", identity.email());
+            assertEquals("Paul Koffi", identity.displayName());
+            assertTrue(identity.matchesEmail("paul@exemple.com"));
+        }
+
+        @Test
+        @DisplayName("accepte l'absence de email_verified : Facebook n'émet pas ce claim")
+        void acceptsMissingVerificationClaim() {
+            // Point central de la politique Facebook : appliquer «
+            // email_verified obligatoire » rendrait TOUTE connexion Facebook
+            // impossible, car ce claim n'existe pas chez ce fournisseur.
+            Map<String, Object> claims = new java.util.HashMap<>(facebookClaims(FB_APP_ID));
+            claims.remove("email_verified");
+            SocialIdentityVerifier verifier = verifierFor(properties(), jwt(claims));
+
+            assertEquals("fb-sub-789",
+                    verifier.verify(SocialProvider.FACEBOOK, "credential").subject());
+        }
+
+        @Test
+        @DisplayName("refuse un email_verified explicitement faux")
+        void rejectsExplicitlyUnverifiedEmail() {
+            Map<String, Object> claims = new java.util.HashMap<>(facebookClaims(FB_APP_ID));
+            claims.put("email_verified", false);
+            SocialIdentityVerifier verifier = verifierFor(properties(), jwt(claims));
+
+            SocialIdentityVerifier.SocialCredentialException failure =
+                    assertThrows(SocialIdentityVerifier.SocialCredentialException.class,
+                            () -> verifier.verify(SocialProvider.FACEBOOK, "credential"));
+
+            assertEquals(403, failure.httpStatus());
+            assertEquals("SOCIAL_EMAIL_NOT_VERIFIED", failure.code());
+        }
+
+        @Test
+        @DisplayName("refuse l'absence d'email : rien où rattacher le compte")
+        void rejectsMissingEmail() {
+            // Cause la plus fréquente en production : permission `email` non
+            // accordée, ou compte Facebook sans adresse.
+            Map<String, Object> claims = new java.util.HashMap<>(facebookClaims(FB_APP_ID));
+            claims.remove("email");
+            SocialIdentityVerifier verifier = verifierFor(properties(), jwt(claims));
+
+            SocialIdentityVerifier.SocialCredentialException failure =
+                    assertThrows(SocialIdentityVerifier.SocialCredentialException.class,
+                            () -> verifier.verify(SocialProvider.FACEBOOK, "credential"));
+
+            assertEquals("SOCIAL_EMAIL_MISSING", failure.code());
+        }
+
+        @Test
+        @DisplayName("refuse une audience inconnue (autre application Meta)")
+        void rejectsForeignAudience() {
+            SocialIdentityVerifier verifier =
+                    verifierFor(properties(), jwt(facebookClaims("9999999999999999")));
+
+            assertEquals("SOCIAL_CREDENTIAL_REJECTED",
+                    assertThrows(SocialIdentityVerifier.SocialCredentialException.class,
+                            () -> verifier.verify(SocialProvider.FACEBOOK, "credential")).code());
+        }
+
+        @Test
+        @DisplayName("refuse un émetteur qui n'est pas Facebook")
+        void rejectsForeignIssuer() {
+            Map<String, Object> claims = new java.util.HashMap<>(facebookClaims(FB_APP_ID));
+            claims.put("iss", "https://www.facebook.com.evil.example");
+            SocialIdentityVerifier verifier = verifierFor(properties(), jwt(claims));
+
+            assertEquals("SOCIAL_CREDENTIAL_REJECTED",
+                    assertThrows(SocialIdentityVerifier.SocialCredentialException.class,
+                            () -> verifier.verify(SocialProvider.FACEBOOK, "credential")).code());
+        }
+
+        @Test
+        @DisplayName("recompose un nom à partir de given_name / family_name")
+        void composesNameFromClaims() {
+            Map<String, Object> claims = new java.util.HashMap<>(facebookClaims(FB_APP_ID));
+            claims.remove("name");
+            SocialIdentityVerifier verifier = verifierFor(properties(), jwt(claims));
+
+            SocialIdentityVerifier.VerifiedIdentity identity =
+                    verifier.verify(SocialProvider.FACEBOOK, "credential");
+
+            assertEquals("Paul", identity.splitDisplayName()[0]);
+            assertEquals("Koffi", identity.splitDisplayName()[1]);
+        }
+
+        @Test
+        @DisplayName("503 si Facebook est activé sans App ID")
+        void failsClosedWhenNotConfigured() {
+            SocialAuthProperties properties = new SocialAuthProperties();
+            SocialAuthProperties.Facebook facebook = new SocialAuthProperties.Facebook();
+            facebook.setEnabled(true);
+            facebook.setAppId("");
+            properties.setFacebook(facebook);
+
+            SocialIdentityVerifier verifier =
+                    verifierFor(properties, jwt(facebookClaims(FB_APP_ID)));
+
+            SocialIdentityVerifier.SocialCredentialException failure =
+                    assertThrows(SocialIdentityVerifier.SocialCredentialException.class,
+                            () -> verifier.verify(SocialProvider.FACEBOOK, "credential"));
+
+            assertEquals(503, failure.httpStatus());
+        }
+    }
+
+    // ==================================================================
+    @Nested
     @DisplayName("Garde-fous communs")
     class CommonGuards {
 
@@ -407,6 +553,7 @@ class OidcSocialIdentityVerifierTest {
         @DisplayName("un fournisseur inconnu est rejeté sans révéler la liste des fournisseurs")
         void rejectsUnknownProviderName() {
             assertThrows(IllegalArgumentException.class, () -> SocialProvider.fromWireName("apple"));
+            assertEquals(SocialProvider.FACEBOOK, SocialProvider.fromWireName("facebook"));
             assertThrows(IllegalArgumentException.class, () -> SocialProvider.fromWireName(null));
             assertThrows(IllegalArgumentException.class, () -> SocialProvider.fromWireName(""));
             assertEquals(SocialProvider.GOOGLE, SocialProvider.fromWireName("GOOGLE"));
@@ -414,9 +561,14 @@ class OidcSocialIdentityVerifierTest {
         }
 
         @Test
-        @DisplayName("les deux fournisseurs exposés restent ceux gratuits et sans plafond")
+        @DisplayName("les fournisseurs exposés restent tous gratuits (Apple et le SMS sont exclus)")
         void exposesOnlyFreeProviders() {
-            assertEquals(Set.of(SocialProvider.GOOGLE, SocialProvider.MICROSOFT),
+            // Apple (99 $/an) et le SMS (facturé par message) sont
+            // délibérément absents : l'énumération est la liste des options
+            // gratuites, donc ce test casse si quelqu'un en ajoute une payante.
+            assertEquals(Set.of(SocialProvider.GOOGLE,
+                            SocialProvider.MICROSOFT,
+                            SocialProvider.FACEBOOK),
                     Set.of(SocialProvider.values()));
         }
 

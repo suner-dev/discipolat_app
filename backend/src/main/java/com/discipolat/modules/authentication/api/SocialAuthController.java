@@ -336,6 +336,7 @@ public class SocialAuthController {
         return switch (provider) {
             case GOOGLE -> properties.isGoogleActive();
             case MICROSOFT -> properties.isMicrosoftActive();
+            case FACEBOOK -> properties.isFacebookActive();
         };
     }
 
@@ -343,6 +344,7 @@ public class SocialAuthController {
         return switch (provider) {
             case GOOGLE -> "Google";
             case MICROSOFT -> "Microsoft";
+            case FACEBOOK -> "Facebook";
         };
     }
 

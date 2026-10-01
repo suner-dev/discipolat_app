@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../../../data/services/api_service.dart';
+import '../../features/auth/social/facebook_credential_source.dart';
 import '../../features/auth/social/google_credential_source.dart';
 import '../../features/auth/social/microsoft_credential_source.dart';
 import '../../features/auth/social/social_auth_service.dart';
@@ -27,6 +28,8 @@ class SocialLoginButtons extends StatefulWidget {
     this.microsoftClientId = '',
     this.microsoftTenantId = 'common',
     this.microsoftRedirectUri = 'com.discipolat.app://auth/microsoft',
+    this.facebookAppId = '',
+    this.facebookRedirectUri = 'com.discipolat.app://auth/facebook',
   });
 
   final ApiService apiService;
@@ -40,6 +43,13 @@ class SocialLoginButtons extends StatefulWidget {
   final String microsoftClientId;
   final String microsoftTenantId;
   final String microsoftRedirectUri;
+
+  /// App ID de l'application Meta (public). Nécessite un **Advanced Access**
+  /// de Meta pour que de vrais membres puissent se connecter : tant que la
+  /// revue n'est pas passée, seuls les comptes ayant un rôle sur
+  /// l'application y ont accès — voir docs/AUTH_SOCIAL.md.
+  final String facebookAppId;
+  final String facebookRedirectUri;
 
   @override
   State<SocialLoginButtons> createState() => _SocialLoginButtonsState();
@@ -57,6 +67,11 @@ class _SocialLoginButtonsState extends State<SocialLoginButtons> {
           clientId: widget.microsoftClientId,
           tenantId: widget.microsoftTenantId,
           redirectUri: widget.microsoftRedirectUri,
+        ),
+      if (widget.facebookAppId.isNotEmpty)
+        SocialProvider.facebook: FacebookCredentialSource(
+          appId: widget.facebookAppId,
+          redirectUri: widget.facebookRedirectUri,
         ),
     },
   );
@@ -139,6 +154,11 @@ class _SocialLoginButtonsState extends State<SocialLoginButtons> {
         return 'Ce compte est temporairement verrouillé après plusieurs tentatives.';
       case 'SOCIAL_EMAIL_NOT_VERIFIED':
         return "Le fournisseur n'a pas confirmé votre adresse email.";
+      case 'SOCIAL_EMAIL_MISSING':
+        return "Facebook n'a pas partagé d'adresse email. Autorisez son accès "
+            'puis réessayez.';
+      case 'SOCIAL_STATE_MISMATCH':
+        return 'Connexion Facebook non sécurisée. Recommencez.';
       case 'SOCIAL_EMAIL_MISMATCH':
         return "L'adresse vérifiée par ce compte externe ne correspond pas à votre "
             'compte Discipolat.';
@@ -222,6 +242,14 @@ class _SocialLoginButtonsState extends State<SocialLoginButtons> {
     );
   }
 
-  IconData _iconFor(SocialProvider provider) =>
-      provider == SocialProvider.google ? Icons.g_mobiledata : Icons.work_outline;
+  IconData _iconFor(SocialProvider provider) {
+    switch (provider) {
+      case SocialProvider.google:
+        return Icons.g_mobiledata;
+      case SocialProvider.microsoft:
+        return Icons.work_outline;
+      case SocialProvider.facebook:
+        return Icons.facebook;
+    }
+  }
 }

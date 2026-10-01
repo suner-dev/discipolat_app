@@ -223,8 +223,13 @@ public class OidcSocialIdentityVerifier implements SocialIdentityVerifier {
                     "Facebook n'a pas partage d'adresse email pour ce compte");
         }
 
-        String name = firstNonBlank(value(jwt, "name"),
-                (firstNonBlank(value(jwt, "given_name"), value(jwt, "family_name"))).trim());
+        // Facebook fournit normalement `name` ; `given_name`/`family_name` sont
+        // le repli. On RECOMPOSE les deux : ne garder que le prénom ferait
+        // apparaître « Paul » seul dans toute l'application.
+        String givenName = value(jwt, "given_name");
+        String familyName = value(jwt, "family_name");
+        String composedName = (givenName + " " + familyName).trim();
+        String name = firstNonBlank(value(jwt, "name"), composedName);
 
         return new VerifiedIdentity(
                 SocialProvider.FACEBOOK,

@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
+import { facebookRedirectUri, startFacebookLogin } from './facebook';
 import { requestGoogleCredential } from './google';
 import { requestMicrosoftCredential } from './microsoft';
 import {
   buildTimeClientIds,
   fetchSocialProviders,
+  providerLabel,
   toSocialAuthError,
 } from './providers';
 import {
@@ -84,7 +86,22 @@ export function SocialLoginButtons({
     async (provider: SocialProviderId) => {
       const clientIds = buildTimeClientIds();
       const clientId =
-        provider === 'google' ? clientIds.google : clientIds.microsoft;
+        provider === 'google'
+          ? clientIds.google
+          : provider === 'microsoft'
+            ? clientIds.microsoft
+            : clientIds.facebook;
+
+      if (provider === 'facebook') {
+        // Flux par redirection : la page se recharge vers le dialogue Meta puis
+        // revient sur /auth/social/callback. Aucun état à conserver ici.
+        startFacebookLogin({
+          appId: clientId ?? '',
+          apiVersion: import.meta.env.VITE_FACEBOOK_API_VERSION || 'v21.0',
+          redirectUri: facebookRedirectUri(),
+        });
+        return;
+      }
 
       if (!clientId) {
         onErrorChange?.(
@@ -197,7 +214,7 @@ export function SocialLoginButtons({
 }
 
 function labelOf(provider: SocialProviderId): string {
-  return provider === 'google' ? 'Google' : 'Microsoft';
+  return providerLabel(provider);
 }
 
 /**
@@ -225,6 +242,8 @@ function messageFor(
       return t('auth.social.emailMismatch');
     case 'SOCIAL_TENANT_NOT_ALLOWED':
       return t('auth.social.tenantNotAllowed');
+    case 'SOCIAL_EMAIL_MISSING':
+      return t('auth.social.facebookNoEmail');
     case 'SOCIAL_IDENTITY_ALREADY_LINKED':
     case 'SOCIAL_PROVIDER_ALREADY_LINKED':
       return t('auth.social.identityAlreadyLinked');
@@ -241,6 +260,16 @@ function messageFor(
 
 /** Icônes officielles, en SVG inline (aucune requête réseau supplémentaire). */
 function ProviderIcon({ provider }: { provider: SocialProviderId }) {
+  if (provider === 'facebook') {
+    return (
+      <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="#1877F2"
+          d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
+        />
+      </svg>
+    );
+  }
   if (provider === 'microsoft') {
     return (
       <svg className="w-5 h-5" viewBox="0 0 23 23" aria-hidden="true">

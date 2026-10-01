@@ -24,6 +24,7 @@ const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ActivateAccountPage = lazy(() => import('@/pages/ActivateAccountPage'));
 const AcceptInvitationPage = lazy(() => import('@/pages/AcceptInvitationPage'));
+const SocialCallbackPage = lazy(() => import('@/pages/SocialCallbackPage'));
 const MagicLinkVerifyPage = lazy(() => import('@/pages/MagicLinkVerifyPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PasteurDashboardPage = lazy(() => import('@/pages/PasteurDashboardPage'));
@@ -361,6 +362,9 @@ export default function App() {
           <Route path="/auth/magic-link" element={<MagicLinkVerifyPage />} />
           {/* §G1.6 — Page PUBLIQUE d'acceptation d'invitation (invité sans compte) */}
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+          {/* Retour de la redirection Facebook (OIDC) : public, protégé par le
+              state + l'audience vérifiée côté serveur. */}
+          <Route path="/auth/social/callback" element={<SocialCallbackPage />} />
         </Route>
 
         <Route path="/verify-2fa" element={
