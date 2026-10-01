@@ -55,6 +55,42 @@ public class RoleManagementService {
                 .stream().sorted(Comparator.comparingInt(Role::getPriority).reversed()).toList();
     }
 
+    /**
+     * PORT Develop1 (§G5.5-58) — projection attendue par l'editeur de roles du
+     * frontend : {@code GET /api/v1/admin/roles}.
+     *
+     * <p>Les entites JPA ne sont pas serialisables telles quelles ici : la collection
+     * {@code permissions} est une association (objets imbriques, lazy) alors que
+     * l'editeur veut des CLES de permission en chaines, et le champ {@code system}
+     * doit apparaitre sous le nom {@code isSystem}. Les permissions sont lues en UNE
+     * requete pour tous les roles (pas de N+1).</p>
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listRolesForEditor(UUID tenantId) {
+        List<Role> roles = getAllRoles(tenantId);
+        Map<UUID, List<String>> keysByRole = new LinkedHashMap<>();
+        if (!roles.isEmpty()) {
+            for (Object[] row : roleRepository.findPermissionKeysByRoleIds(
+                    roles.stream().map(Role::getId).toList())) {
+                UUID roleId = (UUID) row[0];
+                keysByRole.computeIfAbsent(roleId, k -> new ArrayList<>()).add((String) row[1]);
+            }
+        }
+        List<Map<String, Object>> views = new ArrayList<>(roles.size());
+        for (Role role : roles) {
+            Map<String, Object> view = new LinkedHashMap<>();
+            view.put("id", role.getId().toString());
+            view.put("key", role.getKey());
+            view.put("label", role.getLabel());
+            view.put("description", role.getDescription());
+            view.put("priority", role.getPriority());
+            view.put("isSystem", Boolean.TRUE.equals(role.getSystem()));
+            view.put("permissions", keysByRole.getOrDefault(role.getId(), List.of()));
+            views.add(view);
+        }
+        return views;
+    }
+
     @Transactional(readOnly = true)
     public List<Role> getCustomRoles(UUID tenantId) {
         return roleRepository.findByTenantId(tenantId)

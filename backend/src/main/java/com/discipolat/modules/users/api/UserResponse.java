@@ -25,6 +25,8 @@ public record UserResponse(
         String photoUrl,
         String situationFamiliale,
         boolean twoFactorEnabled,
+        /** §G5.9 — opt-in individuel au portail basse connexion (WhatsApp sortant). */
+        boolean whatsappOptIn,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -45,6 +47,7 @@ public record UserResponse(
                 user.getPhotoUrl(),
                 user.getSituationFamiliale(),
                 user.isTwoFactorEnabled(),
+                user.isWhatsappOptIn(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

@@ -27,4 +27,12 @@ public interface RoleRepository extends TenantAwareRepository<Role, UUID> {
 
     @Query("SELECT r FROM Role r JOIN r.permissions p WHERE p.key = :permissionKey AND (r.tenantId = :tenantId OR r.tenantId IS NULL)")
     List<Role> findByPermissionAndTenant(@Param("permissionKey") String permissionKey, @Param("tenantId") UUID tenantId);
+
+    /**
+     * PORT Develop1 (§G5.5) — clés de permissions de plusieurs roles, en UNE
+     * requete. L'editeur de roles affiche la liste complete : le chargement
+     * pares (`getRolePermissions` un par un) ferait N requetes pour N roles.
+     */
+    @Query("SELECT r.id, p.key FROM Role r JOIN r.permissions p WHERE r.id IN :roleIds ORDER BY r.id, p.key")
+    List<Object[]> findPermissionKeysByRoleIds(@Param("roleIds") java.util.Collection<UUID> roleIds);
 }

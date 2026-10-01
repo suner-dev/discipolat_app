@@ -39,6 +39,22 @@ public class RoleManagementController {
 
     // ==================== ROLE CATALOG ====================
 
+    /**
+     * PORT Develop1 (§G5.5-58) — projection « editeur de roles » (cle
+     * {@code isSystem}, permissions en chaines). Le contrat de lecture des
+     * entites JPA reste {@code /overview} ; rien n'est deplace, cette projection
+     * s'ajoute. Arbitrage du port : le chemin nu {@code GET /api/v1/admin/roles}
+     * est DEJA servi par {@code TenantAdminController#listRoles()} (main) — deux
+     * mapping identiques = {@code Ambiguous mapping} bloquant le demarrage. La
+     * projection Develop1 est donc exposee sur {@code /for-editor} (aucune
+     * capacite retiree, aucune route main ecrasee).
+     */
+    @GetMapping("/for-editor")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> listRolesForEditor() {
+        return ResponseEntity.ok(roleService.listRolesForEditor(getCurrentTenantId()));
+    }
+
     @GetMapping("/overview")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Role>> getAllRoles() {

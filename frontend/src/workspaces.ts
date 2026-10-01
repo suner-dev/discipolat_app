@@ -27,6 +27,7 @@ import {
   Trophy,
   CalendarClock,
   UserCog,
+  Crown,
   User,
   UserCheck,
   Sparkles,
@@ -211,6 +212,9 @@ const FULL_NAV: WorkspaceSection[] = [
   {
     title: 'Structures & rapports',
     items: [
+      { name: 'Organisation', href: '/organization', icon: GitBranch, subtitle: "Arbre de l'église & réorganisation" },
+      { name: 'Répertoire', href: '/people', icon: UsersRound, subtitle: 'Fiches personnes, sans espace, affectations' },
+      { name: 'Ministère pastoral', href: '/pastoral', icon: Crown, subtitle: 'Nominations, mandats & transferts' },
       { name: 'Départements', href: '/departments', icon: Building2, subtitle: "Structure de l'église" },
       { name: 'Dashboard Responsable', href: '/dashboard/responsable', icon: Building2, subtitle: 'Mon département' },
       { name: 'Dashboard Chef', href: '/dashboard/chef-famille', icon: Users, subtitle: 'Ma famille' },
@@ -304,6 +308,15 @@ const FULL_NAV: WorkspaceSection[] = [
     title: 'Administration',
     items: [
       { name: "Centre d'administration", href: '/admin', icon: SlidersHorizontal, subtitle: 'Toute la configuration' },
+      // G5.5 (§58) — Console d'administration de l'église (tenant), exposée
+      // dans la nav + la palette (filtrée par canRoleAccessPath).
+      { name: 'Console organisation', href: '/admin/dashboard', icon: Building2, subtitle: 'Tableau de bord de l\'église' },
+      { name: 'Membres de l\'organisation', href: '/admin/members', icon: UserCog, subtitle: 'Affectations & rôles' },
+      { name: 'Rôles & permissions', href: '/admin/roles', icon: Shield, subtitle: 'Éditeur scopé' },
+      { name: 'Invitations', href: '/admin/invitations', icon: FileText, subtitle: 'Inviter & suivre' },
+      { name: 'Espaces de travail', href: '/admin/spaces', icon: Boxes, subtitle: 'Créer & configurer' },
+      { name: 'Paramètres de l\'église', href: '/tenant/settings', icon: SlidersHorizontal, subtitle: 'Langue, fuseau, coordonnées' },
+      { name: 'Modules de l\'église', href: '/tenant/modules', icon: Boxes, subtitle: 'Activer / désactiver (plan)' },
       { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
@@ -368,6 +381,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Arbre famille', href: '/family-tree', icon: GitBranch, subtitle: 'Généalogie' },
       { name: 'Annonces planifiées', href: '/announcement-schedule', icon: CalendarClock, subtitle: 'Programmation' },
       { name: 'Demandes admin', href: '/admin-requests', icon: MessageSquare, subtitle: 'Requêtes' },
+      { name: 'Conflits hors-ligne', href: '/admin/sync-conflicts', icon: AlertTriangle, subtitle: 'Réconciliation LWW' },
       { name: 'Réclamations', href: '/rewards/claims', icon: Trophy, subtitle: 'Récompenses' },
       { name: 'Rôles utilisateurs', href: '/users/roles', icon: UserCog, subtitle: 'Permissions' },
       { name: 'Exports conformité', href: '/admin/compliance-exports', icon: Shield, subtitle: 'RGPD/audit' },
@@ -396,10 +410,12 @@ const RESPONSABLE_NAV: WorkspaceSection[] = [
   {
     title: 'Effectifs & organisation',
     items: [
+      { name: 'Organisation', href: '/organization', icon: GitBranch, subtitle: "Arbre de l'église (lecture)" },
       { name: 'Départements', href: '/departments', icon: Building2, subtitle: 'Structure & hiérarchie' },
       { name: 'Équipes', href: '/departments?tab=teams', icon: UsersRound, subtitle: 'Organisation & branches' },
       { name: 'Postes', href: '/departments?tab=positions', icon: Briefcase, subtitle: 'Positions & compétences' },
       { name: 'Membres', href: '/users', icon: UserCog, subtitle: 'Comptes & affectations' },
+      { name: 'Répertoire', href: '/people', icon: UsersRound, subtitle: 'Fiches sans espace — affecter un membre' },
     ],
   },
   {
@@ -543,6 +559,7 @@ const CHEF_FAMILLE_NAV: WorkspaceSection[] = [
       { name: 'Ma famille', href: '/dashboard/chef-famille', icon: LayoutDashboard, subtitle: 'Vue pastorale' },
       { name: 'Familles', href: '/families', icon: Users, subtitle: 'Groupes de disciples' },
       { name: 'Disciples', href: '/souls', icon: Heart, subtitle: 'Disciples de la famille' },
+      { name: 'Répertoire', href: '/people', icon: UsersRound, subtitle: 'Affecter des membres à mes espaces' },
     ],
   },
   {

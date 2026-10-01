@@ -47,6 +47,11 @@ public class AuthService {
     private final TokenRevocationService tokenRevocationService;
     private final RefreshTokenSessionService refreshTokenSessionService;
     private final TenantStatusGuard tenantStatusGuard;
+    private final com.discipolat.modules.tenants.domain.ActiveTenantService activeTenantService;
+    /** §G3.1 — inscription automatique au répertoire People après vérification. */
+    private final com.discipolat.modules.people.service.PeopleService peopleService;
+    /** §G3.1/§G6.4 — rattachement du self-signup à l'église (tenant) demandée. */
+    private final com.discipolat.modules.tenants.domain.TenantRepository tenantRepository;
     private final String frontendUrl;
 
     public AuthService(UserRepository userRepository, JwtTokenProvider jwtTokenProvider,
@@ -58,6 +63,9 @@ public class AuthService {
                        TokenRevocationService tokenRevocationService,
                        RefreshTokenSessionService refreshTokenSessionService,
                        TenantStatusGuard tenantStatusGuard,
+                       com.discipolat.modules.tenants.domain.ActiveTenantService activeTenantService,
+                       com.discipolat.modules.people.service.PeopleService peopleService,
+                       com.discipolat.modules.tenants.domain.TenantRepository tenantRepository,
                        @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -70,6 +78,9 @@ public class AuthService {
         this.tokenRevocationService = tokenRevocationService;
         this.refreshTokenSessionService = refreshTokenSessionService;
         this.tenantStatusGuard = tenantStatusGuard;
+        this.activeTenantService = activeTenantService;
+        this.peopleService = peopleService;
+        this.tenantRepository = tenantRepository;
         this.frontendUrl = frontendUrl;
     }
 
@@ -95,6 +106,8 @@ public class AuthService {
     /**
      * Enregistrement public (demande d'organisation) — les consentements RGPD
      * (CGU, confidentialité, art. 9) sont obligatoires et horodatés.
+     * Le rattachement direct du self-signup à une église est traité séparément
+     * par {@link #registerInChurch} (§G3.1/§G6.4, apport Develop1).
      */
     public TenantRegistrationRequest register(String email, String rawPassword, String firstName,
                                                 String lastName, String phone, String inviteCode,
@@ -109,6 +122,69 @@ public class AuthService {
         }
         return tenantRegistrationService.submit(email, rawPassword, firstName, lastName, phone,
                 requestedPlan, consent);
+    }
+
+    /**
+     * PORT Develop1 (§G3.1/§G6.4) — « quand un membre s'inscrit AU NOM D'UNE
+     * ÉGLISE » : création directe d'un compte MEMBRE rattaché au tenant demandé
+     * (tenantId côté mobile, tenantSlug côté web — lien /register?tenant=<slug>),
+     * puis email d'activation ; l'inscription au répertoire suit la vérification
+     * (voir activateAccount). Sans rattachement valide, la demande est refusée.
+     *
+     * <p>Chemin AJOUTÉ : la demande d'organisation de main (méthode register
+     * ci-dessus, avec consentements RGPD et approbation Super Admin) reste le
+     * flux par défaut et n'est pas modifiée.
+     */
+    public User registerInChurch(String email, String rawPassword, String firstName, String lastName,
+                                 String phone, String tenantSlug, java.util.UUID tenantId) {
+        String normalizedEmail = email.trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            throw new BusinessRuleException("Email already exists: " + normalizedEmail);
+        }
+        java.util.UUID resolvedTenantId = resolveSignupTenant(tenantSlug, tenantId);
+        if (resolvedTenantId == null) {
+            throw new BusinessRuleException("Aucune église demandée : passer tenantSlug ou tenantId");
+        }
+        User user = User.builder()
+                .tenantId(resolvedTenantId)
+                .email(normalizedEmail)
+                .firstName(firstName != null ? firstName.trim() : null)
+                .lastName(lastName != null ? lastName.trim() : null)
+                .phone(phone != null ? phone.trim() : null)
+                .passwordHash(passwordEncoder.encode(rawPassword))
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .activeRole(UserRole.MEMBRE)
+                .statut(UserStatus.PENDING_ACTIVATION)
+                .estChefDeFamille(false)
+                .twoFactorEnabled(false)
+                .build();
+        User saved = userRepository.save(user);
+        sendActivationEmail(saved.getId());
+        return saved;
+    }
+
+    /** Le rattachement demandé doit exister et être ACTIVE (jamais un tenant suspendu). */
+    private java.util.UUID resolveSignupTenant(String tenantSlug, java.util.UUID tenantId) {
+        if (tenantId != null) {
+            com.discipolat.modules.tenants.domain.Tenant tenant = tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new BusinessRuleException("Église introuvable (tenantId inconnu)"));
+            if (tenant.getStatus() != com.discipolat.modules.tenants.domain.TenantStatus.ACTIVE) {
+                throw new BusinessRuleException("Cette église n'accepte pas d'inscriptions actuellement");
+            }
+            return tenant.getId();
+        }
+        if (tenantSlug != null && !tenantSlug.isBlank()) {
+            com.discipolat.modules.tenants.domain.Tenant tenant =
+                    tenantRepository.findBySlug(tenantSlug.trim().toLowerCase())
+                            .or(() -> tenantRepository.findBySlug(tenantSlug.trim()))
+                            .orElseThrow(() -> new BusinessRuleException("Église introuvable : " + tenantSlug));
+            if (tenant.getStatus() != com.discipolat.modules.tenants.domain.TenantStatus.ACTIVE) {
+                throw new BusinessRuleException("Cette église n'accepte pas d'inscriptions actuellement");
+            }
+            return tenant.getId();
+        }
+        return null;
     }
 
     // ======================== LOGIN ========================
@@ -180,15 +256,17 @@ public class AuthService {
         userRepository.save(user);
 
         String activeRoleStr = user.getActiveRole().name();
+        // G5.4 (§55) : le token porte le tenant ACTIF choisi (validé), sinon le tenant maison.
+        java.util.UUID tokenTenant = activeTenantService.resolveTokenTenantId(user);
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille(), user.getTenantId());
+                user.isEstChefDeFamille(), tokenTenant);
         UUID familyId = UUID.randomUUID();
         String refreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.getTenantId(), familyId);
+                tokenTenant, familyId);
         refreshTokenSessionService.register(
                 refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
 
@@ -237,6 +315,33 @@ public class AuthService {
 
         user.setStatut(UserStatus.ACTIVE);
         userRepository.save(user);
+
+        // §G3.1 — vérification (email) aboutie → inscription AUTOMATIQUE au
+        // répertoire de l'église : compte + personne + membership (transaction
+        // propre dans PeopleService, événement MemberRegistered publié).
+        // Un doublon (même email/téléphone) n'est jamais recréé ; une échec du
+        // répertoire ne bloque jamais l'activation du compte.
+        if (user.getTenantId() != null) {
+            try {
+                com.discipolat.modules.people.domain.Person person =
+                        com.discipolat.modules.people.domain.Person.builder()
+                                .firstName(user.getFirstName() != null && !user.getFirstName().isBlank()
+                                        ? user.getFirstName() : "Membre")
+                                .lastName(user.getLastName() != null && !user.getLastName().isBlank()
+                                        ? user.getLastName() : "")
+                                .emailNormalized(user.getEmail())
+                                .phoneNormalized(user.getPhone())
+                                .build();
+                peopleService.registerPerson(user.getTenantId(), person, "SELF_SIGNUP", user.getId());
+            } catch (com.discipolat.modules.people.service.PeopleService.PersonAlreadyExistsException exists) {
+                // Déjà au répertoire : on ne crée pas de fiche en double.
+            } catch (RuntimeException directoryIssue) {
+                // Journaliser sans faire échouer l'activation.
+                org.slf4j.LoggerFactory.getLogger(AuthService.class)
+                        .warn("Inscription répertoire impossible pour {}: {}",
+                                user.getEmail(), directoryIssue.getMessage());
+            }
+        }
 
         activationToken.setUsed(true);
         activationTokenRepository.save(activationToken);
@@ -353,14 +458,16 @@ public class AuthService {
                 jwtTokenProvider.getTokenExpiration(refreshToken), "rotated");
 
         String activeRoleStr = user.getActiveRole() != null ? user.getActiveRole().name() : user.getRole().name();
+        // G5.4 (§55) : le refresh NE DOIT PAS faire régresser le tenant actif choisi.
+        java.util.UUID tokenTenant = activeTenantService.resolveTokenTenantId(user);
         String newAccessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille(), user.getTenantId());
+                user.isEstChefDeFamille(), tokenTenant);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.getTenantId(), familyId);
+                tokenTenant, familyId);
         refreshTokenSessionService.register(
                 newRefreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(newRefreshToken));
 
@@ -420,15 +527,17 @@ public class AuthService {
         userRepository.save(user);
 
         String activeRoleStr = newActiveRole.name();
+        // G5.4 (§55) : changement de rôle ≠ retour au tenant maison — conserver le tenant actif.
+        java.util.UUID tokenTenant = activeTenantService.resolveTokenTenantId(user);
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.isEstChefDeFamille(), user.getTenantId());
+                user.isEstChefDeFamille(), tokenTenant);
         UUID familyId = UUID.randomUUID();
         String refreshToken = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail(), activeRoleStr,
                 user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
-                user.getTenantId(), familyId);
+                tokenTenant, familyId);
         refreshTokenSessionService.register(
                 refreshToken, user.getId(), familyId, jwtTokenProvider.getTokenExpiration(refreshToken));
 

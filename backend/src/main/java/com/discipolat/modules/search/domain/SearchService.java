@@ -1,5 +1,6 @@
 package com.discipolat.modules.search.domain;
 
+import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.modules.discipline.domain.SoulDisciplineEventRepository;
 import com.discipolat.modules.evaluations.domain.EvaluationService;
@@ -38,6 +39,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -134,7 +136,11 @@ public class SearchService {
         Instant startTime = Instant.now();
         UUID currentUserId = securityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User", currentUserId));
+        // §G6.5 — une seule résolution du périmètre d'accès par requête :
+        // buildAccessClause + executeFullTextSearch + countSearchResults la
+        // recalculaient chacun (3 × requêtes dépendantes par recherche).
+        Set<UUID> accessibleSoulIds = getAccessibleSoulIds(currentUser);
         
         UUID tenantId = TenantContext.getCurrentTenantId();
         
@@ -144,16 +150,16 @@ public class SearchService {
         
         if (isPostgreSQL) {
             // Build the WHERE clause for tenant + role-based access
-            String accessClause = buildAccessClause(currentUser);
+            String accessClause = buildAccessClause(currentUser, accessibleSoulIds);
             
             // Build the full-text search query using tsvector + trigram similarity
             String searchQuery = buildSearchQuery(query, accessClause);
             
             // Execute search with pagination
-            results = executeFullTextSearch(searchQuery, pageable, query);
+            results = executeFullTextSearch(searchQuery, pageable, query, currentUser, accessibleSoulIds);
             
             // Get total count for pagination
-            totalCount = countSearchResults(searchQuery, query);
+            totalCount = countSearchResults(searchQuery, query, currentUser, accessibleSoulIds);
         } else {
             // Fallback: simple search using JPA repositories (for H2 tests)
             results = executeSimpleSearch(query, currentUser, pageable);
@@ -178,7 +184,7 @@ public class SearchService {
         
         UUID currentUserId = securityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User", currentUserId));
         
         if (isPostgreSQL) {
             return autocompletePostgreSQL(query, limit, currentUser);
@@ -265,6 +271,14 @@ public class SearchService {
      * Always includes tenant_id filter for multi-tenant isolation.
      */
     private String buildAccessClause(User currentUser) {
+        return buildAccessClause(currentUser, getAccessibleSoulIds(currentUser));
+    }
+
+    /**
+     * §G6.5 — variante accepting le périmètre déjà résolu pour éviter de
+     * le recaculer à chaque étape d'une même recherche.
+     */
+    private String buildAccessClause(User currentUser, Set<UUID> accessibleSoulIds) {
         StringBuilder clause = new StringBuilder();
         
         // Base: only non-deleted souls in current tenant (always required for multi-tenancy)
@@ -274,8 +288,7 @@ public class SearchService {
         if (securityUtils.isSuperUser()) {
             return clause.toString();
         }
-        
-        Set<UUID> accessibleSoulIds = getAccessibleSoulIds(currentUser);
+
         if (accessibleSoulIds != null && !accessibleSoulIds.isEmpty()) {
             // Use parameterized IN clause for accessible IDs
             clause.append(" AND s.id IN :accessibleIds");
@@ -331,15 +344,11 @@ public class SearchService {
      * Execute the full-text search query with pagination.
      */
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> executeFullTextSearch(String searchQuery, Pageable pageable, String query) {
+    private List<Map<String, Object>> executeFullTextSearch(String searchQuery, Pageable pageable, String query,
+                                                             User currentUser, Set<UUID> accessibleSoulIds) {
         Query q = entityManager.createNativeQuery(searchQuery);
         q.setParameter("query", query != null ? query : "");
         q.setParameter("tenantId", TenantContext.getCurrentTenantId());
-        
-        // Add accessible IDs if needed
-        UUID currentUserId = securityUtils.getCurrentUserId();
-        User currentUser = userRepository.findById(currentUserId).orElseThrow();
-        Set<UUID> accessibleSoulIds = getAccessibleSoulIds(currentUser);
         if (accessibleSoulIds != null && !accessibleSoulIds.isEmpty()) {
             q.setParameter("accessibleIds", accessibleSoulIds);
         }
@@ -348,6 +357,25 @@ public class SearchService {
         q.setMaxResults(pageable.getPageSize());
         
         List<Object[]> rows = q.getResultList();
+
+        // §G6.5 — suppression du N+1 : chaque résultat rechargeait 1 User +
+        // 1 Family (jusqu'à 40 requêtes pour une page de 20 âmes).
+        Set<UUID> faiseurIds = new HashSet<>();
+        Set<UUID> familyIds = new HashSet<>();
+        for (Object[] row : rows) {
+            if (row[7] != null) {
+                faiseurIds.add((UUID) row[7]);
+            }
+            if (row[8] != null) {
+                familyIds.add((UUID) row[8]);
+            }
+        }
+        Map<UUID, User> faiseursById = faiseurIds.isEmpty() ? Map.of()
+                : userRepository.findAllById(faiseurIds).stream()
+                        .collect(Collectors.toMap(User::getId, f -> f));
+        Map<UUID, Family> familiesById = familyIds.isEmpty() ? Map.of()
+                : familyRepository.findAllById(familyIds).stream()
+                        .collect(Collectors.toMap(Family::getId, fm -> fm));
         
         return rows.stream().map(row -> {
             Map<String, Object> result = new LinkedHashMap<>();
@@ -371,14 +399,18 @@ public class SearchService {
             
             // Get faiseur name
             if (row[7] != null) {
-                userRepository.findById((UUID) row[7]).ifPresent(f ->
-                        result.put("faiseurNom", f.getFirstName() + " " + f.getLastName()));
+                User faiseur = faiseursById.get((UUID) row[7]);
+                if (faiseur != null) {
+                    result.put("faiseurNom", faiseur.getFirstName() + " " + faiseur.getLastName());
+                }
             }
             
             // Get family name
             if (row[8] != null) {
-                familyRepository.findById((UUID) row[8]).ifPresent(fam ->
-                        result.put("familleNom", fam.getNom()));
+                Family fam = familiesById.get((UUID) row[8]);
+                if (fam != null) {
+                    result.put("familleNom", fam.getNom());
+                }
             }
             
             // Years in church
@@ -394,7 +426,8 @@ public class SearchService {
     /**
      * Count total results for pagination.
      */
-    private long countSearchResults(String searchQuery, String query) {
+    private long countSearchResults(String searchQuery, String query,
+                                    User currentUser, Set<UUID> accessibleSoulIds) {
         // Extract the WHERE clause from the search query
         String countQuery = searchQuery
             .replaceFirst("(?s)SELECT.*?FROM", "SELECT COUNT(*) FROM")
@@ -403,10 +436,6 @@ public class SearchService {
         Query q = entityManager.createNativeQuery(countQuery);
         q.setParameter("query", query != null ? query : "");
         q.setParameter("tenantId", TenantContext.getCurrentTenantId());
-        
-        UUID currentUserId = securityUtils.getCurrentUserId();
-        User currentUser = userRepository.findById(currentUserId).orElseThrow();
-        Set<UUID> accessibleSoulIds = getAccessibleSoulIds(currentUser);
         if (accessibleSoulIds != null && !accessibleSoulIds.isEmpty()) {
             q.setParameter("accessibleIds", accessibleSoulIds);
         }
@@ -438,13 +467,16 @@ public class SearchService {
      * Role-based: user can only access souls they have permission to see.
      */
     public Map<String, Object> getCompleteProfile(UUID soulId) {
+        // §G6.6 — findById est filtré par tenant (TenantAwareSimpleJpaRepository) :
+        // une âme d'un autre tenant renvoie empty → 404 (anti-énumération), et non
+        // une fuite ni un 500. Le « not found » remonte un vrai 404 (pas un 500).
         Soul soul = soulRepository.findById(soulId)
-                .orElseThrow(() -> new RuntimeException("Soul not found: " + soulId));
+                .orElseThrow(() -> new EntityNotFoundException("Soul", soulId));
 
         // Check access
         UUID currentUserId = securityUtils.getCurrentUserId();
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User", currentUserId));
         checkSoulAccess(soul, currentUser);
 
         Map<String, Object> profile = new LinkedHashMap<>();
@@ -807,7 +839,9 @@ public class SearchService {
     private void checkSoulAccess(Soul soul, User currentUser) {
         Set<UUID> accessibleIds = getAccessibleSoulIds(currentUser);
         if (accessibleIds != null && !accessibleIds.contains(soul.getId())) {
-            throw new RuntimeException("Access denied to soul: " + soul.getId());
+            // §G6.6 — refus d'autorisation = 403 propre (AccessDeniedException →
+            // GlobalExceptionHandler), sans écho de l'UUID (anti-énumération) ni 500.
+            throw new AccessDeniedException("Accès refusé à ce profil");
         }
     }
     

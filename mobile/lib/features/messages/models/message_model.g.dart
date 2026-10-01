@@ -12,7 +12,8 @@ _$ConversationImpl _$$ConversationImplFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String,
       type: $enumDecode(_$ConversationTypeEnumMap, json['type']),
       avatarUrl: json['avatarUrl'] as String?,
-      participantIds: (json['participantIds'] as List<dynamic>?)
+      participantIds:
+          (json['participantIds'] as List<dynamic>?)
               ?.map((e) => (e as num).toInt())
               .toList() ??
           const [],
@@ -58,7 +59,8 @@ _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>
       senderAvatarUrl: json['senderAvatarUrl'] as String?,
       content: json['content'] as String,
       type: $enumDecode(_$MessageTypeEnumMap, json['type']),
-      mediaUrls: (json['mediaUrls'] as List<dynamic>?)
+      mediaUrls:
+          (json['mediaUrls'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
@@ -66,9 +68,12 @@ _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>
       isSystem: json['isSystem'] as bool? ?? false,
       isOwn: json['isOwn'] as bool? ?? false,
       reactionsCount: (json['reactionsCount'] as num?)?.toInt() ?? 0,
-      reactions: (json['reactions'] as Map<String, dynamic>?)?.map(
-            (k, e) => MapEntry(k,
-                (e as List<dynamic>).map((e) => (e as num).toInt()).toList()),
+      reactions:
+          (json['reactions'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(
+              k,
+              (e as List<dynamic>).map((e) => (e as num).toInt()).toList(),
+            ),
           ) ??
           const {},
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -110,32 +115,32 @@ const _$MessageTypeEnumMap = {
 };
 
 _$ConversationParticipantImpl _$$ConversationParticipantImplFromJson(
-        Map<String, dynamic> json) =>
-    _$ConversationParticipantImpl(
-      userId: (json['userId'] as num).toInt(),
-      name: json['name'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      role: $enumDecode(_$ConversationRoleEnumMap, json['role']),
-      joinedAt: json['joinedAt'] == null
-          ? null
-          : DateTime.parse(json['joinedAt'] as String),
-      isOnline: json['isOnline'] as bool? ?? false,
-      lastSeenAt: json['lastSeenAt'] == null
-          ? null
-          : DateTime.parse(json['lastSeenAt'] as String),
-    );
+  Map<String, dynamic> json,
+) => _$ConversationParticipantImpl(
+  userId: (json['userId'] as num).toInt(),
+  name: json['name'] as String,
+  avatarUrl: json['avatarUrl'] as String?,
+  role: $enumDecode(_$ConversationRoleEnumMap, json['role']),
+  joinedAt: json['joinedAt'] == null
+      ? null
+      : DateTime.parse(json['joinedAt'] as String),
+  isOnline: json['isOnline'] as bool? ?? false,
+  lastSeenAt: json['lastSeenAt'] == null
+      ? null
+      : DateTime.parse(json['lastSeenAt'] as String),
+);
 
 Map<String, dynamic> _$$ConversationParticipantImplToJson(
-        _$ConversationParticipantImpl instance) =>
-    <String, dynamic>{
-      'userId': instance.userId,
-      'name': instance.name,
-      'avatarUrl': instance.avatarUrl,
-      'role': _$ConversationRoleEnumMap[instance.role]!,
-      'joinedAt': instance.joinedAt?.toIso8601String(),
-      'isOnline': instance.isOnline,
-      'lastSeenAt': instance.lastSeenAt?.toIso8601String(),
-    };
+  _$ConversationParticipantImpl instance,
+) => <String, dynamic>{
+  'userId': instance.userId,
+  'name': instance.name,
+  'avatarUrl': instance.avatarUrl,
+  'role': _$ConversationRoleEnumMap[instance.role]!,
+  'joinedAt': instance.joinedAt?.toIso8601String(),
+  'isOnline': instance.isOnline,
+  'lastSeenAt': instance.lastSeenAt?.toIso8601String(),
+};
 
 const _$ConversationRoleEnumMap = {
   ConversationRole.admin: 'ADMIN',
@@ -145,21 +150,21 @@ const _$ConversationRoleEnumMap = {
 };
 
 _$MessageReactionImpl _$$MessageReactionImplFromJson(
-        Map<String, dynamic> json) =>
-    _$MessageReactionImpl(
-      messageId: (json['messageId'] as num).toInt(),
-      emoji: json['emoji'] as String,
-      userId: (json['userId'] as num).toInt(),
-      userName: json['userName'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-    );
+  Map<String, dynamic> json,
+) => _$MessageReactionImpl(
+  messageId: (json['messageId'] as num).toInt(),
+  emoji: json['emoji'] as String,
+  userId: (json['userId'] as num).toInt(),
+  userName: json['userName'] as String,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+);
 
 Map<String, dynamic> _$$MessageReactionImplToJson(
-        _$MessageReactionImpl instance) =>
-    <String, dynamic>{
-      'messageId': instance.messageId,
-      'emoji': instance.emoji,
-      'userId': instance.userId,
-      'userName': instance.userName,
-      'createdAt': instance.createdAt.toIso8601String(),
-    };
+  _$MessageReactionImpl instance,
+) => <String, dynamic>{
+  'messageId': instance.messageId,
+  'emoji': instance.emoji,
+  'userId': instance.userId,
+  'userName': instance.userName,
+  'createdAt': instance.createdAt.toIso8601String(),
+};

@@ -17,6 +17,14 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 
     Optional<Membership> findByPersonId(UUID personId);
 
+    /**
+     * PORT Develop1 (§moteur de migration legacy) : une personne peut être membre
+     * de plusieurs unités dans un même tenant ; le rollback d'une migration doit
+     * supprimer TOUTES ses adhésions, d'où le retour en liste (la méthode
+     * findByPersonId ci-dessus, en Optional, refuserait les doublons).
+     */
+    List<Membership> findByTenantIdAndPersonId(UUID tenantId, UUID personId);
+
     List<Membership> findByTenantIdAndMembershipStatus(UUID tenantId, String status);
 
     long countByTenantId(UUID tenantId);

@@ -101,6 +101,10 @@ public class InventoryItem {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    /** Jeton opaque du QR d'inventaire (G5.6) — généré à la première demande, infalsifiable. */
+    @Column(name = "qr_token", length = 36, unique = true)
+    private String qrToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

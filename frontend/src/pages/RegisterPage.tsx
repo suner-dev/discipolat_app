@@ -49,6 +49,10 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
   const requestedPlan = searchParams.get('plan')?.trim().toUpperCase() || 'DISCOVERY';
+  // §G3.1 (Develop1) — lien d'inscription d'une église : /register?tenant=<slug>
+  // rattache le compte (puis la fiche répertoire) à cette église. Le champ est
+  // optionnel : absent, on reste sur le flux SaaS de main (demande à valider).
+  const tenantSlug = searchParams.get('tenant')?.trim() || undefined;
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const { versionOf, legalVersion } = useLegalVersions();
@@ -73,6 +77,7 @@ export default function RegisterPage() {
         lastName: data.lastName.trim(),
         phone: data.phone?.trim() || undefined,
         plan: requestedPlan.toLowerCase(),
+        tenantSlug,
         consentCgu: data.consentCgu,
         consentPrivacy: data.consentPrivacy,
         consentArt9: data.consentArt9,

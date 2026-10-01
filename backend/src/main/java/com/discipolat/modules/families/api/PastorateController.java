@@ -20,9 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * G4.3 — Ministère pastoral. LECTURES : l'organigramme pastoral est consultable
+ * par les bergers et l'administration (PASTOR_PRINCIPAL, PASTEUR, ADMIN).
+ * ÉCRITURES (nommer, clore, transférer) : réservées au pasteur principal et à
+ * l'administrateur du tenant (« qui nomme »).
+ */
 @RestController
 @RequestMapping("/api/v1/pastorate")
-@PreAuthorize("hasRole('PASTOR_PRINCIPAL')")
 public class PastorateController {
 
     private final PastorateService pastorateService;
@@ -34,6 +39,7 @@ public class PastorateController {
     // ========== APPOINTMENTS ==========
 
     @GetMapping("/appointments")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<List<PastorateAppointment>> getAppointments(
             @RequestParam(required = false) UUID pastorId,
             @RequestParam(required = false) UUID orgUnitId) {
@@ -42,12 +48,14 @@ public class PastorateController {
     }
 
     @GetMapping("/appointments/{id}")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<PastorateAppointment> getAppointment(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(pastorateService.getAppointment(tenantId, id));
     }
 
     @PostMapping("/appointments")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<PastorateAppointment> createAppointment(@RequestBody PastorateAppointment appointment) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -55,6 +63,7 @@ public class PastorateController {
     }
 
     @PutMapping("/appointments/{id}")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<PastorateAppointment> updateAppointment(@PathVariable UUID id, @RequestBody Map<String, Object> updates) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -62,6 +71,7 @@ public class PastorateController {
     }
 
     @DeleteMapping("/appointments/{id}")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<Void> endAppointment(@PathVariable UUID id, @RequestParam String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -72,6 +82,7 @@ public class PastorateController {
     // ========== TRANSFERS ==========
 
     @GetMapping("/transfers")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<List<PastorateTransfer>> getTransfers(
             @RequestParam(required = false) String status) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -79,6 +90,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<PastorateTransfer> createTransfer(
             @RequestParam UUID pastorId,
             @RequestParam UUID toOrgUnitId,
@@ -89,6 +101,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers/{id}/approve")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<PastorateTransfer> approveTransfer(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -96,6 +109,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers/{id}/reject")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
     public ResponseEntity<Void> rejectTransfer(@PathVariable UUID id, @RequestParam String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -105,7 +119,9 @@ public class PastorateController {
 
     // ========== HISTORY ==========
 
+    /** Historique consultable par les bergers et l'administration — comme l'organigramme. */
     @GetMapping("/pastors/{pastorId}/history")
+    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> getPastorHistory(@PathVariable UUID pastorId) {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(pastorateService.getPastorHistory(tenantId, pastorId));

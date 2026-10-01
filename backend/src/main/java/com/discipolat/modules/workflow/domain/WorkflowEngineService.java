@@ -352,6 +352,36 @@ public class WorkflowEngineService {
         return taskRepository.findByTenantIdAndAssigneeIdAndStatus(tenantId, actorId, WorkflowTaskStatus.PENDING);
     }
 
+    /**
+     * §G5.5 (mobile admin terrain) — Même volet « Mes approbations » mais enrichi
+     * des libellés métier (workflow, étape, entité) : l'écran mobile affiche des
+     * noms, jamais des UUID bruts.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getPendingTasksForDetailed(UUID tenantId, UUID actorId) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (WorkflowTask task : taskRepository.findByTenantIdAndAssigneeIdAndStatus(
+                tenantId, actorId, WorkflowTaskStatus.PENDING)) {
+            WorkflowStep step = stepRepository.findById(task.getStepId()).orElse(null);
+            WorkflowInstance instance = instanceRepository.findById(task.getInstanceId()).orElse(null);
+            WorkflowDefinition definition = instance != null
+                    ? definitionRepository.findById(instance.getWorkflowId()).orElse(null) : null;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("taskId", task.getId());
+            entry.put("instanceId", task.getInstanceId());
+            entry.put("workflowName", definition != null ? definition.getName() : null);
+            entry.put("entityType", definition != null ? definition.getEntityType() : null);
+            entry.put("entityId", instance != null ? instance.getEntityId() : null);
+            entry.put("stepName", step != null ? step.getName() : null);
+            entry.put("stepType", step != null ? step.getStepType() : null);
+            entry.put("assigneeRole", task.getAssigneeRole());
+            entry.put("dueAt", task.getDueAt());
+            entry.put("createdAt", task.getCreatedAt());
+            out.add(entry);
+        }
+        return out;
+    }
+
     /** Graphe de définition : nœuds (étapes) + transitions, pour l'éditeur visuel. */
     @Transactional(readOnly = true)
     public Map<String, Object> getDefinitionGraph(UUID tenantId, UUID workflowId) {

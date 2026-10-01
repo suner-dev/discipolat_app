@@ -50,6 +50,9 @@ export const navKeyMap: Record<string, string> = {
   'Retraits': 'nav.retractions',
 
   // ── Structures & rapports ──
+  'Organisation': 'nav.organization',
+  'Répertoire': 'nav.repertoire',
+  'Ministère pastoral': 'nav.pastoralMinistry',
   'Dashboard Responsable': 'nav.leaderDashboard',
   'Dashboard Chef': 'nav.chiefDashboard',
   'Rapport faiseur': 'nav.makerReport',
@@ -93,6 +96,13 @@ export const navKeyMap: Record<string, string> = {
 
   // ── Administration ──
   "Centre d'administration": 'nav.adminCenter',
+  'Console organisation': 'nav.adminOrgConsole',
+  "Membres de l'organisation": 'nav.adminOrgMembers',
+  'Rôles & permissions': 'nav.adminRoles',
+  'Invitations': 'nav.adminInvitations',
+  'Espaces de travail': 'nav.adminSpaces',
+  "Paramètres de l'église": 'nav.tenantSettings',
+  "Modules de l'église": 'nav.tenantModules',
   'Identité & marque': 'nav.identity',
   'Modules': 'nav.modules',
   'Menus': 'nav.menus',

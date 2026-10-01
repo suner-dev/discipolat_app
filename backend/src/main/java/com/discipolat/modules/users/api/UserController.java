@@ -35,12 +35,20 @@ public class UserController {
     private final com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService;
     private final TransferBridgeService transferBridgeService;
     private final com.discipolat.modules.audit.domain.AuditService auditService;
+    /** §G4.4 — rôles vivants : tout changement de rôle bump le cache + pousse PermissionsChanged. */
+    private final com.discipolat.modules.families.service.PermissionResolver permissionResolver;
+    /** §G6.4 — cohérence legacy↔catalogue : le rôle du compte pilote sa tenant_membership. */
+    private final com.discipolat.modules.tenants.domain.TenantMembershipRepository tenantMembershipRepository;
+    private final com.discipolat.modules.tenants.domain.RoleRepository roleRepository;
 
     public UserController(UserService userService, AuthService authService, SecurityUtils securityUtils,
                           EvaluationService evaluationService,
                           com.discipolat.modules.souls.domain.WorkspaceScopeService workspaceScopeService,
                           TransferBridgeService transferBridgeService,
-                          com.discipolat.modules.audit.domain.AuditService auditService) {
+                          com.discipolat.modules.audit.domain.AuditService auditService,
+                          com.discipolat.modules.families.service.PermissionResolver permissionResolver,
+                          com.discipolat.modules.tenants.domain.TenantMembershipRepository tenantMembershipRepository,
+                          com.discipolat.modules.tenants.domain.RoleRepository roleRepository) {
         this.userService = userService;
         this.authService = authService;
         this.securityUtils = securityUtils;
@@ -48,6 +56,9 @@ public class UserController {
         this.workspaceScopeService = workspaceScopeService;
         this.transferBridgeService = transferBridgeService;
         this.auditService = auditService;
+        this.permissionResolver = permissionResolver;
+        this.tenantMembershipRepository = tenantMembershipRepository;
+        this.roleRepository = roleRepository;
     }
 
     /**
@@ -126,7 +137,8 @@ public class UserController {
                 request.lastName(),
                 request.phone(),
                 request.dateNaissance(),
-                request.situationFamiliale()
+                request.situationFamiliale(),
+                request.whatsappOptIn()
         );
         return ResponseEntity.ok(UserResponse.from(user));
     }
@@ -170,10 +182,27 @@ public class UserController {
         Map<String, Object> oldValues = Map.of(
                 "email", user.getEmail(), "firstName", user.getFirstName(),
                 "lastName", user.getLastName(), "role", String.valueOf(user.getRole()));
+        // §G4.4 — snapshot des rôles AVANT mutation pour détecter un changement.
+        UserRole previousPrimaryRole = user.getRole();
+        UserRole previousActiveRole = user.getActiveRole();
+        Set<UserRole> previousRoles = user.getRoles() == null
+                ? EnumSet.noneOf(UserRole.class) : EnumSet.copyOf(user.getRoles());
         user.setEmail(request.email());
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setRole(request.role());
+        // §G6.4 — CP8 : le PUT « rôle » des pages d’administration ne porte que
+        // le rôle primaire. Si activeRole pointait sur l’ancien rôle primaire
+        // (cas normal d’un compte non multi-rôles), il SUIT la mutation — sinon
+        // syncTenantMembershipRole recalculerait depuis un activeRole périmé et
+        // les permissions resolved ne changeraient jamais (< 5 s promis, mort).
+        if (request.role() != null && previousPrimaryRole != request.role()
+                && (previousActiveRole == null || previousActiveRole == previousPrimaryRole)) {
+            user.setActiveRole(request.role());
+            if (user.getRoles() != null && !user.getRoles().contains(request.role())) {
+                user.getRoles().add(request.role());
+            }
+        }
         // Set multi-role fields if provided
         if (request.roles() != null && !request.roles().isEmpty()) {
             user.setRoles(request.roles());
@@ -182,12 +211,62 @@ public class UserController {
             user.setActiveRole(request.activeRole());
         }
         user = userService.update(user);
+        // §G4.4 / §64 — « rôles vivantes » : changement de rôle → recalcul du
+        // cache de permissions + PermissionsChanged (outbox → STOMP < 5 s), pour
+        // que web ET mobile reconfigurent l'interface sans reconnexion.
+        boolean rolesChanged = previousPrimaryRole != user.getRole()
+                || previousActiveRole != user.getActiveRole()
+                || (user.getRoles() != null && !user.getRoles().isEmpty()
+                        && !previousRoles.equals(EnumSet.copyOf(user.getRoles())));
+        if (rolesChanged && user.getTenantId() != null) {
+            // §G6.4 — le bump recalcule depuis les memberships (PermissionResolver) :
+            // sans synchronisation, changer users.role ne changeait RIEN résolu
+            // côté serveur — la chaîne « rôle modifié → permissions < 5 s » (CP8)
+            // était morte. Le rôle effectif du compte pilote désormais sa
+            // tenant_membership ACTIVE (clé du rôle = nom UserRole, pont V173).
+            syncTenantMembershipRole(user);
+            permissionResolver.bumpPermissions(user.getTenantId(), user.getId(), "ROLE_CHANGED");
+        }
         // Audit log
         Map<String, Object> newValues = Map.of(
                 "email", user.getEmail(), "firstName", user.getFirstName(),
                 "lastName", user.getLastName(), "role", String.valueOf(user.getRole()));
         auditService.log("UPDATE", "USER", user.getId(), oldValues, newValues, httpRequest);
         return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    /**
+     * §G6.4 — synchronise la/les tenant_membership ACTIVES du compte dans son
+     * tenant maison avec son rôle effectif (activeRole sinon role). Défensif :
+     * pas de membership → rien à sync (le contexte serveur retombe sur le rôle
+     * du compte) ; clé de rôle absente du catalogue → on ne casse pas la mutation.
+     */
+    private void syncTenantMembershipRole(User user) {
+        try {
+            UserRole effective = user.getActiveRole() != null ? user.getActiveRole() : user.getRole();
+            if (effective == null) {
+                return;
+            }
+            com.discipolat.modules.tenants.domain.Role role =
+                    roleRepository.findByTenantIdAndKey(user.getTenantId(), effective.name())
+                            .or(() -> roleRepository.findByTenantIdIsNullAndKey(effective.name()))
+                            .orElse(null);
+            if (role == null) {
+                return;
+            }
+            for (com.discipolat.modules.tenants.domain.TenantMembership tm :
+                    tenantMembershipRepository.findAllByUserIdAndTenantIdAndStatus(
+                            user.getId(), user.getTenantId(),
+                            com.discipolat.modules.tenants.domain.MembershipStatus.ACTIVE)) {
+                if (tm.getRole() == null || !role.getId().equals(tm.getRole().getId())) {
+                    tm.setRole(role);
+                    tenantMembershipRepository.save(tm);
+                }
+            }
+        } catch (RuntimeException e) {
+            // Jamais bloquant pour la mutation du compte ; le bump suivant
+            // repartira de l'état cohérent si le catalogue est réparé.
+        }
     }
 
     @PatchMapping("/{id}/deactivate")

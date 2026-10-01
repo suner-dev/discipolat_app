@@ -24,6 +24,9 @@ import {
   RotateCcw,
   ArrowLeftRight,
   BarChart3,
+  ShieldCheck,
+  History,
+  X,
 } from 'lucide-react';
 import {
   ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid,
@@ -89,7 +92,7 @@ function toIsoEnd(date: string) {
 }
 
 export default function AuditPage() {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,6 +104,28 @@ export default function AuditPage() {
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  // §G2.9 / §58 — Vérification d'intégrité de la hash chain + historique métier.
+  const [verifying, setVerifying] = useState(false);
+  const [chainResult, setChainResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<{ objectType: string; objectId: string } | null>(null);
+
+  const verifyChain = async () => {
+    setVerifying(true);
+    try {
+      const res = await api.get('/audit/events/verify-chain');
+      const d = res.data as { valid: boolean; checked: number; totalEvents: number };
+      setChainResult({
+        ok: d.valid,
+        message: d.valid
+          ? t('audit.chainOk', { n: String(d.checked) })
+          : t('audit.chainBroken', { n: String(d.checked) }),
+      });
+    } catch {
+      setChainResult({ ok: false, message: t('audit.chainUnverified') });
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   // Liste des utilisateurs pour le filtre et la résolution des emails.
   const { data: users } = useQuery({
@@ -223,6 +248,11 @@ export default function AuditPage() {
           </div>
         </div>
         <div className="page-header-actions">
+          <button onClick={verifyChain} disabled={verifying} className="btn-secondary btn-sm"
+            title={t('audit.verifyChain')}>
+            {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            {t('audit.verifyChain')}
+          </button>
           <button onClick={handleExport} disabled={isExporting} className="btn-secondary btn-sm">
             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             {isExporting ? 'Génération…' : 'Exporter CSV'}
@@ -234,6 +264,17 @@ export default function AuditPage() {
           )}
         </div>
       </div>
+
+      {chainResult && (
+        <div className={
+          'mb-6 px-4 py-3 rounded-lg text-sm font-medium border ' +
+          (chainResult.ok
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700/40'
+            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700/40')
+        }>
+          {chainResult.message}
+        </div>
+      )}
 
       {/* Stats cards (cliquables → filtrent par catégorie d'action) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -443,12 +484,13 @@ export default function AuditPage() {
                   <th>Action</th>
                   <th>{tText('Entité')}</th>
                   <th>{tText('Détails')}</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {entries.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center">
+                    <td colSpan={6} className="py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <Sparkles className="w-8 h-8 text-gray-300 dark:text-gray-600" />
                         <p className="text-sm text-gray-400">{tText('Aucune entrée ne correspond à la recherche')}</p>
@@ -495,6 +537,18 @@ export default function AuditPage() {
                       <td className="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate" title={entry.details}>
                         {entry.details || '-'}
                       </td>
+                      <td className="whitespace-nowrap text-right">
+                        {entry.entiteId && (
+                          <button
+                            type="button"
+                            onClick={() => setHistoryTarget({ objectType: entry.entiteType, objectId: entry.entiteId! })}
+                            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 dark:text-primary-400"
+                            title={t('audit.historyTitle')}
+                          >
+                            <History className="w-3.5 h-3.5" /> {t('audit.history')}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -528,6 +582,71 @@ export default function AuditPage() {
           )}
         </div>
       )}
+
+      {historyTarget && (
+        <HistoryModal target={historyTarget} onClose={() => setHistoryTarget(null)} />
+      )}
+    </div>
+  );
+}
+
+interface BusinessHistoryEntry {
+  id: number;
+  objectType: string;
+  objectId: string;
+  eventType: string;
+  summary?: string | null;
+  actorId?: string | null;
+  actorRole?: string | null;
+  happenedAt: string;
+}
+
+/** §G2.9 — Historique métier (business_history) d'un objet : timeline distincte de l'audit technique. */
+function HistoryModal({ target, onClose }: {
+  target: { objectType: string; objectId: string };
+  onClose: () => void;
+}) {
+  const { locale, t } = useI18n();
+  const { data: history, isLoading } = useQuery({
+    queryKey: ['audit', 'history', target.objectType, target.objectId],
+    queryFn: async () => {
+      const res = await api.get(`/audit/history/${target.objectType}/${target.objectId}`);
+      return res.data as BusinessHistoryEntry[];
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+            {t('audit.historyTitle')} — {target.objectType}
+          </h3>
+          <button onClick={onClose} aria-label="Fermer"><X className="w-5 h-5 text-gray-400" /></button>
+        </div>
+        <div className="p-6 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
+          ) : !history || history.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">{t('audit.historyEmpty')}</p>
+          ) : (
+            <ol className="relative border-l border-gray-200 dark:border-gray-700 ml-3 space-y-5">
+              {history.map((h) => (
+                <li key={h.id} className="ml-5">
+                  <span className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full bg-primary-500" />
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{h.eventType}</p>
+                  {h.summary && <p className="text-sm text-gray-600 dark:text-gray-300">{h.summary}</p>}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(h.happenedAt).toLocaleString(locale)}
+                    {h.actorRole ? ` · ${t('audit.actor')} ${h.actorRole}` : ''}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

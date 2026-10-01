@@ -133,3 +133,11 @@ export function useImpersonation() {
   }
   return ctx;
 }
+
+/// Variante tolérante : undefined hors ImpersonationProvider (au lieu de lever).
+/// Pour les composants additionnels (ex. porte d'entrée d'impersonation dans la
+/// fiche tenant) qui doivent s'effacer gracieusement quand le provider n'est pas
+/// monté (tests unitaires isolés, surfaces publiques).
+export function useImpersonationOptional() {
+  return useContext(ImpersonationContext);
+}

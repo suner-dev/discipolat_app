@@ -9,6 +9,7 @@ import { usePlatformMeta } from '@/contexts/MetaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
 import { RealtimeSync } from '@/hooks/useRealtimeSync';
+import { RealtimeBus } from '@/hooks/useRealtimeBus';
 import { useCommandPalette } from '@/hooks/useKeyboardShortcuts';
 import CommandPalette from '@/components/CommandPalette';
 import { FlaskConical, X } from 'lucide-react';
@@ -49,6 +50,8 @@ export default function MainLayout() {
       {/* Synchronisation temps réel (SSE) : les données saisies par d'autres rôles
           apparaissent automatiquement, sans rechargement. */}
       <RealtimeSync />
+      {/* PORT Develop1 (G5.1/#57) — bus temps réel WebSocket + badge d'activité. */}
+      <RealtimeBus />
       {/* Sidebar */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

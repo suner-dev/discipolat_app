@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
+import FamilyOsPanel from '@/components/family/FamilyOsPanel';
 
 import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
@@ -210,6 +211,15 @@ export default function FamilyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* §G4.1 — Espace Family OS : visites, réceptions, réunions, journal,
+          membres (endpoints réels /families/{id}/os/*, garde serveur par famille). */}
+      {id && (
+        <FamilyOsPanel
+          familyId={id}
+          canWrite={!!activeRole && ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'].includes(activeRole)}
+        />
+      )}
 
       {/* Change chief modal */}
       {showChiefModal && (

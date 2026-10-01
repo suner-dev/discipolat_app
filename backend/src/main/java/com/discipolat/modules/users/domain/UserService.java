@@ -487,6 +487,18 @@ public class UserService {
     /** Self-update: any authenticated user can update their own profile */
     public User updateMyProfile(String firstName, String lastName, String phone,
                                  java.time.LocalDate dateNaissance, String situationFamiliale) {
+        // Signature historique de main conservee (appelants existants) : delegation
+        // vers la version complete, sans changement de comportement.
+        return updateMyProfile(firstName, lastName, phone, dateNaissance, situationFamiliale, null);
+    }
+
+    /**
+     * PORT Develop1 (§G5.9) : meme mise a jour de profil, avec l'opt-in individuel
+     * au portail basse connexion. Une valeur nulle laisse l'opt-in tel quel.
+     */
+    public User updateMyProfile(String firstName, String lastName, String phone,
+                                 java.time.LocalDate dateNaissance, String situationFamiliale,
+                                 Boolean whatsappOptIn) {
         UUID currentUserId = securityUtils.getCurrentUserId();
         User existing = findById(currentUserId);
         if (firstName != null) existing.setFirstName(firstName);
@@ -494,6 +506,12 @@ public class UserService {
         if (phone != null) existing.setPhone(phone);
         if (dateNaissance != null) existing.setDateNaissance(dateNaissance);
         if (situationFamiliale != null) existing.setSituationFamiliale(situationFamiliale);
+        // §G5.9 — opt-in individuel au portail basse connexion : activation
+        // conditionnée à un numéro joignable (sinon refus silencieux = désactivé).
+        if (whatsappOptIn != null) {
+            boolean hasPhone = existing.getPhone() != null && !existing.getPhone().isBlank();
+            existing.setWhatsappOptIn(whatsappOptIn && hasPhone);
+        }
         existing.markUpdated();
         return userRepository.save(existing);
     }

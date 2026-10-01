@@ -7,81 +7,102 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @Service
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
+    /**
+     * §G6.4 — l'envoi SMTP se fait hors du thread de requête HTTP : sans cela,
+     * un serveur mail injoignable (ex : localhost:1025 en local/CI) bloque la
+     * réponse d'inscription/invitation une trentaine de secondes et fait
+     * expirer les parcours E2E. Les logs d'échec sont conservés.
+     */
+    private static final ExecutorService MAIL_EXECUTOR = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "email-sender");
+        t.setDaemon(true);
+        return t;
+    });
+
     private final JavaMailSender mailSender;
     private final String fromAddress;
+    /** §G6.4 — MAIL_ENABLED=false (dev/E2E) : plus aucune connexion SMTP, tracé seul. */
+    private final boolean enabled;
 
     public EmailService(JavaMailSender mailSender,
-                        @Value("${spring.mail.username:noreply@discipolat.com}") String fromAddress) {
+                        @Value("${spring.mail.username:noreply@discipolat.com}") String fromAddress,
+                        @Value("${app.email.enabled:true}") boolean enabled) {
         this.mailSender = mailSender;
         this.fromAddress = fromAddress;
+        this.enabled = enabled;
     }
 
     /**
      * US-02: Send welcome email with activation link
      */
     public void sendWelcomeEmail(String to, String firstName, String activationLink) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(to);
-            message.setSubject("Bienvenue sur Discipolat - Activez votre compte");
-            message.setText(String.format(
-                    "Bonjour %s,\n\n" +
-                    "Bienvenue sur la plateforme Discipolat ! Votre compte a été créé avec succès.\n\n" +
-                    "Pour activer votre compte et définir votre mot de passe, veuillez cliquer sur le lien suivant :\n%s\n\n" +
-                    "Ce lien est valable 48 heures.\n\n" +
-                    "Si vous n'avez pas demandé la création de ce compte, veuillez ignorer cet email.\n\n" +
-                    "Cordialement,\nL'équipe Discipolat",
-                    firstName, activationLink));
-            mailSender.send(message);
-            log.info("Welcome email sent to: {}", to);
-        } catch (Exception e) {
-            log.error("Failed to send welcome email to {}: {}", to, e.getMessage());
-        }
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(to);
+        message.setSubject("Bienvenue sur Discipolat - Activez votre compte");
+        message.setText(String.format(
+                "Bonjour %s,\n\n" +
+                "Bienvenue sur la plateforme Discipolat ! Votre compte a été créé avec succès.\n\n" +
+                "Pour activer votre compte et définir votre mot de passe, veuillez cliquer sur le lien suivant :\n%s\n\n" +
+                "Ce lien est valable 48 heures.\n\n" +
+                "Si vous n'avez pas demandé la création de ce compte, veuillez ignorer cet email.\n\n" +
+                "Cordialement,\nL'équipe Discipolat",
+                firstName, activationLink));
+        dispatch(message, "Welcome");
     }
 
     /**
      * US-03: Send password reset email
      */
     public void sendPasswordResetEmail(String to, String resetLink) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(to);
-            message.setSubject("Réinitialisation de votre mot de passe Discipolat");
-            message.setText(String.format(
-                    "Bonjour,\n\n" +
-                    "Vous avez demandé la réinitialisation de votre mot de passe.\n\n" +
-                    "Cliquez sur le lien suivant pour définir un nouveau mot de passe :\n%s\n\n" +
-                    "Ce lien est valable 30 minutes.\n\n" +
-                    "Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.\n\n" +
-                    "Cordialement,\nL'équipe Discipolat",
-                    resetLink));
-            mailSender.send(message);
-            log.info("Password reset email sent to: {}", to);
-        } catch (Exception e) {
-            log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
-        }
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(to);
+        message.setSubject("Réinitialisation de votre mot de passe Discipolat");
+        message.setText(String.format(
+                "Bonjour,\n\n" +
+                "Vous avez demandé la réinitialisation de votre mot de passe.\n\n" +
+                "Cliquez sur le lien suivant pour définir un nouveau mot de passe :\n%s\n\n" +
+                "Ce lien est valable 30 minutes.\n\n" +
+                "Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.\n\n" +
+                "Cordialement,\nL'équipe Discipolat",
+                resetLink));
+        dispatch(message, "Password reset");
     }
 
     /** Envoie un email simple (utilisé par le magic link & flow OAuth). */
     public void send(String to, String subject, String body) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
-            log.info("Email sent to {}: {}", to, subject);
-        } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        dispatch(message, "Email");
+    }
+
+    private void dispatch(SimpleMailMessage message, String label) {
+        String to = message.getTo() != null && message.getTo().length > 0 ? message.getTo()[0] : "?";
+        if (!enabled) {
+            log.info("{} not sent (app.email.enabled=false) to: {}", label, to);
+            return;
         }
+        CompletableFuture.runAsync(() -> {
+            try {
+                mailSender.send(message);
+                log.info("{} sent to: {}", label, to);
+            } catch (Exception e) {
+                log.error("Failed to send {} to {}: {}", label.toLowerCase(), to, e.getMessage());
+            }
+        }, MAIL_EXECUTOR);
     }
 
     // ==================================================================

@@ -129,6 +129,91 @@ jobs:
       - name: Build APK (debug)
         run: cd mobile && flutter build apk --debug --no-pub
 
+  # ── E2E critiques (Playwright) ─────────────────────────
+  # PORTÉ de Develop1 (§G6.9) : chemin critique onboarding/membership sur
+  # stack réelle (Postgres + Redis + backend démarré, seed démo). S'appuie sur
+  # frontend/playwright.config.ts + frontend/e2e/critical-paths.spec.ts.
+  e2e:
+    name: E2E critiques (Playwright)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: discipolat
+          POSTGRES_USER: discipolat
+          POSTGRES_PASSWORD: discipolat_secret
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps (Playwright)
+        # Fournit @playwright/test au job (npx playwright test résout la spec).
+        run: cd frontend && npm ci
+
+      - name: Generate JWT keys
+        run: bash setup-keys.sh
+
+      - name: Build backend fat jar
+        run: cd backend && mvn -B package -DskipTests -q
+
+      - name: Start backend (Flyway + seed démo)
+        working-directory: backend
+        run: |
+          # §G6.9 — AES-256 (32 octets base64) requis par CryptoService (démarrage) ;
+          # dossier de fichiers non-root (FileStorageService par défaut /var/...).
+          export ENCRYPTION_AES_KEY=$(openssl rand -base64 32)
+          export DISCIPOLAT_FILE_STORAGE_ROOT=$RUNNER_TEMP/discipolat-files
+          mkdir -p $DISCIPOLAT_FILE_STORAGE_ROOT
+          JWT_PRIVATE_KEY_PATH=$GITHUB_WORKSPACE/keys/private.pem \
+          JWT_PUBLIC_KEY_PATH=$GITHUB_WORKSPACE/keys/public.pem \
+          nohup java -jar target/discipolat-backend-1.0.0.jar \
+            --spring.datasource.url=jdbc:postgresql://localhost:5432/discipolat \
+            --spring.datasource.username=discipolat \
+            --spring.datasource.password=discipolat_secret \
+            --app.beta-testing.seed-demo-accounts=true > /tmp/backend-e2e.log 2>&1 &
+          for i in $(seq 1 90); do
+            curl -sf http://localhost:8080/actuator/health && break
+            sleep 5
+            [ "$i" = 90 ] && { tail -n 200 /tmp/backend-e2e.log; exit 1; }
+          done
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run critical-path E2E
+        working-directory: frontend
+        run: npx playwright test
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-results
+          path: |
+            frontend/e2e/results.json
+            frontend/test-results/
+
   # ── Security Audit ─────────────────────────────────────
   security:
     name: Security Audit

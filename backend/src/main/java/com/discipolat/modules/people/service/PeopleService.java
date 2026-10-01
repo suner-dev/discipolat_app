@@ -50,6 +50,9 @@ public class PeopleService {
     private final OutboxPublisher outboxPublisher;
     private final PermissionVersionRepository permissionVersionRepository;
     private final RoleRepository roleRepository;
+    /** §G3.1 — notification « Vous avez été ajouté à [Espace] par [X] ». */
+    private final com.discipolat.modules.users.domain.UserRepository userRepository;
+    private final com.discipolat.modules.notifications.domain.NotificationService notificationService;
 
     // ========== G3.1 : PEOPLE ENGINE ==========
 
@@ -57,9 +60,17 @@ public class PeopleService {
      * Inscrit une personne (auto-inscription ou par admin).
      * Création transactionnelle : Person + Membership + événement MemberRegistered.
      * La personne apparaît immédiatement dans le répertoire et liste "Sans espace".
+     *
+     * §G6.4 — REQUIRES_NEW : quand l'appelant (activation de compte, acceptation
+     * d'invitation) tolère un doublon/échec de répertoire, la transaction outer
+     * n'est jamais marquée rollback-only — « l'activation ne bloque jamais ».
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Person registerPerson(UUID tenantId, Person person, String source, UUID actorId) {
+        // §G6.4 — la source est normalisée contre la liste du CHECK membership
+        // (V154+V171) : une valeur inconnue du client ne doit pas transformer
+        // l'inscription en 500 ; elle retombe sur 'INSCRIPTION'.
+        String normalizedSource = normalizeMembershipSource(source);
         // Normalisation email/phone pour dédoublonnage
         String emailNorm = normalizeEmail(person.getEmailNormalized());
         String phoneNorm = normalizePhone(person.getPhoneNormalized());
@@ -92,7 +103,7 @@ public class PeopleService {
                 .personId(savedPerson.getId())
                 .membershipStatus("NOUVEAU_CONVERTI")
                 .joinedAt(LocalDate.now())
-                .source(source != null ? source : "INSCRIPTION")
+                .source(normalizedSource)
                 .build();
         membershipRepository.save(membership);
 
@@ -104,8 +115,8 @@ public class PeopleService {
                         "tenantId", tenantId.toString(),
                         "firstName", savedPerson.getFirstName(),
                         "lastName", savedPerson.getLastName(),
-                        "email", savedPerson.getEmailNormalized(),
-                        "source", source
+                        "email", String.valueOf(savedPerson.getEmailNormalized()),
+                        "source", normalizedSource
                 )
         );
 
@@ -179,7 +190,11 @@ public class PeopleService {
         if (status != null) {
             return personRepository.findByTenantIdAndStatusAndDeletedAtIsNull(tenantId, status, pageable);
         }
-        // TODO: Filtres avancés (campus, sans espace, sans famille) nécessitent jointures
+        // §G6.4 — filtres « sans espace » / « sans famille » RÉELS (ancien TODO muet).
+        if (withoutSpace || withoutFamily) {
+            return personRepository.findFiltered(tenantId, withoutSpace, withoutFamily, pageable);
+        }
+        // TODO: filtre campusId nécessite la jointure campus (espaces de type CAMPUS).
         return personRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
     }
 
@@ -188,10 +203,10 @@ public class PeopleService {
      */
     @Transactional(readOnly = true)
     public List<Person> getPeopleWithoutSpace(UUID tenantId) {
-        List<Person> all = personRepository.findByTenantIdAndDeletedAtIsNullOrderByLastNameAscFirstNameAsc(tenantId);
-        return all.stream()
-                .filter(p -> spaceMembershipRepository.findByPersonIdAndStatus(p.getId(), "ACTIVE").isEmpty())
-                .toList();
+        // §G6.5 — une seule requête NOT EXISTS au lieu de charger toutes les
+        // personnes puis faire un findByPersonId par personne (N+1 : ~10 001
+        // requêtes pour 10 000 fiches, plusieurs secondes en charge).
+        return personRepository.findWithoutActiveSpace(tenantId);
     }
 
     // ========== G3.2 : MEMBERSHIPS & ROLE ASSIGNMENTS ==========
@@ -203,7 +218,8 @@ public class PeopleService {
     @Transactional
     public SpaceMembership assignToSpace(UUID tenantId, UUID actorId, UUID personId, UUID spaceId, String membershipType, String responsibility) {
         // Vérifier droits (spaceService.canCustomize)
-        Space space = spaceRepository.findById(spaceId)
+        // §G6.4 — jamais de findById nu sur une donnée multi-tenant (§0.3 n°3).
+        Space space = spaceRepository.findByIdAndTenantId(spaceId, tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Space", spaceId));
         if (!spaceService.canCustomize(actorId, space)) {
             throw new SecurityException("Vous ne pouvez pas ajouter de membre à cet espace");
@@ -228,13 +244,15 @@ public class PeopleService {
         SpaceMembership saved = spaceMembershipRepository.save(sm);
 
         // Événement MemberTransferred (ajout à un espace)
+        // §G6.4 — Map.of refuse les null : membershipType optionnel provoquait
+        // un NPE (500) à chaque affectation sans type explicite.
         outboxPublisher.publish("SPACE_MEMBERSHIP", saved.getId(), "MemberTransferred",
                 Map.of(
                         "personId", personId.toString(),
                         "personName", person.getFullName(),
                         "spaceId", spaceId.toString(),
                         "spaceName", space.getName(),
-                        "membershipType", membershipType,
+                        "membershipType", saved.getMembershipType(),
                         "actorId", actorId.toString()
                 )
         );
@@ -247,7 +265,34 @@ public class PeopleService {
         // G4.4 : propager le changement de permission (rôle vivant)
         notifyPermissionChange(personId, "SPACE_MEMBER_ADDED");
 
+        // §G3.1 — l'utilisateur reçoit « Vous avez été ajouté à [Espace] par [X] »
+        notifyAddedToSpace(tenantId, actorId, person, space);
+
         return saved;
+    }
+
+    /** Notification in-app de l'affectation (défensive : jamais bloquante). */
+    private void notifyAddedToSpace(UUID tenantId, UUID actorId, Person person, Space space) {
+        try {
+            if (person.getEmailNormalized() == null) return;
+            // findByEmail (supprime par main : sans scope, sensible a la casse et
+            // IncorrectResultSize sur doublons soft-deletes) -> lookup scope tenant.
+            userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, person.getEmailNormalized()).ifPresent(user -> {
+                String actorName = userRepository.findById(actorId)
+                        .map(a -> (a.getFirstName() != null ? a.getFirstName() + " " : "")
+                                + (a.getLastName() != null ? a.getLastName() : ""))
+                        .filter(n -> !n.isBlank())
+                        .orElse("un responsable");
+                notificationService.create(tenantId, user.getId(),
+                        com.discipolat.common.enums.TypeNotification.MEMBRE_AFFECTE,
+                        com.discipolat.common.enums.CanalNotification.IN_APP,
+                        "Ajout à un espace",
+                        "Vous avez été ajouté à " + space.getName() + " par " + actorName.trim() + ".",
+                        person.getId(), "PERSON");
+            });
+        } catch (RuntimeException e) {
+            log.warn("Notification d'affectation impossible pour la personne {}", person.getId());
+        }
     }
 
     /**
@@ -360,8 +405,10 @@ public class PeopleService {
     public RoleAssignment transferPastor(UUID tenantId, UUID actorId, UUID personId, UUID newOrgUnitId, String reason) {
         // Clôturer tous rôles actifs sur ancienne org_unit
         List<RoleAssignment> active = roleAssignmentRepository.findByTenantIdAndPersonIdAndStatus(tenantId, personId, "ACTIVE");
+        UUID templateRoleId = null;
         for (RoleAssignment ra : active) {
             if (ra.getOrganizationUnitId() != null) {
+                if (templateRoleId == null) templateRoleId = ra.getRoleId();
                 ra.setStatus("ENDED");
                 ra.setEndedAt(LocalDate.now());
                 ra.setReason("Transféré vers " + newOrgUnitId + ": " + reason);
@@ -369,12 +416,22 @@ public class PeopleService {
             }
         }
 
-        Role pastorCampus = roleRepository.findByTenantIdAndKey(tenantId, "PASTOR_CAMPUS")
-                .orElseGet(() -> roleRepository.findGlobalByKey("PASTOR_CAMPUS").orElse(null));
+        // G4.3 (apport Develop1) : le transfert CONSERVE le rôle du pasteur muté
+        // (templateRoleId = rôle clôturé juste au-dessus) ; à défaut le rôle
+        // PASTOR_CAMPUS du tenant, puis le rôle global (ordre de main).
+        Role pastorCampus = templateRoleId != null
+                ? roleRepository.findById(templateRoleId).orElse(null)
+                : null;
+        if (pastorCampus == null) {
+            pastorCampus = roleRepository.findByTenantIdAndKey(tenantId, "PASTOR_CAMPUS")
+                    .orElseGet(() -> roleRepository.findGlobalByKey("PASTOR_CAMPUS").orElse(null));
+        }
         if (pastorCampus == null) {
             throw new EntityNotFoundException("Role", "key", "PASTOR_CAMPUS");
         }
         String appointmentReason = reason == null ? "Transfert pasteur" : reason;
+        // assignRole (main) : écriture auditée + version de permissions + NOT NULL
+        // contrôlé — plus strict que la construction directe du rôle ailleurs.
         RoleAssignment newAssignment = assignRole(tenantId, actorId, personId, pastorCampus.getId(),
                 newOrgUnitId, null, appointmentReason);
 
@@ -394,8 +451,20 @@ public class PeopleService {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) return;
 
+        // §G6.4 — Le cache de permissions est indexé par COMPTE (users.id, FK
+        // permission_version_user_id_fkey), pas par fiche. Une fiche du
+        // répertoire sans compte lié n'a aucune permission : le bump direct
+        // sur personId violait la FK → 500 à chaque affectation d'espace.
+        UUID userId = personRepository.findById(personId)
+                .map(Person::getEmailNormalized)
+                .filter(email -> email != null && !email.isBlank())
+                .flatMap(email -> userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, email))
+                .map(com.discipolat.modules.users.domain.User::getId)
+                .orElse(null);
+        if (userId == null) return;
+
         // Bump la version du cache permission_version
-        permissionVersionRepository.findByTenantIdAndUserId(tenantId, personId)
+        permissionVersionRepository.findByTenantIdAndUserId(tenantId, userId)
                 .ifPresentOrElse(
                         pv -> {
                             pv.setVersion(pv.getVersion() + 1);
@@ -405,7 +474,7 @@ public class PeopleService {
                         () -> {
                             PermissionVersion pv = PermissionVersion.builder()
                                     .tenantId(tenantId)
-                                    .userId(personId)
+                                    .userId(userId)
                                     .version(1L)
                                     .permissionsJson(new ArrayList<>())
                                     .updatedAt(OffsetDateTime.now())
@@ -414,8 +483,8 @@ public class PeopleService {
                         });
 
         // Publie l'événement PermissionsChanged (outbox -> realtime consumer -> WS push)
-        outboxPublisher.publish("PERMISSION", personId, "PermissionsChanged",
-                Map.of("userId", personId.toString(), "changeType", changeType));
+        outboxPublisher.publish("PERMISSION", userId, "PermissionsChanged",
+                Map.of("userId", userId.toString(), "changeType", changeType));
     }
 
     // ========== HELPERS ==========
@@ -452,6 +521,16 @@ public class PeopleService {
         String cleaned = phone.replaceAll("[^0-9+]", "");
         if (!cleaned.startsWith("+")) cleaned = "+" + cleaned;
         return cleaned;
+    }
+
+    /** §G6.4 — sources membership autorisées (alignées sur le CHECK V154+V171). */
+    private static final java.util.Set<String> MEMBERSHIP_SOURCES = java.util.Set.of(
+            "INSCRIPTION", "INVITATION", "IMPORT", "EVANGELISATION", "TRANSFERT", "MANUEL", "SELF_SIGNUP");
+
+    private String normalizeMembershipSource(String source) {
+        if (source == null || source.isBlank()) return "INSCRIPTION";
+        String up = source.trim().toUpperCase();
+        return MEMBERSHIP_SOURCES.contains(up) ? up : "INSCRIPTION";
     }
 
     public static class PersonAlreadyExistsException extends RuntimeException {

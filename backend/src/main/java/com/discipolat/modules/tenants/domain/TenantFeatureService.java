@@ -48,6 +48,24 @@ public class TenantFeatureService {
         return repository.findEnabledByTenantId(tenantId);
     }
 
+    /**
+     * G5.4 (§55-2 RequireFeature) — État d'activation canonique de tous les
+     * modules du tenant (code → enabled), source unique pour le drapeau
+     * {@code features} du contexte résolu. Les modules sans ligne explicite
+     * ne figurent pas dans la carte : le frontend traite une absence comme
+     * « non géré » (jamais un refus arbitraire), une valeur false comme un
+     * refus — miroir du 403 backend.
+     */
+    public Map<String, Boolean> getFeatureFlags(UUID tenantId) {
+        Map<String, Boolean> flags = new java.util.LinkedHashMap<>();
+        for (TenantFeature f : repository.findByTenantId(tenantId)) {
+            if (f.getModuleCode() != null) {
+                flags.put(f.getModuleCode().toUpperCase(), Boolean.TRUE.equals(f.getEnabled()));
+            }
+        }
+        return flags;
+    }
+
     private TenantFeature upsertFeature(UUID tenantId, String moduleCode, boolean enabled,
                                          Map<String, Object> configuration, Map<String, Object> limits) {
         TenantFeature feature = repository.findByTenantIdAndModuleCode(tenantId, moduleCode).orElse(null);

@@ -21,6 +21,15 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             UUID destinataireId, com.discipolat.common.enums.TypeNotification type,
             UUID entiteReferenceId, String entiteReferenceType);
 
+    /**
+     * PORT Develop1 (§G4.1 rappels de suivi) : déduplication dans le TEMPS — au
+     * plus un rappel SUIVI_RAPPEL par visite et par destinataire pour une journée,
+     * sans interdire les rappels des jours suivants sur la même visite.
+     */
+    boolean existsByDestinataireIdAndTypeAndEntiteReferenceIdAndCreatedAtAfter(
+            UUID destinataireId, com.discipolat.common.enums.TypeNotification type,
+            UUID entiteReferenceId, java.time.LocalDateTime after);
+
     @Modifying
     @Query("UPDATE Notification n SET n.lu = true, n.dateLecture = CURRENT_TIMESTAMP WHERE n.destinataireId = :userId AND n.lu = false")
     void markAllAsRead(@Param("userId") UUID userId);

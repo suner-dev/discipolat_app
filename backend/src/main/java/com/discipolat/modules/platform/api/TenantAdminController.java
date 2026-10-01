@@ -166,6 +166,118 @@ public class TenantAdminController {
 
 
     /**
+     * §58 / §G3.2 — Affectation : changer le rôle d'un membre dans CE tenant.
+     * La membership doit appartenir au tenant courant (isolation), le rôle
+     * cible doit exister dans le tenant, et le dernier propriétaire actif ne
+     * peut pas être rétrogradé. Action auditée.
+     */
+    @PutMapping("/members/{membershipId}/role")
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateMemberRole(
+            @PathVariable UUID membershipId,
+            @RequestBody Map<String, String> body,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        UUID tenantId = TenantContext.requireTenantId();
+        TenantMembership membership = tenantScopedMembership(membershipId, tenantId);
+
+        String roleKey = body.get("roleKey");
+        if (roleKey == null || roleKey.isBlank()) {
+            throw new IllegalArgumentException("roleKey requis");
+        }
+        Role newRole = roleService.getRoles(tenantId).stream()
+            .filter(r -> r.getKey().equalsIgnoreCase(roleKey.trim()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Rôle inconnu dans ce tenant : " + roleKey));
+
+        Role currentRole = membership.getRole();
+        if (currentRole != null && isOwnerRoleKey(currentRole.getKey())
+                && !currentRole.getId().equals(newRole.getId())) {
+            guardNotLastOwner(tenantId, currentRole.getId());
+        }
+
+        UUID previousRoleId = currentRole != null ? currentRole.getId() : null;
+        membership.setRole(newRole);
+        membership.setRoleLegacy(null);
+        membership.setUpdatedAt(Instant.now());
+        membershipRepository.save(membership);
+
+        auditService.log(TenantContext.getCurrentUserId(), tenantId, "MEMBER_ROLE_CHANGED",
+            "TENANT_MEMBERSHIP", membershipId, "SUCCESS", Payloads.of(
+            "previousRoleId", String.valueOf(previousRoleId),
+            "newRoleKey", newRole.getKey()
+        ), null, null, httpRequest);
+
+        return ResponseEntity.ok(Payloads.of(
+            "membershipId", membershipId.toString(),
+            "userId", membership.getUserId().toString(),
+            "roleKey", newRole.getKey(),
+            "success", true
+        ));
+    }
+
+    /**
+     * §58 — Révoquer l'adhésion d'un membre de CE tenant (soft : statut REVOKED,
+     * aucune suppression de données). Impossible de se révoquer soi-même ni de
+     * révoquer le dernier propriétaire. Action auditée.
+     */
+    @DeleteMapping("/members/{membershipId}")
+    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    public ResponseEntity<Map<String, Object>> revokeMember(
+            @PathVariable UUID membershipId,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        UUID tenantId = TenantContext.requireTenantId();
+        TenantMembership membership = tenantScopedMembership(membershipId, tenantId);
+
+        UUID currentUserId = TenantContext.getCurrentUserId();
+        if (membership.getUserId().equals(currentUserId)) {
+            throw new IllegalArgumentException("Vous ne pouvez pas vous retirer vous-même de l'organisation.");
+        }
+        Role currentRole = membership.getRole();
+        if (currentRole != null && isOwnerRoleKey(currentRole.getKey())) {
+            guardNotLastOwner(tenantId, currentRole.getId());
+        }
+
+        membership.setStatus(MembershipStatus.REVOKED);
+        membership.setUpdatedAt(Instant.now());
+        membershipRepository.save(membership);
+
+        auditService.log(currentUserId, tenantId, "MEMBER_REVOKED",
+            "TENANT_MEMBERSHIP", membershipId, "SUCCESS", Payloads.of(
+            "userId", membership.getUserId().toString()
+        ), null, null, httpRequest);
+
+        return ResponseEntity.ok(Payloads.of("membershipId", membershipId.toString(), "status", "REVOKED"));
+    }
+
+    /** Isolation : une membership d'un autre tenant est introuvable (404), jamais 403 fuitable. */
+    private TenantMembership tenantScopedMembership(UUID membershipId, UUID tenantId) {
+        TenantMembership membership = membershipRepository.findById(membershipId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Adhésion introuvable"));
+        if (!membership.getTenantId().equals(tenantId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Adhésion introuvable");
+        }
+        return membership;
+    }
+
+    private static boolean isOwnerRoleKey(String key) {
+        return "TENANT_OWNER".equalsIgnoreCase(key) || "OWNER".equalsIgnoreCase(key);
+    }
+
+    private void guardNotLastOwner(UUID tenantId, UUID ownerRoleId) {
+        long activeOwners = membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE).stream()
+            .filter(m -> m.getRole() != null && m.getRole().getId().equals(ownerRoleId))
+            .count();
+        if (activeOwners <= 1) {
+            throw new IllegalArgumentException(
+                "Impossible de modifier le rôle du dernier propriétaire de l'organisation.");
+        }
+    }
+
+    /**
      * Gérer les rôles
      */
     @GetMapping("/roles")
@@ -227,7 +339,8 @@ public class TenantAdminController {
             jakarta.servlet.http.HttpServletRequest httpRequest) {
         
         UUID tenantId = TenantContext.requireTenantId();
-        UUID currentUserId = TenantContext.getTenantId();
+        // FIX G5.5 : l'auteur de l'audit est l'utilisateur courant, pas le tenant.
+        UUID currentUserId = TenantContext.getCurrentUserId();
         
         boolean enabled = request.get("enabled");
         

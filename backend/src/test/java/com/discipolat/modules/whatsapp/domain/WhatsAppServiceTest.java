@@ -29,13 +29,20 @@ class WhatsAppServiceTest {
     @Mock private SoulRepository soulRepository;
     @Mock private CryptoService cryptoService;
     @Mock private PlatformFeatureFlagService featureFlagService;
+    // PORT Develop1 — le portail basse connexion est branchu en optionnel ;
+    // un provider non stubbe rend getIfAvailable() == null (portail coupe).
+    @Mock private org.springframework.beans.factory.ObjectProvider<
+            com.discipolat.modules.lowband.domain.LowBandPortalService> lowBandProvider;
 
     @Test
     void signedWebhookIsStoredWhenOutboundFeatureIsDisabled() {
         when(configRepository.findByTenantId(any())).thenReturn(Optional.empty());
         when(messageRepository.save(any(WhatsAppMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
         WhatsAppService service = new WhatsAppService(configRepository, messageRepository,
-                reminderRepository, soulRepository, cryptoService, featureFlagService);
+                reminderRepository, soulRepository, cryptoService, featureFlagService,
+                // PORT Develop1 — le portail basse connexion est optionnel : un
+                // ObjectProvider vide laisse le service inactif, comme ici.
+                lowBandProvider);
         Map<String, Object> payload = Map.of("entry", List.of(Map.of("changes", List.of(Map.of("value",
                 Map.of("messages", List.of(Map.of("from", "+33123456789", "id", "wamid-1",
                         "text", Map.of("body", "hello")))))))));

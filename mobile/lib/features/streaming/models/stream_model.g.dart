@@ -52,41 +52,41 @@ const _$StreamStatusEnumMap = {
 };
 
 _$StreamChatMessageImpl _$$StreamChatMessageImplFromJson(
-        Map<String, dynamic> json) =>
-    _$StreamChatMessageImpl(
-      id: (json['id'] as num).toInt(),
-      senderName: json['senderName'] as String,
-      content: json['content'] as String,
-      messageType: json['messageType'] as String,
-      emoji: json['emoji'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      isSystem: json['isSystem'] as bool? ?? false,
-      isOwn: json['isOwn'] as bool? ?? false,
-    );
+  Map<String, dynamic> json,
+) => _$StreamChatMessageImpl(
+  id: (json['id'] as num).toInt(),
+  senderName: json['senderName'] as String,
+  content: json['content'] as String,
+  messageType: json['messageType'] as String,
+  emoji: json['emoji'] as String?,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  isSystem: json['isSystem'] as bool? ?? false,
+  isOwn: json['isOwn'] as bool? ?? false,
+);
 
 Map<String, dynamic> _$$StreamChatMessageImplToJson(
-        _$StreamChatMessageImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'senderName': instance.senderName,
-      'content': instance.content,
-      'messageType': instance.messageType,
-      'emoji': instance.emoji,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'isSystem': instance.isSystem,
-      'isOwn': instance.isOwn,
-    };
+  _$StreamChatMessageImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'senderName': instance.senderName,
+  'content': instance.content,
+  'messageType': instance.messageType,
+  'emoji': instance.emoji,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'isSystem': instance.isSystem,
+  'isOwn': instance.isOwn,
+};
 
 _$StreamViewerCountImpl _$$StreamViewerCountImplFromJson(
-        Map<String, dynamic> json) =>
-    _$StreamViewerCountImpl(
-      count: (json['count'] as num).toInt(),
-      timestamp: DateTime.parse(json['timestamp'] as String),
-    );
+  Map<String, dynamic> json,
+) => _$StreamViewerCountImpl(
+  count: (json['count'] as num).toInt(),
+  timestamp: DateTime.parse(json['timestamp'] as String),
+);
 
 Map<String, dynamic> _$$StreamViewerCountImplToJson(
-        _$StreamViewerCountImpl instance) =>
-    <String, dynamic>{
-      'count': instance.count,
-      'timestamp': instance.timestamp.toIso8601String(),
-    };
+  _$StreamViewerCountImpl instance,
+) => <String, dynamic>{
+  'count': instance.count,
+  'timestamp': instance.timestamp.toIso8601String(),
+};

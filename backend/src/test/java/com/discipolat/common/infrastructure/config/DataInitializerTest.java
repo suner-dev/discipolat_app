@@ -44,6 +44,8 @@ class DataInitializerTest {
     @Mock private PermissionRepository permissionRepository;
     @Mock private TenantMembershipRepository membershipRepository;
     @Mock private OrganizationNodeRepository orgNodeRepository;
+    // PORT Develop1 — le seed initialise aussi les espaces du tenant.
+    @Mock private com.discipolat.modules.spaces.domain.SpaceRepository spaceRepository;
     @Mock private TenantSubscriptionRepository subscriptionRepository;
     @Mock private SaasPlanRepository planRepository;
     @Mock private TenantRepository tenantRepository;
@@ -54,7 +56,8 @@ class DataInitializerTest {
     void setUp() {
         initializer = new DataInitializer(userRepository, passwordEncoder, soulRepository,
                 departmentRepository, memberDepartmentRepository, roleRepository, permissionRepository,
-                membershipRepository, orgNodeRepository, subscriptionRepository, planRepository, tenantRepository);
+                membershipRepository, orgNodeRepository, spaceRepository,
+                subscriptionRepository, planRepository, tenantRepository);
         when(roleRepository.count()).thenReturn(1L);
         when(userRepository.findAll()).thenReturn(List.of());
     }

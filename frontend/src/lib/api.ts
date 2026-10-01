@@ -81,10 +81,18 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        const hadSession = Boolean(localStorage.getItem('refreshToken'));
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        // §G6.4 — une redirection dure sur tout 401 éjecte les visiteurs ANONYMES
+        // des pages publiques (/register, /accept-invitation…) dès qu'un appel
+        // d'arrière-plan échoue (boucle /login). On ne renvoie vers /login que si
+        // une session expirait réellement, et jamais si on y est déjà.
+        const publicPaths = ['/login', '/register', '/accept-invitation', '/forgot-password', '/reset-password'];
+        if (hadSession && !publicPaths.includes(window.location.pathname)) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

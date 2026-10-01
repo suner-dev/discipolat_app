@@ -1,11 +1,14 @@
 package com.discipolat.modules.members.api;
 
+import com.discipolat.common.infrastructure.qr.QrImageService;
 import com.discipolat.modules.members.domain.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +20,11 @@ import java.util.UUID;
 public class MemberController {
 
     private final MemberService memberService;
+    private final QrImageService qrImageService;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(MemberService memberService, QrImageService qrImageService) {
         this.memberService = memberService;
+        this.qrImageService = qrImageService;
     }
 
     // ============================================================
@@ -140,16 +145,84 @@ public class MemberController {
         return ResponseEntity.ok(memberService.submitDepartmentPresences(deptId, request));
     }
 
-    /** Enregistre la présence via scan QR code (dispo pour tous les rôles). */
+    /** Enregistre la présence via scan QR code (dispo pour tous les rôles).
+     *  Accepte {@code soulId} (UUID) ou {@code code} (contenu scanné {@code discipolat:soul:<uuid>}). */
     @PostMapping("/qr-checkin")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
     public ResponseEntity<Map<String, Object>> qrCheckin(@RequestBody Map<String, String> body) {
-        String soulIdStr = body.get("soulId");
-        if (soulIdStr == null || soulIdStr.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "soulId is required"));
+        String raw = body.getOrDefault("soulId", body.get("code"));
+        UUID soulId = parseSoulCode(raw);
+        if (soulId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "soulId ou code QR valide requis"));
         }
-        UUID soulId = UUID.fromString(soulIdStr);
         memberService.recordPresenceByQr(soulId);
         return ResponseEntity.ok(Map.of("success", true, "message", "Présence enregistrée", "soulId", soulId.toString()));
+    }
+
+    /** Scan terrain : la photo du QR du membre est remontée, décodée (ZXing) puis convertie en présence. */
+    @PostMapping("/qr-checkin/scan")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> qrCheckinScan(@RequestParam("file") MultipartFile file) throws IOException {
+        java.util.Optional<String> decoded = qrImageService.decodeQrImage(file.getBytes());
+        if (decoded.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Aucun QR lisible sur la photo"));
+        }
+        UUID soulId = parseSoulCode(decoded.get());
+        if (soulId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "QR non reconnu", "scanned", decoded.get()));
+        }
+        memberService.recordPresenceByQr(soulId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Présence enregistrée", "soulId", soulId.toString()));
+    }
+
+    /** QR de présentation du membre connecté, à faire scanner par le responsable. */
+    @GetMapping("/me/qr-code")
+    public ResponseEntity<Map<String, String>> myQrCode() throws IOException {
+        UUID soulId = memberService.mySoulId();
+        if (soulId == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String data = "discipolat:soul:" + soulId;
+        return ResponseEntity.ok(Map.of(
+                "soulId", soulId.toString(),
+                "data", data,
+                "qrPngDataUrl", qrImageService.renderPngDataUrl(data)));
+    }
+
+    /**
+     * Identifie une âme depuis la photo de son QR (distribution de kit par scan
+     * de « l'âme », G5.6) — sans enregistrer de présence.
+     */
+    @PostMapping("/qr-resolve")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> qrResolve(@RequestParam("file") MultipartFile file) throws IOException {
+        java.util.Optional<String> decoded = qrImageService.decodeQrImage(file.getBytes());
+        if (decoded.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Aucun QR lisible sur la photo"));
+        }
+        UUID soulId = parseSoulCode(decoded.get());
+        if (soulId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "QR non reconnu", "scanned", decoded.get()));
+        }
+        return memberService.resolveSoulForQr(soulId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Extrait l'UUID d'un contenu QR de membre (tolère {@code discipolat:soul:<uuid>} ou UUID brut). */
+    private static UUID parseSoulCode(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String trimmed = raw.trim();
+        int idx = trimmed.lastIndexOf("discipolat:soul:");
+        if (idx >= 0) {
+            trimmed = trimmed.substring(idx + "discipolat:soul:".length());
+        }
+        try {
+            return UUID.fromString(trimmed);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

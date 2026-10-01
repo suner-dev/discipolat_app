@@ -515,6 +515,32 @@ public class MemberService {
         return soul != null ? soul.getId() : null;
     }
 
+    /**
+     * PORT Develop1 (§G5.6) : âme liée au compte connecté — presentation du QR de
+     * check-in, et pointage de sa propre presence depuis l'app mobile hors ligne.
+     */
+    public UUID mySoulId() {
+        return currentSoulId(securityUtils.getCurrentUserId());
+    }
+
+    /**
+     * PORT Develop1 (§G5.6) : identifie une âme scannee (distribution de kit) sans
+     * enregistrer de presence. Scoped tenant : un QR d'une âme d'un autre tenant
+     * ne doit etre resolvable que pour le tenant courant (null = hors contexte).
+     */
+    public Optional<Map<String, Object>> resolveSoulForQr(UUID soulId) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.getTenantId();
+        return soulRepository.findById(soulId)
+                .filter(s -> tenantId == null || s.getTenantId() == null || tenantId.equals(s.getTenantId()))
+                .map(s -> {
+                    Map<String, Object> summary = new LinkedHashMap<>();
+                    summary.put("soulId", s.getId().toString());
+                    summary.put("nom", s.getNom());
+                    summary.put("prenom", s.getPrenom());
+                    return summary;
+                });
+    }
+
     private UUID firstDepartmentId(UUID userId) {
         Soul soul = currentSoul(userId);
         if (soul == null) return null;
@@ -731,6 +757,14 @@ public class MemberService {
     public void recordPresenceByQr(UUID soulId) {
         Soul soul = soulRepository.findById(soulId)
                 .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId));
+        // G5.6 (PORT Develop1) : le QR scanné sur le terrain ne doit jamais pointer
+        // hors du tenant courant — sinon fuite d'existence cross-tenant. Isolation
+        // additive ; aucune donnée main retirée.
+        UUID currentTenantId = com.discipolat.common.multitenancy.TenantContext.getTenantId();
+        if (currentTenantId != null && soul.getTenantId() != null
+                && !currentTenantId.equals(soul.getTenantId())) {
+            throw new com.discipolat.common.domain.EntityNotFoundException("Soul", soulId);
+        }
         if (soul.getUserId() == null) {
             throw new IllegalStateException("Ce membre n'a pas de compte utilisateur lié");
         }

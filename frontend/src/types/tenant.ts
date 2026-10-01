@@ -34,7 +34,7 @@ export interface OrganizationNode {
   id: string;
   tenantId: string;
   parentId?: string;
-  type: 'ROOT_CHURCH' | 'REGION' | 'CHURCH' | 'SUB_CHURCH' | 'CAMPUS' | 'ASSEMBLY' | 'DEPARTMENT' | 'GROUP';
+  type: 'ROOT_CHURCH' | 'REGION' | 'CHURCH' | 'SUB_CHURCH' | 'CAMPUS' | 'ASSEMBLY' | 'DISTRICT' | 'DEPARTMENT' | 'GROUP';
   name: string;
   code: string;
   slug?: string;
@@ -209,6 +209,8 @@ export interface TenantContextValue {
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
   hasFeature: (feature: string) => boolean;
+  /** G5.4 : true seulement si le serveur a résolu le module explicitement désactivé. */
+  isFeatureBlocked: (feature: string) => boolean;
   canAccess: (resource: string, action: string, scopeType?: string, scopeId?: string) => boolean;
   isQuotaExceeded: (quota: keyof Quotas) => boolean;
 
@@ -222,6 +224,7 @@ export interface SwitchTenantResponse {
   tenantId: string;
   tenantName: string;
   role: string;
+  /** G5.4 (§55) : nouveaux JWT portant le claim tenantId du tenant choisi. */
   accessToken?: string;
   refreshToken?: string;
   message: string;

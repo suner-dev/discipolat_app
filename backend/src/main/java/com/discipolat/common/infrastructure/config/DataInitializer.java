@@ -8,6 +8,9 @@ import com.discipolat.modules.members.domain.MemberDepartment;
 import com.discipolat.modules.members.domain.MemberDepartmentRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.spaces.domain.Space;
+import com.discipolat.modules.spaces.domain.SpaceRepository;
+import com.discipolat.modules.spaces.domain.SpaceType;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -46,6 +50,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final TenantMembershipRepository membershipRepository;
     private final OrganizationNodeRepository orgNodeRepository;
+    private final SpaceRepository spaceRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
     private final SaasPlanRepository planRepository;
     private final TenantRepository tenantRepository;
@@ -79,6 +84,7 @@ public class DataInitializer implements CommandLineRunner {
                            PermissionRepository permissionRepository,
                            TenantMembershipRepository membershipRepository,
                            OrganizationNodeRepository orgNodeRepository,
+                           SpaceRepository spaceRepository,
                            TenantSubscriptionRepository subscriptionRepository,
                            SaasPlanRepository planRepository,
                            TenantRepository tenantRepository) {
@@ -91,6 +97,7 @@ public class DataInitializer implements CommandLineRunner {
         this.permissionRepository = permissionRepository;
         this.membershipRepository = membershipRepository;
         this.orgNodeRepository = orgNodeRepository;
+        this.spaceRepository = spaceRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.tenantRepository = tenantRepository;
@@ -185,6 +192,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // Espace Membre : âme liée au compte membre + départements ministères
         seedMemberSpace();
+
+        // §G6.4 — Unités d'organisation + espaces unifiés de démonstration (CP2)
+        seedDemoOrganization();
 
         // Multi-tenant: seed organisations, subscriptions
         seedDefaultMemberships();
@@ -357,6 +367,64 @@ public class DataInitializer implements CommandLineRunner {
                     log.info("✅ Membre {} affecté au département {}", membre.getEmail(), deptNom);
                 }
             });
+        }
+    }
+
+    /**
+     * §G6.4 — Arborescence d'organisation + espaces unifiés (G2.6) de démonstration
+     * pour le tenant par défaut. Sur une installation vierge, AUCUNE unité
+     * d'organisation ni AUCUN espace n'existe : le parcours critique « répertoire →
+     * affecter une fiche à un espace » (E2E CP2) est alors impossible, même pour un
+     * pasteur. Idempotent : ne crée que les objets absents (clés ROOT_DEMO,
+     * DEPT_CHORALE, DEPT_AUDIO), ne touche jamais aux données existantes.
+     */
+    private void seedDemoOrganization() {
+        UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)
+                .map(Tenant::getId)
+                .orElse(null);
+        if (tenantId == null) {
+            return;
+        }
+
+        OrganizationNode root = orgNodeRepository.findRootByTenantId(tenantId).orElseGet(() ->
+                orgNodeRepository.save(OrganizationNode.builder()
+                        .tenantId(tenantId)
+                        .type(OrganizationNodeType.ROOT_CHURCH)
+                        .name("Église de démonstration")
+                        .code("ROOT_DEMO")
+                        .path("root_demo")
+                        .level(0)
+                        .status(OrganizationNodeStatus.ACTIVE)
+                        .timezone("Africa/Douala")
+                        .build()));
+
+        for (String[] dept : List.of(
+                new String[]{"DEPT_CHORALE", "Chorale", "Département musique (démo)"},
+                new String[]{"DEPT_AUDIO", "Audiovisuel", "Département technique (démo)"})) {
+            OrganizationNode unit = orgNodeRepository.findByTenantIdAndCode(tenantId, dept[0]).orElseGet(() ->
+                    orgNodeRepository.save(OrganizationNode.builder()
+                            .tenantId(tenantId)
+                            .parentId(root.getId())
+                            .type(OrganizationNodeType.DEPARTMENT)
+                            .name(dept[1])
+                            .code(dept[0])
+                            .path(root.getPath() + "." + dept[0].toLowerCase(Locale.ROOT))
+                            .level(root.getLevel() + 1)
+                            .status(OrganizationNodeStatus.ACTIVE)
+                            .timezone(root.getTimezone())
+                            .description(dept[2])
+                            .build()));
+            if (spaceRepository.findByTenantIdAndOrganizationUnitId(tenantId, unit.getId()).isEmpty()) {
+                spaceRepository.save(Space.builder()
+                        .tenantId(tenantId)
+                        .organizationUnitId(unit.getId())
+                        .spaceType(SpaceType.DEPARTMENT)
+                        .name(unit.getName())
+                        .code("SPACE_" + unit.getCode())
+                        .description(unit.getDescription())
+                        .build());
+                log.info("✅ Espace de démonstration « {} » créé (unité {})", unit.getName(), unit.getCode());
+            }
         }
     }
 

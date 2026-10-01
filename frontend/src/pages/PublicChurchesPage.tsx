@@ -6,7 +6,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
 import { Building2, Globe, MapPin, Search } from 'lucide-react';
 
-interface PublicChurch { name: string; city?: string; country?: string; denomination?: string; website?: string; description?: string; }
+interface PublicChurch { name: string; slug?: string; city?: string; country?: string; denomination?: string; website?: string; description?: string; }
 const API_BASE = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL ?? '';
 
 /** G6.9 — Annuaire public « Eglises sur Discipolat » (opt-in individuel, aucune PII). */
@@ -59,13 +59,15 @@ export default function PublicChurchesPage() {
         : churches.length === 0 ? <EmptyState title="Aucune eglise publiee" message="Soyez la premiere eglise du reseau." action={{ label: "Rejoindre", onClick: () => { window.location.href = '/register'; }} } />
         : <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {churches.map((c, i) => (
-            <article key={`${c.name}-${i}`} className="rounded-2xl border p-5 flex flex-col gap-2">
+            <article key={`${c.slug ?? c.name}-${i}`} className="rounded-2xl border p-5 flex flex-col gap-2">
               <h2 className="font-bold flex items-center gap-2"><Building2 className="w-5 h-5" /> {c.name}</h2>
               {(c.city || c.country) && <p className="text-xs text-gray-500">{[c.city, c.country].filter(Boolean).join(', ')}</p>}
               {c.description && <p className="text-sm line-clamp-4">{c.description}</p>}
               <div className="mt-auto pt-3 flex gap-3">
                 {c.website && <a href={c.website} target="_blank" rel="noreferrer" className="text-xs underline flex gap-1"><Globe className="w-3.5 h-3.5" /> Site</a>}
-                <Link to="/register" className="text-xs underline">Rejoindre</Link>
+                {/* Develop1 §G3.1 : l'annuaire public mene vers l'inscription « au nom de
+                    cette église » (/register?tenant=<slug>) quand le slug est exposé. */}
+                <Link to={c.slug ? `/register?tenant=${encodeURIComponent(c.slug)}` : '/register'} className="text-xs underline">Rejoindre</Link>
               </div>
             </article>
           ))}

@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'data/services/api_service.dart';
+import 'data/services/realtime_bus_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/screens/ai_assistant/ai_assistant_screen.dart';
 import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
@@ -27,6 +30,11 @@ import 'presentation/screens/alerts/smart_alerts_screen.dart';
 import 'presentation/screens/notifications/notifications_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/family_space/family_space_screen.dart';
+// PORT Develop1 — écrans livrés par Develop1, câblés ici (routes + garde rôles).
+import 'presentation/screens/streak/streak_screen.dart';
+import 'presentation/screens/asset_field/asset_field_screen.dart';
+import 'presentation/screens/pastoral/pastoral_ministry_screen.dart';
+import 'presentation/screens/admin/admin_field_console_screen.dart';
 import 'presentation/screens/prayers/prayers_list_screen.dart';
 import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
@@ -307,6 +315,62 @@ class AuthState {
         TenantConfig.isMultiTenantActive;
   }
 
+  // ── §G4.4 Rôles vivants (mobile) ────────────────────────────────
+  // Un push `PermissionsChanged` (nomination/fin de mandat pastoral, rôle
+  // assigné ou retiré) recharge la session via GET /auth/me — SANS
+  // déconnexion : les widgets qui écoutent [permissionsEpoch] re-rendent
+  // menus et actions à chaud.
+
+  /// Compteur incrémenté à chaque re-câblage live des droits.
+  final ValueNotifier<int> permissionsEpoch = ValueNotifier<int>(0);
+  StreamSubscription? _liveRolesSub;
+
+  /// Injectable pour les tests (widget/unit) ; null → ApiService réel.
+  ApiService? livePermissionsApi;
+
+  /// Re-pulls le rôle actif + la liste des rôles depuis le serveur.
+  Future<void> refreshLivePermissions() async {
+    try {
+      final res = await (livePermissionsApi ?? ApiService()).get('/auth/me');
+      final data = res.data;
+      if (data is! Map) return;
+      final roles = _contractRoleList(data['roles'], null);
+      if (roles.isNotEmpty) _roles = roles;
+      final newRole =
+          _contractRole(data['activeRole']) ?? _contractRole(data['role']);
+      if (newRole != null && newRole.isNotEmpty) {
+        _activeRole = newRole;
+        _userRole = newRole;
+      } else if (_activeRole.isNotEmpty && !_roles.contains(_activeRole)) {
+        // Rétrogradation : l'ancien rôle actif n'existe plus → retombe sur
+        // le premier rôle restant (jamais une déconnexion).
+        _activeRole = _roles.isNotEmpty ? _roles.first : '';
+        _userRole = _activeRole;
+      }
+      _estChefDeFamille = data['estChefDeFamille'] as bool? ?? _estChefDeFamille;
+      permissionsEpoch.value++;
+    } catch (e) {
+      // Best-effort : REST indisponible → le prochain événement ou un
+      // refresh manuel rattrapera ; jamais de logout forcé (§G4.4-4).
+      debugPrint('[AuthState] refreshLivePermissions ignoré: $e');
+    }
+  }
+
+  /// Écoute le firehose et recâble la session sur événements de droits.
+  void _listenLiveRoles() {
+    _liveRolesSub?.cancel();
+    const liveTypes = {
+      'PermissionsChanged', 'PastorAppointed', 'PastorEnded',
+      'RoleAssigned', 'RoleEnded',
+    };
+    _liveRolesSub = RealtimeBus.instance.events.listen((e) {
+      if (!liveTypes.contains(e.eventType)) return;
+      final target = e.payload['userId']?.toString();
+      if (target != null && target != _userId) return; // pas pour moi
+      unawaited(refreshLivePermissions());
+    });
+  }
+
   void setAuthenticated(bool value, {Map<String, dynamic>? userData}) {
     _isAuthenticated = value;
     if (!value) {
@@ -337,6 +401,8 @@ class AuthState {
       if (_orgId != null) {
         TenantConfig.setOrgId(_orgId!);
       }
+      // §G4.4 — rôles vivants : recâblage session à chaud sur push temps réel.
+      _listenLiveRoles();
     }
   }
 
@@ -375,6 +441,9 @@ class AuthState {
     _orgId = null;
     // Clear tenant config on logout
     TenantConfig.clearOrgId();
+    // §G4.4 — stopper l'écoute des rôles vivants.
+    _liveRolesSub?.cancel();
+    _liveRolesSub = null;
   }
 }
 
@@ -948,6 +1017,11 @@ Map<String, List<String>> _routeRoles = {
     'MEMBRE'
   ],
   '/sermon-translations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'MEMBRE'],
+  // PORT Develop1 — registre d'accès des écrans portés (parité D1 §G5/G6).
+  '/asset-field': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/family-space': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/pastoral': ['ADMIN', 'PASTEUR', 'PASTOR_PRINCIPAL'],
+  '/admin-console': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/spiritual-journal': [
     'ADMIN',
     'PASTEUR',
@@ -1882,6 +1956,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const AdminRequestsScreen(),
     ),
     GoRoute(
+      path: '/admin-console',
+      name: 'admin-console',
+      builder: (context, state) => const AdminFieldConsoleScreen()),
+    GoRoute(
       path: '/dev-plans',
       name: 'dev-plans',
       builder: (context, state) => const DevelopmentPlanScreen(),
@@ -1979,6 +2057,19 @@ final appRouter = GoRouter(
         path: '/family-space',
         name: 'family-space',
         builder: (ctx, s) => const FamilySpaceScreen()),
+    // PORT Develop1 — routes livrées par Develop1 et absentes de main.
+    GoRoute(
+        path: '/streak',
+        name: 'streak',
+        builder: (ctx, s) => const StreakScreen()),
+    GoRoute(
+        path: '/pastoral',
+        name: 'pastoral-ministry',
+        builder: (ctx, s) => const PastoralMinistryScreen()),
+    GoRoute(
+        path: '/asset-field',
+        name: 'asset-field',
+        builder: (ctx, s) => const AssetFieldScreen()),
     GoRoute(
         path: '/reverse-mentoring',
         name: 'reverse-mentoring',

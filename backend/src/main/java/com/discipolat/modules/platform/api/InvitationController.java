@@ -54,6 +54,8 @@ public class InvitationController {
     private final AuditService auditService;
     private final com.discipolat.modules.authentication.domain.EmailService emailService;
     private final com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter;
+    /** §G6.4/§391 — acceptation d'invitation = inscription AUTOMATIQUE au répertoire. */
+    private final com.discipolat.modules.people.service.PeopleService peopleService;
     private final String frontendUrl;
 
     public InvitationController(InvitationRepository invitationRepository,
@@ -67,6 +69,7 @@ public class InvitationController {
                                  AuditService auditService,
                                  com.discipolat.modules.authentication.domain.EmailService emailService,
                                  com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter,
+                                 com.discipolat.modules.people.service.PeopleService peopleService,
                                 @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.invitationRepository = invitationRepository;
         this.invitationService = invitationService;
@@ -79,11 +82,20 @@ public class InvitationController {
         this.auditService = auditService;
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
+        this.peopleService = peopleService;
         this.frontendUrl = frontendUrl;
     }
 
     // ==================== CREATE INVITATION ====================
 
+    // §G6.4 — LE GUARD ÉTAIT MORT EN PRODUCTION : les autorités JWT ne portent
+    // que les rôles actifs réels (ROLE_PASTEUR, ROLE_ADMIN, …) — « TENANT_OWNER /
+    // TENANT_ADMIN » ne sont jamais émis par JwtAuthenticationFilter, donc AUCUN
+    // utilisateur réel ne pouvait inviter (403 systématique, vérifié E2E).
+    // Les rôles tenant-admin du gestionnaire d'espaces (SpaceService.
+    // TENANT_ADMIN_ROLE_KEYS) pilotent désormais la garde ; RESPONSABLE reste
+    // exclu : inviter un rôle RESPONSABLE sans assertCanAssignRoles serait une
+    // escalation de privilèges déléguée aux chefs de département.
     @PostMapping
     @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<Map<String, Object>> createInvitation(@RequestBody Map<String, Object> request) {
@@ -314,6 +326,11 @@ public class InvitationController {
         auditService.logSimple("INVITATION_RESENT", "INVITATION", id);
 
         String invitationLink = invitationLink(newToken);
+        // §G5.5 — Le renvoi recharge réellement l'email via sendInvitationEmail
+        // (SMTP configurable ; échec non bloquant : le lien renvoye reste affichable
+        // cote admin). Un seul envoi : sendInvitationEmail encapsule deja l'appel
+        // emailService.send — le bloc inline duplique herite de la fusion Develop1
+        // provoquait un DOUBLE emailService.send (retourne a 2 attempts).
         boolean emailSent = sendInvitationEmail(
                 inv.getEmail(), inv.getRole(), tenantId, invitationLink);
 
@@ -336,6 +353,9 @@ public class InvitationController {
         Optional<OrganizationNode> orgNode = inv.getOrganizationNodeId() != null ?
                 orgNodeRepository.findById(inv.getOrganizationNodeId()) : Optional.empty();
 
+        // §G6.4 — HashMap et pas Map.of : organizationName est légalement null
+        // (invitation sans nœud organisationnel) → Map.of rejetait le null (NPE 500).
+        // main applique déjà cette correction et ajoute `accountExists` (B4/D3).
         Map<String, Object> response = new HashMap<>();
         response.put("valid", true);
         response.put("email", inv.getEmail());

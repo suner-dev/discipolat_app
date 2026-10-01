@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../services/api_service.dart';
@@ -209,14 +210,19 @@ class SyncService {
       final faiseurId = await _resolveFaiseurId(tenantId, ameId);
       if (faiseurId != null) payload['faiseurId'] = faiseurId;
     }
-    await _db.addToSyncQueue(SyncQueueItem(
+    // PORT Develop1 (§G5.7) — idempotence par client_uuid : UUID généré à la
+    // saisie terrain, jamais régénéré ; rejeu après réseau instable → doublon
+    // ignoré côté serveur (V208). Le companion accepte les défauts de colonnes.
+    final now = DateTime.now();
+    await _db.addToSyncQueue(SyncQueueTableCompanion.insert(
       id: const Uuid().v4(),
       tenantId: tenantId,
       operation: 'CREATE',
       endpoint: '/reports/maker-weekly',
       payload: jsonEncode(payload),
-      createdAt: DateTime.now().toIso8601String(),
-      retryCount: 0,
+      createdAt: now.toIso8601String(),
+      clientUuid: Value(Uuid().v4()),
+      clientAt: Value(now.toUtc().toIso8601String()),
     ));
   }
 

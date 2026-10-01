@@ -203,3 +203,96 @@ describe('AuditPage — filtres et export', () => {
     expect(click).toHaveBeenCalled();
   });
 });
+
+// §G2.9 — Vérification d'intégrité de la chaîne + historique métier par entité.
+describe('AuditPage — chaîne d’intégrité et historique métier', () => {
+  const ENTRIES_WITH_ENTITY = [
+    {
+      id: 'log-9',
+      utilisateurId: 'u-pasteur',
+      emailUtilisateur: 'pasteur@discipolat.com',
+      action: 'MODIFIER_SOUL',
+      entiteType: 'SOUL',
+      entiteId: 'soul-9',
+      createdAt: '2026-08-06T11:00:00',
+    },
+  ];
+  const HISTORY = [
+    {
+      id: 1,
+      objectType: 'SOUL',
+      objectId: 'soul-9',
+      eventType: 'STATUT_CHANGE',
+      summary: 'Nouveau converti → Membre actif',
+      actorId: 'u-pasteur',
+      actorRole: 'PASTEUR',
+      happenedAt: '2026-08-05T10:30:00',
+    },
+  ];
+
+  beforeEach(() => {
+    mockGet.mockReset();
+    mockGet.mockImplementation((url: string) => {
+      if (url.startsWith('/users')) return Promise.resolve({ data: { content: USERS } });
+      if (url.startsWith('/audit/events/verify-chain')) {
+        return Promise.resolve({ data: { valid: true, checked: 42, totalEvents: 42, headHash: 'abc123' } });
+      }
+      if (url.startsWith('/audit/history/')) return Promise.resolve({ data: HISTORY });
+      if (url.startsWith('/audit')) return Promise.resolve(pageResponse(ENTRIES_WITH_ENTITY));
+      return Promise.resolve({ data: {} });
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('vérifie la chaîne et affiche la bannière verte', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('MODIFIER_SOUL');
+
+    await user.click(screen.getByRole('button', { name: /vérifier l'intégrité de la chaîne/i }));
+
+    expect(await screen.findByText(/Chaîne d'audit intègre — 42 événements vérifiés/)).toBeInTheDocument();
+    expect(mockGet.mock.calls.some(([u]) => String(u) === '/audit/events/verify-chain')).toBe(true);
+  });
+
+  it('signale une chaîne compromise', async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url.startsWith('/users')) return Promise.resolve({ data: { content: USERS } });
+      if (url.startsWith('/audit/events/verify-chain')) {
+        return Promise.resolve({ data: { valid: false, checked: 7, totalEvents: 42, headHash: null } });
+      }
+      if (url.startsWith('/audit')) return Promise.resolve(pageResponse(ENTRIES_WITH_ENTITY));
+      return Promise.resolve({ data: {} });
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('MODIFIER_SOUL');
+
+    await user.click(screen.getByRole('button', { name: /vérifier l'intégrité de la chaîne/i }));
+
+    expect(await screen.findByText(/Intégrité compromise — rupture après 7 événements/)).toBeInTheDocument();
+  });
+
+  it('ouvre l’historique métier d’une entité depuis la ligne', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('MODIFIER_SOUL');
+
+    const btn = await screen.findByRole('button', { name: /historique/i });
+    await user.click(btn);
+
+    expect(await screen.findByText(/Historique métier de l'entité — SOUL/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGet.mock.calls.some(([u]) => String(u) === '/audit/history/SOUL/soul-9')).toBe(true);
+    });
+    expect(screen.getByText('STATUT_CHANGE')).toBeInTheDocument();
+    expect(screen.getByText('Nouveau converti → Membre actif')).toBeInTheDocument();
+    expect(screen.getByText(/Acteur PASTEUR/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fermer' }));
+    expect(screen.queryByText('STATUT_CHANGE')).not.toBeInTheDocument();
+  });
+});

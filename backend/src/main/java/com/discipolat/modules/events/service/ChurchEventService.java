@@ -49,6 +49,161 @@ public class ChurchEventService {
     private final PersonRepository personRepository;
     private final AuditEventService auditEventService;
     private final OutboxPublisher outboxPublisher;
+    /** §G3.4/§G6.4 — archives intégrales d'événement (snapshot versionné au clôturage). */
+    private final ChurchEventArchiveRepository archiveRepository;
+    private final com.discipolat.modules.dresscode.domain.DressCodeRepository dressCodeRepository;
+    private final com.discipolat.modules.dresscode.domain.DressCodeRuleRepository dressCodeRuleRepository;
+
+    // ========== ARCHIVES (§G3.4) ==========
+
+    /**
+     * Clôture et archive INTÉGRALEMENT un événement : snapshot JSON versionné
+     * (espaces, équipes, tâches, programme, matériel, dépenses, documents,
+     * présences, dress codes + règles) — jamais d'écrasement : chaque re-clôture
+     * crée une nouvelle version, l'événement passe au statut ARCHIVED.
+     */
+    public com.discipolat.modules.events.domain.ChurchEventArchive archiveEvent(
+            UUID tenantId, UUID actorId, UUID eventId) {
+        // Develop1 écrivait cette méthode sur son entité propre « ChurchEvent ».
+        // main a unifié les événements sur la table vivante `event` (V203) : une
+        // seconde entité JPA sur cette table ferait échouer Hibernate au
+        // démarrage. Le snapshot est donc lu via l'entité vivante, SANS perte : le
+        // champ archivé conserve l'instantané complet en JSONB.
+        Event event = getChurchEvent(tenantId, eventId);
+
+        List<EventSpace> spaces = eventSpaceRepository.findByChurchEventId(eventId);
+        List<EventTeam> teams = eventTeamRepository.findByChurchEventId(eventId);
+        List<EventTask> tasks = eventTaskRepository.findByTenantIdAndChurchEventIdOrderByDueAtAsc(tenantId, eventId);
+        List<EventSchedule> schedule = eventScheduleRepository.findByTenantIdAndChurchEventIdOrderByStartAtAsc(tenantId, eventId);
+        List<EventAsset> assets = eventAssetRepository.findByChurchEventId(eventId);
+        List<EventExpense> expenses = eventExpenseRepository.findByChurchEventId(eventId);
+        List<EventDocument> documents = eventDocumentRepository.findByChurchEventId(eventId);
+        List<EventAttendance> attendance = eventAttendanceRepository.findByChurchEventId(eventId);
+
+        List<Map<String, Object>> dressCodes = new ArrayList<>();
+        // §G6.4 — l'archive est un instantané HISTORIQUE : elle inclut aussi les
+        // tenues déjà archivées pour cet événement (sinon archive trouée).
+        for (var dc : dressCodeRepository.findByTenantIdAndEventId(tenantId, eventId)) {
+            Map<String, Object> d = new LinkedHashMap<>();
+            d.put("id", dc.getId().toString());
+            d.put("title", dc.getTitle());
+            d.put("serviceName", dc.getServiceName());
+            d.put("spaceId", dc.getSpaceId() != null ? dc.getSpaceId().toString() : null);
+            d.put("status", dc.getStatus());
+            d.put("rules", dressCodeRuleRepository.findByDressCodeId(dc.getId()).stream().map(r -> {
+                Map<String, Object> rr = new LinkedHashMap<>();
+                rr.put("groupName", r.getGroupName());
+                rr.put("description", r.getDescription());
+                return rr;
+            }).toList());
+            dressCodes.add(d);
+        }
+
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        LocalDateTime startAt = event.getDateDebut();
+        snapshot.put("title", event.getTitre());
+        snapshot.put("description", event.getDescription());
+        snapshot.put("type", event.getTypeEvenement());
+        snapshot.put("startAt", startAt != null ? startAt.toString() : null);
+        snapshot.put("endAt", event.getDateFin() != null ? event.getDateFin().toString() : null);
+        snapshot.put("spaces", spaces.stream().map(s -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("spaceId", s.getSpaceId().toString());
+            m.put("spaceName", spaceRepository.findById(s.getSpaceId()).map(Space::getName).orElse(null));
+            m.put("role", s.getRole());
+            return m;
+        }).toList());
+        snapshot.put("teams", teams.stream().map(t -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", t.getName());
+            m.put("description", t.getDescription());
+            return m;
+        }).toList());
+        snapshot.put("tasks", tasks.stream().map(t -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("title", t.getTitle());
+            m.put("status", t.getStatus());
+            m.put("dueAt", t.getDueAt() != null ? t.getDueAt().toString() : null);
+            return m;
+        }).toList());
+        snapshot.put("schedule", schedule.stream().map(s -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("title", s.getTitle());
+            m.put("startAt", s.getStartAt() != null ? s.getStartAt().toString() : null);
+            m.put("endAt", s.getEndAt() != null ? s.getEndAt().toString() : null);
+            return m;
+        }).toList());
+        snapshot.put("assets", assets.stream().map(a -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("assetId", a.getAssetId().toString());
+            m.put("quantity", a.getQuantity());
+            m.put("conditionBefore", a.getConditionBefore());
+            m.put("conditionAfter", a.getConditionAfter());
+            return m;
+        }).toList());
+        snapshot.put("expenses", expenses.size());
+        snapshot.put("documents", documents.size());
+        snapshot.put("attendanceCount", attendance.size());
+        snapshot.put("dressCodes", dressCodes);
+
+        int nextVersion = archiveRepository.findByEventIdOrderByVersionDesc(eventId).stream()
+                .map(com.discipolat.modules.events.domain.ChurchEventArchive::getVersion)
+                .max(Integer::compareTo).orElse(0) + 1;
+
+        event.setStatut(Event.STATUT_ARCHIVE);
+        churchEventRepository.save(event);
+
+        com.discipolat.modules.events.domain.ChurchEventArchive archive =
+                com.discipolat.modules.events.domain.ChurchEventArchive.builder()
+                        .tenantId(tenantId)
+                        .eventId(eventId)
+                        .eventTitle(event.getTitre())
+                        .eventStartAt(startAt != null ? offsetUtc(startAt) : OffsetDateTime.now())
+                        .eventYear(startAt != null ? startAt.getYear() : OffsetDateTime.now().getYear())
+                        .eventMonth(startAt != null ? startAt.getMonthValue() : OffsetDateTime.now().getMonthValue())
+                        .spaceId(spaces.isEmpty() ? null : spaces.get(0).getSpaceId())
+                        .version(nextVersion)
+                        .snapshotJson(snapshot)
+                        .archivedBy(actorId)
+                        .build();
+        com.discipolat.modules.events.domain.ChurchEventArchive saved = archiveRepository.save(archive);
+
+        auditEventService.log(tenantId, actorId, null, "EVENT_ARCHIVED", "CHURCH_EVENT", eventId,
+                Map.of(), Map.of("archiveId", saved.getId().toString(), "version", nextVersion), null, null);
+        outboxPublisher.publish(tenantId, "CHURCH_EVENT", eventId, "EventArchived",
+                Map.of("archiveId", saved.getId().toString(), "title", event.getTitre()));
+        return saved;
+    }
+
+    /** Écran « Archives » : consultation par années / mois / espace. */
+    @Transactional(readOnly = true)
+    public List<com.discipolat.modules.events.domain.ChurchEventArchive> getArchives(
+            UUID tenantId, Integer year, Integer month, UUID spaceId) {
+        List<com.discipolat.modules.events.domain.ChurchEventArchive> result;
+        if (year != null && month != null) {
+            result = archiveRepository.findByTenantIdAndEventYearAndEventMonthOrderByEventStartAtDesc(tenantId, year, month);
+        } else if (year != null) {
+            result = archiveRepository.findByTenantIdAndEventYearOrderByEventStartAtDesc(tenantId, year);
+        } else {
+            result = archiveRepository.findByTenantIdOrderByEventStartAtDesc(tenantId);
+        }
+        if (spaceId != null) {
+            result = result.stream()
+                    .filter(a -> spaceId.equals(a.getSpaceId())
+                            || a.getSnapshotJson().get("spaces") instanceof List<?> l && l.stream()
+                                    .filter(Map.class::isInstance).map(Map.class::cast)
+                                    .anyMatch(sp -> spaceId.toString().equals(sp.get("spaceId"))))
+                    .toList();
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public com.discipolat.modules.events.domain.ChurchEventArchive getArchive(UUID tenantId, UUID archiveId) {
+        return archiveRepository.findById(archiveId)
+                .filter(a -> a.getTenantId().equals(tenantId))
+                .orElseThrow(() -> new EntityNotFoundException("ChurchEventArchive", archiveId));
+    }
 
     // ========== CHURCH EVENT CRUD ==========
     // Depuis l'arbitrage D1 (V203), l'entité unique de la table « event » est

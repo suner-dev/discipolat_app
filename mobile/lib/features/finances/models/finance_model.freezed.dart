@@ -12,7 +12,8 @@ part of 'finance_model.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 Transaction _$TransactionFromJson(Map<String, dynamic> json) {
   return _Transaction.fromJson(json);
@@ -60,36 +61,38 @@ mixin _$Transaction {
 /// @nodoc
 abstract class $TransactionCopyWith<$Res> {
   factory $TransactionCopyWith(
-          Transaction value, $Res Function(Transaction) then) =
-      _$TransactionCopyWithImpl<$Res, Transaction>;
+    Transaction value,
+    $Res Function(Transaction) then,
+  ) = _$TransactionCopyWithImpl<$Res, Transaction>;
   @useResult
-  $Res call(
-      {int id,
-      String reference,
-      TransactionType type,
-      TransactionCategory category,
-      double amount,
-      String currency,
-      String? description,
-      DateTime date,
-      String? paymentMethod,
-      String? paymentReference,
-      TransactionStatus status,
-      int? accountId,
-      String? accountName,
-      int? budgetId,
-      String? budgetName,
-      int? projectId,
-      String? projectName,
-      int? donorId,
-      String? donorName,
-      bool? isAnonymous,
-      String? receiptUrl,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      bool isReconciled,
-      DateTime? reconciledAt,
-      int? reconciledBy});
+  $Res call({
+    int id,
+    String reference,
+    TransactionType type,
+    TransactionCategory category,
+    double amount,
+    String currency,
+    String? description,
+    DateTime date,
+    String? paymentMethod,
+    String? paymentReference,
+    TransactionStatus status,
+    int? accountId,
+    String? accountName,
+    int? budgetId,
+    String? budgetName,
+    int? projectId,
+    String? projectName,
+    int? donorId,
+    String? donorName,
+    bool? isAnonymous,
+    String? receiptUrl,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    bool isReconciled,
+    DateTime? reconciledAt,
+    int? reconciledBy,
+  });
 }
 
 /// @nodoc
@@ -134,112 +137,115 @@ class _$TransactionCopyWithImpl<$Res, $Val extends Transaction>
     Object? reconciledAt = freezed,
     Object? reconciledBy = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      reference: null == reference
-          ? _value.reference
-          : reference // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TransactionType,
-      category: null == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as TransactionCategory,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      date: null == date
-          ? _value.date
-          : date // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      paymentMethod: freezed == paymentMethod
-          ? _value.paymentMethod
-          : paymentMethod // ignore: cast_nullable_to_non_nullable
-              as String?,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TransactionStatus,
-      accountId: freezed == accountId
-          ? _value.accountId
-          : accountId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      accountName: freezed == accountName
-          ? _value.accountName
-          : accountName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      budgetId: freezed == budgetId
-          ? _value.budgetId
-          : budgetId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      budgetName: freezed == budgetName
-          ? _value.budgetName
-          : budgetName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      projectId: freezed == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projectName: freezed == projectName
-          ? _value.projectName
-          : projectName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorId: freezed == donorId
-          ? _value.donorId
-          : donorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      donorName: freezed == donorName
-          ? _value.donorName
-          : donorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isAnonymous: freezed == isAnonymous
-          ? _value.isAnonymous
-          : isAnonymous // ignore: cast_nullable_to_non_nullable
-              as bool?,
-      receiptUrl: freezed == receiptUrl
-          ? _value.receiptUrl
-          : receiptUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isReconciled: null == isReconciled
-          ? _value.isReconciled
-          : isReconciled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      reconciledAt: freezed == reconciledAt
-          ? _value.reconciledAt
-          : reconciledAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      reconciledBy: freezed == reconciledBy
-          ? _value.reconciledBy
-          : reconciledBy // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            reference: null == reference
+                ? _value.reference
+                : reference // ignore: cast_nullable_to_non_nullable
+                      as String,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as TransactionType,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as TransactionCategory,
+            amount: null == amount
+                ? _value.amount
+                : amount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            date: null == date
+                ? _value.date
+                : date // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            paymentMethod: freezed == paymentMethod
+                ? _value.paymentMethod
+                : paymentMethod // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            paymentReference: freezed == paymentReference
+                ? _value.paymentReference
+                : paymentReference // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TransactionStatus,
+            accountId: freezed == accountId
+                ? _value.accountId
+                : accountId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            accountName: freezed == accountName
+                ? _value.accountName
+                : accountName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            budgetId: freezed == budgetId
+                ? _value.budgetId
+                : budgetId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            budgetName: freezed == budgetName
+                ? _value.budgetName
+                : budgetName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            projectId: freezed == projectId
+                ? _value.projectId
+                : projectId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            projectName: freezed == projectName
+                ? _value.projectName
+                : projectName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            donorId: freezed == donorId
+                ? _value.donorId
+                : donorId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            donorName: freezed == donorName
+                ? _value.donorName
+                : donorName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isAnonymous: freezed == isAnonymous
+                ? _value.isAnonymous
+                : isAnonymous // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            receiptUrl: freezed == receiptUrl
+                ? _value.receiptUrl
+                : receiptUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            isReconciled: null == isReconciled
+                ? _value.isReconciled
+                : isReconciled // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            reconciledAt: freezed == reconciledAt
+                ? _value.reconciledAt
+                : reconciledAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            reconciledBy: freezed == reconciledBy
+                ? _value.reconciledBy
+                : reconciledBy // ignore: cast_nullable_to_non_nullable
+                      as int?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -247,37 +253,39 @@ class _$TransactionCopyWithImpl<$Res, $Val extends Transaction>
 abstract class _$$TransactionImplCopyWith<$Res>
     implements $TransactionCopyWith<$Res> {
   factory _$$TransactionImplCopyWith(
-          _$TransactionImpl value, $Res Function(_$TransactionImpl) then) =
-      __$$TransactionImplCopyWithImpl<$Res>;
+    _$TransactionImpl value,
+    $Res Function(_$TransactionImpl) then,
+  ) = __$$TransactionImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String reference,
-      TransactionType type,
-      TransactionCategory category,
-      double amount,
-      String currency,
-      String? description,
-      DateTime date,
-      String? paymentMethod,
-      String? paymentReference,
-      TransactionStatus status,
-      int? accountId,
-      String? accountName,
-      int? budgetId,
-      String? budgetName,
-      int? projectId,
-      String? projectName,
-      int? donorId,
-      String? donorName,
-      bool? isAnonymous,
-      String? receiptUrl,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      bool isReconciled,
-      DateTime? reconciledAt,
-      int? reconciledBy});
+  $Res call({
+    int id,
+    String reference,
+    TransactionType type,
+    TransactionCategory category,
+    double amount,
+    String currency,
+    String? description,
+    DateTime date,
+    String? paymentMethod,
+    String? paymentReference,
+    TransactionStatus status,
+    int? accountId,
+    String? accountName,
+    int? budgetId,
+    String? budgetName,
+    int? projectId,
+    String? projectName,
+    int? donorId,
+    String? donorName,
+    bool? isAnonymous,
+    String? receiptUrl,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    bool isReconciled,
+    DateTime? reconciledAt,
+    int? reconciledBy,
+  });
 }
 
 /// @nodoc
@@ -285,8 +293,9 @@ class __$$TransactionImplCopyWithImpl<$Res>
     extends _$TransactionCopyWithImpl<$Res, _$TransactionImpl>
     implements _$$TransactionImplCopyWith<$Res> {
   __$$TransactionImplCopyWithImpl(
-      _$TransactionImpl _value, $Res Function(_$TransactionImpl) _then)
-      : super(_value, _then);
+    _$TransactionImpl _value,
+    $Res Function(_$TransactionImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Transaction
   /// with the given fields replaced by the non-null parameter values.
@@ -320,145 +329,148 @@ class __$$TransactionImplCopyWithImpl<$Res>
     Object? reconciledAt = freezed,
     Object? reconciledBy = freezed,
   }) {
-    return _then(_$TransactionImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      reference: null == reference
-          ? _value.reference
-          : reference // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TransactionType,
-      category: null == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as TransactionCategory,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      date: null == date
-          ? _value.date
-          : date // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      paymentMethod: freezed == paymentMethod
-          ? _value.paymentMethod
-          : paymentMethod // ignore: cast_nullable_to_non_nullable
-              as String?,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TransactionStatus,
-      accountId: freezed == accountId
-          ? _value.accountId
-          : accountId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      accountName: freezed == accountName
-          ? _value.accountName
-          : accountName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      budgetId: freezed == budgetId
-          ? _value.budgetId
-          : budgetId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      budgetName: freezed == budgetName
-          ? _value.budgetName
-          : budgetName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      projectId: freezed == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projectName: freezed == projectName
-          ? _value.projectName
-          : projectName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorId: freezed == donorId
-          ? _value.donorId
-          : donorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      donorName: freezed == donorName
-          ? _value.donorName
-          : donorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isAnonymous: freezed == isAnonymous
-          ? _value.isAnonymous
-          : isAnonymous // ignore: cast_nullable_to_non_nullable
-              as bool?,
-      receiptUrl: freezed == receiptUrl
-          ? _value.receiptUrl
-          : receiptUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isReconciled: null == isReconciled
-          ? _value.isReconciled
-          : isReconciled // ignore: cast_nullable_to_non_nullable
-              as bool,
-      reconciledAt: freezed == reconciledAt
-          ? _value.reconciledAt
-          : reconciledAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      reconciledBy: freezed == reconciledBy
-          ? _value.reconciledBy
-          : reconciledBy // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ));
+    return _then(
+      _$TransactionImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        reference: null == reference
+            ? _value.reference
+            : reference // ignore: cast_nullable_to_non_nullable
+                  as String,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as TransactionType,
+        category: null == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as TransactionCategory,
+        amount: null == amount
+            ? _value.amount
+            : amount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        currency: null == currency
+            ? _value.currency
+            : currency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        date: null == date
+            ? _value.date
+            : date // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        paymentMethod: freezed == paymentMethod
+            ? _value.paymentMethod
+            : paymentMethod // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        paymentReference: freezed == paymentReference
+            ? _value.paymentReference
+            : paymentReference // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TransactionStatus,
+        accountId: freezed == accountId
+            ? _value.accountId
+            : accountId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        accountName: freezed == accountName
+            ? _value.accountName
+            : accountName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        budgetId: freezed == budgetId
+            ? _value.budgetId
+            : budgetId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        budgetName: freezed == budgetName
+            ? _value.budgetName
+            : budgetName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        projectId: freezed == projectId
+            ? _value.projectId
+            : projectId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        projectName: freezed == projectName
+            ? _value.projectName
+            : projectName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        donorId: freezed == donorId
+            ? _value.donorId
+            : donorId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        donorName: freezed == donorName
+            ? _value.donorName
+            : donorName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isAnonymous: freezed == isAnonymous
+            ? _value.isAnonymous
+            : isAnonymous // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        receiptUrl: freezed == receiptUrl
+            ? _value.receiptUrl
+            : receiptUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        isReconciled: null == isReconciled
+            ? _value.isReconciled
+            : isReconciled // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        reconciledAt: freezed == reconciledAt
+            ? _value.reconciledAt
+            : reconciledAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        reconciledBy: freezed == reconciledBy
+            ? _value.reconciledBy
+            : reconciledBy // ignore: cast_nullable_to_non_nullable
+                  as int?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TransactionImpl implements _Transaction {
-  const _$TransactionImpl(
-      {required this.id,
-      required this.reference,
-      required this.type,
-      required this.category,
-      required this.amount,
-      required this.currency,
-      this.description,
-      required this.date,
-      this.paymentMethod,
-      this.paymentReference,
-      required this.status,
-      this.accountId,
-      this.accountName,
-      this.budgetId,
-      this.budgetName,
-      this.projectId,
-      this.projectName,
-      this.donorId,
-      this.donorName,
-      this.isAnonymous,
-      this.receiptUrl,
-      required this.createdAt,
-      this.updatedAt,
-      this.isReconciled = false,
-      this.reconciledAt,
-      this.reconciledBy});
+  const _$TransactionImpl({
+    required this.id,
+    required this.reference,
+    required this.type,
+    required this.category,
+    required this.amount,
+    required this.currency,
+    this.description,
+    required this.date,
+    this.paymentMethod,
+    this.paymentReference,
+    required this.status,
+    this.accountId,
+    this.accountName,
+    this.budgetId,
+    this.budgetName,
+    this.projectId,
+    this.projectName,
+    this.donorId,
+    this.donorName,
+    this.isAnonymous,
+    this.receiptUrl,
+    required this.createdAt,
+    this.updatedAt,
+    this.isReconciled = false,
+    this.reconciledAt,
+    this.reconciledBy,
+  });
 
   factory _$TransactionImpl.fromJson(Map<String, dynamic> json) =>
       _$$TransactionImplFromJson(json);
@@ -578,34 +590,34 @@ class _$TransactionImpl implements _Transaction {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        reference,
-        type,
-        category,
-        amount,
-        currency,
-        description,
-        date,
-        paymentMethod,
-        paymentReference,
-        status,
-        accountId,
-        accountName,
-        budgetId,
-        budgetName,
-        projectId,
-        projectName,
-        donorId,
-        donorName,
-        isAnonymous,
-        receiptUrl,
-        createdAt,
-        updatedAt,
-        isReconciled,
-        reconciledAt,
-        reconciledBy
-      ]);
+    runtimeType,
+    id,
+    reference,
+    type,
+    category,
+    amount,
+    currency,
+    description,
+    date,
+    paymentMethod,
+    paymentReference,
+    status,
+    accountId,
+    accountName,
+    budgetId,
+    budgetName,
+    projectId,
+    projectName,
+    donorId,
+    donorName,
+    isAnonymous,
+    receiptUrl,
+    createdAt,
+    updatedAt,
+    isReconciled,
+    reconciledAt,
+    reconciledBy,
+  ]);
 
   /// Create a copy of Transaction
   /// with the given fields replaced by the non-null parameter values.
@@ -617,40 +629,39 @@ class _$TransactionImpl implements _Transaction {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TransactionImplToJson(
-      this,
-    );
+    return _$$TransactionImplToJson(this);
   }
 }
 
 abstract class _Transaction implements Transaction {
-  const factory _Transaction(
-      {required final int id,
-      required final String reference,
-      required final TransactionType type,
-      required final TransactionCategory category,
-      required final double amount,
-      required final String currency,
-      final String? description,
-      required final DateTime date,
-      final String? paymentMethod,
-      final String? paymentReference,
-      required final TransactionStatus status,
-      final int? accountId,
-      final String? accountName,
-      final int? budgetId,
-      final String? budgetName,
-      final int? projectId,
-      final String? projectName,
-      final int? donorId,
-      final String? donorName,
-      final bool? isAnonymous,
-      final String? receiptUrl,
-      required final DateTime createdAt,
-      final DateTime? updatedAt,
-      final bool isReconciled,
-      final DateTime? reconciledAt,
-      final int? reconciledBy}) = _$TransactionImpl;
+  const factory _Transaction({
+    required final int id,
+    required final String reference,
+    required final TransactionType type,
+    required final TransactionCategory category,
+    required final double amount,
+    required final String currency,
+    final String? description,
+    required final DateTime date,
+    final String? paymentMethod,
+    final String? paymentReference,
+    required final TransactionStatus status,
+    final int? accountId,
+    final String? accountName,
+    final int? budgetId,
+    final String? budgetName,
+    final int? projectId,
+    final String? projectName,
+    final int? donorId,
+    final String? donorName,
+    final bool? isAnonymous,
+    final String? receiptUrl,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+    final bool isReconciled,
+    final DateTime? reconciledAt,
+    final int? reconciledBy,
+  }) = _$TransactionImpl;
 
   factory _Transaction.fromJson(Map<String, dynamic> json) =
       _$TransactionImpl.fromJson;
@@ -750,20 +761,21 @@ abstract class $AccountCopyWith<$Res> {
   factory $AccountCopyWith(Account value, $Res Function(Account) then) =
       _$AccountCopyWithImpl<$Res, Account>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String code,
-      AccountType type,
-      String currency,
-      double balance,
-      double initialBalance,
-      String? description,
-      bool isActive,
-      int? parentId,
-      String? parentName,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String code,
+    AccountType type,
+    String currency,
+    double balance,
+    double initialBalance,
+    String? description,
+    bool isActive,
+    int? parentId,
+    String? parentName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -795,84 +807,89 @@ class _$AccountCopyWithImpl<$Res, $Val extends Account>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as AccountType,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      balance: null == balance
-          ? _value.balance
-          : balance // ignore: cast_nullable_to_non_nullable
-              as double,
-      initialBalance: null == initialBalance
-          ? _value.initialBalance
-          : initialBalance // ignore: cast_nullable_to_non_nullable
-              as double,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      parentId: freezed == parentId
-          ? _value.parentId
-          : parentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentName: freezed == parentName
-          ? _value.parentName
-          : parentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            code: null == code
+                ? _value.code
+                : code // ignore: cast_nullable_to_non_nullable
+                      as String,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as AccountType,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            balance: null == balance
+                ? _value.balance
+                : balance // ignore: cast_nullable_to_non_nullable
+                      as double,
+            initialBalance: null == initialBalance
+                ? _value.initialBalance
+                : initialBalance // ignore: cast_nullable_to_non_nullable
+                      as double,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            parentId: freezed == parentId
+                ? _value.parentId
+                : parentId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            parentName: freezed == parentName
+                ? _value.parentName
+                : parentName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$AccountImplCopyWith<$Res> implements $AccountCopyWith<$Res> {
   factory _$$AccountImplCopyWith(
-          _$AccountImpl value, $Res Function(_$AccountImpl) then) =
-      __$$AccountImplCopyWithImpl<$Res>;
+    _$AccountImpl value,
+    $Res Function(_$AccountImpl) then,
+  ) = __$$AccountImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String code,
-      AccountType type,
-      String currency,
-      double balance,
-      double initialBalance,
-      String? description,
-      bool isActive,
-      int? parentId,
-      String? parentName,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String code,
+    AccountType type,
+    String currency,
+    double balance,
+    double initialBalance,
+    String? description,
+    bool isActive,
+    int? parentId,
+    String? parentName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -880,8 +897,9 @@ class __$$AccountImplCopyWithImpl<$Res>
     extends _$AccountCopyWithImpl<$Res, _$AccountImpl>
     implements _$$AccountImplCopyWith<$Res> {
   __$$AccountImplCopyWithImpl(
-      _$AccountImpl _value, $Res Function(_$AccountImpl) _then)
-      : super(_value, _then);
+    _$AccountImpl _value,
+    $Res Function(_$AccountImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Account
   /// with the given fields replaced by the non-null parameter values.
@@ -902,80 +920,83 @@ class __$$AccountImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$AccountImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as AccountType,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      balance: null == balance
-          ? _value.balance
-          : balance // ignore: cast_nullable_to_non_nullable
-              as double,
-      initialBalance: null == initialBalance
-          ? _value.initialBalance
-          : initialBalance // ignore: cast_nullable_to_non_nullable
-              as double,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      parentId: freezed == parentId
-          ? _value.parentId
-          : parentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentName: freezed == parentName
-          ? _value.parentName
-          : parentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$AccountImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        code: null == code
+            ? _value.code
+            : code // ignore: cast_nullable_to_non_nullable
+                  as String,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as AccountType,
+        currency: null == currency
+            ? _value.currency
+            : currency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        balance: null == balance
+            ? _value.balance
+            : balance // ignore: cast_nullable_to_non_nullable
+                  as double,
+        initialBalance: null == initialBalance
+            ? _value.initialBalance
+            : initialBalance // ignore: cast_nullable_to_non_nullable
+                  as double,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        parentId: freezed == parentId
+            ? _value.parentId
+            : parentId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        parentName: freezed == parentName
+            ? _value.parentName
+            : parentName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$AccountImpl implements _Account {
-  const _$AccountImpl(
-      {required this.id,
-      required this.name,
-      required this.code,
-      required this.type,
-      required this.currency,
-      this.balance = 0.0,
-      this.initialBalance = 0.0,
-      this.description,
-      this.isActive = true,
-      this.parentId,
-      this.parentName,
-      required this.createdAt,
-      this.updatedAt});
+  const _$AccountImpl({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.type,
+    required this.currency,
+    this.balance = 0.0,
+    this.initialBalance = 0.0,
+    this.description,
+    this.isActive = true,
+    this.parentId,
+    this.parentName,
+    required this.createdAt,
+    this.updatedAt,
+  });
 
   factory _$AccountImpl.fromJson(Map<String, dynamic> json) =>
       _$$AccountImplFromJson(json);
@@ -1046,20 +1067,21 @@ class _$AccountImpl implements _Account {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      code,
-      type,
-      currency,
-      balance,
-      initialBalance,
-      description,
-      isActive,
-      parentId,
-      parentName,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    code,
+    type,
+    currency,
+    balance,
+    initialBalance,
+    description,
+    isActive,
+    parentId,
+    parentName,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of Account
   /// with the given fields replaced by the non-null parameter values.
@@ -1071,27 +1093,26 @@ class _$AccountImpl implements _Account {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$AccountImplToJson(
-      this,
-    );
+    return _$$AccountImplToJson(this);
   }
 }
 
 abstract class _Account implements Account {
-  const factory _Account(
-      {required final int id,
-      required final String name,
-      required final String code,
-      required final AccountType type,
-      required final String currency,
-      final double balance,
-      final double initialBalance,
-      final String? description,
-      final bool isActive,
-      final int? parentId,
-      final String? parentName,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$AccountImpl;
+  const factory _Account({
+    required final int id,
+    required final String name,
+    required final String code,
+    required final AccountType type,
+    required final String currency,
+    final double balance,
+    final double initialBalance,
+    final String? description,
+    final bool isActive,
+    final int? parentId,
+    final String? parentName,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$AccountImpl;
 
   factory _Account.fromJson(Map<String, dynamic> json) = _$AccountImpl.fromJson;
 
@@ -1165,21 +1186,22 @@ abstract class $BudgetCopyWith<$Res> {
   factory $BudgetCopyWith(Budget value, $Res Function(Budget) then) =
       _$BudgetCopyWithImpl<$Res, Budget>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String code,
-      double allocatedAmount,
-      double spentAmount,
-      String currency,
-      DateTime startDate,
-      DateTime endDate,
-      bool isActive,
-      String? description,
-      int? departmentId,
-      String? departmentName,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String code,
+    double allocatedAmount,
+    double spentAmount,
+    String currency,
+    DateTime startDate,
+    DateTime endDate,
+    bool isActive,
+    String? description,
+    int? departmentId,
+    String? departmentName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1212,89 +1234,94 @@ class _$BudgetCopyWithImpl<$Res, $Val extends Budget>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String,
-      allocatedAmount: null == allocatedAmount
-          ? _value.allocatedAmount
-          : allocatedAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      spentAmount: null == spentAmount
-          ? _value.spentAmount
-          : spentAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            code: null == code
+                ? _value.code
+                : code // ignore: cast_nullable_to_non_nullable
+                      as String,
+            allocatedAmount: null == allocatedAmount
+                ? _value.allocatedAmount
+                : allocatedAmount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            spentAmount: null == spentAmount
+                ? _value.spentAmount
+                : spentAmount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            startDate: null == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endDate: null == endDate
+                ? _value.endDate
+                : endDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            departmentId: freezed == departmentId
+                ? _value.departmentId
+                : departmentId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            departmentName: freezed == departmentName
+                ? _value.departmentName
+                : departmentName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$BudgetImplCopyWith<$Res> implements $BudgetCopyWith<$Res> {
   factory _$$BudgetImplCopyWith(
-          _$BudgetImpl value, $Res Function(_$BudgetImpl) then) =
-      __$$BudgetImplCopyWithImpl<$Res>;
+    _$BudgetImpl value,
+    $Res Function(_$BudgetImpl) then,
+  ) = __$$BudgetImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String code,
-      double allocatedAmount,
-      double spentAmount,
-      String currency,
-      DateTime startDate,
-      DateTime endDate,
-      bool isActive,
-      String? description,
-      int? departmentId,
-      String? departmentName,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String code,
+    double allocatedAmount,
+    double spentAmount,
+    String currency,
+    DateTime startDate,
+    DateTime endDate,
+    bool isActive,
+    String? description,
+    int? departmentId,
+    String? departmentName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1302,8 +1329,9 @@ class __$$BudgetImplCopyWithImpl<$Res>
     extends _$BudgetCopyWithImpl<$Res, _$BudgetImpl>
     implements _$$BudgetImplCopyWith<$Res> {
   __$$BudgetImplCopyWithImpl(
-      _$BudgetImpl _value, $Res Function(_$BudgetImpl) _then)
-      : super(_value, _then);
+    _$BudgetImpl _value,
+    $Res Function(_$BudgetImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Budget
   /// with the given fields replaced by the non-null parameter values.
@@ -1325,85 +1353,88 @@ class __$$BudgetImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$BudgetImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      code: null == code
-          ? _value.code
-          : code // ignore: cast_nullable_to_non_nullable
-              as String,
-      allocatedAmount: null == allocatedAmount
-          ? _value.allocatedAmount
-          : allocatedAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      spentAmount: null == spentAmount
-          ? _value.spentAmount
-          : spentAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$BudgetImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        code: null == code
+            ? _value.code
+            : code // ignore: cast_nullable_to_non_nullable
+                  as String,
+        allocatedAmount: null == allocatedAmount
+            ? _value.allocatedAmount
+            : allocatedAmount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        spentAmount: null == spentAmount
+            ? _value.spentAmount
+            : spentAmount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        currency: null == currency
+            ? _value.currency
+            : currency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        startDate: null == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endDate: null == endDate
+            ? _value.endDate
+            : endDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        departmentId: freezed == departmentId
+            ? _value.departmentId
+            : departmentId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        departmentName: freezed == departmentName
+            ? _value.departmentName
+            : departmentName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$BudgetImpl implements _Budget {
-  const _$BudgetImpl(
-      {required this.id,
-      required this.name,
-      required this.code,
-      required this.allocatedAmount,
-      this.spentAmount = 0.0,
-      required this.currency,
-      required this.startDate,
-      required this.endDate,
-      this.isActive = true,
-      this.description,
-      this.departmentId,
-      this.departmentName,
-      required this.createdAt,
-      this.updatedAt});
+  const _$BudgetImpl({
+    required this.id,
+    required this.name,
+    required this.code,
+    required this.allocatedAmount,
+    this.spentAmount = 0.0,
+    required this.currency,
+    required this.startDate,
+    required this.endDate,
+    this.isActive = true,
+    this.description,
+    this.departmentId,
+    this.departmentName,
+    required this.createdAt,
+    this.updatedAt,
+  });
 
   factory _$BudgetImpl.fromJson(Map<String, dynamic> json) =>
       _$$BudgetImplFromJson(json);
@@ -1478,21 +1509,22 @@ class _$BudgetImpl implements _Budget {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      code,
-      allocatedAmount,
-      spentAmount,
-      currency,
-      startDate,
-      endDate,
-      isActive,
-      description,
-      departmentId,
-      departmentName,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    code,
+    allocatedAmount,
+    spentAmount,
+    currency,
+    startDate,
+    endDate,
+    isActive,
+    description,
+    departmentId,
+    departmentName,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of Budget
   /// with the given fields replaced by the non-null parameter values.
@@ -1504,28 +1536,27 @@ class _$BudgetImpl implements _Budget {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$BudgetImplToJson(
-      this,
-    );
+    return _$$BudgetImplToJson(this);
   }
 }
 
 abstract class _Budget implements Budget {
-  const factory _Budget(
-      {required final int id,
-      required final String name,
-      required final String code,
-      required final double allocatedAmount,
-      final double spentAmount,
-      required final String currency,
-      required final DateTime startDate,
-      required final DateTime endDate,
-      final bool isActive,
-      final String? description,
-      final int? departmentId,
-      final String? departmentName,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$BudgetImpl;
+  const factory _Budget({
+    required final int id,
+    required final String name,
+    required final String code,
+    required final double allocatedAmount,
+    final double spentAmount,
+    required final String currency,
+    required final DateTime startDate,
+    required final DateTime endDate,
+    final bool isActive,
+    final String? description,
+    final int? departmentId,
+    final String? departmentName,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$BudgetImpl;
 
   factory _Budget.fromJson(Map<String, dynamic> json) = _$BudgetImpl.fromJson;
 
@@ -1604,24 +1635,25 @@ abstract class $TontineCopyWith<$Res> {
   factory $TontineCopyWith(Tontine value, $Res Function(Tontine) then) =
       _$TontineCopyWithImpl<$Res, Tontine>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String description,
-      double contributionAmount,
-      TontineFrequency frequency,
-      int maxMembers,
-      int currentMembers,
-      DateTime startDate,
-      DateTime? endDate,
-      TontineStatus status,
-      String currency,
-      int? managerId,
-      String? managerName,
-      String? payoutMethod,
-      bool isPublic,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String description,
+    double contributionAmount,
+    TontineFrequency frequency,
+    int maxMembers,
+    int currentMembers,
+    DateTime startDate,
+    DateTime? endDate,
+    TontineStatus status,
+    String currency,
+    int? managerId,
+    String? managerName,
+    String? payoutMethod,
+    bool isPublic,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1657,104 +1689,109 @@ class _$TontineCopyWithImpl<$Res, $Val extends Tontine>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: null == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String,
-      contributionAmount: null == contributionAmount
-          ? _value.contributionAmount
-          : contributionAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      frequency: null == frequency
-          ? _value.frequency
-          : frequency // ignore: cast_nullable_to_non_nullable
-              as TontineFrequency,
-      maxMembers: null == maxMembers
-          ? _value.maxMembers
-          : maxMembers // ignore: cast_nullable_to_non_nullable
-              as int,
-      currentMembers: null == currentMembers
-          ? _value.currentMembers
-          : currentMembers // ignore: cast_nullable_to_non_nullable
-              as int,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: freezed == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontineStatus,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      managerId: freezed == managerId
-          ? _value.managerId
-          : managerId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      managerName: freezed == managerName
-          ? _value.managerName
-          : managerName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      payoutMethod: freezed == payoutMethod
-          ? _value.payoutMethod
-          : payoutMethod // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isPublic: null == isPublic
-          ? _value.isPublic
-          : isPublic // ignore: cast_nullable_to_non_nullable
-              as bool,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: null == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String,
+            contributionAmount: null == contributionAmount
+                ? _value.contributionAmount
+                : contributionAmount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            frequency: null == frequency
+                ? _value.frequency
+                : frequency // ignore: cast_nullable_to_non_nullable
+                      as TontineFrequency,
+            maxMembers: null == maxMembers
+                ? _value.maxMembers
+                : maxMembers // ignore: cast_nullable_to_non_nullable
+                      as int,
+            currentMembers: null == currentMembers
+                ? _value.currentMembers
+                : currentMembers // ignore: cast_nullable_to_non_nullable
+                      as int,
+            startDate: null == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endDate: freezed == endDate
+                ? _value.endDate
+                : endDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TontineStatus,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            managerId: freezed == managerId
+                ? _value.managerId
+                : managerId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            managerName: freezed == managerName
+                ? _value.managerName
+                : managerName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            payoutMethod: freezed == payoutMethod
+                ? _value.payoutMethod
+                : payoutMethod // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isPublic: null == isPublic
+                ? _value.isPublic
+                : isPublic // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TontineImplCopyWith<$Res> implements $TontineCopyWith<$Res> {
   factory _$$TontineImplCopyWith(
-          _$TontineImpl value, $Res Function(_$TontineImpl) then) =
-      __$$TontineImplCopyWithImpl<$Res>;
+    _$TontineImpl value,
+    $Res Function(_$TontineImpl) then,
+  ) = __$$TontineImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String description,
-      double contributionAmount,
-      TontineFrequency frequency,
-      int maxMembers,
-      int currentMembers,
-      DateTime startDate,
-      DateTime? endDate,
-      TontineStatus status,
-      String currency,
-      int? managerId,
-      String? managerName,
-      String? payoutMethod,
-      bool isPublic,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String description,
+    double contributionAmount,
+    TontineFrequency frequency,
+    int maxMembers,
+    int currentMembers,
+    DateTime startDate,
+    DateTime? endDate,
+    TontineStatus status,
+    String currency,
+    int? managerId,
+    String? managerName,
+    String? payoutMethod,
+    bool isPublic,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1762,8 +1799,9 @@ class __$$TontineImplCopyWithImpl<$Res>
     extends _$TontineCopyWithImpl<$Res, _$TontineImpl>
     implements _$$TontineImplCopyWith<$Res> {
   __$$TontineImplCopyWithImpl(
-      _$TontineImpl _value, $Res Function(_$TontineImpl) _then)
-      : super(_value, _then);
+    _$TontineImpl _value,
+    $Res Function(_$TontineImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Tontine
   /// with the given fields replaced by the non-null parameter values.
@@ -1788,100 +1826,103 @@ class __$$TontineImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$TontineImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: null == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String,
-      contributionAmount: null == contributionAmount
-          ? _value.contributionAmount
-          : contributionAmount // ignore: cast_nullable_to_non_nullable
-              as double,
-      frequency: null == frequency
-          ? _value.frequency
-          : frequency // ignore: cast_nullable_to_non_nullable
-              as TontineFrequency,
-      maxMembers: null == maxMembers
-          ? _value.maxMembers
-          : maxMembers // ignore: cast_nullable_to_non_nullable
-              as int,
-      currentMembers: null == currentMembers
-          ? _value.currentMembers
-          : currentMembers // ignore: cast_nullable_to_non_nullable
-              as int,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: freezed == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontineStatus,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      managerId: freezed == managerId
-          ? _value.managerId
-          : managerId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      managerName: freezed == managerName
-          ? _value.managerName
-          : managerName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      payoutMethod: freezed == payoutMethod
-          ? _value.payoutMethod
-          : payoutMethod // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isPublic: null == isPublic
-          ? _value.isPublic
-          : isPublic // ignore: cast_nullable_to_non_nullable
-              as bool,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$TontineImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: null == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String,
+        contributionAmount: null == contributionAmount
+            ? _value.contributionAmount
+            : contributionAmount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        frequency: null == frequency
+            ? _value.frequency
+            : frequency // ignore: cast_nullable_to_non_nullable
+                  as TontineFrequency,
+        maxMembers: null == maxMembers
+            ? _value.maxMembers
+            : maxMembers // ignore: cast_nullable_to_non_nullable
+                  as int,
+        currentMembers: null == currentMembers
+            ? _value.currentMembers
+            : currentMembers // ignore: cast_nullable_to_non_nullable
+                  as int,
+        startDate: null == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endDate: freezed == endDate
+            ? _value.endDate
+            : endDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TontineStatus,
+        currency: null == currency
+            ? _value.currency
+            : currency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        managerId: freezed == managerId
+            ? _value.managerId
+            : managerId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        managerName: freezed == managerName
+            ? _value.managerName
+            : managerName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        payoutMethod: freezed == payoutMethod
+            ? _value.payoutMethod
+            : payoutMethod // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isPublic: null == isPublic
+            ? _value.isPublic
+            : isPublic // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TontineImpl implements _Tontine {
-  const _$TontineImpl(
-      {required this.id,
-      required this.name,
-      required this.description,
-      required this.contributionAmount,
-      required this.frequency,
-      required this.maxMembers,
-      this.currentMembers = 0,
-      required this.startDate,
-      this.endDate,
-      required this.status,
-      required this.currency,
-      this.managerId,
-      this.managerName,
-      this.payoutMethod,
-      this.isPublic = false,
-      required this.createdAt,
-      this.updatedAt});
+  const _$TontineImpl({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.contributionAmount,
+    required this.frequency,
+    required this.maxMembers,
+    this.currentMembers = 0,
+    required this.startDate,
+    this.endDate,
+    required this.status,
+    required this.currency,
+    this.managerId,
+    this.managerName,
+    this.payoutMethod,
+    this.isPublic = false,
+    required this.createdAt,
+    this.updatedAt,
+  });
 
   factory _$TontineImpl.fromJson(Map<String, dynamic> json) =>
       _$$TontineImplFromJson(json);
@@ -1968,24 +2009,25 @@ class _$TontineImpl implements _Tontine {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      description,
-      contributionAmount,
-      frequency,
-      maxMembers,
-      currentMembers,
-      startDate,
-      endDate,
-      status,
-      currency,
-      managerId,
-      managerName,
-      payoutMethod,
-      isPublic,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    description,
+    contributionAmount,
+    frequency,
+    maxMembers,
+    currentMembers,
+    startDate,
+    endDate,
+    status,
+    currency,
+    managerId,
+    managerName,
+    payoutMethod,
+    isPublic,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of Tontine
   /// with the given fields replaced by the non-null parameter values.
@@ -1997,31 +2039,30 @@ class _$TontineImpl implements _Tontine {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TontineImplToJson(
-      this,
-    );
+    return _$$TontineImplToJson(this);
   }
 }
 
 abstract class _Tontine implements Tontine {
-  const factory _Tontine(
-      {required final int id,
-      required final String name,
-      required final String description,
-      required final double contributionAmount,
-      required final TontineFrequency frequency,
-      required final int maxMembers,
-      final int currentMembers,
-      required final DateTime startDate,
-      final DateTime? endDate,
-      required final TontineStatus status,
-      required final String currency,
-      final int? managerId,
-      final String? managerName,
-      final String? payoutMethod,
-      final bool isPublic,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$TontineImpl;
+  const factory _Tontine({
+    required final int id,
+    required final String name,
+    required final String description,
+    required final double contributionAmount,
+    required final TontineFrequency frequency,
+    required final int maxMembers,
+    final int currentMembers,
+    required final DateTime startDate,
+    final DateTime? endDate,
+    required final TontineStatus status,
+    required final String currency,
+    final int? managerId,
+    final String? managerName,
+    final String? payoutMethod,
+    final bool isPublic,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$TontineImpl;
 
   factory _Tontine.fromJson(Map<String, dynamic> json) = _$TontineImpl.fromJson;
 
@@ -2100,22 +2141,24 @@ mixin _$TontineMember {
 /// @nodoc
 abstract class $TontineMemberCopyWith<$Res> {
   factory $TontineMemberCopyWith(
-          TontineMember value, $Res Function(TontineMember) then) =
-      _$TontineMemberCopyWithImpl<$Res, TontineMember>;
+    TontineMember value,
+    $Res Function(TontineMember) then,
+  ) = _$TontineMemberCopyWithImpl<$Res, TontineMember>;
   @useResult
-  $Res call(
-      {int id,
-      int tontineId,
-      int personId,
-      String personName,
-      TontineMemberRole role,
-      TontineMemberStatus status,
-      int position,
-      DateTime? joinedAt,
-      DateTime? lastPaymentAt,
-      double totalContributed,
-      int paymentsMade,
-      int paymentsMissed});
+  $Res call({
+    int id,
+    int tontineId,
+    int personId,
+    String personName,
+    TontineMemberRole role,
+    TontineMemberStatus status,
+    int position,
+    DateTime? joinedAt,
+    DateTime? lastPaymentAt,
+    double totalContributed,
+    int paymentsMade,
+    int paymentsMissed,
+  });
 }
 
 /// @nodoc
@@ -2146,56 +2189,59 @@ class _$TontineMemberCopyWithImpl<$Res, $Val extends TontineMember>
     Object? paymentsMade = null,
     Object? paymentsMissed = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      tontineId: null == tontineId
-          ? _value.tontineId
-          : tontineId // ignore: cast_nullable_to_non_nullable
-              as int,
-      personId: null == personId
-          ? _value.personId
-          : personId // ignore: cast_nullable_to_non_nullable
-              as int,
-      personName: null == personName
-          ? _value.personName
-          : personName // ignore: cast_nullable_to_non_nullable
-              as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
-              as TontineMemberRole,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontineMemberStatus,
-      position: null == position
-          ? _value.position
-          : position // ignore: cast_nullable_to_non_nullable
-              as int,
-      joinedAt: freezed == joinedAt
-          ? _value.joinedAt
-          : joinedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      lastPaymentAt: freezed == lastPaymentAt
-          ? _value.lastPaymentAt
-          : lastPaymentAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      totalContributed: null == totalContributed
-          ? _value.totalContributed
-          : totalContributed // ignore: cast_nullable_to_non_nullable
-              as double,
-      paymentsMade: null == paymentsMade
-          ? _value.paymentsMade
-          : paymentsMade // ignore: cast_nullable_to_non_nullable
-              as int,
-      paymentsMissed: null == paymentsMissed
-          ? _value.paymentsMissed
-          : paymentsMissed // ignore: cast_nullable_to_non_nullable
-              as int,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            tontineId: null == tontineId
+                ? _value.tontineId
+                : tontineId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            personId: null == personId
+                ? _value.personId
+                : personId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            personName: null == personName
+                ? _value.personName
+                : personName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            role: null == role
+                ? _value.role
+                : role // ignore: cast_nullable_to_non_nullable
+                      as TontineMemberRole,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TontineMemberStatus,
+            position: null == position
+                ? _value.position
+                : position // ignore: cast_nullable_to_non_nullable
+                      as int,
+            joinedAt: freezed == joinedAt
+                ? _value.joinedAt
+                : joinedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            lastPaymentAt: freezed == lastPaymentAt
+                ? _value.lastPaymentAt
+                : lastPaymentAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            totalContributed: null == totalContributed
+                ? _value.totalContributed
+                : totalContributed // ignore: cast_nullable_to_non_nullable
+                      as double,
+            paymentsMade: null == paymentsMade
+                ? _value.paymentsMade
+                : paymentsMade // ignore: cast_nullable_to_non_nullable
+                      as int,
+            paymentsMissed: null == paymentsMissed
+                ? _value.paymentsMissed
+                : paymentsMissed // ignore: cast_nullable_to_non_nullable
+                      as int,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2203,23 +2249,25 @@ class _$TontineMemberCopyWithImpl<$Res, $Val extends TontineMember>
 abstract class _$$TontineMemberImplCopyWith<$Res>
     implements $TontineMemberCopyWith<$Res> {
   factory _$$TontineMemberImplCopyWith(
-          _$TontineMemberImpl value, $Res Function(_$TontineMemberImpl) then) =
-      __$$TontineMemberImplCopyWithImpl<$Res>;
+    _$TontineMemberImpl value,
+    $Res Function(_$TontineMemberImpl) then,
+  ) = __$$TontineMemberImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int tontineId,
-      int personId,
-      String personName,
-      TontineMemberRole role,
-      TontineMemberStatus status,
-      int position,
-      DateTime? joinedAt,
-      DateTime? lastPaymentAt,
-      double totalContributed,
-      int paymentsMade,
-      int paymentsMissed});
+  $Res call({
+    int id,
+    int tontineId,
+    int personId,
+    String personName,
+    TontineMemberRole role,
+    TontineMemberStatus status,
+    int position,
+    DateTime? joinedAt,
+    DateTime? lastPaymentAt,
+    double totalContributed,
+    int paymentsMade,
+    int paymentsMissed,
+  });
 }
 
 /// @nodoc
@@ -2227,8 +2275,9 @@ class __$$TontineMemberImplCopyWithImpl<$Res>
     extends _$TontineMemberCopyWithImpl<$Res, _$TontineMemberImpl>
     implements _$$TontineMemberImplCopyWith<$Res> {
   __$$TontineMemberImplCopyWithImpl(
-      _$TontineMemberImpl _value, $Res Function(_$TontineMemberImpl) _then)
-      : super(_value, _then);
+    _$TontineMemberImpl _value,
+    $Res Function(_$TontineMemberImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TontineMember
   /// with the given fields replaced by the non-null parameter values.
@@ -2248,75 +2297,78 @@ class __$$TontineMemberImplCopyWithImpl<$Res>
     Object? paymentsMade = null,
     Object? paymentsMissed = null,
   }) {
-    return _then(_$TontineMemberImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      tontineId: null == tontineId
-          ? _value.tontineId
-          : tontineId // ignore: cast_nullable_to_non_nullable
-              as int,
-      personId: null == personId
-          ? _value.personId
-          : personId // ignore: cast_nullable_to_non_nullable
-              as int,
-      personName: null == personName
-          ? _value.personName
-          : personName // ignore: cast_nullable_to_non_nullable
-              as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
-              as TontineMemberRole,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontineMemberStatus,
-      position: null == position
-          ? _value.position
-          : position // ignore: cast_nullable_to_non_nullable
-              as int,
-      joinedAt: freezed == joinedAt
-          ? _value.joinedAt
-          : joinedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      lastPaymentAt: freezed == lastPaymentAt
-          ? _value.lastPaymentAt
-          : lastPaymentAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      totalContributed: null == totalContributed
-          ? _value.totalContributed
-          : totalContributed // ignore: cast_nullable_to_non_nullable
-              as double,
-      paymentsMade: null == paymentsMade
-          ? _value.paymentsMade
-          : paymentsMade // ignore: cast_nullable_to_non_nullable
-              as int,
-      paymentsMissed: null == paymentsMissed
-          ? _value.paymentsMissed
-          : paymentsMissed // ignore: cast_nullable_to_non_nullable
-              as int,
-    ));
+    return _then(
+      _$TontineMemberImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        tontineId: null == tontineId
+            ? _value.tontineId
+            : tontineId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        personId: null == personId
+            ? _value.personId
+            : personId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        personName: null == personName
+            ? _value.personName
+            : personName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        role: null == role
+            ? _value.role
+            : role // ignore: cast_nullable_to_non_nullable
+                  as TontineMemberRole,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TontineMemberStatus,
+        position: null == position
+            ? _value.position
+            : position // ignore: cast_nullable_to_non_nullable
+                  as int,
+        joinedAt: freezed == joinedAt
+            ? _value.joinedAt
+            : joinedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        lastPaymentAt: freezed == lastPaymentAt
+            ? _value.lastPaymentAt
+            : lastPaymentAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        totalContributed: null == totalContributed
+            ? _value.totalContributed
+            : totalContributed // ignore: cast_nullable_to_non_nullable
+                  as double,
+        paymentsMade: null == paymentsMade
+            ? _value.paymentsMade
+            : paymentsMade // ignore: cast_nullable_to_non_nullable
+                  as int,
+        paymentsMissed: null == paymentsMissed
+            ? _value.paymentsMissed
+            : paymentsMissed // ignore: cast_nullable_to_non_nullable
+                  as int,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TontineMemberImpl implements _TontineMember {
-  const _$TontineMemberImpl(
-      {required this.id,
-      required this.tontineId,
-      required this.personId,
-      required this.personName,
-      required this.role,
-      required this.status,
-      required this.position,
-      this.joinedAt,
-      this.lastPaymentAt,
-      this.totalContributed = 0.0,
-      this.paymentsMade = 0,
-      this.paymentsMissed = 0});
+  const _$TontineMemberImpl({
+    required this.id,
+    required this.tontineId,
+    required this.personId,
+    required this.personName,
+    required this.role,
+    required this.status,
+    required this.position,
+    this.joinedAt,
+    this.lastPaymentAt,
+    this.totalContributed = 0.0,
+    this.paymentsMade = 0,
+    this.paymentsMissed = 0,
+  });
 
   factory _$TontineMemberImpl.fromJson(Map<String, dynamic> json) =>
       _$$TontineMemberImplFromJson(json);
@@ -2385,19 +2437,20 @@ class _$TontineMemberImpl implements _TontineMember {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      tontineId,
-      personId,
-      personName,
-      role,
-      status,
-      position,
-      joinedAt,
-      lastPaymentAt,
-      totalContributed,
-      paymentsMade,
-      paymentsMissed);
+    runtimeType,
+    id,
+    tontineId,
+    personId,
+    personName,
+    role,
+    status,
+    position,
+    joinedAt,
+    lastPaymentAt,
+    totalContributed,
+    paymentsMade,
+    paymentsMissed,
+  );
 
   /// Create a copy of TontineMember
   /// with the given fields replaced by the non-null parameter values.
@@ -2409,26 +2462,25 @@ class _$TontineMemberImpl implements _TontineMember {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TontineMemberImplToJson(
-      this,
-    );
+    return _$$TontineMemberImplToJson(this);
   }
 }
 
 abstract class _TontineMember implements TontineMember {
-  const factory _TontineMember(
-      {required final int id,
-      required final int tontineId,
-      required final int personId,
-      required final String personName,
-      required final TontineMemberRole role,
-      required final TontineMemberStatus status,
-      required final int position,
-      final DateTime? joinedAt,
-      final DateTime? lastPaymentAt,
-      final double totalContributed,
-      final int paymentsMade,
-      final int paymentsMissed}) = _$TontineMemberImpl;
+  const factory _TontineMember({
+    required final int id,
+    required final int tontineId,
+    required final int personId,
+    required final String personName,
+    required final TontineMemberRole role,
+    required final TontineMemberStatus status,
+    required final int position,
+    final DateTime? joinedAt,
+    final DateTime? lastPaymentAt,
+    final double totalContributed,
+    final int paymentsMade,
+    final int paymentsMissed,
+  }) = _$TontineMemberImpl;
 
   factory _TontineMember.fromJson(Map<String, dynamic> json) =
       _$TontineMemberImpl.fromJson;
@@ -2495,19 +2547,21 @@ mixin _$TontinePayout {
 /// @nodoc
 abstract class $TontinePayoutCopyWith<$Res> {
   factory $TontinePayoutCopyWith(
-          TontinePayout value, $Res Function(TontinePayout) then) =
-      _$TontinePayoutCopyWithImpl<$Res, TontinePayout>;
+    TontinePayout value,
+    $Res Function(TontinePayout) then,
+  ) = _$TontinePayoutCopyWithImpl<$Res, TontinePayout>;
   @useResult
-  $Res call(
-      {int id,
-      int tontineId,
-      int memberId,
-      String memberName,
-      double amount,
-      DateTime scheduledDate,
-      DateTime? paidDate,
-      TontinePayoutStatus status,
-      String? paymentReference});
+  $Res call({
+    int id,
+    int tontineId,
+    int memberId,
+    String memberName,
+    double amount,
+    DateTime scheduledDate,
+    DateTime? paidDate,
+    TontinePayoutStatus status,
+    String? paymentReference,
+  });
 }
 
 /// @nodoc
@@ -2535,44 +2589,47 @@ class _$TontinePayoutCopyWithImpl<$Res, $Val extends TontinePayout>
     Object? status = null,
     Object? paymentReference = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      tontineId: null == tontineId
-          ? _value.tontineId
-          : tontineId // ignore: cast_nullable_to_non_nullable
-              as int,
-      memberId: null == memberId
-          ? _value.memberId
-          : memberId // ignore: cast_nullable_to_non_nullable
-              as int,
-      memberName: null == memberName
-          ? _value.memberName
-          : memberName // ignore: cast_nullable_to_non_nullable
-              as String,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      scheduledDate: null == scheduledDate
-          ? _value.scheduledDate
-          : scheduledDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      paidDate: freezed == paidDate
-          ? _value.paidDate
-          : paidDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontinePayoutStatus,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            tontineId: null == tontineId
+                ? _value.tontineId
+                : tontineId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            memberId: null == memberId
+                ? _value.memberId
+                : memberId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            memberName: null == memberName
+                ? _value.memberName
+                : memberName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            amount: null == amount
+                ? _value.amount
+                : amount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            scheduledDate: null == scheduledDate
+                ? _value.scheduledDate
+                : scheduledDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            paidDate: freezed == paidDate
+                ? _value.paidDate
+                : paidDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TontinePayoutStatus,
+            paymentReference: freezed == paymentReference
+                ? _value.paymentReference
+                : paymentReference // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2580,20 +2637,22 @@ class _$TontinePayoutCopyWithImpl<$Res, $Val extends TontinePayout>
 abstract class _$$TontinePayoutImplCopyWith<$Res>
     implements $TontinePayoutCopyWith<$Res> {
   factory _$$TontinePayoutImplCopyWith(
-          _$TontinePayoutImpl value, $Res Function(_$TontinePayoutImpl) then) =
-      __$$TontinePayoutImplCopyWithImpl<$Res>;
+    _$TontinePayoutImpl value,
+    $Res Function(_$TontinePayoutImpl) then,
+  ) = __$$TontinePayoutImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int tontineId,
-      int memberId,
-      String memberName,
-      double amount,
-      DateTime scheduledDate,
-      DateTime? paidDate,
-      TontinePayoutStatus status,
-      String? paymentReference});
+  $Res call({
+    int id,
+    int tontineId,
+    int memberId,
+    String memberName,
+    double amount,
+    DateTime scheduledDate,
+    DateTime? paidDate,
+    TontinePayoutStatus status,
+    String? paymentReference,
+  });
 }
 
 /// @nodoc
@@ -2601,8 +2660,9 @@ class __$$TontinePayoutImplCopyWithImpl<$Res>
     extends _$TontinePayoutCopyWithImpl<$Res, _$TontinePayoutImpl>
     implements _$$TontinePayoutImplCopyWith<$Res> {
   __$$TontinePayoutImplCopyWithImpl(
-      _$TontinePayoutImpl _value, $Res Function(_$TontinePayoutImpl) _then)
-      : super(_value, _then);
+    _$TontinePayoutImpl _value,
+    $Res Function(_$TontinePayoutImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TontinePayout
   /// with the given fields replaced by the non-null parameter values.
@@ -2619,60 +2679,63 @@ class __$$TontinePayoutImplCopyWithImpl<$Res>
     Object? status = null,
     Object? paymentReference = freezed,
   }) {
-    return _then(_$TontinePayoutImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      tontineId: null == tontineId
-          ? _value.tontineId
-          : tontineId // ignore: cast_nullable_to_non_nullable
-              as int,
-      memberId: null == memberId
-          ? _value.memberId
-          : memberId // ignore: cast_nullable_to_non_nullable
-              as int,
-      memberName: null == memberName
-          ? _value.memberName
-          : memberName // ignore: cast_nullable_to_non_nullable
-              as String,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      scheduledDate: null == scheduledDate
-          ? _value.scheduledDate
-          : scheduledDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      paidDate: freezed == paidDate
-          ? _value.paidDate
-          : paidDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TontinePayoutStatus,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+    return _then(
+      _$TontinePayoutImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        tontineId: null == tontineId
+            ? _value.tontineId
+            : tontineId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        memberId: null == memberId
+            ? _value.memberId
+            : memberId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        memberName: null == memberName
+            ? _value.memberName
+            : memberName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        amount: null == amount
+            ? _value.amount
+            : amount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        scheduledDate: null == scheduledDate
+            ? _value.scheduledDate
+            : scheduledDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        paidDate: freezed == paidDate
+            ? _value.paidDate
+            : paidDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TontinePayoutStatus,
+        paymentReference: freezed == paymentReference
+            ? _value.paymentReference
+            : paymentReference // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TontinePayoutImpl implements _TontinePayout {
-  const _$TontinePayoutImpl(
-      {required this.id,
-      required this.tontineId,
-      required this.memberId,
-      required this.memberName,
-      required this.amount,
-      required this.scheduledDate,
-      this.paidDate,
-      required this.status,
-      this.paymentReference});
+  const _$TontinePayoutImpl({
+    required this.id,
+    required this.tontineId,
+    required this.memberId,
+    required this.memberName,
+    required this.amount,
+    required this.scheduledDate,
+    this.paidDate,
+    required this.status,
+    this.paymentReference,
+  });
 
   factory _$TontinePayoutImpl.fromJson(Map<String, dynamic> json) =>
       _$$TontinePayoutImplFromJson(json);
@@ -2725,8 +2788,18 @@ class _$TontinePayoutImpl implements _TontinePayout {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, tontineId, memberId,
-      memberName, amount, scheduledDate, paidDate, status, paymentReference);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    tontineId,
+    memberId,
+    memberName,
+    amount,
+    scheduledDate,
+    paidDate,
+    status,
+    paymentReference,
+  );
 
   /// Create a copy of TontinePayout
   /// with the given fields replaced by the non-null parameter values.
@@ -2738,23 +2811,22 @@ class _$TontinePayoutImpl implements _TontinePayout {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TontinePayoutImplToJson(
-      this,
-    );
+    return _$$TontinePayoutImplToJson(this);
   }
 }
 
 abstract class _TontinePayout implements TontinePayout {
-  const factory _TontinePayout(
-      {required final int id,
-      required final int tontineId,
-      required final int memberId,
-      required final String memberName,
-      required final double amount,
-      required final DateTime scheduledDate,
-      final DateTime? paidDate,
-      required final TontinePayoutStatus status,
-      final String? paymentReference}) = _$TontinePayoutImpl;
+  const factory _TontinePayout({
+    required final int id,
+    required final int tontineId,
+    required final int memberId,
+    required final String memberName,
+    required final double amount,
+    required final DateTime scheduledDate,
+    final DateTime? paidDate,
+    required final TontinePayoutStatus status,
+    final String? paymentReference,
+  }) = _$TontinePayoutImpl;
 
   factory _TontinePayout.fromJson(Map<String, dynamic> json) =
       _$TontinePayoutImpl.fromJson;
@@ -2825,24 +2897,25 @@ abstract class $DonationCopyWith<$Res> {
   factory $DonationCopyWith(Donation value, $Res Function(Donation) then) =
       _$DonationCopyWithImpl<$Res, Donation>;
   @useResult
-  $Res call(
-      {int id,
-      String reference,
-      double amount,
-      String currency,
-      String? donorName,
-      String? donorEmail,
-      String? donorPhone,
-      bool isAnonymous,
-      String? message,
-      DateTime date,
-      DonationSource source,
-      String? paymentReference,
-      DonationStatus status,
-      String? campaignId,
-      String? campaignName,
-      DateTime? receiptSentAt,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    String reference,
+    double amount,
+    String currency,
+    String? donorName,
+    String? donorEmail,
+    String? donorPhone,
+    bool isAnonymous,
+    String? message,
+    DateTime date,
+    DonationSource source,
+    String? paymentReference,
+    DonationStatus status,
+    String? campaignId,
+    String? campaignName,
+    DateTime? receiptSentAt,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -2878,76 +2951,79 @@ class _$DonationCopyWithImpl<$Res, $Val extends Donation>
     Object? receiptSentAt = freezed,
     Object? createdAt = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      reference: null == reference
-          ? _value.reference
-          : reference // ignore: cast_nullable_to_non_nullable
-              as String,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      donorName: freezed == donorName
-          ? _value.donorName
-          : donorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorEmail: freezed == donorEmail
-          ? _value.donorEmail
-          : donorEmail // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorPhone: freezed == donorPhone
-          ? _value.donorPhone
-          : donorPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isAnonymous: null == isAnonymous
-          ? _value.isAnonymous
-          : isAnonymous // ignore: cast_nullable_to_non_nullable
-              as bool,
-      message: freezed == message
-          ? _value.message
-          : message // ignore: cast_nullable_to_non_nullable
-              as String?,
-      date: null == date
-          ? _value.date
-          : date // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      source: null == source
-          ? _value.source
-          : source // ignore: cast_nullable_to_non_nullable
-              as DonationSource,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as DonationStatus,
-      campaignId: freezed == campaignId
-          ? _value.campaignId
-          : campaignId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      campaignName: freezed == campaignName
-          ? _value.campaignName
-          : campaignName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      receiptSentAt: freezed == receiptSentAt
-          ? _value.receiptSentAt
-          : receiptSentAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            reference: null == reference
+                ? _value.reference
+                : reference // ignore: cast_nullable_to_non_nullable
+                      as String,
+            amount: null == amount
+                ? _value.amount
+                : amount // ignore: cast_nullable_to_non_nullable
+                      as double,
+            currency: null == currency
+                ? _value.currency
+                : currency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            donorName: freezed == donorName
+                ? _value.donorName
+                : donorName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            donorEmail: freezed == donorEmail
+                ? _value.donorEmail
+                : donorEmail // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            donorPhone: freezed == donorPhone
+                ? _value.donorPhone
+                : donorPhone // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isAnonymous: null == isAnonymous
+                ? _value.isAnonymous
+                : isAnonymous // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            message: freezed == message
+                ? _value.message
+                : message // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            date: null == date
+                ? _value.date
+                : date // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            source: null == source
+                ? _value.source
+                : source // ignore: cast_nullable_to_non_nullable
+                      as DonationSource,
+            paymentReference: freezed == paymentReference
+                ? _value.paymentReference
+                : paymentReference // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as DonationStatus,
+            campaignId: freezed == campaignId
+                ? _value.campaignId
+                : campaignId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            campaignName: freezed == campaignName
+                ? _value.campaignName
+                : campaignName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            receiptSentAt: freezed == receiptSentAt
+                ? _value.receiptSentAt
+                : receiptSentAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2955,28 +3031,30 @@ class _$DonationCopyWithImpl<$Res, $Val extends Donation>
 abstract class _$$DonationImplCopyWith<$Res>
     implements $DonationCopyWith<$Res> {
   factory _$$DonationImplCopyWith(
-          _$DonationImpl value, $Res Function(_$DonationImpl) then) =
-      __$$DonationImplCopyWithImpl<$Res>;
+    _$DonationImpl value,
+    $Res Function(_$DonationImpl) then,
+  ) = __$$DonationImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String reference,
-      double amount,
-      String currency,
-      String? donorName,
-      String? donorEmail,
-      String? donorPhone,
-      bool isAnonymous,
-      String? message,
-      DateTime date,
-      DonationSource source,
-      String? paymentReference,
-      DonationStatus status,
-      String? campaignId,
-      String? campaignName,
-      DateTime? receiptSentAt,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    String reference,
+    double amount,
+    String currency,
+    String? donorName,
+    String? donorEmail,
+    String? donorPhone,
+    bool isAnonymous,
+    String? message,
+    DateTime date,
+    DonationSource source,
+    String? paymentReference,
+    DonationStatus status,
+    String? campaignId,
+    String? campaignName,
+    DateTime? receiptSentAt,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -2984,8 +3062,9 @@ class __$$DonationImplCopyWithImpl<$Res>
     extends _$DonationCopyWithImpl<$Res, _$DonationImpl>
     implements _$$DonationImplCopyWith<$Res> {
   __$$DonationImplCopyWithImpl(
-      _$DonationImpl _value, $Res Function(_$DonationImpl) _then)
-      : super(_value, _then);
+    _$DonationImpl _value,
+    $Res Function(_$DonationImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Donation
   /// with the given fields replaced by the non-null parameter values.
@@ -3010,100 +3089,103 @@ class __$$DonationImplCopyWithImpl<$Res>
     Object? receiptSentAt = freezed,
     Object? createdAt = null,
   }) {
-    return _then(_$DonationImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      reference: null == reference
-          ? _value.reference
-          : reference // ignore: cast_nullable_to_non_nullable
-              as String,
-      amount: null == amount
-          ? _value.amount
-          : amount // ignore: cast_nullable_to_non_nullable
-              as double,
-      currency: null == currency
-          ? _value.currency
-          : currency // ignore: cast_nullable_to_non_nullable
-              as String,
-      donorName: freezed == donorName
-          ? _value.donorName
-          : donorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorEmail: freezed == donorEmail
-          ? _value.donorEmail
-          : donorEmail // ignore: cast_nullable_to_non_nullable
-              as String?,
-      donorPhone: freezed == donorPhone
-          ? _value.donorPhone
-          : donorPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isAnonymous: null == isAnonymous
-          ? _value.isAnonymous
-          : isAnonymous // ignore: cast_nullable_to_non_nullable
-              as bool,
-      message: freezed == message
-          ? _value.message
-          : message // ignore: cast_nullable_to_non_nullable
-              as String?,
-      date: null == date
-          ? _value.date
-          : date // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      source: null == source
-          ? _value.source
-          : source // ignore: cast_nullable_to_non_nullable
-              as DonationSource,
-      paymentReference: freezed == paymentReference
-          ? _value.paymentReference
-          : paymentReference // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as DonationStatus,
-      campaignId: freezed == campaignId
-          ? _value.campaignId
-          : campaignId // ignore: cast_nullable_to_non_nullable
-              as String?,
-      campaignName: freezed == campaignName
-          ? _value.campaignName
-          : campaignName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      receiptSentAt: freezed == receiptSentAt
-          ? _value.receiptSentAt
-          : receiptSentAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
+    return _then(
+      _$DonationImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        reference: null == reference
+            ? _value.reference
+            : reference // ignore: cast_nullable_to_non_nullable
+                  as String,
+        amount: null == amount
+            ? _value.amount
+            : amount // ignore: cast_nullable_to_non_nullable
+                  as double,
+        currency: null == currency
+            ? _value.currency
+            : currency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        donorName: freezed == donorName
+            ? _value.donorName
+            : donorName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        donorEmail: freezed == donorEmail
+            ? _value.donorEmail
+            : donorEmail // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        donorPhone: freezed == donorPhone
+            ? _value.donorPhone
+            : donorPhone // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isAnonymous: null == isAnonymous
+            ? _value.isAnonymous
+            : isAnonymous // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        message: freezed == message
+            ? _value.message
+            : message // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        date: null == date
+            ? _value.date
+            : date // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        source: null == source
+            ? _value.source
+            : source // ignore: cast_nullable_to_non_nullable
+                  as DonationSource,
+        paymentReference: freezed == paymentReference
+            ? _value.paymentReference
+            : paymentReference // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as DonationStatus,
+        campaignId: freezed == campaignId
+            ? _value.campaignId
+            : campaignId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        campaignName: freezed == campaignName
+            ? _value.campaignName
+            : campaignName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        receiptSentAt: freezed == receiptSentAt
+            ? _value.receiptSentAt
+            : receiptSentAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$DonationImpl implements _Donation {
-  const _$DonationImpl(
-      {required this.id,
-      required this.reference,
-      required this.amount,
-      required this.currency,
-      this.donorName,
-      this.donorEmail,
-      this.donorPhone,
-      this.isAnonymous = false,
-      this.message,
-      required this.date,
-      required this.source,
-      this.paymentReference,
-      required this.status,
-      this.campaignId,
-      this.campaignName,
-      this.receiptSentAt,
-      required this.createdAt});
+  const _$DonationImpl({
+    required this.id,
+    required this.reference,
+    required this.amount,
+    required this.currency,
+    this.donorName,
+    this.donorEmail,
+    this.donorPhone,
+    this.isAnonymous = false,
+    this.message,
+    required this.date,
+    required this.source,
+    this.paymentReference,
+    required this.status,
+    this.campaignId,
+    this.campaignName,
+    this.receiptSentAt,
+    required this.createdAt,
+  });
 
   factory _$DonationImpl.fromJson(Map<String, dynamic> json) =>
       _$$DonationImplFromJson(json);
@@ -3187,24 +3269,25 @@ class _$DonationImpl implements _Donation {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      reference,
-      amount,
-      currency,
-      donorName,
-      donorEmail,
-      donorPhone,
-      isAnonymous,
-      message,
-      date,
-      source,
-      paymentReference,
-      status,
-      campaignId,
-      campaignName,
-      receiptSentAt,
-      createdAt);
+    runtimeType,
+    id,
+    reference,
+    amount,
+    currency,
+    donorName,
+    donorEmail,
+    donorPhone,
+    isAnonymous,
+    message,
+    date,
+    source,
+    paymentReference,
+    status,
+    campaignId,
+    campaignName,
+    receiptSentAt,
+    createdAt,
+  );
 
   /// Create a copy of Donation
   /// with the given fields replaced by the non-null parameter values.
@@ -3216,31 +3299,30 @@ class _$DonationImpl implements _Donation {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$DonationImplToJson(
-      this,
-    );
+    return _$$DonationImplToJson(this);
   }
 }
 
 abstract class _Donation implements Donation {
-  const factory _Donation(
-      {required final int id,
-      required final String reference,
-      required final double amount,
-      required final String currency,
-      final String? donorName,
-      final String? donorEmail,
-      final String? donorPhone,
-      final bool isAnonymous,
-      final String? message,
-      required final DateTime date,
-      required final DonationSource source,
-      final String? paymentReference,
-      required final DonationStatus status,
-      final String? campaignId,
-      final String? campaignName,
-      final DateTime? receiptSentAt,
-      required final DateTime createdAt}) = _$DonationImpl;
+  const factory _Donation({
+    required final int id,
+    required final String reference,
+    required final double amount,
+    required final String currency,
+    final String? donorName,
+    final String? donorEmail,
+    final String? donorPhone,
+    final bool isAnonymous,
+    final String? message,
+    required final DateTime date,
+    required final DonationSource source,
+    final String? paymentReference,
+    required final DonationStatus status,
+    final String? campaignId,
+    final String? campaignName,
+    final DateTime? receiptSentAt,
+    required final DateTime createdAt,
+  }) = _$DonationImpl;
 
   factory _Donation.fromJson(Map<String, dynamic> json) =
       _$DonationImpl.fromJson;

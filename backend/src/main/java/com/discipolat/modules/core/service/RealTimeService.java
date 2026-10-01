@@ -194,6 +194,38 @@ public class RealTimeService {
         messagingTemplate.convertAndSend(destination, message);
     }
 
+    // ========== §G5.8 FIREHOSE OUTBOX → WEB ↔ MOBILE < 5 s ==========
+
+    /**
+     * Enveloppe générique de TOUT événement outbox sur le « firehose » du
+     * tenant : {@code /topic/tenant:{id}/events}. Les clients (web ET mobile)
+     * s'y abonnent une seule fois et re-rendent les écrans actifs selon
+     * {@code eventType}.
+     *
+     * <p>{@code eventId} = id BIGSERIAL monotone de l'outbox : si un client
+     * constate un trou (eventId reçu > dernier + 1 après reconnexion), il
+     * effectue un rafraîchissement TOTAL (contrôle §1128 « rafraîchissement
+     * total si delta manquant »).</p>
+     */
+    public void pushOutboxEvent(com.discipolat.modules.core.domain.OutboxEvent event) {
+        if (event.getTenantId() == null) {
+            return; // pas de destination sans tenant — jamais de fuite cross-tenant
+        }
+        Map<String, Object> payload = event.getPayloadJson();
+        Map<String, Object> message = new java.util.HashMap<>();
+        message.put("type", "OUTBOX");
+        message.put("eventId", event.getId());
+        message.put("eventType", event.getEventType());
+        message.put("aggregateType", event.getAggregateType());
+        message.put("aggregateId", event.getAggregateId() != null ? event.getAggregateId().toString() : null);
+        message.put("spaceId", payload != null && payload.get("spaceId") != null ? payload.get("spaceId").toString() : null);
+        message.put("payload", payload);
+        message.put("timestamp", java.time.OffsetDateTime.now().toString());
+        messagingTemplate.convertAndSend("/topic/tenant:" + event.getTenantId() + "/events", message);
+        log.debug("§G5.8 outbox #{} ({}) poussé sur le firehose du tenant {}",
+                event.getId(), event.getEventType(), event.getTenantId());
+    }
+
     // ========== NOTIFICATIONS ==========
 
     public void pushNotification(UUID tenantId, UUID userId, String title, String body, String type, String link) {

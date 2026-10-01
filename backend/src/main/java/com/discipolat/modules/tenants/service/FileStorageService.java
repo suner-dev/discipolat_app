@@ -1,6 +1,8 @@
 package com.discipolat.modules.tenants.service;
 
 import com.discipolat.common.multitenancy.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,14 +17,42 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
 
+    private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
+
     private final Path rootLocation;
+    /**
+     * §G6.5 — un dossier de stockage non accessible ne doit JAMAIS empêcher le
+     * démarrage de l'application (l'upload n'est pas requis au boot). On démarre
+     * en mode dégradé : les opérations d'écriture échouent avec une erreur
+     * explicite au moment de l'appel, tout le reste du service reste disponible.
+     */
+    private final boolean available;
 
     public FileStorageService(@Value("${discipolat.file.storage.root:/var/discipolat/files}") String rootPath) {
         this.rootLocation = Paths.get(rootPath).toAbsolutePath().normalize();
+        boolean ready = false;
         try {
             Files.createDirectories(this.rootLocation);
-        } catch (IOException e) {
-            throw new RuntimeException("Impossible de créer le dossier de stockage: " + rootPath, e);
+            ready = Files.isWritable(this.rootLocation);
+            if (!ready) {
+                log.error("⚠️ Dossier de stockage non accessible en écriture: {} — upload désactivé", rootPath);
+            }
+        } catch (IOException | RuntimeException e) {
+            log.error("⚠️ Impossible de préparer le dossier de stockage: {} — upload désactivé ({})",
+                    rootPath, e.getMessage());
+        }
+        this.available = ready;
+    }
+
+    /** Le stockage de fichiers est-il utilisable sur cette instance ? */
+    public boolean isAvailable() {
+        return available;
+    }
+
+    private void requireAvailable() {
+        if (!available) {
+            throw new IllegalStateException(
+                    "Stockage de fichiers indisponible (dossier racine non inscriptible): " + rootLocation);
         }
     }
 
@@ -39,6 +69,7 @@ public class FileStorageService {
      */
     public String upload(MultipartFile file, String relativePath, UUID tenantId) {
         try {
+            requireAvailable();
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("Fichier vide");
             }
@@ -94,6 +125,9 @@ public class FileStorageService {
      * Delete a file with explicit tenant ID.
      */
     public void delete(String relativePath, UUID tenantId) {
+        if (!available) {
+            return;
+        }
         try {
             if (tenantId == null) {
                 throw new IllegalArgumentException("tenantId is required for file deletion");
@@ -120,7 +154,9 @@ public class FileStorageService {
      * Check if a file exists with explicit tenant ID.
      */
     public boolean exists(String relativePath, UUID tenantId) {
-        if (tenantId == null) {
+        // PORT Develop1 (§ stockage) : si le dossier de stockage n'est pas pret,
+        // une lecture d'existence repond « non » au lieu de lever une erreur.
+        if (!available || tenantId == null) {
             return false;
         }
         Path tenantRoot = this.rootLocation.resolve(tenantId.toString()).normalize().toAbsolutePath();
@@ -139,6 +175,9 @@ public class FileStorageService {
      * Get the absolute file path with explicit tenant ID.
      */
     public Path getFilePath(String relativePath, UUID tenantId) {
+        // PORT Develop1 : la lecture d'un fichier n'a de sens que si le stockage est
+        // disponible ; on leve une erreur explicite plutot qu'un chemin fantome.
+        requireAvailable();
         if (tenantId == null) {
             throw new IllegalArgumentException("tenantId is required");
         }

@@ -12,100 +12,162 @@ class $SoulsTableTable extends SoulsTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _nomMeta = const VerificationMeta('nom');
   @override
   late final GeneratedColumn<String> nom = GeneratedColumn<String>(
-      'nom', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'nom',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _prenomMeta = const VerificationMeta('prenom');
   @override
   late final GeneratedColumn<String> prenom = GeneratedColumn<String>(
-      'prenom', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'prenom',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
-      'email', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _telephoneMeta =
-      const VerificationMeta('telephone');
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _telephoneMeta = const VerificationMeta(
+    'telephone',
+  );
   @override
   late final GeneratedColumn<String> telephone = GeneratedColumn<String>(
-      'telephone', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _typeDiscipleMeta =
-      const VerificationMeta('typeDisciple');
+    'telephone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _typeDiscipleMeta = const VerificationMeta(
+    'typeDisciple',
+  );
   @override
   late final GeneratedColumn<String> typeDisciple = GeneratedColumn<String>(
-      'type_disciple', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'type_disciple',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _statutMeta = const VerificationMeta('statut');
   @override
   late final GeneratedColumn<String> statut = GeneratedColumn<String>(
-      'statut', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _dateIntegrationMeta =
-      const VerificationMeta('dateIntegration');
+    'statut',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateIntegrationMeta = const VerificationMeta(
+    'dateIntegration',
+  );
   @override
   late final GeneratedColumn<String> dateIntegration = GeneratedColumn<String>(
-      'date_integration', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _faiseurIdMeta =
-      const VerificationMeta('faiseurId');
+    'date_integration',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _faiseurIdMeta = const VerificationMeta(
+    'faiseurId',
+  );
   @override
   late final GeneratedColumn<String> faiseurId = GeneratedColumn<String>(
-      'faiseur_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _familleIdMeta =
-      const VerificationMeta('familleId');
+    'faiseur_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _familleIdMeta = const VerificationMeta(
+    'familleId',
+  );
   @override
   late final GeneratedColumn<String> familleId = GeneratedColumn<String>(
-      'famille_id', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'famille_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dateDernierContactMeta =
       const VerificationMeta('dateDernierContact');
   @override
   late final GeneratedColumn<String> dateDernierContact =
-      GeneratedColumn<String>('date_dernier_contact', aliasedName, true,
-          type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _lastSyncAtMeta =
-      const VerificationMeta('lastSyncAt');
+      GeneratedColumn<String>(
+        'date_dernier_contact',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastSyncAtMeta = const VerificationMeta(
+    'lastSyncAt',
+  );
   @override
   late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
-      'last_sync_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'last_sync_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        nom,
-        prenom,
-        email,
-        telephone,
-        typeDisciple,
-        statut,
-        dateIntegration,
-        faiseurId,
-        familleId,
-        dateDernierContact,
-        lastSyncAt
-      ];
+    id,
+    tenantId,
+    nom,
+    prenom,
+    email,
+    telephone,
+    typeDisciple,
+    statut,
+    dateIntegration,
+    faiseurId,
+    familleId,
+    dateDernierContact,
+    lastSyncAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'souls_table';
   @override
-  VerificationContext validateIntegrity(Insertable<SoulLocal> instance,
-      {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SoulLocal> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -114,72 +176,100 @@ class $SoulsTableTable extends SoulsTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('nom')) {
       context.handle(
-          _nomMeta, nom.isAcceptableOrUnknown(data['nom']!, _nomMeta));
+        _nomMeta,
+        nom.isAcceptableOrUnknown(data['nom']!, _nomMeta),
+      );
     } else if (isInserting) {
       context.missing(_nomMeta);
     }
     if (data.containsKey('prenom')) {
-      context.handle(_prenomMeta,
-          prenom.isAcceptableOrUnknown(data['prenom']!, _prenomMeta));
+      context.handle(
+        _prenomMeta,
+        prenom.isAcceptableOrUnknown(data['prenom']!, _prenomMeta),
+      );
     }
     if (data.containsKey('email')) {
       context.handle(
-          _emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
     }
     if (data.containsKey('telephone')) {
-      context.handle(_telephoneMeta,
-          telephone.isAcceptableOrUnknown(data['telephone']!, _telephoneMeta));
+      context.handle(
+        _telephoneMeta,
+        telephone.isAcceptableOrUnknown(data['telephone']!, _telephoneMeta),
+      );
     }
     if (data.containsKey('type_disciple')) {
       context.handle(
+        _typeDiscipleMeta,
+        typeDisciple.isAcceptableOrUnknown(
+          data['type_disciple']!,
           _typeDiscipleMeta,
-          typeDisciple.isAcceptableOrUnknown(
-              data['type_disciple']!, _typeDiscipleMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_typeDiscipleMeta);
     }
     if (data.containsKey('statut')) {
-      context.handle(_statutMeta,
-          statut.isAcceptableOrUnknown(data['statut']!, _statutMeta));
+      context.handle(
+        _statutMeta,
+        statut.isAcceptableOrUnknown(data['statut']!, _statutMeta),
+      );
     } else if (isInserting) {
       context.missing(_statutMeta);
     }
     if (data.containsKey('date_integration')) {
       context.handle(
+        _dateIntegrationMeta,
+        dateIntegration.isAcceptableOrUnknown(
+          data['date_integration']!,
           _dateIntegrationMeta,
-          dateIntegration.isAcceptableOrUnknown(
-              data['date_integration']!, _dateIntegrationMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_dateIntegrationMeta);
     }
     if (data.containsKey('faiseur_id')) {
-      context.handle(_faiseurIdMeta,
-          faiseurId.isAcceptableOrUnknown(data['faiseur_id']!, _faiseurIdMeta));
+      context.handle(
+        _faiseurIdMeta,
+        faiseurId.isAcceptableOrUnknown(data['faiseur_id']!, _faiseurIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_faiseurIdMeta);
     }
     if (data.containsKey('famille_id')) {
-      context.handle(_familleIdMeta,
-          familleId.isAcceptableOrUnknown(data['famille_id']!, _familleIdMeta));
+      context.handle(
+        _familleIdMeta,
+        familleId.isAcceptableOrUnknown(data['famille_id']!, _familleIdMeta),
+      );
     }
     if (data.containsKey('date_dernier_contact')) {
       context.handle(
+        _dateDernierContactMeta,
+        dateDernierContact.isAcceptableOrUnknown(
+          data['date_dernier_contact']!,
           _dateDernierContactMeta,
-          dateDernierContact.isAcceptableOrUnknown(
-              data['date_dernier_contact']!, _dateDernierContactMeta));
+        ),
+      );
     }
     if (data.containsKey('last_sync_at')) {
       context.handle(
+        _lastSyncAtMeta,
+        lastSyncAt.isAcceptableOrUnknown(
+          data['last_sync_at']!,
           _lastSyncAtMeta,
-          lastSyncAt.isAcceptableOrUnknown(
-              data['last_sync_at']!, _lastSyncAtMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_lastSyncAtMeta);
     }
@@ -192,32 +282,58 @@ class $SoulsTableTable extends SoulsTable
   SoulLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SoulLocal(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      nom: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}nom'])!,
-      prenom: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}prenom']),
-      email: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}email']),
-      telephone: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}telephone']),
-      typeDisciple: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}type_disciple'])!,
-      statut: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}statut'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      nom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nom'],
+      )!,
+      prenom: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prenom'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      telephone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}telephone'],
+      ),
+      typeDisciple: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type_disciple'],
+      )!,
+      statut: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}statut'],
+      )!,
       dateIntegration: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}date_integration'])!,
-      faiseurId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}faiseur_id'])!,
-      familleId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}famille_id']),
+        DriftSqlType.string,
+        data['${effectivePrefix}date_integration'],
+      )!,
+      faiseurId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}faiseur_id'],
+      )!,
+      familleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}famille_id'],
+      ),
       dateDernierContact: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}date_dernier_contact']),
-      lastSyncAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+        DriftSqlType.string,
+        data['${effectivePrefix}date_dernier_contact'],
+      ),
+      lastSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_at'],
+      )!,
     );
   }
 
@@ -241,20 +357,21 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
   final String? familleId;
   final String? dateDernierContact;
   final String lastSyncAt;
-  const SoulLocal(
-      {required this.id,
-      required this.tenantId,
-      required this.nom,
-      this.prenom,
-      this.email,
-      this.telephone,
-      required this.typeDisciple,
-      required this.statut,
-      required this.dateIntegration,
-      required this.faiseurId,
-      this.familleId,
-      this.dateDernierContact,
-      required this.lastSyncAt});
+  const SoulLocal({
+    required this.id,
+    required this.tenantId,
+    required this.nom,
+    this.prenom,
+    this.email,
+    this.telephone,
+    required this.typeDisciple,
+    required this.statut,
+    required this.dateIntegration,
+    required this.faiseurId,
+    this.familleId,
+    this.dateDernierContact,
+    required this.lastSyncAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -289,10 +406,12 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
       id: Value(id),
       tenantId: Value(tenantId),
       nom: Value(nom),
-      prenom:
-          prenom == null && nullToAbsent ? const Value.absent() : Value(prenom),
-      email:
-          email == null && nullToAbsent ? const Value.absent() : Value(email),
+      prenom: prenom == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prenom),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
       telephone: telephone == null && nullToAbsent
           ? const Value.absent()
           : Value(telephone),
@@ -310,8 +429,10 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
     );
   }
 
-  factory SoulLocal.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory SoulLocal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SoulLocal(
       id: serializer.fromJson<String>(json['id']),
@@ -325,8 +446,9 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
       dateIntegration: serializer.fromJson<String>(json['dateIntegration']),
       faiseurId: serializer.fromJson<String>(json['faiseurId']),
       familleId: serializer.fromJson<String?>(json['familleId']),
-      dateDernierContact:
-          serializer.fromJson<String?>(json['dateDernierContact']),
+      dateDernierContact: serializer.fromJson<String?>(
+        json['dateDernierContact'],
+      ),
       lastSyncAt: serializer.fromJson<String>(json['lastSyncAt']),
     );
   }
@@ -350,37 +472,37 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
     };
   }
 
-  SoulLocal copyWith(
-          {String? id,
-          String? tenantId,
-          String? nom,
-          Value<String?> prenom = const Value.absent(),
-          Value<String?> email = const Value.absent(),
-          Value<String?> telephone = const Value.absent(),
-          String? typeDisciple,
-          String? statut,
-          String? dateIntegration,
-          String? faiseurId,
-          Value<String?> familleId = const Value.absent(),
-          Value<String?> dateDernierContact = const Value.absent(),
-          String? lastSyncAt}) =>
-      SoulLocal(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        nom: nom ?? this.nom,
-        prenom: prenom.present ? prenom.value : this.prenom,
-        email: email.present ? email.value : this.email,
-        telephone: telephone.present ? telephone.value : this.telephone,
-        typeDisciple: typeDisciple ?? this.typeDisciple,
-        statut: statut ?? this.statut,
-        dateIntegration: dateIntegration ?? this.dateIntegration,
-        faiseurId: faiseurId ?? this.faiseurId,
-        familleId: familleId.present ? familleId.value : this.familleId,
-        dateDernierContact: dateDernierContact.present
-            ? dateDernierContact.value
-            : this.dateDernierContact,
-        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      );
+  SoulLocal copyWith({
+    String? id,
+    String? tenantId,
+    String? nom,
+    Value<String?> prenom = const Value.absent(),
+    Value<String?> email = const Value.absent(),
+    Value<String?> telephone = const Value.absent(),
+    String? typeDisciple,
+    String? statut,
+    String? dateIntegration,
+    String? faiseurId,
+    Value<String?> familleId = const Value.absent(),
+    Value<String?> dateDernierContact = const Value.absent(),
+    String? lastSyncAt,
+  }) => SoulLocal(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    nom: nom ?? this.nom,
+    prenom: prenom.present ? prenom.value : this.prenom,
+    email: email.present ? email.value : this.email,
+    telephone: telephone.present ? telephone.value : this.telephone,
+    typeDisciple: typeDisciple ?? this.typeDisciple,
+    statut: statut ?? this.statut,
+    dateIntegration: dateIntegration ?? this.dateIntegration,
+    faiseurId: faiseurId ?? this.faiseurId,
+    familleId: familleId.present ? familleId.value : this.familleId,
+    dateDernierContact: dateDernierContact.present
+        ? dateDernierContact.value
+        : this.dateDernierContact,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+  );
   SoulLocal copyWithCompanion(SoulsTableCompanion data) {
     return SoulLocal(
       id: data.id.present ? data.id.value : this.id,
@@ -401,8 +523,9 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
       dateDernierContact: data.dateDernierContact.present
           ? data.dateDernierContact.value
           : this.dateDernierContact,
-      lastSyncAt:
-          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+      lastSyncAt: data.lastSyncAt.present
+          ? data.lastSyncAt.value
+          : this.lastSyncAt,
     );
   }
 
@@ -428,19 +551,20 @@ class SoulLocal extends DataClass implements Insertable<SoulLocal> {
 
   @override
   int get hashCode => Object.hash(
-      id,
-      tenantId,
-      nom,
-      prenom,
-      email,
-      telephone,
-      typeDisciple,
-      statut,
-      dateIntegration,
-      faiseurId,
-      familleId,
-      dateDernierContact,
-      lastSyncAt);
+    id,
+    tenantId,
+    nom,
+    prenom,
+    email,
+    telephone,
+    typeDisciple,
+    statut,
+    dateIntegration,
+    faiseurId,
+    familleId,
+    dateDernierContact,
+    lastSyncAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -506,14 +630,14 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
     this.dateDernierContact = const Value.absent(),
     required String lastSyncAt,
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        nom = Value(nom),
-        typeDisciple = Value(typeDisciple),
-        statut = Value(statut),
-        dateIntegration = Value(dateIntegration),
-        faiseurId = Value(faiseurId),
-        lastSyncAt = Value(lastSyncAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       nom = Value(nom),
+       typeDisciple = Value(typeDisciple),
+       statut = Value(statut),
+       dateIntegration = Value(dateIntegration),
+       faiseurId = Value(faiseurId),
+       lastSyncAt = Value(lastSyncAt);
   static Insertable<SoulLocal> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -549,21 +673,22 @@ class SoulsTableCompanion extends UpdateCompanion<SoulLocal> {
     });
   }
 
-  SoulsTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String>? nom,
-      Value<String?>? prenom,
-      Value<String?>? email,
-      Value<String?>? telephone,
-      Value<String>? typeDisciple,
-      Value<String>? statut,
-      Value<String>? dateIntegration,
-      Value<String>? faiseurId,
-      Value<String?>? familleId,
-      Value<String?>? dateDernierContact,
-      Value<String>? lastSyncAt,
-      Value<int>? rowid}) {
+  SoulsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? nom,
+    Value<String?>? prenom,
+    Value<String?>? email,
+    Value<String?>? telephone,
+    Value<String>? typeDisciple,
+    Value<String>? statut,
+    Value<String>? dateIntegration,
+    Value<String>? faiseurId,
+    Value<String?>? familleId,
+    Value<String?>? dateDernierContact,
+    Value<String>? lastSyncAt,
+    Value<int>? rowid,
+  }) {
     return SoulsTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -661,110 +786,173 @@ class $ReportDraftsTableTable extends ReportDraftsTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _ameIdMeta = const VerificationMeta('ameId');
   @override
   late final GeneratedColumn<String> ameId = GeneratedColumn<String>(
-      'ame_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _semaineMeta =
-      const VerificationMeta('semaine');
+    'ame_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _semaineMeta = const VerificationMeta(
+    'semaine',
+  );
   @override
   late final GeneratedColumn<String> semaine = GeneratedColumn<String>(
-      'semaine', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _presencesParCulteMeta =
-      const VerificationMeta('presencesParCulte');
+    'semaine',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _presencesParCulteMeta = const VerificationMeta(
+    'presencesParCulte',
+  );
   @override
   late final GeneratedColumn<String> presencesParCulte =
-      GeneratedColumn<String>('presences_par_culte', aliasedName, false,
-          type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _absenceRaisonMeta =
-      const VerificationMeta('absenceRaison');
+      GeneratedColumn<String>(
+        'presences_par_culte',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _absenceRaisonMeta = const VerificationMeta(
+    'absenceRaison',
+  );
   @override
   late final GeneratedColumn<String> absenceRaison = GeneratedColumn<String>(
-      'absence_raison', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'absence_raison',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _absenceCommentaireMeta =
       const VerificationMeta('absenceCommentaire');
   @override
   late final GeneratedColumn<String> absenceCommentaire =
-      GeneratedColumn<String>('absence_commentaire', aliasedName, true,
-          type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _difficultesMeta =
-      const VerificationMeta('difficultes');
+      GeneratedColumn<String>(
+        'absence_commentaire',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _difficultesMeta = const VerificationMeta(
+    'difficultes',
+  );
   @override
   late final GeneratedColumn<String> difficultes = GeneratedColumn<String>(
-      'difficultes', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'difficultes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesComplementairesMeta =
       const VerificationMeta('notesComplementaires');
   @override
   late final GeneratedColumn<String> notesComplementaires =
-      GeneratedColumn<String>('notes_complementaires', aliasedName, true,
-          type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _nbSortiesMeta =
-      const VerificationMeta('nbSorties');
+      GeneratedColumn<String>(
+        'notes_complementaires',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _nbSortiesMeta = const VerificationMeta(
+    'nbSorties',
+  );
   @override
   late final GeneratedColumn<int> nbSorties = GeneratedColumn<int>(
-      'nb_sorties', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0));
-  static const VerificationMeta _nbMaintenusMeta =
-      const VerificationMeta('nbMaintenus');
+    'nb_sorties',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _nbMaintenusMeta = const VerificationMeta(
+    'nbMaintenus',
+  );
   @override
   late final GeneratedColumn<int> nbMaintenus = GeneratedColumn<int>(
-      'nb_maintenus', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0));
-  static const VerificationMeta _updatedAtMeta =
-      const VerificationMeta('updatedAt');
+    'nb_maintenus',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<String> updatedAt = GeneratedColumn<String>(
-      'updated_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
   @override
   late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
-      'synced', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
-      defaultValue: const Constant(false));
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        ameId,
-        semaine,
-        presencesParCulte,
-        absenceRaison,
-        absenceCommentaire,
-        difficultes,
-        notesComplementaires,
-        nbSorties,
-        nbMaintenus,
-        updatedAt,
-        synced
-      ];
+    id,
+    tenantId,
+    ameId,
+    semaine,
+    presencesParCulte,
+    absenceRaison,
+    absenceCommentaire,
+    difficultes,
+    notesComplementaires,
+    nbSorties,
+    nbMaintenus,
+    updatedAt,
+    synced,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'report_drafts_table';
   @override
-  VerificationContext validateIntegrity(Insertable<ReportDraft> instance,
-      {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<ReportDraft> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -773,74 +961,104 @@ class $ReportDraftsTableTable extends ReportDraftsTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('ame_id')) {
       context.handle(
-          _ameIdMeta, ameId.isAcceptableOrUnknown(data['ame_id']!, _ameIdMeta));
+        _ameIdMeta,
+        ameId.isAcceptableOrUnknown(data['ame_id']!, _ameIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_ameIdMeta);
     }
     if (data.containsKey('semaine')) {
-      context.handle(_semaineMeta,
-          semaine.isAcceptableOrUnknown(data['semaine']!, _semaineMeta));
+      context.handle(
+        _semaineMeta,
+        semaine.isAcceptableOrUnknown(data['semaine']!, _semaineMeta),
+      );
     } else if (isInserting) {
       context.missing(_semaineMeta);
     }
     if (data.containsKey('presences_par_culte')) {
       context.handle(
+        _presencesParCulteMeta,
+        presencesParCulte.isAcceptableOrUnknown(
+          data['presences_par_culte']!,
           _presencesParCulteMeta,
-          presencesParCulte.isAcceptableOrUnknown(
-              data['presences_par_culte']!, _presencesParCulteMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_presencesParCulteMeta);
     }
     if (data.containsKey('absence_raison')) {
       context.handle(
+        _absenceRaisonMeta,
+        absenceRaison.isAcceptableOrUnknown(
+          data['absence_raison']!,
           _absenceRaisonMeta,
-          absenceRaison.isAcceptableOrUnknown(
-              data['absence_raison']!, _absenceRaisonMeta));
+        ),
+      );
     }
     if (data.containsKey('absence_commentaire')) {
       context.handle(
+        _absenceCommentaireMeta,
+        absenceCommentaire.isAcceptableOrUnknown(
+          data['absence_commentaire']!,
           _absenceCommentaireMeta,
-          absenceCommentaire.isAcceptableOrUnknown(
-              data['absence_commentaire']!, _absenceCommentaireMeta));
+        ),
+      );
     }
     if (data.containsKey('difficultes')) {
       context.handle(
+        _difficultesMeta,
+        difficultes.isAcceptableOrUnknown(
+          data['difficultes']!,
           _difficultesMeta,
-          difficultes.isAcceptableOrUnknown(
-              data['difficultes']!, _difficultesMeta));
+        ),
+      );
     }
     if (data.containsKey('notes_complementaires')) {
       context.handle(
+        _notesComplementairesMeta,
+        notesComplementaires.isAcceptableOrUnknown(
+          data['notes_complementaires']!,
           _notesComplementairesMeta,
-          notesComplementaires.isAcceptableOrUnknown(
-              data['notes_complementaires']!, _notesComplementairesMeta));
+        ),
+      );
     }
     if (data.containsKey('nb_sorties')) {
-      context.handle(_nbSortiesMeta,
-          nbSorties.isAcceptableOrUnknown(data['nb_sorties']!, _nbSortiesMeta));
+      context.handle(
+        _nbSortiesMeta,
+        nbSorties.isAcceptableOrUnknown(data['nb_sorties']!, _nbSortiesMeta),
+      );
     }
     if (data.containsKey('nb_maintenus')) {
       context.handle(
+        _nbMaintenusMeta,
+        nbMaintenus.isAcceptableOrUnknown(
+          data['nb_maintenus']!,
           _nbMaintenusMeta,
-          nbMaintenus.isAcceptableOrUnknown(
-              data['nb_maintenus']!, _nbMaintenusMeta));
+        ),
+      );
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta,
-          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
     if (data.containsKey('synced')) {
-      context.handle(_syncedMeta,
-          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
     }
     return context;
   }
@@ -851,32 +1069,58 @@ class $ReportDraftsTableTable extends ReportDraftsTable
   ReportDraft map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ReportDraft(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      ameId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}ame_id'])!,
-      semaine: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}semaine'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      ameId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ame_id'],
+      )!,
+      semaine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}semaine'],
+      )!,
       presencesParCulte: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}presences_par_culte'])!,
-      absenceRaison: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}absence_raison']),
+        DriftSqlType.string,
+        data['${effectivePrefix}presences_par_culte'],
+      )!,
+      absenceRaison: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}absence_raison'],
+      ),
       absenceCommentaire: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}absence_commentaire']),
-      difficultes: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}difficultes']),
+        DriftSqlType.string,
+        data['${effectivePrefix}absence_commentaire'],
+      ),
+      difficultes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}difficultes'],
+      ),
       notesComplementaires: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}notes_complementaires']),
-      nbSorties: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}nb_sorties'])!,
-      nbMaintenus: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}nb_maintenus'])!,
-      updatedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}updated_at'])!,
-      synced: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+        DriftSqlType.string,
+        data['${effectivePrefix}notes_complementaires'],
+      ),
+      nbSorties: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nb_sorties'],
+      )!,
+      nbMaintenus: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nb_maintenus'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
     );
   }
 
@@ -900,20 +1144,21 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
   final int nbMaintenus;
   final String updatedAt;
   final bool synced;
-  const ReportDraft(
-      {required this.id,
-      required this.tenantId,
-      required this.ameId,
-      required this.semaine,
-      required this.presencesParCulte,
-      this.absenceRaison,
-      this.absenceCommentaire,
-      this.difficultes,
-      this.notesComplementaires,
-      required this.nbSorties,
-      required this.nbMaintenus,
-      required this.updatedAt,
-      required this.synced});
+  const ReportDraft({
+    required this.id,
+    required this.tenantId,
+    required this.ameId,
+    required this.semaine,
+    required this.presencesParCulte,
+    this.absenceRaison,
+    this.absenceCommentaire,
+    this.difficultes,
+    this.notesComplementaires,
+    required this.nbSorties,
+    required this.nbMaintenus,
+    required this.updatedAt,
+    required this.synced,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -967,8 +1212,10 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
     );
   }
 
-  factory ReportDraft.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory ReportDraft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ReportDraft(
       id: serializer.fromJson<String>(json['id']),
@@ -977,11 +1224,13 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
       semaine: serializer.fromJson<String>(json['semaine']),
       presencesParCulte: serializer.fromJson<String>(json['presencesParCulte']),
       absenceRaison: serializer.fromJson<String?>(json['absenceRaison']),
-      absenceCommentaire:
-          serializer.fromJson<String?>(json['absenceCommentaire']),
+      absenceCommentaire: serializer.fromJson<String?>(
+        json['absenceCommentaire'],
+      ),
       difficultes: serializer.fromJson<String?>(json['difficultes']),
-      notesComplementaires:
-          serializer.fromJson<String?>(json['notesComplementaires']),
+      notesComplementaires: serializer.fromJson<String?>(
+        json['notesComplementaires'],
+      ),
       nbSorties: serializer.fromJson<int>(json['nbSorties']),
       nbMaintenus: serializer.fromJson<int>(json['nbMaintenus']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
@@ -1008,40 +1257,41 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
     };
   }
 
-  ReportDraft copyWith(
-          {String? id,
-          String? tenantId,
-          String? ameId,
-          String? semaine,
-          String? presencesParCulte,
-          Value<String?> absenceRaison = const Value.absent(),
-          Value<String?> absenceCommentaire = const Value.absent(),
-          Value<String?> difficultes = const Value.absent(),
-          Value<String?> notesComplementaires = const Value.absent(),
-          int? nbSorties,
-          int? nbMaintenus,
-          String? updatedAt,
-          bool? synced}) =>
-      ReportDraft(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        ameId: ameId ?? this.ameId,
-        semaine: semaine ?? this.semaine,
-        presencesParCulte: presencesParCulte ?? this.presencesParCulte,
-        absenceRaison:
-            absenceRaison.present ? absenceRaison.value : this.absenceRaison,
-        absenceCommentaire: absenceCommentaire.present
-            ? absenceCommentaire.value
-            : this.absenceCommentaire,
-        difficultes: difficultes.present ? difficultes.value : this.difficultes,
-        notesComplementaires: notesComplementaires.present
-            ? notesComplementaires.value
-            : this.notesComplementaires,
-        nbSorties: nbSorties ?? this.nbSorties,
-        nbMaintenus: nbMaintenus ?? this.nbMaintenus,
-        updatedAt: updatedAt ?? this.updatedAt,
-        synced: synced ?? this.synced,
-      );
+  ReportDraft copyWith({
+    String? id,
+    String? tenantId,
+    String? ameId,
+    String? semaine,
+    String? presencesParCulte,
+    Value<String?> absenceRaison = const Value.absent(),
+    Value<String?> absenceCommentaire = const Value.absent(),
+    Value<String?> difficultes = const Value.absent(),
+    Value<String?> notesComplementaires = const Value.absent(),
+    int? nbSorties,
+    int? nbMaintenus,
+    String? updatedAt,
+    bool? synced,
+  }) => ReportDraft(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    ameId: ameId ?? this.ameId,
+    semaine: semaine ?? this.semaine,
+    presencesParCulte: presencesParCulte ?? this.presencesParCulte,
+    absenceRaison: absenceRaison.present
+        ? absenceRaison.value
+        : this.absenceRaison,
+    absenceCommentaire: absenceCommentaire.present
+        ? absenceCommentaire.value
+        : this.absenceCommentaire,
+    difficultes: difficultes.present ? difficultes.value : this.difficultes,
+    notesComplementaires: notesComplementaires.present
+        ? notesComplementaires.value
+        : this.notesComplementaires,
+    nbSorties: nbSorties ?? this.nbSorties,
+    nbMaintenus: nbMaintenus ?? this.nbMaintenus,
+    updatedAt: updatedAt ?? this.updatedAt,
+    synced: synced ?? this.synced,
+  );
   ReportDraft copyWithCompanion(ReportDraftsTableCompanion data) {
     return ReportDraft(
       id: data.id.present ? data.id.value : this.id,
@@ -1057,14 +1307,16 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
       absenceCommentaire: data.absenceCommentaire.present
           ? data.absenceCommentaire.value
           : this.absenceCommentaire,
-      difficultes:
-          data.difficultes.present ? data.difficultes.value : this.difficultes,
+      difficultes: data.difficultes.present
+          ? data.difficultes.value
+          : this.difficultes,
       notesComplementaires: data.notesComplementaires.present
           ? data.notesComplementaires.value
           : this.notesComplementaires,
       nbSorties: data.nbSorties.present ? data.nbSorties.value : this.nbSorties,
-      nbMaintenus:
-          data.nbMaintenus.present ? data.nbMaintenus.value : this.nbMaintenus,
+      nbMaintenus: data.nbMaintenus.present
+          ? data.nbMaintenus.value
+          : this.nbMaintenus,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       synced: data.synced.present ? data.synced.value : this.synced,
     );
@@ -1092,19 +1344,20 @@ class ReportDraft extends DataClass implements Insertable<ReportDraft> {
 
   @override
   int get hashCode => Object.hash(
-      id,
-      tenantId,
-      ameId,
-      semaine,
-      presencesParCulte,
-      absenceRaison,
-      absenceCommentaire,
-      difficultes,
-      notesComplementaires,
-      nbSorties,
-      nbMaintenus,
-      updatedAt,
-      synced);
+    id,
+    tenantId,
+    ameId,
+    semaine,
+    presencesParCulte,
+    absenceRaison,
+    absenceCommentaire,
+    difficultes,
+    notesComplementaires,
+    nbSorties,
+    nbMaintenus,
+    updatedAt,
+    synced,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1170,12 +1423,12 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
     required String updatedAt,
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        ameId = Value(ameId),
-        semaine = Value(semaine),
-        presencesParCulte = Value(presencesParCulte),
-        updatedAt = Value(updatedAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       ameId = Value(ameId),
+       semaine = Value(semaine),
+       presencesParCulte = Value(presencesParCulte),
+       updatedAt = Value(updatedAt);
   static Insertable<ReportDraft> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -1211,21 +1464,22 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
     });
   }
 
-  ReportDraftsTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String>? ameId,
-      Value<String>? semaine,
-      Value<String>? presencesParCulte,
-      Value<String?>? absenceRaison,
-      Value<String?>? absenceCommentaire,
-      Value<String?>? difficultes,
-      Value<String?>? notesComplementaires,
-      Value<int>? nbSorties,
-      Value<int>? nbMaintenus,
-      Value<String>? updatedAt,
-      Value<bool>? synced,
-      Value<int>? rowid}) {
+  ReportDraftsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? ameId,
+    Value<String>? semaine,
+    Value<String>? presencesParCulte,
+    Value<String?>? absenceRaison,
+    Value<String?>? absenceCommentaire,
+    Value<String?>? difficultes,
+    Value<String?>? notesComplementaires,
+    Value<int>? nbSorties,
+    Value<int>? nbMaintenus,
+    Value<String>? updatedAt,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
     return ReportDraftsTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -1272,8 +1526,9 @@ class ReportDraftsTableCompanion extends UpdateCompanion<ReportDraft> {
       map['difficultes'] = Variable<String>(difficultes.value);
     }
     if (notesComplementaires.present) {
-      map['notes_complementaires'] =
-          Variable<String>(notesComplementaires.value);
+      map['notes_complementaires'] = Variable<String>(
+        notesComplementaires.value,
+      );
     }
     if (nbSorties.present) {
       map['nb_sorties'] = Variable<int>(nbSorties.value);
@@ -1324,71 +1579,200 @@ class $SyncQueueTableTable extends SyncQueueTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _operationMeta =
-      const VerificationMeta('operation');
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _operationMeta = const VerificationMeta(
+    'operation',
+  );
   @override
   late final GeneratedColumn<String> operation = GeneratedColumn<String>(
-      'operation', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _endpointMeta =
-      const VerificationMeta('endpoint');
+    'operation',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endpointMeta = const VerificationMeta(
+    'endpoint',
+  );
   @override
   late final GeneratedColumn<String> endpoint = GeneratedColumn<String>(
-      'endpoint', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _payloadMeta =
-      const VerificationMeta('payload');
+    'endpoint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
   @override
   late final GeneratedColumn<String> payload = GeneratedColumn<String>(
-      'payload', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _createdAtMeta =
-      const VerificationMeta('createdAt');
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<String> createdAt = GeneratedColumn<String>(
-      'created_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _retryCountMeta =
-      const VerificationMeta('retryCount');
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _retryCountMeta = const VerificationMeta(
+    'retryCount',
+  );
   @override
   late final GeneratedColumn<int> retryCount = GeneratedColumn<int>(
-      'retry_count', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0));
-  static const VerificationMeta _lastErrorMeta =
-      const VerificationMeta('lastError');
+    'retry_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
   @override
   late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
-      'last_error', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _clientUuidMeta = const VerificationMeta(
+    'clientUuid',
+  );
+  @override
+  late final GeneratedColumn<String> clientUuid = GeneratedColumn<String>(
+    'client_uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _syncTypeMeta = const VerificationMeta(
+    'syncType',
+  );
+  @override
+  late final GeneratedColumn<String> syncType = GeneratedColumn<String>(
+    'sync_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('PENDING'),
+  );
+  static const VerificationMeta _clientAtMeta = const VerificationMeta(
+    'clientAt',
+  );
+  @override
+  late final GeneratedColumn<String> clientAt = GeneratedColumn<String>(
+    'client_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _photoBase64Meta = const VerificationMeta(
+    'photoBase64',
+  );
+  @override
+  late final GeneratedColumn<String> photoBase64 = GeneratedColumn<String>(
+    'photo_base64',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _photoMimeMeta = const VerificationMeta(
+    'photoMime',
+  );
+  @override
+  late final GeneratedColumn<String> photoMime = GeneratedColumn<String>(
+    'photo_mime',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('image/jpeg'),
+  );
+  static const VerificationMeta _photoNameMeta = const VerificationMeta(
+    'photoName',
+  );
+  @override
+  late final GeneratedColumn<String> photoName = GeneratedColumn<String>(
+    'photo_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('photo.jpg'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        operation,
-        endpoint,
-        payload,
-        createdAt,
-        retryCount,
-        lastError
-      ];
+    id,
+    tenantId,
+    operation,
+    endpoint,
+    payload,
+    createdAt,
+    retryCount,
+    lastError,
+    clientUuid,
+    syncType,
+    status,
+    clientAt,
+    photoBase64,
+    photoMime,
+    photoName,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'sync_queue_table';
   @override
-  VerificationContext validateIntegrity(Insertable<SyncQueueItem> instance,
-      {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SyncQueueItem> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1397,44 +1781,101 @@ class $SyncQueueTableTable extends SyncQueueTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('operation')) {
-      context.handle(_operationMeta,
-          operation.isAcceptableOrUnknown(data['operation']!, _operationMeta));
+      context.handle(
+        _operationMeta,
+        operation.isAcceptableOrUnknown(data['operation']!, _operationMeta),
+      );
     } else if (isInserting) {
       context.missing(_operationMeta);
     }
     if (data.containsKey('endpoint')) {
-      context.handle(_endpointMeta,
-          endpoint.isAcceptableOrUnknown(data['endpoint']!, _endpointMeta));
+      context.handle(
+        _endpointMeta,
+        endpoint.isAcceptableOrUnknown(data['endpoint']!, _endpointMeta),
+      );
     } else if (isInserting) {
       context.missing(_endpointMeta);
     }
     if (data.containsKey('payload')) {
-      context.handle(_payloadMeta,
-          payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta));
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
     } else if (isInserting) {
       context.missing(_payloadMeta);
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta,
-          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('retry_count')) {
       context.handle(
-          _retryCountMeta,
-          retryCount.isAcceptableOrUnknown(
-              data['retry_count']!, _retryCountMeta));
+        _retryCountMeta,
+        retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta),
+      );
     }
     if (data.containsKey('last_error')) {
-      context.handle(_lastErrorMeta,
-          lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta));
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('client_uuid')) {
+      context.handle(
+        _clientUuidMeta,
+        clientUuid.isAcceptableOrUnknown(data['client_uuid']!, _clientUuidMeta),
+      );
+    }
+    if (data.containsKey('sync_type')) {
+      context.handle(
+        _syncTypeMeta,
+        syncType.isAcceptableOrUnknown(data['sync_type']!, _syncTypeMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('client_at')) {
+      context.handle(
+        _clientAtMeta,
+        clientAt.isAcceptableOrUnknown(data['client_at']!, _clientAtMeta),
+      );
+    }
+    if (data.containsKey('photo_base64')) {
+      context.handle(
+        _photoBase64Meta,
+        photoBase64.isAcceptableOrUnknown(
+          data['photo_base64']!,
+          _photoBase64Meta,
+        ),
+      );
+    }
+    if (data.containsKey('photo_mime')) {
+      context.handle(
+        _photoMimeMeta,
+        photoMime.isAcceptableOrUnknown(data['photo_mime']!, _photoMimeMeta),
+      );
+    }
+    if (data.containsKey('photo_name')) {
+      context.handle(
+        _photoNameMeta,
+        photoName.isAcceptableOrUnknown(data['photo_name']!, _photoNameMeta),
+      );
     }
     return context;
   }
@@ -1445,22 +1886,66 @@ class $SyncQueueTableTable extends SyncQueueTable
   SyncQueueItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SyncQueueItem(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      operation: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}operation'])!,
-      endpoint: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}endpoint'])!,
-      payload: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}payload'])!,
-      createdAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}created_at'])!,
-      retryCount: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}retry_count'])!,
-      lastError: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_error']),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      operation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation'],
+      )!,
+      endpoint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}endpoint'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_at'],
+      )!,
+      retryCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retry_count'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      clientUuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_uuid'],
+      )!,
+      syncType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_type'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      clientAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_at'],
+      )!,
+      photoBase64: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_base64'],
+      )!,
+      photoMime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_mime'],
+      )!,
+      photoName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_name'],
+      )!,
     );
   }
 
@@ -1479,15 +1964,41 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
   final String createdAt;
   final int retryCount;
   final String? lastError;
-  const SyncQueueItem(
-      {required this.id,
-      required this.tenantId,
-      required this.operation,
-      required this.endpoint,
-      required this.payload,
-      required this.createdAt,
-      required this.retryCount,
-      this.lastError});
+
+  /// §G5.7 — UUID v4 généré à la saisie terrain, jamais régénéré :
+  /// clé d'idempotence serveur (rejeu après réseau instable → doublon ignoré).
+  final String clientUuid;
+
+  /// §G5.7 — type d'opération dispatché par POST /sync/batch (QR_CHECKIN, …).
+  final String syncType;
+
+  /// PENDING | SYNCED | FAILED_MAX_RETRIES
+  final String status;
+
+  /// Horodatage local de la saisie (résolution de conflits LWW serveur).
+  final String clientAt;
+
+  /// Photo éventuelle (dommage matériel) encodée base64, remontée au batch.
+  final String photoBase64;
+  final String photoMime;
+  final String photoName;
+  const SyncQueueItem({
+    required this.id,
+    required this.tenantId,
+    required this.operation,
+    required this.endpoint,
+    required this.payload,
+    required this.createdAt,
+    required this.retryCount,
+    this.lastError,
+    required this.clientUuid,
+    required this.syncType,
+    required this.status,
+    required this.clientAt,
+    required this.photoBase64,
+    required this.photoMime,
+    required this.photoName,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1501,6 +2012,13 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
     if (!nullToAbsent || lastError != null) {
       map['last_error'] = Variable<String>(lastError);
     }
+    map['client_uuid'] = Variable<String>(clientUuid);
+    map['sync_type'] = Variable<String>(syncType);
+    map['status'] = Variable<String>(status);
+    map['client_at'] = Variable<String>(clientAt);
+    map['photo_base64'] = Variable<String>(photoBase64);
+    map['photo_mime'] = Variable<String>(photoMime);
+    map['photo_name'] = Variable<String>(photoName);
     return map;
   }
 
@@ -1516,11 +2034,20 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
       lastError: lastError == null && nullToAbsent
           ? const Value.absent()
           : Value(lastError),
+      clientUuid: Value(clientUuid),
+      syncType: Value(syncType),
+      status: Value(status),
+      clientAt: Value(clientAt),
+      photoBase64: Value(photoBase64),
+      photoMime: Value(photoMime),
+      photoName: Value(photoName),
     );
   }
 
-  factory SyncQueueItem.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory SyncQueueItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SyncQueueItem(
       id: serializer.fromJson<String>(json['id']),
@@ -1531,6 +2058,13 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
       createdAt: serializer.fromJson<String>(json['createdAt']),
       retryCount: serializer.fromJson<int>(json['retryCount']),
       lastError: serializer.fromJson<String?>(json['lastError']),
+      clientUuid: serializer.fromJson<String>(json['clientUuid']),
+      syncType: serializer.fromJson<String>(json['syncType']),
+      status: serializer.fromJson<String>(json['status']),
+      clientAt: serializer.fromJson<String>(json['clientAt']),
+      photoBase64: serializer.fromJson<String>(json['photoBase64']),
+      photoMime: serializer.fromJson<String>(json['photoMime']),
+      photoName: serializer.fromJson<String>(json['photoName']),
     );
   }
   @override
@@ -1545,28 +2079,49 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
       'createdAt': serializer.toJson<String>(createdAt),
       'retryCount': serializer.toJson<int>(retryCount),
       'lastError': serializer.toJson<String?>(lastError),
+      'clientUuid': serializer.toJson<String>(clientUuid),
+      'syncType': serializer.toJson<String>(syncType),
+      'status': serializer.toJson<String>(status),
+      'clientAt': serializer.toJson<String>(clientAt),
+      'photoBase64': serializer.toJson<String>(photoBase64),
+      'photoMime': serializer.toJson<String>(photoMime),
+      'photoName': serializer.toJson<String>(photoName),
     };
   }
 
-  SyncQueueItem copyWith(
-          {String? id,
-          String? tenantId,
-          String? operation,
-          String? endpoint,
-          String? payload,
-          String? createdAt,
-          int? retryCount,
-          Value<String?> lastError = const Value.absent()}) =>
-      SyncQueueItem(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        operation: operation ?? this.operation,
-        endpoint: endpoint ?? this.endpoint,
-        payload: payload ?? this.payload,
-        createdAt: createdAt ?? this.createdAt,
-        retryCount: retryCount ?? this.retryCount,
-        lastError: lastError.present ? lastError.value : this.lastError,
-      );
+  SyncQueueItem copyWith({
+    String? id,
+    String? tenantId,
+    String? operation,
+    String? endpoint,
+    String? payload,
+    String? createdAt,
+    int? retryCount,
+    Value<String?> lastError = const Value.absent(),
+    String? clientUuid,
+    String? syncType,
+    String? status,
+    String? clientAt,
+    String? photoBase64,
+    String? photoMime,
+    String? photoName,
+  }) => SyncQueueItem(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    operation: operation ?? this.operation,
+    endpoint: endpoint ?? this.endpoint,
+    payload: payload ?? this.payload,
+    createdAt: createdAt ?? this.createdAt,
+    retryCount: retryCount ?? this.retryCount,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    clientUuid: clientUuid ?? this.clientUuid,
+    syncType: syncType ?? this.syncType,
+    status: status ?? this.status,
+    clientAt: clientAt ?? this.clientAt,
+    photoBase64: photoBase64 ?? this.photoBase64,
+    photoMime: photoMime ?? this.photoMime,
+    photoName: photoName ?? this.photoName,
+  );
   SyncQueueItem copyWithCompanion(SyncQueueTableCompanion data) {
     return SyncQueueItem(
       id: data.id.present ? data.id.value : this.id,
@@ -1575,9 +2130,21 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
       endpoint: data.endpoint.present ? data.endpoint.value : this.endpoint,
       payload: data.payload.present ? data.payload.value : this.payload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      retryCount:
-          data.retryCount.present ? data.retryCount.value : this.retryCount,
+      retryCount: data.retryCount.present
+          ? data.retryCount.value
+          : this.retryCount,
       lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      clientUuid: data.clientUuid.present
+          ? data.clientUuid.value
+          : this.clientUuid,
+      syncType: data.syncType.present ? data.syncType.value : this.syncType,
+      status: data.status.present ? data.status.value : this.status,
+      clientAt: data.clientAt.present ? data.clientAt.value : this.clientAt,
+      photoBase64: data.photoBase64.present
+          ? data.photoBase64.value
+          : this.photoBase64,
+      photoMime: data.photoMime.present ? data.photoMime.value : this.photoMime,
+      photoName: data.photoName.present ? data.photoName.value : this.photoName,
     );
   }
 
@@ -1591,14 +2158,36 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
           ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('retryCount: $retryCount, ')
-          ..write('lastError: $lastError')
+          ..write('lastError: $lastError, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('syncType: $syncType, ')
+          ..write('status: $status, ')
+          ..write('clientAt: $clientAt, ')
+          ..write('photoBase64: $photoBase64, ')
+          ..write('photoMime: $photoMime, ')
+          ..write('photoName: $photoName')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, tenantId, operation, endpoint, payload,
-      createdAt, retryCount, lastError);
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    operation,
+    endpoint,
+    payload,
+    createdAt,
+    retryCount,
+    lastError,
+    clientUuid,
+    syncType,
+    status,
+    clientAt,
+    photoBase64,
+    photoMime,
+    photoName,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1610,7 +2199,14 @@ class SyncQueueItem extends DataClass implements Insertable<SyncQueueItem> {
           other.payload == this.payload &&
           other.createdAt == this.createdAt &&
           other.retryCount == this.retryCount &&
-          other.lastError == this.lastError);
+          other.lastError == this.lastError &&
+          other.clientUuid == this.clientUuid &&
+          other.syncType == this.syncType &&
+          other.status == this.status &&
+          other.clientAt == this.clientAt &&
+          other.photoBase64 == this.photoBase64 &&
+          other.photoMime == this.photoMime &&
+          other.photoName == this.photoName);
 }
 
 class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
@@ -1622,6 +2218,13 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
   final Value<String> createdAt;
   final Value<int> retryCount;
   final Value<String?> lastError;
+  final Value<String> clientUuid;
+  final Value<String> syncType;
+  final Value<String> status;
+  final Value<String> clientAt;
+  final Value<String> photoBase64;
+  final Value<String> photoMime;
+  final Value<String> photoName;
   final Value<int> rowid;
   const SyncQueueTableCompanion({
     this.id = const Value.absent(),
@@ -1632,6 +2235,13 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     this.createdAt = const Value.absent(),
     this.retryCount = const Value.absent(),
     this.lastError = const Value.absent(),
+    this.clientUuid = const Value.absent(),
+    this.syncType = const Value.absent(),
+    this.status = const Value.absent(),
+    this.clientAt = const Value.absent(),
+    this.photoBase64 = const Value.absent(),
+    this.photoMime = const Value.absent(),
+    this.photoName = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncQueueTableCompanion.insert({
@@ -1643,13 +2253,20 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     required String createdAt,
     this.retryCount = const Value.absent(),
     this.lastError = const Value.absent(),
+    this.clientUuid = const Value.absent(),
+    this.syncType = const Value.absent(),
+    this.status = const Value.absent(),
+    this.clientAt = const Value.absent(),
+    this.photoBase64 = const Value.absent(),
+    this.photoMime = const Value.absent(),
+    this.photoName = const Value.absent(),
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        operation = Value(operation),
-        endpoint = Value(endpoint),
-        payload = Value(payload),
-        createdAt = Value(createdAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       operation = Value(operation),
+       endpoint = Value(endpoint),
+       payload = Value(payload),
+       createdAt = Value(createdAt);
   static Insertable<SyncQueueItem> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -1659,6 +2276,13 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     Expression<String>? createdAt,
     Expression<int>? retryCount,
     Expression<String>? lastError,
+    Expression<String>? clientUuid,
+    Expression<String>? syncType,
+    Expression<String>? status,
+    Expression<String>? clientAt,
+    Expression<String>? photoBase64,
+    Expression<String>? photoMime,
+    Expression<String>? photoName,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1670,20 +2294,35 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
       if (createdAt != null) 'created_at': createdAt,
       if (retryCount != null) 'retry_count': retryCount,
       if (lastError != null) 'last_error': lastError,
+      if (clientUuid != null) 'client_uuid': clientUuid,
+      if (syncType != null) 'sync_type': syncType,
+      if (status != null) 'status': status,
+      if (clientAt != null) 'client_at': clientAt,
+      if (photoBase64 != null) 'photo_base64': photoBase64,
+      if (photoMime != null) 'photo_mime': photoMime,
+      if (photoName != null) 'photo_name': photoName,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  SyncQueueTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String>? operation,
-      Value<String>? endpoint,
-      Value<String>? payload,
-      Value<String>? createdAt,
-      Value<int>? retryCount,
-      Value<String?>? lastError,
-      Value<int>? rowid}) {
+  SyncQueueTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? operation,
+    Value<String>? endpoint,
+    Value<String>? payload,
+    Value<String>? createdAt,
+    Value<int>? retryCount,
+    Value<String?>? lastError,
+    Value<String>? clientUuid,
+    Value<String>? syncType,
+    Value<String>? status,
+    Value<String>? clientAt,
+    Value<String>? photoBase64,
+    Value<String>? photoMime,
+    Value<String>? photoName,
+    Value<int>? rowid,
+  }) {
     return SyncQueueTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -1693,6 +2332,13 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
       createdAt: createdAt ?? this.createdAt,
       retryCount: retryCount ?? this.retryCount,
       lastError: lastError ?? this.lastError,
+      clientUuid: clientUuid ?? this.clientUuid,
+      syncType: syncType ?? this.syncType,
+      status: status ?? this.status,
+      clientAt: clientAt ?? this.clientAt,
+      photoBase64: photoBase64 ?? this.photoBase64,
+      photoMime: photoMime ?? this.photoMime,
+      photoName: photoName ?? this.photoName,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1724,6 +2370,27 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
     if (lastError.present) {
       map['last_error'] = Variable<String>(lastError.value);
     }
+    if (clientUuid.present) {
+      map['client_uuid'] = Variable<String>(clientUuid.value);
+    }
+    if (syncType.present) {
+      map['sync_type'] = Variable<String>(syncType.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (clientAt.present) {
+      map['client_at'] = Variable<String>(clientAt.value);
+    }
+    if (photoBase64.present) {
+      map['photo_base64'] = Variable<String>(photoBase64.value);
+    }
+    if (photoMime.present) {
+      map['photo_mime'] = Variable<String>(photoMime.value);
+    }
+    if (photoName.present) {
+      map['photo_name'] = Variable<String>(photoName.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1741,6 +2408,13 @@ class SyncQueueTableCompanion extends UpdateCompanion<SyncQueueItem> {
           ..write('createdAt: $createdAt, ')
           ..write('retryCount: $retryCount, ')
           ..write('lastError: $lastError, ')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('syncType: $syncType, ')
+          ..write('status: $status, ')
+          ..write('clientAt: $clientAt, ')
+          ..write('photoBase64: $photoBase64, ')
+          ..write('photoMime: $photoMime, ')
+          ..write('photoName: $photoName, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1756,97 +2430,154 @@ class $NetworkResourcesTableTable extends NetworkResourcesTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
-      'title', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _descriptionMeta =
-      const VerificationMeta('description');
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
   @override
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
-      'description', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _categoryMeta =
-      const VerificationMeta('category');
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
   @override
   late final GeneratedColumn<String> category = GeneratedColumn<String>(
-      'category', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _resourceTypeMeta =
-      const VerificationMeta('resourceType');
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resourceTypeMeta = const VerificationMeta(
+    'resourceType',
+  );
   @override
   late final GeneratedColumn<String> resourceType = GeneratedColumn<String>(
-      'resource_type', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _fileUrlMeta =
-      const VerificationMeta('fileUrl');
+    'resource_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileUrlMeta = const VerificationMeta(
+    'fileUrl',
+  );
   @override
   late final GeneratedColumn<String> fileUrl = GeneratedColumn<String>(
-      'file_url', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _contentMeta =
-      const VerificationMeta('content');
+    'file_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
   @override
   late final GeneratedColumn<String> content = GeneratedColumn<String>(
-      'content', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _sharedWithPublicMeta =
-      const VerificationMeta('sharedWithPublic');
+    'content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sharedWithPublicMeta = const VerificationMeta(
+    'sharedWithPublic',
+  );
   @override
   late final GeneratedColumn<bool> sharedWithPublic = GeneratedColumn<bool>(
-      'shared_with_public', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("shared_with_public" IN (0, 1))'));
-  static const VerificationMeta _downloadsMeta =
-      const VerificationMeta('downloads');
+    'shared_with_public',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("shared_with_public" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _downloadsMeta = const VerificationMeta(
+    'downloads',
+  );
   @override
   late final GeneratedColumn<int> downloads = GeneratedColumn<int>(
-      'downloads', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0));
-  static const VerificationMeta _isActiveMeta =
-      const VerificationMeta('isActive');
+    'downloads',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
   @override
   late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-      'is_active', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
-      defaultValue: const Constant(true));
-  static const VerificationMeta _lastSyncAtMeta =
-      const VerificationMeta('lastSyncAt');
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _lastSyncAtMeta = const VerificationMeta(
+    'lastSyncAt',
+  );
   @override
   late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
-      'last_sync_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'last_sync_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        title,
-        description,
-        category,
-        resourceType,
-        fileUrl,
-        content,
-        sharedWithPublic,
-        downloads,
-        isActive,
-        lastSyncAt
-      ];
+    id,
+    tenantId,
+    title,
+    description,
+    category,
+    resourceType,
+    fileUrl,
+    content,
+    sharedWithPublic,
+    downloads,
+    isActive,
+    lastSyncAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1854,8 +2585,9 @@ class $NetworkResourcesTableTable extends NetworkResourcesTable
   static const String $name = 'network_resources_table';
   @override
   VerificationContext validateIntegrity(
-      Insertable<NetworkResourceLocal> instance,
-      {bool isInserting = false}) {
+    Insertable<NetworkResourceLocal> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -1864,66 +2596,92 @@ class $NetworkResourcesTableTable extends NetworkResourcesTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('title')) {
       context.handle(
-          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
     if (data.containsKey('description')) {
       context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
           _descriptionMeta,
-          description.isAcceptableOrUnknown(
-              data['description']!, _descriptionMeta));
+        ),
+      );
     }
     if (data.containsKey('category')) {
-      context.handle(_categoryMeta,
-          category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
     } else if (isInserting) {
       context.missing(_categoryMeta);
     }
     if (data.containsKey('resource_type')) {
       context.handle(
+        _resourceTypeMeta,
+        resourceType.isAcceptableOrUnknown(
+          data['resource_type']!,
           _resourceTypeMeta,
-          resourceType.isAcceptableOrUnknown(
-              data['resource_type']!, _resourceTypeMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_resourceTypeMeta);
     }
     if (data.containsKey('file_url')) {
-      context.handle(_fileUrlMeta,
-          fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta));
+      context.handle(
+        _fileUrlMeta,
+        fileUrl.isAcceptableOrUnknown(data['file_url']!, _fileUrlMeta),
+      );
     }
     if (data.containsKey('content')) {
-      context.handle(_contentMeta,
-          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
     }
     if (data.containsKey('shared_with_public')) {
       context.handle(
+        _sharedWithPublicMeta,
+        sharedWithPublic.isAcceptableOrUnknown(
+          data['shared_with_public']!,
           _sharedWithPublicMeta,
-          sharedWithPublic.isAcceptableOrUnknown(
-              data['shared_with_public']!, _sharedWithPublicMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_sharedWithPublicMeta);
     }
     if (data.containsKey('downloads')) {
-      context.handle(_downloadsMeta,
-          downloads.isAcceptableOrUnknown(data['downloads']!, _downloadsMeta));
+      context.handle(
+        _downloadsMeta,
+        downloads.isAcceptableOrUnknown(data['downloads']!, _downloadsMeta),
+      );
     }
     if (data.containsKey('is_active')) {
-      context.handle(_isActiveMeta,
-          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
     }
     if (data.containsKey('last_sync_at')) {
       context.handle(
+        _lastSyncAtMeta,
+        lastSyncAt.isAcceptableOrUnknown(
+          data['last_sync_at']!,
           _lastSyncAtMeta,
-          lastSyncAt.isAcceptableOrUnknown(
-              data['last_sync_at']!, _lastSyncAtMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_lastSyncAtMeta);
     }
@@ -1936,30 +2694,54 @@ class $NetworkResourcesTableTable extends NetworkResourcesTable
   NetworkResourceLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NetworkResourceLocal(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      title: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
-      description: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}description']),
-      category: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}category'])!,
-      resourceType: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}resource_type'])!,
-      fileUrl: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}file_url']),
-      content: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}content']),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      resourceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}resource_type'],
+      )!,
+      fileUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_url'],
+      ),
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      ),
       sharedWithPublic: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}shared_with_public'])!,
-      downloads: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}downloads'])!,
-      isActive: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-      lastSyncAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+        DriftSqlType.bool,
+        data['${effectivePrefix}shared_with_public'],
+      )!,
+      downloads: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downloads'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      lastSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_at'],
+      )!,
     );
   }
 
@@ -1983,19 +2765,20 @@ class NetworkResourceLocal extends DataClass
   final int downloads;
   final bool isActive;
   final String lastSyncAt;
-  const NetworkResourceLocal(
-      {required this.id,
-      required this.tenantId,
-      required this.title,
-      this.description,
-      required this.category,
-      required this.resourceType,
-      this.fileUrl,
-      this.content,
-      required this.sharedWithPublic,
-      required this.downloads,
-      required this.isActive,
-      required this.lastSyncAt});
+  const NetworkResourceLocal({
+    required this.id,
+    required this.tenantId,
+    required this.title,
+    this.description,
+    required this.category,
+    required this.resourceType,
+    this.fileUrl,
+    this.content,
+    required this.sharedWithPublic,
+    required this.downloads,
+    required this.isActive,
+    required this.lastSyncAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2043,8 +2826,10 @@ class NetworkResourceLocal extends DataClass
     );
   }
 
-  factory NetworkResourceLocal.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory NetworkResourceLocal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return NetworkResourceLocal(
       id: serializer.fromJson<String>(json['id']),
@@ -2080,40 +2865,41 @@ class NetworkResourceLocal extends DataClass
     };
   }
 
-  NetworkResourceLocal copyWith(
-          {String? id,
-          String? tenantId,
-          String? title,
-          Value<String?> description = const Value.absent(),
-          String? category,
-          String? resourceType,
-          Value<String?> fileUrl = const Value.absent(),
-          Value<String?> content = const Value.absent(),
-          bool? sharedWithPublic,
-          int? downloads,
-          bool? isActive,
-          String? lastSyncAt}) =>
-      NetworkResourceLocal(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        title: title ?? this.title,
-        description: description.present ? description.value : this.description,
-        category: category ?? this.category,
-        resourceType: resourceType ?? this.resourceType,
-        fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
-        content: content.present ? content.value : this.content,
-        sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
-        downloads: downloads ?? this.downloads,
-        isActive: isActive ?? this.isActive,
-        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      );
+  NetworkResourceLocal copyWith({
+    String? id,
+    String? tenantId,
+    String? title,
+    Value<String?> description = const Value.absent(),
+    String? category,
+    String? resourceType,
+    Value<String?> fileUrl = const Value.absent(),
+    Value<String?> content = const Value.absent(),
+    bool? sharedWithPublic,
+    int? downloads,
+    bool? isActive,
+    String? lastSyncAt,
+  }) => NetworkResourceLocal(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    title: title ?? this.title,
+    description: description.present ? description.value : this.description,
+    category: category ?? this.category,
+    resourceType: resourceType ?? this.resourceType,
+    fileUrl: fileUrl.present ? fileUrl.value : this.fileUrl,
+    content: content.present ? content.value : this.content,
+    sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+    downloads: downloads ?? this.downloads,
+    isActive: isActive ?? this.isActive,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+  );
   NetworkResourceLocal copyWithCompanion(NetworkResourcesTableCompanion data) {
     return NetworkResourceLocal(
       id: data.id.present ? data.id.value : this.id,
       tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
       title: data.title.present ? data.title.value : this.title,
-      description:
-          data.description.present ? data.description.value : this.description,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
       category: data.category.present ? data.category.value : this.category,
       resourceType: data.resourceType.present
           ? data.resourceType.value
@@ -2125,8 +2911,9 @@ class NetworkResourceLocal extends DataClass
           : this.sharedWithPublic,
       downloads: data.downloads.present ? data.downloads.value : this.downloads,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      lastSyncAt:
-          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+      lastSyncAt: data.lastSyncAt.present
+          ? data.lastSyncAt.value
+          : this.lastSyncAt,
     );
   }
 
@@ -2151,18 +2938,19 @@ class NetworkResourceLocal extends DataClass
 
   @override
   int get hashCode => Object.hash(
-      id,
-      tenantId,
-      title,
-      description,
-      category,
-      resourceType,
-      fileUrl,
-      content,
-      sharedWithPublic,
-      downloads,
-      isActive,
-      lastSyncAt);
+    id,
+    tenantId,
+    title,
+    description,
+    category,
+    resourceType,
+    fileUrl,
+    content,
+    sharedWithPublic,
+    downloads,
+    isActive,
+    lastSyncAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2225,13 +3013,13 @@ class NetworkResourcesTableCompanion
     this.isActive = const Value.absent(),
     required String lastSyncAt,
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        title = Value(title),
-        category = Value(category),
-        resourceType = Value(resourceType),
-        sharedWithPublic = Value(sharedWithPublic),
-        lastSyncAt = Value(lastSyncAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       title = Value(title),
+       category = Value(category),
+       resourceType = Value(resourceType),
+       sharedWithPublic = Value(sharedWithPublic),
+       lastSyncAt = Value(lastSyncAt);
   static Insertable<NetworkResourceLocal> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -2264,20 +3052,21 @@ class NetworkResourcesTableCompanion
     });
   }
 
-  NetworkResourcesTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String>? title,
-      Value<String?>? description,
-      Value<String>? category,
-      Value<String>? resourceType,
-      Value<String?>? fileUrl,
-      Value<String?>? content,
-      Value<bool>? sharedWithPublic,
-      Value<int>? downloads,
-      Value<bool>? isActive,
-      Value<String>? lastSyncAt,
-      Value<int>? rowid}) {
+  NetworkResourcesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? title,
+    Value<String?>? description,
+    Value<String>? category,
+    Value<String>? resourceType,
+    Value<String?>? fileUrl,
+    Value<String?>? content,
+    Value<bool>? sharedWithPublic,
+    Value<int>? downloads,
+    Value<bool>? isActive,
+    Value<String>? lastSyncAt,
+    Value<int>? rowid,
+  }) {
     return NetworkResourcesTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -2370,146 +3159,227 @@ class $NetworkEventsTableTable extends NetworkEventsTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
-      'title', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _descriptionMeta =
-      const VerificationMeta('description');
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
   @override
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
-      'description', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _eventTypeMeta =
-      const VerificationMeta('eventType');
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _eventTypeMeta = const VerificationMeta(
+    'eventType',
+  );
   @override
   late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
-      'event_type', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _locationMeta =
-      const VerificationMeta('location');
+    'event_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
   @override
   late final GeneratedColumn<String> location = GeneratedColumn<String>(
-      'location', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'location',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cityMeta = const VerificationMeta('city');
   @override
   late final GeneratedColumn<String> city = GeneratedColumn<String>(
-      'city', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _countryMeta =
-      const VerificationMeta('country');
+    'city',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
   @override
   late final GeneratedColumn<String> country = GeneratedColumn<String>(
-      'country', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _startsAtMeta =
-      const VerificationMeta('startsAt');
+    'country',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startsAtMeta = const VerificationMeta(
+    'startsAt',
+  );
   @override
   late final GeneratedColumn<String> startsAt = GeneratedColumn<String>(
-      'starts_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'starts_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _endsAtMeta = const VerificationMeta('endsAt');
   @override
   late final GeneratedColumn<String> endsAt = GeneratedColumn<String>(
-      'ends_at', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _maxParticipantsMeta =
-      const VerificationMeta('maxParticipants');
+    'ends_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxParticipantsMeta = const VerificationMeta(
+    'maxParticipants',
+  );
   @override
   late final GeneratedColumn<int> maxParticipants = GeneratedColumn<int>(
-      'max_participants', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
+    'max_participants',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _currentParticipantsMeta =
       const VerificationMeta('currentParticipants');
   @override
   late final GeneratedColumn<int> currentParticipants = GeneratedColumn<int>(
-      'current_participants', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(0));
-  static const VerificationMeta _isVirtualMeta =
-      const VerificationMeta('isVirtual');
+    'current_participants',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isVirtualMeta = const VerificationMeta(
+    'isVirtual',
+  );
   @override
   late final GeneratedColumn<bool> isVirtual = GeneratedColumn<bool>(
-      'is_virtual', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_virtual" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _sharedWithPublicMeta =
-      const VerificationMeta('sharedWithPublic');
+    'is_virtual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_virtual" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sharedWithPublicMeta = const VerificationMeta(
+    'sharedWithPublic',
+  );
   @override
   late final GeneratedColumn<bool> sharedWithPublic = GeneratedColumn<bool>(
-      'shared_with_public', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: true,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("shared_with_public" IN (0, 1))'));
-  static const VerificationMeta _isActiveMeta =
-      const VerificationMeta('isActive');
+    'shared_with_public',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("shared_with_public" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
   @override
   late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-      'is_active', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
-      defaultValue: const Constant(true));
-  static const VerificationMeta _joinedByMeMeta =
-      const VerificationMeta('joinedByMe');
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _joinedByMeMeta = const VerificationMeta(
+    'joinedByMe',
+  );
   @override
   late final GeneratedColumn<bool> joinedByMe = GeneratedColumn<bool>(
-      'joined_by_me', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'CHECK ("joined_by_me" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _lastSyncAtMeta =
-      const VerificationMeta('lastSyncAt');
+    'joined_by_me',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("joined_by_me" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _lastSyncAtMeta = const VerificationMeta(
+    'lastSyncAt',
+  );
   @override
   late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
-      'last_sync_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'last_sync_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        title,
-        description,
-        eventType,
-        location,
-        city,
-        country,
-        startsAt,
-        endsAt,
-        maxParticipants,
-        currentParticipants,
-        isVirtual,
-        sharedWithPublic,
-        isActive,
-        joinedByMe,
-        lastSyncAt
-      ];
+    id,
+    tenantId,
+    title,
+    description,
+    eventType,
+    location,
+    city,
+    country,
+    startsAt,
+    endsAt,
+    maxParticipants,
+    currentParticipants,
+    isVirtual,
+    sharedWithPublic,
+    isActive,
+    joinedByMe,
+    lastSyncAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'network_events_table';
   @override
-  VerificationContext validateIntegrity(Insertable<NetworkEventLocal> instance,
-      {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<NetworkEventLocal> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -2518,90 +3388,128 @@ class $NetworkEventsTableTable extends NetworkEventsTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('title')) {
       context.handle(
-          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
     if (data.containsKey('description')) {
       context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
           _descriptionMeta,
-          description.isAcceptableOrUnknown(
-              data['description']!, _descriptionMeta));
+        ),
+      );
     }
     if (data.containsKey('event_type')) {
-      context.handle(_eventTypeMeta,
-          eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta));
+      context.handle(
+        _eventTypeMeta,
+        eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta),
+      );
     } else if (isInserting) {
       context.missing(_eventTypeMeta);
     }
     if (data.containsKey('location')) {
-      context.handle(_locationMeta,
-          location.isAcceptableOrUnknown(data['location']!, _locationMeta));
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
     }
     if (data.containsKey('city')) {
       context.handle(
-          _cityMeta, city.isAcceptableOrUnknown(data['city']!, _cityMeta));
+        _cityMeta,
+        city.isAcceptableOrUnknown(data['city']!, _cityMeta),
+      );
     }
     if (data.containsKey('country')) {
-      context.handle(_countryMeta,
-          country.isAcceptableOrUnknown(data['country']!, _countryMeta));
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
     }
     if (data.containsKey('starts_at')) {
-      context.handle(_startsAtMeta,
-          startsAt.isAcceptableOrUnknown(data['starts_at']!, _startsAtMeta));
+      context.handle(
+        _startsAtMeta,
+        startsAt.isAcceptableOrUnknown(data['starts_at']!, _startsAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_startsAtMeta);
     }
     if (data.containsKey('ends_at')) {
-      context.handle(_endsAtMeta,
-          endsAt.isAcceptableOrUnknown(data['ends_at']!, _endsAtMeta));
+      context.handle(
+        _endsAtMeta,
+        endsAt.isAcceptableOrUnknown(data['ends_at']!, _endsAtMeta),
+      );
     }
     if (data.containsKey('max_participants')) {
       context.handle(
+        _maxParticipantsMeta,
+        maxParticipants.isAcceptableOrUnknown(
+          data['max_participants']!,
           _maxParticipantsMeta,
-          maxParticipants.isAcceptableOrUnknown(
-              data['max_participants']!, _maxParticipantsMeta));
+        ),
+      );
     }
     if (data.containsKey('current_participants')) {
       context.handle(
+        _currentParticipantsMeta,
+        currentParticipants.isAcceptableOrUnknown(
+          data['current_participants']!,
           _currentParticipantsMeta,
-          currentParticipants.isAcceptableOrUnknown(
-              data['current_participants']!, _currentParticipantsMeta));
+        ),
+      );
     }
     if (data.containsKey('is_virtual')) {
-      context.handle(_isVirtualMeta,
-          isVirtual.isAcceptableOrUnknown(data['is_virtual']!, _isVirtualMeta));
+      context.handle(
+        _isVirtualMeta,
+        isVirtual.isAcceptableOrUnknown(data['is_virtual']!, _isVirtualMeta),
+      );
     }
     if (data.containsKey('shared_with_public')) {
       context.handle(
+        _sharedWithPublicMeta,
+        sharedWithPublic.isAcceptableOrUnknown(
+          data['shared_with_public']!,
           _sharedWithPublicMeta,
-          sharedWithPublic.isAcceptableOrUnknown(
-              data['shared_with_public']!, _sharedWithPublicMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_sharedWithPublicMeta);
     }
     if (data.containsKey('is_active')) {
-      context.handle(_isActiveMeta,
-          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
     }
     if (data.containsKey('joined_by_me')) {
       context.handle(
+        _joinedByMeMeta,
+        joinedByMe.isAcceptableOrUnknown(
+          data['joined_by_me']!,
           _joinedByMeMeta,
-          joinedByMe.isAcceptableOrUnknown(
-              data['joined_by_me']!, _joinedByMeMeta));
+        ),
+      );
     }
     if (data.containsKey('last_sync_at')) {
       context.handle(
+        _lastSyncAtMeta,
+        lastSyncAt.isAcceptableOrUnknown(
+          data['last_sync_at']!,
           _lastSyncAtMeta,
-          lastSyncAt.isAcceptableOrUnknown(
-              data['last_sync_at']!, _lastSyncAtMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_lastSyncAtMeta);
     }
@@ -2614,40 +3522,74 @@ class $NetworkEventsTableTable extends NetworkEventsTable
   NetworkEventLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NetworkEventLocal(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      title: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
-      description: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}description']),
-      eventType: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}event_type'])!,
-      location: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}location']),
-      city: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}city']),
-      country: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}country']),
-      startsAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}starts_at'])!,
-      endsAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}ends_at']),
-      maxParticipants: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}max_participants']),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      eventType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_type'],
+      )!,
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      ),
+      city: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}city'],
+      ),
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      ),
+      startsAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}starts_at'],
+      )!,
+      endsAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ends_at'],
+      ),
+      maxParticipants: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_participants'],
+      ),
       currentParticipants: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}current_participants'])!,
-      isVirtual: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_virtual'])!,
+        DriftSqlType.int,
+        data['${effectivePrefix}current_participants'],
+      )!,
+      isVirtual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_virtual'],
+      )!,
       sharedWithPublic: attachedDatabase.typeMapping.read(
-          DriftSqlType.bool, data['${effectivePrefix}shared_with_public'])!,
-      isActive: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
-      joinedByMe: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}joined_by_me'])!,
-      lastSyncAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+        DriftSqlType.bool,
+        data['${effectivePrefix}shared_with_public'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      joinedByMe: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}joined_by_me'],
+      )!,
+      lastSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_at'],
+      )!,
     );
   }
 
@@ -2676,24 +3618,25 @@ class NetworkEventLocal extends DataClass
   final bool isActive;
   final bool joinedByMe;
   final String lastSyncAt;
-  const NetworkEventLocal(
-      {required this.id,
-      required this.tenantId,
-      required this.title,
-      this.description,
-      required this.eventType,
-      this.location,
-      this.city,
-      this.country,
-      required this.startsAt,
-      this.endsAt,
-      this.maxParticipants,
-      required this.currentParticipants,
-      required this.isVirtual,
-      required this.sharedWithPublic,
-      required this.isActive,
-      required this.joinedByMe,
-      required this.lastSyncAt});
+  const NetworkEventLocal({
+    required this.id,
+    required this.tenantId,
+    required this.title,
+    this.description,
+    required this.eventType,
+    this.location,
+    this.city,
+    this.country,
+    required this.startsAt,
+    this.endsAt,
+    this.maxParticipants,
+    required this.currentParticipants,
+    required this.isVirtual,
+    required this.sharedWithPublic,
+    required this.isActive,
+    required this.joinedByMe,
+    required this.lastSyncAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2746,8 +3689,9 @@ class NetworkEventLocal extends DataClass
           ? const Value.absent()
           : Value(country),
       startsAt: Value(startsAt),
-      endsAt:
-          endsAt == null && nullToAbsent ? const Value.absent() : Value(endsAt),
+      endsAt: endsAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endsAt),
       maxParticipants: maxParticipants == null && nullToAbsent
           ? const Value.absent()
           : Value(maxParticipants),
@@ -2760,8 +3704,10 @@ class NetworkEventLocal extends DataClass
     );
   }
 
-  factory NetworkEventLocal.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory NetworkEventLocal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return NetworkEventLocal(
       id: serializer.fromJson<String>(json['id']),
@@ -2775,8 +3721,9 @@ class NetworkEventLocal extends DataClass
       startsAt: serializer.fromJson<String>(json['startsAt']),
       endsAt: serializer.fromJson<String?>(json['endsAt']),
       maxParticipants: serializer.fromJson<int?>(json['maxParticipants']),
-      currentParticipants:
-          serializer.fromJson<int>(json['currentParticipants']),
+      currentParticipants: serializer.fromJson<int>(
+        json['currentParticipants'],
+      ),
       isVirtual: serializer.fromJson<bool>(json['isVirtual']),
       sharedWithPublic: serializer.fromJson<bool>(json['sharedWithPublic']),
       isActive: serializer.fromJson<bool>(json['isActive']),
@@ -2808,52 +3755,53 @@ class NetworkEventLocal extends DataClass
     };
   }
 
-  NetworkEventLocal copyWith(
-          {String? id,
-          String? tenantId,
-          String? title,
-          Value<String?> description = const Value.absent(),
-          String? eventType,
-          Value<String?> location = const Value.absent(),
-          Value<String?> city = const Value.absent(),
-          Value<String?> country = const Value.absent(),
-          String? startsAt,
-          Value<String?> endsAt = const Value.absent(),
-          Value<int?> maxParticipants = const Value.absent(),
-          int? currentParticipants,
-          bool? isVirtual,
-          bool? sharedWithPublic,
-          bool? isActive,
-          bool? joinedByMe,
-          String? lastSyncAt}) =>
-      NetworkEventLocal(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        title: title ?? this.title,
-        description: description.present ? description.value : this.description,
-        eventType: eventType ?? this.eventType,
-        location: location.present ? location.value : this.location,
-        city: city.present ? city.value : this.city,
-        country: country.present ? country.value : this.country,
-        startsAt: startsAt ?? this.startsAt,
-        endsAt: endsAt.present ? endsAt.value : this.endsAt,
-        maxParticipants: maxParticipants.present
-            ? maxParticipants.value
-            : this.maxParticipants,
-        currentParticipants: currentParticipants ?? this.currentParticipants,
-        isVirtual: isVirtual ?? this.isVirtual,
-        sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
-        isActive: isActive ?? this.isActive,
-        joinedByMe: joinedByMe ?? this.joinedByMe,
-        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      );
+  NetworkEventLocal copyWith({
+    String? id,
+    String? tenantId,
+    String? title,
+    Value<String?> description = const Value.absent(),
+    String? eventType,
+    Value<String?> location = const Value.absent(),
+    Value<String?> city = const Value.absent(),
+    Value<String?> country = const Value.absent(),
+    String? startsAt,
+    Value<String?> endsAt = const Value.absent(),
+    Value<int?> maxParticipants = const Value.absent(),
+    int? currentParticipants,
+    bool? isVirtual,
+    bool? sharedWithPublic,
+    bool? isActive,
+    bool? joinedByMe,
+    String? lastSyncAt,
+  }) => NetworkEventLocal(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    title: title ?? this.title,
+    description: description.present ? description.value : this.description,
+    eventType: eventType ?? this.eventType,
+    location: location.present ? location.value : this.location,
+    city: city.present ? city.value : this.city,
+    country: country.present ? country.value : this.country,
+    startsAt: startsAt ?? this.startsAt,
+    endsAt: endsAt.present ? endsAt.value : this.endsAt,
+    maxParticipants: maxParticipants.present
+        ? maxParticipants.value
+        : this.maxParticipants,
+    currentParticipants: currentParticipants ?? this.currentParticipants,
+    isVirtual: isVirtual ?? this.isVirtual,
+    sharedWithPublic: sharedWithPublic ?? this.sharedWithPublic,
+    isActive: isActive ?? this.isActive,
+    joinedByMe: joinedByMe ?? this.joinedByMe,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+  );
   NetworkEventLocal copyWithCompanion(NetworkEventsTableCompanion data) {
     return NetworkEventLocal(
       id: data.id.present ? data.id.value : this.id,
       tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
       title: data.title.present ? data.title.value : this.title,
-      description:
-          data.description.present ? data.description.value : this.description,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
       eventType: data.eventType.present ? data.eventType.value : this.eventType,
       location: data.location.present ? data.location.value : this.location,
       city: data.city.present ? data.city.value : this.city,
@@ -2871,10 +3819,12 @@ class NetworkEventLocal extends DataClass
           ? data.sharedWithPublic.value
           : this.sharedWithPublic,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      joinedByMe:
-          data.joinedByMe.present ? data.joinedByMe.value : this.joinedByMe,
-      lastSyncAt:
-          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+      joinedByMe: data.joinedByMe.present
+          ? data.joinedByMe.value
+          : this.joinedByMe,
+      lastSyncAt: data.lastSyncAt.present
+          ? data.lastSyncAt.value
+          : this.lastSyncAt,
     );
   }
 
@@ -2904,23 +3854,24 @@ class NetworkEventLocal extends DataClass
 
   @override
   int get hashCode => Object.hash(
-      id,
-      tenantId,
-      title,
-      description,
-      eventType,
-      location,
-      city,
-      country,
-      startsAt,
-      endsAt,
-      maxParticipants,
-      currentParticipants,
-      isVirtual,
-      sharedWithPublic,
-      isActive,
-      joinedByMe,
-      lastSyncAt);
+    id,
+    tenantId,
+    title,
+    description,
+    eventType,
+    location,
+    city,
+    country,
+    startsAt,
+    endsAt,
+    maxParticipants,
+    currentParticipants,
+    isVirtual,
+    sharedWithPublic,
+    isActive,
+    joinedByMe,
+    lastSyncAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3002,13 +3953,13 @@ class NetworkEventsTableCompanion extends UpdateCompanion<NetworkEventLocal> {
     this.joinedByMe = const Value.absent(),
     required String lastSyncAt,
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        title = Value(title),
-        eventType = Value(eventType),
-        startsAt = Value(startsAt),
-        sharedWithPublic = Value(sharedWithPublic),
-        lastSyncAt = Value(lastSyncAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       title = Value(title),
+       eventType = Value(eventType),
+       startsAt = Value(startsAt),
+       sharedWithPublic = Value(sharedWithPublic),
+       lastSyncAt = Value(lastSyncAt);
   static Insertable<NetworkEventLocal> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -3052,25 +4003,26 @@ class NetworkEventsTableCompanion extends UpdateCompanion<NetworkEventLocal> {
     });
   }
 
-  NetworkEventsTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String>? title,
-      Value<String?>? description,
-      Value<String>? eventType,
-      Value<String?>? location,
-      Value<String?>? city,
-      Value<String?>? country,
-      Value<String>? startsAt,
-      Value<String?>? endsAt,
-      Value<int?>? maxParticipants,
-      Value<int>? currentParticipants,
-      Value<bool>? isVirtual,
-      Value<bool>? sharedWithPublic,
-      Value<bool>? isActive,
-      Value<bool>? joinedByMe,
-      Value<String>? lastSyncAt,
-      Value<int>? rowid}) {
+  NetworkEventsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? title,
+    Value<String?>? description,
+    Value<String>? eventType,
+    Value<String?>? location,
+    Value<String?>? city,
+    Value<String?>? country,
+    Value<String>? startsAt,
+    Value<String?>? endsAt,
+    Value<int?>? maxParticipants,
+    Value<int>? currentParticipants,
+    Value<bool>? isVirtual,
+    Value<bool>? sharedWithPublic,
+    Value<bool>? isActive,
+    Value<bool>? joinedByMe,
+    Value<String>? lastSyncAt,
+    Value<int>? rowid,
+  }) {
     return NetworkEventsTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -3188,92 +4140,150 @@ class $NetworkDirectoryTableTable extends NetworkDirectoryTable
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
-      'id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _tenantIdMeta =
-      const VerificationMeta('tenantId');
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
   @override
   late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
-      'tenant_id', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _churchNameMeta =
-      const VerificationMeta('churchName');
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _churchNameMeta = const VerificationMeta(
+    'churchName',
+  );
   @override
   late final GeneratedColumn<String> churchName = GeneratedColumn<String>(
-      'church_name', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
+    'church_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _cityMeta = const VerificationMeta('city');
   @override
   late final GeneratedColumn<String> city = GeneratedColumn<String>(
-      'city', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _countryMeta =
-      const VerificationMeta('country');
+    'city',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
   @override
   late final GeneratedColumn<String> country = GeneratedColumn<String>(
-      'country', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _denominationMeta =
-      const VerificationMeta('denomination');
+    'country',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _denominationMeta = const VerificationMeta(
+    'denomination',
+  );
   @override
   late final GeneratedColumn<String> denomination = GeneratedColumn<String>(
-      'denomination', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _pastorNameMeta =
-      const VerificationMeta('pastorName');
+    'denomination',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pastorNameMeta = const VerificationMeta(
+    'pastorName',
+  );
   @override
   late final GeneratedColumn<String> pastorName = GeneratedColumn<String>(
-      'pastor_name', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _contactEmailMeta =
-      const VerificationMeta('contactEmail');
+    'pastor_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contactEmailMeta = const VerificationMeta(
+    'contactEmail',
+  );
   @override
   late final GeneratedColumn<String> contactEmail = GeneratedColumn<String>(
-      'contact_email', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _contactPhoneMeta =
-      const VerificationMeta('contactPhone');
+    'contact_email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contactPhoneMeta = const VerificationMeta(
+    'contactPhone',
+  );
   @override
   late final GeneratedColumn<String> contactPhone = GeneratedColumn<String>(
-      'contact_phone', aliasedName, true,
-      type: DriftSqlType.string, requiredDuringInsert: false);
-  static const VerificationMeta _memberCountMeta =
-      const VerificationMeta('memberCount');
+    'contact_phone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _memberCountMeta = const VerificationMeta(
+    'memberCount',
+  );
   @override
   late final GeneratedColumn<int> memberCount = GeneratedColumn<int>(
-      'member_count', aliasedName, true,
-      type: DriftSqlType.int, requiredDuringInsert: false);
-  static const VerificationMeta _isListedMeta =
-      const VerificationMeta('isListed');
+    'member_count',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isListedMeta = const VerificationMeta(
+    'isListed',
+  );
   @override
   late final GeneratedColumn<bool> isListed = GeneratedColumn<bool>(
-      'is_listed', aliasedName, false,
-      type: DriftSqlType.bool,
-      requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('CHECK ("is_listed" IN (0, 1))'),
-      defaultValue: const Constant(false));
-  static const VerificationMeta _lastSyncAtMeta =
-      const VerificationMeta('lastSyncAt');
+    'is_listed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_listed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _lastSyncAtMeta = const VerificationMeta(
+    'lastSyncAt',
+  );
   @override
   late final GeneratedColumn<String> lastSyncAt = GeneratedColumn<String>(
-      'last_sync_at', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+    'last_sync_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   @override
   List<GeneratedColumn> get $columns => [
-        id,
-        tenantId,
-        churchName,
-        city,
-        country,
-        denomination,
-        pastorName,
-        contactEmail,
-        contactPhone,
-        memberCount,
-        isListed,
-        lastSyncAt
-      ];
+    id,
+    tenantId,
+    churchName,
+    city,
+    country,
+    denomination,
+    pastorName,
+    contactEmail,
+    contactPhone,
+    memberCount,
+    isListed,
+    lastSyncAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3281,8 +4291,9 @@ class $NetworkDirectoryTableTable extends NetworkDirectoryTable
   static const String $name = 'network_directory_table';
   @override
   VerificationContext validateIntegrity(
-      Insertable<NetworkDirectoryLocal> instance,
-      {bool isInserting = false}) {
+    Insertable<NetworkDirectoryLocal> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -3291,64 +4302,87 @@ class $NetworkDirectoryTableTable extends NetworkDirectoryTable
       context.missing(_idMeta);
     }
     if (data.containsKey('tenant_id')) {
-      context.handle(_tenantIdMeta,
-          tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta));
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_tenantIdMeta);
     }
     if (data.containsKey('church_name')) {
       context.handle(
-          _churchNameMeta,
-          churchName.isAcceptableOrUnknown(
-              data['church_name']!, _churchNameMeta));
+        _churchNameMeta,
+        churchName.isAcceptableOrUnknown(data['church_name']!, _churchNameMeta),
+      );
     }
     if (data.containsKey('city')) {
       context.handle(
-          _cityMeta, city.isAcceptableOrUnknown(data['city']!, _cityMeta));
+        _cityMeta,
+        city.isAcceptableOrUnknown(data['city']!, _cityMeta),
+      );
     }
     if (data.containsKey('country')) {
-      context.handle(_countryMeta,
-          country.isAcceptableOrUnknown(data['country']!, _countryMeta));
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
     }
     if (data.containsKey('denomination')) {
       context.handle(
+        _denominationMeta,
+        denomination.isAcceptableOrUnknown(
+          data['denomination']!,
           _denominationMeta,
-          denomination.isAcceptableOrUnknown(
-              data['denomination']!, _denominationMeta));
+        ),
+      );
     }
     if (data.containsKey('pastor_name')) {
       context.handle(
-          _pastorNameMeta,
-          pastorName.isAcceptableOrUnknown(
-              data['pastor_name']!, _pastorNameMeta));
+        _pastorNameMeta,
+        pastorName.isAcceptableOrUnknown(data['pastor_name']!, _pastorNameMeta),
+      );
     }
     if (data.containsKey('contact_email')) {
       context.handle(
+        _contactEmailMeta,
+        contactEmail.isAcceptableOrUnknown(
+          data['contact_email']!,
           _contactEmailMeta,
-          contactEmail.isAcceptableOrUnknown(
-              data['contact_email']!, _contactEmailMeta));
+        ),
+      );
     }
     if (data.containsKey('contact_phone')) {
       context.handle(
+        _contactPhoneMeta,
+        contactPhone.isAcceptableOrUnknown(
+          data['contact_phone']!,
           _contactPhoneMeta,
-          contactPhone.isAcceptableOrUnknown(
-              data['contact_phone']!, _contactPhoneMeta));
+        ),
+      );
     }
     if (data.containsKey('member_count')) {
       context.handle(
+        _memberCountMeta,
+        memberCount.isAcceptableOrUnknown(
+          data['member_count']!,
           _memberCountMeta,
-          memberCount.isAcceptableOrUnknown(
-              data['member_count']!, _memberCountMeta));
+        ),
+      );
     }
     if (data.containsKey('is_listed')) {
-      context.handle(_isListedMeta,
-          isListed.isAcceptableOrUnknown(data['is_listed']!, _isListedMeta));
+      context.handle(
+        _isListedMeta,
+        isListed.isAcceptableOrUnknown(data['is_listed']!, _isListedMeta),
+      );
     }
     if (data.containsKey('last_sync_at')) {
       context.handle(
+        _lastSyncAtMeta,
+        lastSyncAt.isAcceptableOrUnknown(
+          data['last_sync_at']!,
           _lastSyncAtMeta,
-          lastSyncAt.isAcceptableOrUnknown(
-              data['last_sync_at']!, _lastSyncAtMeta));
+        ),
+      );
     } else if (isInserting) {
       context.missing(_lastSyncAtMeta);
     }
@@ -3361,30 +4395,54 @@ class $NetworkDirectoryTableTable extends NetworkDirectoryTable
   NetworkDirectoryLocal map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return NetworkDirectoryLocal(
-      id: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
-      tenantId: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}tenant_id'])!,
-      churchName: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}church_name']),
-      city: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}city']),
-      country: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}country']),
-      denomination: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}denomination']),
-      pastorName: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}pastor_name']),
-      contactEmail: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}contact_email']),
-      contactPhone: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}contact_phone']),
-      memberCount: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}member_count']),
-      isListed: attachedDatabase.typeMapping
-          .read(DriftSqlType.bool, data['${effectivePrefix}is_listed'])!,
-      lastSyncAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_sync_at'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      churchName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}church_name'],
+      ),
+      city: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}city'],
+      ),
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      ),
+      denomination: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}denomination'],
+      ),
+      pastorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pastor_name'],
+      ),
+      contactEmail: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_email'],
+      ),
+      contactPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}contact_phone'],
+      ),
+      memberCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}member_count'],
+      ),
+      isListed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_listed'],
+      )!,
+      lastSyncAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_sync_at'],
+      )!,
     );
   }
 
@@ -3408,19 +4466,20 @@ class NetworkDirectoryLocal extends DataClass
   final int? memberCount;
   final bool isListed;
   final String lastSyncAt;
-  const NetworkDirectoryLocal(
-      {required this.id,
-      required this.tenantId,
-      this.churchName,
-      this.city,
-      this.country,
-      this.denomination,
-      this.pastorName,
-      this.contactEmail,
-      this.contactPhone,
-      this.memberCount,
-      required this.isListed,
-      required this.lastSyncAt});
+  const NetworkDirectoryLocal({
+    required this.id,
+    required this.tenantId,
+    this.churchName,
+    this.city,
+    this.country,
+    this.denomination,
+    this.pastorName,
+    this.contactEmail,
+    this.contactPhone,
+    this.memberCount,
+    required this.isListed,
+    required this.lastSyncAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3486,8 +4545,10 @@ class NetworkDirectoryLocal extends DataClass
     );
   }
 
-  factory NetworkDirectoryLocal.fromJson(Map<String, dynamic> json,
-      {ValueSerializer? serializer}) {
+  factory NetworkDirectoryLocal.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return NetworkDirectoryLocal(
       id: serializer.fromJson<String>(json['id']),
@@ -3523,60 +4584,61 @@ class NetworkDirectoryLocal extends DataClass
     };
   }
 
-  NetworkDirectoryLocal copyWith(
-          {String? id,
-          String? tenantId,
-          Value<String?> churchName = const Value.absent(),
-          Value<String?> city = const Value.absent(),
-          Value<String?> country = const Value.absent(),
-          Value<String?> denomination = const Value.absent(),
-          Value<String?> pastorName = const Value.absent(),
-          Value<String?> contactEmail = const Value.absent(),
-          Value<String?> contactPhone = const Value.absent(),
-          Value<int?> memberCount = const Value.absent(),
-          bool? isListed,
-          String? lastSyncAt}) =>
-      NetworkDirectoryLocal(
-        id: id ?? this.id,
-        tenantId: tenantId ?? this.tenantId,
-        churchName: churchName.present ? churchName.value : this.churchName,
-        city: city.present ? city.value : this.city,
-        country: country.present ? country.value : this.country,
-        denomination:
-            denomination.present ? denomination.value : this.denomination,
-        pastorName: pastorName.present ? pastorName.value : this.pastorName,
-        contactEmail:
-            contactEmail.present ? contactEmail.value : this.contactEmail,
-        contactPhone:
-            contactPhone.present ? contactPhone.value : this.contactPhone,
-        memberCount: memberCount.present ? memberCount.value : this.memberCount,
-        isListed: isListed ?? this.isListed,
-        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-      );
+  NetworkDirectoryLocal copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> churchName = const Value.absent(),
+    Value<String?> city = const Value.absent(),
+    Value<String?> country = const Value.absent(),
+    Value<String?> denomination = const Value.absent(),
+    Value<String?> pastorName = const Value.absent(),
+    Value<String?> contactEmail = const Value.absent(),
+    Value<String?> contactPhone = const Value.absent(),
+    Value<int?> memberCount = const Value.absent(),
+    bool? isListed,
+    String? lastSyncAt,
+  }) => NetworkDirectoryLocal(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    churchName: churchName.present ? churchName.value : this.churchName,
+    city: city.present ? city.value : this.city,
+    country: country.present ? country.value : this.country,
+    denomination: denomination.present ? denomination.value : this.denomination,
+    pastorName: pastorName.present ? pastorName.value : this.pastorName,
+    contactEmail: contactEmail.present ? contactEmail.value : this.contactEmail,
+    contactPhone: contactPhone.present ? contactPhone.value : this.contactPhone,
+    memberCount: memberCount.present ? memberCount.value : this.memberCount,
+    isListed: isListed ?? this.isListed,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+  );
   NetworkDirectoryLocal copyWithCompanion(NetworkDirectoryTableCompanion data) {
     return NetworkDirectoryLocal(
       id: data.id.present ? data.id.value : this.id,
       tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
-      churchName:
-          data.churchName.present ? data.churchName.value : this.churchName,
+      churchName: data.churchName.present
+          ? data.churchName.value
+          : this.churchName,
       city: data.city.present ? data.city.value : this.city,
       country: data.country.present ? data.country.value : this.country,
       denomination: data.denomination.present
           ? data.denomination.value
           : this.denomination,
-      pastorName:
-          data.pastorName.present ? data.pastorName.value : this.pastorName,
+      pastorName: data.pastorName.present
+          ? data.pastorName.value
+          : this.pastorName,
       contactEmail: data.contactEmail.present
           ? data.contactEmail.value
           : this.contactEmail,
       contactPhone: data.contactPhone.present
           ? data.contactPhone.value
           : this.contactPhone,
-      memberCount:
-          data.memberCount.present ? data.memberCount.value : this.memberCount,
+      memberCount: data.memberCount.present
+          ? data.memberCount.value
+          : this.memberCount,
       isListed: data.isListed.present ? data.isListed.value : this.isListed,
-      lastSyncAt:
-          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+      lastSyncAt: data.lastSyncAt.present
+          ? data.lastSyncAt.value
+          : this.lastSyncAt,
     );
   }
 
@@ -3601,18 +4663,19 @@ class NetworkDirectoryLocal extends DataClass
 
   @override
   int get hashCode => Object.hash(
-      id,
-      tenantId,
-      churchName,
-      city,
-      country,
-      denomination,
-      pastorName,
-      contactEmail,
-      contactPhone,
-      memberCount,
-      isListed,
-      lastSyncAt);
+    id,
+    tenantId,
+    churchName,
+    city,
+    country,
+    denomination,
+    pastorName,
+    contactEmail,
+    contactPhone,
+    memberCount,
+    isListed,
+    lastSyncAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3675,9 +4738,9 @@ class NetworkDirectoryTableCompanion
     this.isListed = const Value.absent(),
     required String lastSyncAt,
     this.rowid = const Value.absent(),
-  })  : id = Value(id),
-        tenantId = Value(tenantId),
-        lastSyncAt = Value(lastSyncAt);
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       lastSyncAt = Value(lastSyncAt);
   static Insertable<NetworkDirectoryLocal> custom({
     Expression<String>? id,
     Expression<String>? tenantId,
@@ -3710,20 +4773,21 @@ class NetworkDirectoryTableCompanion
     });
   }
 
-  NetworkDirectoryTableCompanion copyWith(
-      {Value<String>? id,
-      Value<String>? tenantId,
-      Value<String?>? churchName,
-      Value<String?>? city,
-      Value<String?>? country,
-      Value<String?>? denomination,
-      Value<String?>? pastorName,
-      Value<String?>? contactEmail,
-      Value<String?>? contactPhone,
-      Value<int?>? memberCount,
-      Value<bool>? isListed,
-      Value<String>? lastSyncAt,
-      Value<int>? rowid}) {
+  NetworkDirectoryTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? churchName,
+    Value<String?>? city,
+    Value<String?>? country,
+    Value<String?>? denomination,
+    Value<String?>? pastorName,
+    Value<String?>? contactEmail,
+    Value<String?>? contactPhone,
+    Value<int?>? memberCount,
+    Value<bool>? isListed,
+    Value<String>? lastSyncAt,
+    Value<int>? rowid,
+  }) {
     return NetworkDirectoryTableCompanion(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
@@ -3825,47 +4889,49 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
-        soulsTable,
-        reportDraftsTable,
-        syncQueueTable,
-        networkResourcesTable,
-        networkEventsTable,
-        networkDirectoryTable
-      ];
+    soulsTable,
+    reportDraftsTable,
+    syncQueueTable,
+    networkResourcesTable,
+    networkEventsTable,
+    networkDirectoryTable,
+  ];
 }
 
-typedef $$SoulsTableTableCreateCompanionBuilder = SoulsTableCompanion Function({
-  required String id,
-  required String tenantId,
-  required String nom,
-  Value<String?> prenom,
-  Value<String?> email,
-  Value<String?> telephone,
-  required String typeDisciple,
-  required String statut,
-  required String dateIntegration,
-  required String faiseurId,
-  Value<String?> familleId,
-  Value<String?> dateDernierContact,
-  required String lastSyncAt,
-  Value<int> rowid,
-});
-typedef $$SoulsTableTableUpdateCompanionBuilder = SoulsTableCompanion Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String> nom,
-  Value<String?> prenom,
-  Value<String?> email,
-  Value<String?> telephone,
-  Value<String> typeDisciple,
-  Value<String> statut,
-  Value<String> dateIntegration,
-  Value<String> faiseurId,
-  Value<String?> familleId,
-  Value<String?> dateDernierContact,
-  Value<String> lastSyncAt,
-  Value<int> rowid,
-});
+typedef $$SoulsTableTableCreateCompanionBuilder =
+    SoulsTableCompanion Function({
+      required String id,
+      required String tenantId,
+      required String nom,
+      Value<String?> prenom,
+      Value<String?> email,
+      Value<String?> telephone,
+      required String typeDisciple,
+      required String statut,
+      required String dateIntegration,
+      required String faiseurId,
+      Value<String?> familleId,
+      Value<String?> dateDernierContact,
+      required String lastSyncAt,
+      Value<int> rowid,
+    });
+typedef $$SoulsTableTableUpdateCompanionBuilder =
+    SoulsTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> nom,
+      Value<String?> prenom,
+      Value<String?> email,
+      Value<String?> telephone,
+      Value<String> typeDisciple,
+      Value<String> statut,
+      Value<String> dateIntegration,
+      Value<String> faiseurId,
+      Value<String?> familleId,
+      Value<String?> dateDernierContact,
+      Value<String> lastSyncAt,
+      Value<int> rowid,
+    });
 
 class $$SoulsTableTableFilterComposer
     extends Composer<_$AppDatabase, $SoulsTableTable> {
@@ -3877,45 +4943,69 @@ class $$SoulsTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get nom => $composableBuilder(
-      column: $table.nom, builder: (column) => ColumnFilters(column));
+    column: $table.nom,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get prenom => $composableBuilder(
-      column: $table.prenom, builder: (column) => ColumnFilters(column));
+    column: $table.prenom,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get email => $composableBuilder(
-      column: $table.email, builder: (column) => ColumnFilters(column));
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get telephone => $composableBuilder(
-      column: $table.telephone, builder: (column) => ColumnFilters(column));
+    column: $table.telephone,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get typeDisciple => $composableBuilder(
-      column: $table.typeDisciple, builder: (column) => ColumnFilters(column));
+    column: $table.typeDisciple,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get statut => $composableBuilder(
-      column: $table.statut, builder: (column) => ColumnFilters(column));
+    column: $table.statut,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get dateIntegration => $composableBuilder(
-      column: $table.dateIntegration,
-      builder: (column) => ColumnFilters(column));
+    column: $table.dateIntegration,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get faiseurId => $composableBuilder(
-      column: $table.faiseurId, builder: (column) => ColumnFilters(column));
+    column: $table.faiseurId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get familleId => $composableBuilder(
-      column: $table.familleId, builder: (column) => ColumnFilters(column));
+    column: $table.familleId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get dateDernierContact => $composableBuilder(
-      column: $table.dateDernierContact,
-      builder: (column) => ColumnFilters(column));
+    column: $table.dateDernierContact,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SoulsTableTableOrderingComposer
@@ -3928,46 +5018,69 @@ class $$SoulsTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get nom => $composableBuilder(
-      column: $table.nom, builder: (column) => ColumnOrderings(column));
+    column: $table.nom,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get prenom => $composableBuilder(
-      column: $table.prenom, builder: (column) => ColumnOrderings(column));
+    column: $table.prenom,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get email => $composableBuilder(
-      column: $table.email, builder: (column) => ColumnOrderings(column));
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get telephone => $composableBuilder(
-      column: $table.telephone, builder: (column) => ColumnOrderings(column));
+    column: $table.telephone,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get typeDisciple => $composableBuilder(
-      column: $table.typeDisciple,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.typeDisciple,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get statut => $composableBuilder(
-      column: $table.statut, builder: (column) => ColumnOrderings(column));
+    column: $table.statut,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get dateIntegration => $composableBuilder(
-      column: $table.dateIntegration,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.dateIntegration,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get faiseurId => $composableBuilder(
-      column: $table.faiseurId, builder: (column) => ColumnOrderings(column));
+    column: $table.faiseurId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get familleId => $composableBuilder(
-      column: $table.familleId, builder: (column) => ColumnOrderings(column));
+    column: $table.familleId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get dateDernierContact => $composableBuilder(
-      column: $table.dateDernierContact,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.dateDernierContact,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SoulsTableTableAnnotationComposer
@@ -3998,13 +5111,17 @@ class $$SoulsTableTableAnnotationComposer
       $composableBuilder(column: $table.telephone, builder: (column) => column);
 
   GeneratedColumn<String> get typeDisciple => $composableBuilder(
-      column: $table.typeDisciple, builder: (column) => column);
+    column: $table.typeDisciple,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get statut =>
       $composableBuilder(column: $table.statut, builder: (column) => column);
 
   GeneratedColumn<String> get dateIntegration => $composableBuilder(
-      column: $table.dateIntegration, builder: (column) => column);
+    column: $table.dateIntegration,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get faiseurId =>
       $composableBuilder(column: $table.faiseurId, builder: (column) => column);
@@ -4013,26 +5130,37 @@ class $$SoulsTableTableAnnotationComposer
       $composableBuilder(column: $table.familleId, builder: (column) => column);
 
   GeneratedColumn<String> get dateDernierContact => $composableBuilder(
-      column: $table.dateDernierContact, builder: (column) => column);
+    column: $table.dateDernierContact,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => column);
+    column: $table.lastSyncAt,
+    builder: (column) => column,
+  );
 }
 
-class $$SoulsTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $SoulsTableTable,
-    SoulLocal,
-    $$SoulsTableTableFilterComposer,
-    $$SoulsTableTableOrderingComposer,
-    $$SoulsTableTableAnnotationComposer,
-    $$SoulsTableTableCreateCompanionBuilder,
-    $$SoulsTableTableUpdateCompanionBuilder,
-    (SoulLocal, BaseReferences<_$AppDatabase, $SoulsTableTable, SoulLocal>),
-    SoulLocal,
-    PrefetchHooks Function()> {
+class $$SoulsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SoulsTableTable,
+          SoulLocal,
+          $$SoulsTableTableFilterComposer,
+          $$SoulsTableTableOrderingComposer,
+          $$SoulsTableTableAnnotationComposer,
+          $$SoulsTableTableCreateCompanionBuilder,
+          $$SoulsTableTableUpdateCompanionBuilder,
+          (
+            SoulLocal,
+            BaseReferences<_$AppDatabase, $SoulsTableTable, SoulLocal>,
+          ),
+          SoulLocal,
+          PrefetchHooks Function()
+        > {
   $$SoulsTableTableTableManager(_$AppDatabase db, $SoulsTableTable table)
-      : super(TableManagerState(
+    : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -4041,123 +5169,126 @@ class $$SoulsTableTableTableManager extends RootTableManager<
               $$SoulsTableTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$SoulsTableTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String> nom = const Value.absent(),
-            Value<String?> prenom = const Value.absent(),
-            Value<String?> email = const Value.absent(),
-            Value<String?> telephone = const Value.absent(),
-            Value<String> typeDisciple = const Value.absent(),
-            Value<String> statut = const Value.absent(),
-            Value<String> dateIntegration = const Value.absent(),
-            Value<String> faiseurId = const Value.absent(),
-            Value<String?> familleId = const Value.absent(),
-            Value<String?> dateDernierContact = const Value.absent(),
-            Value<String> lastSyncAt = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              SoulsTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            nom: nom,
-            prenom: prenom,
-            email: email,
-            telephone: telephone,
-            typeDisciple: typeDisciple,
-            statut: statut,
-            dateIntegration: dateIntegration,
-            faiseurId: faiseurId,
-            familleId: familleId,
-            dateDernierContact: dateDernierContact,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            required String nom,
-            Value<String?> prenom = const Value.absent(),
-            Value<String?> email = const Value.absent(),
-            Value<String?> telephone = const Value.absent(),
-            required String typeDisciple,
-            required String statut,
-            required String dateIntegration,
-            required String faiseurId,
-            Value<String?> familleId = const Value.absent(),
-            Value<String?> dateDernierContact = const Value.absent(),
-            required String lastSyncAt,
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              SoulsTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            nom: nom,
-            prenom: prenom,
-            email: email,
-            telephone: telephone,
-            typeDisciple: typeDisciple,
-            statut: statut,
-            dateIntegration: dateIntegration,
-            faiseurId: faiseurId,
-            familleId: familleId,
-            dateDernierContact: dateDernierContact,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> nom = const Value.absent(),
+                Value<String?> prenom = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> telephone = const Value.absent(),
+                Value<String> typeDisciple = const Value.absent(),
+                Value<String> statut = const Value.absent(),
+                Value<String> dateIntegration = const Value.absent(),
+                Value<String> faiseurId = const Value.absent(),
+                Value<String?> familleId = const Value.absent(),
+                Value<String?> dateDernierContact = const Value.absent(),
+                Value<String> lastSyncAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SoulsTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                nom: nom,
+                prenom: prenom,
+                email: email,
+                telephone: telephone,
+                typeDisciple: typeDisciple,
+                statut: statut,
+                dateIntegration: dateIntegration,
+                faiseurId: faiseurId,
+                familleId: familleId,
+                dateDernierContact: dateDernierContact,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String nom,
+                Value<String?> prenom = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String?> telephone = const Value.absent(),
+                required String typeDisciple,
+                required String statut,
+                required String dateIntegration,
+                required String faiseurId,
+                Value<String?> familleId = const Value.absent(),
+                Value<String?> dateDernierContact = const Value.absent(),
+                required String lastSyncAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SoulsTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                nom: nom,
+                prenom: prenom,
+                email: email,
+                telephone: telephone,
+                typeDisciple: typeDisciple,
+                statut: statut,
+                dateIntegration: dateIntegration,
+                faiseurId: faiseurId,
+                familleId: familleId,
+                dateDernierContact: dateDernierContact,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$SoulsTableTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $SoulsTableTable,
-    SoulLocal,
-    $$SoulsTableTableFilterComposer,
-    $$SoulsTableTableOrderingComposer,
-    $$SoulsTableTableAnnotationComposer,
-    $$SoulsTableTableCreateCompanionBuilder,
-    $$SoulsTableTableUpdateCompanionBuilder,
-    (SoulLocal, BaseReferences<_$AppDatabase, $SoulsTableTable, SoulLocal>),
-    SoulLocal,
-    PrefetchHooks Function()>;
-typedef $$ReportDraftsTableTableCreateCompanionBuilder
-    = ReportDraftsTableCompanion Function({
-  required String id,
-  required String tenantId,
-  required String ameId,
-  required String semaine,
-  required String presencesParCulte,
-  Value<String?> absenceRaison,
-  Value<String?> absenceCommentaire,
-  Value<String?> difficultes,
-  Value<String?> notesComplementaires,
-  Value<int> nbSorties,
-  Value<int> nbMaintenus,
-  required String updatedAt,
-  Value<bool> synced,
-  Value<int> rowid,
-});
-typedef $$ReportDraftsTableTableUpdateCompanionBuilder
-    = ReportDraftsTableCompanion Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String> ameId,
-  Value<String> semaine,
-  Value<String> presencesParCulte,
-  Value<String?> absenceRaison,
-  Value<String?> absenceCommentaire,
-  Value<String?> difficultes,
-  Value<String?> notesComplementaires,
-  Value<int> nbSorties,
-  Value<int> nbMaintenus,
-  Value<String> updatedAt,
-  Value<bool> synced,
-  Value<int> rowid,
-});
+typedef $$SoulsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SoulsTableTable,
+      SoulLocal,
+      $$SoulsTableTableFilterComposer,
+      $$SoulsTableTableOrderingComposer,
+      $$SoulsTableTableAnnotationComposer,
+      $$SoulsTableTableCreateCompanionBuilder,
+      $$SoulsTableTableUpdateCompanionBuilder,
+      (SoulLocal, BaseReferences<_$AppDatabase, $SoulsTableTable, SoulLocal>),
+      SoulLocal,
+      PrefetchHooks Function()
+    >;
+typedef $$ReportDraftsTableTableCreateCompanionBuilder =
+    ReportDraftsTableCompanion Function({
+      required String id,
+      required String tenantId,
+      required String ameId,
+      required String semaine,
+      required String presencesParCulte,
+      Value<String?> absenceRaison,
+      Value<String?> absenceCommentaire,
+      Value<String?> difficultes,
+      Value<String?> notesComplementaires,
+      Value<int> nbSorties,
+      Value<int> nbMaintenus,
+      required String updatedAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
+typedef $$ReportDraftsTableTableUpdateCompanionBuilder =
+    ReportDraftsTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> ameId,
+      Value<String> semaine,
+      Value<String> presencesParCulte,
+      Value<String?> absenceRaison,
+      Value<String?> absenceCommentaire,
+      Value<String?> difficultes,
+      Value<String?> notesComplementaires,
+      Value<int> nbSorties,
+      Value<int> nbMaintenus,
+      Value<String> updatedAt,
+      Value<bool> synced,
+      Value<int> rowid,
+    });
 
 class $$ReportDraftsTableTableFilterComposer
     extends Composer<_$AppDatabase, $ReportDraftsTableTable> {
@@ -4169,46 +5300,69 @@ class $$ReportDraftsTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get ameId => $composableBuilder(
-      column: $table.ameId, builder: (column) => ColumnFilters(column));
+    column: $table.ameId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get semaine => $composableBuilder(
-      column: $table.semaine, builder: (column) => ColumnFilters(column));
+    column: $table.semaine,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get presencesParCulte => $composableBuilder(
-      column: $table.presencesParCulte,
-      builder: (column) => ColumnFilters(column));
+    column: $table.presencesParCulte,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get absenceRaison => $composableBuilder(
-      column: $table.absenceRaison, builder: (column) => ColumnFilters(column));
+    column: $table.absenceRaison,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get absenceCommentaire => $composableBuilder(
-      column: $table.absenceCommentaire,
-      builder: (column) => ColumnFilters(column));
+    column: $table.absenceCommentaire,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get difficultes => $composableBuilder(
-      column: $table.difficultes, builder: (column) => ColumnFilters(column));
+    column: $table.difficultes,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get notesComplementaires => $composableBuilder(
-      column: $table.notesComplementaires,
-      builder: (column) => ColumnFilters(column));
+    column: $table.notesComplementaires,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get nbSorties => $composableBuilder(
-      column: $table.nbSorties, builder: (column) => ColumnFilters(column));
+    column: $table.nbSorties,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get nbMaintenus => $composableBuilder(
-      column: $table.nbMaintenus, builder: (column) => ColumnFilters(column));
+    column: $table.nbMaintenus,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get synced => $composableBuilder(
-      column: $table.synced, builder: (column) => ColumnFilters(column));
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$ReportDraftsTableTableOrderingComposer
@@ -4221,47 +5375,69 @@ class $$ReportDraftsTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get ameId => $composableBuilder(
-      column: $table.ameId, builder: (column) => ColumnOrderings(column));
+    column: $table.ameId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get semaine => $composableBuilder(
-      column: $table.semaine, builder: (column) => ColumnOrderings(column));
+    column: $table.semaine,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get presencesParCulte => $composableBuilder(
-      column: $table.presencesParCulte,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.presencesParCulte,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get absenceRaison => $composableBuilder(
-      column: $table.absenceRaison,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.absenceRaison,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get absenceCommentaire => $composableBuilder(
-      column: $table.absenceCommentaire,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.absenceCommentaire,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get difficultes => $composableBuilder(
-      column: $table.difficultes, builder: (column) => ColumnOrderings(column));
+    column: $table.difficultes,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get notesComplementaires => $composableBuilder(
-      column: $table.notesComplementaires,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.notesComplementaires,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get nbSorties => $composableBuilder(
-      column: $table.nbSorties, builder: (column) => ColumnOrderings(column));
+    column: $table.nbSorties,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get nbMaintenus => $composableBuilder(
-      column: $table.nbMaintenus, builder: (column) => ColumnOrderings(column));
+    column: $table.nbMaintenus,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get updatedAt => $composableBuilder(
-      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get synced => $composableBuilder(
-      column: $table.synced, builder: (column) => ColumnOrderings(column));
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ReportDraftsTableTableAnnotationComposer
@@ -4286,25 +5462,37 @@ class $$ReportDraftsTableTableAnnotationComposer
       $composableBuilder(column: $table.semaine, builder: (column) => column);
 
   GeneratedColumn<String> get presencesParCulte => $composableBuilder(
-      column: $table.presencesParCulte, builder: (column) => column);
+    column: $table.presencesParCulte,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get absenceRaison => $composableBuilder(
-      column: $table.absenceRaison, builder: (column) => column);
+    column: $table.absenceRaison,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get absenceCommentaire => $composableBuilder(
-      column: $table.absenceCommentaire, builder: (column) => column);
+    column: $table.absenceCommentaire,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get difficultes => $composableBuilder(
-      column: $table.difficultes, builder: (column) => column);
+    column: $table.difficultes,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get notesComplementaires => $composableBuilder(
-      column: $table.notesComplementaires, builder: (column) => column);
+    column: $table.notesComplementaires,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get nbSorties =>
       $composableBuilder(column: $table.nbSorties, builder: (column) => column);
 
   GeneratedColumn<int> get nbMaintenus => $composableBuilder(
-      column: $table.nbMaintenus, builder: (column) => column);
+    column: $table.nbMaintenus,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -4313,24 +5501,29 @@ class $$ReportDraftsTableTableAnnotationComposer
       $composableBuilder(column: $table.synced, builder: (column) => column);
 }
 
-class $$ReportDraftsTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $ReportDraftsTableTable,
-    ReportDraft,
-    $$ReportDraftsTableTableFilterComposer,
-    $$ReportDraftsTableTableOrderingComposer,
-    $$ReportDraftsTableTableAnnotationComposer,
-    $$ReportDraftsTableTableCreateCompanionBuilder,
-    $$ReportDraftsTableTableUpdateCompanionBuilder,
-    (
-      ReportDraft,
-      BaseReferences<_$AppDatabase, $ReportDraftsTableTable, ReportDraft>
-    ),
-    ReportDraft,
-    PrefetchHooks Function()> {
+class $$ReportDraftsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReportDraftsTableTable,
+          ReportDraft,
+          $$ReportDraftsTableTableFilterComposer,
+          $$ReportDraftsTableTableOrderingComposer,
+          $$ReportDraftsTableTableAnnotationComposer,
+          $$ReportDraftsTableTableCreateCompanionBuilder,
+          $$ReportDraftsTableTableUpdateCompanionBuilder,
+          (
+            ReportDraft,
+            BaseReferences<_$AppDatabase, $ReportDraftsTableTable, ReportDraft>,
+          ),
+          ReportDraft,
+          PrefetchHooks Function()
+        > {
   $$ReportDraftsTableTableTableManager(
-      _$AppDatabase db, $ReportDraftsTableTable table)
-      : super(TableManagerState(
+    _$AppDatabase db,
+    $ReportDraftsTableTable table,
+  ) : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -4339,117 +5532,136 @@ class $$ReportDraftsTableTableTableManager extends RootTableManager<
               $$ReportDraftsTableTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$ReportDraftsTableTableAnnotationComposer(
-                  $db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String> ameId = const Value.absent(),
-            Value<String> semaine = const Value.absent(),
-            Value<String> presencesParCulte = const Value.absent(),
-            Value<String?> absenceRaison = const Value.absent(),
-            Value<String?> absenceCommentaire = const Value.absent(),
-            Value<String?> difficultes = const Value.absent(),
-            Value<String?> notesComplementaires = const Value.absent(),
-            Value<int> nbSorties = const Value.absent(),
-            Value<int> nbMaintenus = const Value.absent(),
-            Value<String> updatedAt = const Value.absent(),
-            Value<bool> synced = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              ReportDraftsTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            ameId: ameId,
-            semaine: semaine,
-            presencesParCulte: presencesParCulte,
-            absenceRaison: absenceRaison,
-            absenceCommentaire: absenceCommentaire,
-            difficultes: difficultes,
-            notesComplementaires: notesComplementaires,
-            nbSorties: nbSorties,
-            nbMaintenus: nbMaintenus,
-            updatedAt: updatedAt,
-            synced: synced,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            required String ameId,
-            required String semaine,
-            required String presencesParCulte,
-            Value<String?> absenceRaison = const Value.absent(),
-            Value<String?> absenceCommentaire = const Value.absent(),
-            Value<String?> difficultes = const Value.absent(),
-            Value<String?> notesComplementaires = const Value.absent(),
-            Value<int> nbSorties = const Value.absent(),
-            Value<int> nbMaintenus = const Value.absent(),
-            required String updatedAt,
-            Value<bool> synced = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              ReportDraftsTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            ameId: ameId,
-            semaine: semaine,
-            presencesParCulte: presencesParCulte,
-            absenceRaison: absenceRaison,
-            absenceCommentaire: absenceCommentaire,
-            difficultes: difficultes,
-            notesComplementaires: notesComplementaires,
-            nbSorties: nbSorties,
-            nbMaintenus: nbMaintenus,
-            updatedAt: updatedAt,
-            synced: synced,
-            rowid: rowid,
-          ),
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> ameId = const Value.absent(),
+                Value<String> semaine = const Value.absent(),
+                Value<String> presencesParCulte = const Value.absent(),
+                Value<String?> absenceRaison = const Value.absent(),
+                Value<String?> absenceCommentaire = const Value.absent(),
+                Value<String?> difficultes = const Value.absent(),
+                Value<String?> notesComplementaires = const Value.absent(),
+                Value<int> nbSorties = const Value.absent(),
+                Value<int> nbMaintenus = const Value.absent(),
+                Value<String> updatedAt = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReportDraftsTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                ameId: ameId,
+                semaine: semaine,
+                presencesParCulte: presencesParCulte,
+                absenceRaison: absenceRaison,
+                absenceCommentaire: absenceCommentaire,
+                difficultes: difficultes,
+                notesComplementaires: notesComplementaires,
+                nbSorties: nbSorties,
+                nbMaintenus: nbMaintenus,
+                updatedAt: updatedAt,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String ameId,
+                required String semaine,
+                required String presencesParCulte,
+                Value<String?> absenceRaison = const Value.absent(),
+                Value<String?> absenceCommentaire = const Value.absent(),
+                Value<String?> difficultes = const Value.absent(),
+                Value<String?> notesComplementaires = const Value.absent(),
+                Value<int> nbSorties = const Value.absent(),
+                Value<int> nbMaintenus = const Value.absent(),
+                required String updatedAt,
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReportDraftsTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                ameId: ameId,
+                semaine: semaine,
+                presencesParCulte: presencesParCulte,
+                absenceRaison: absenceRaison,
+                absenceCommentaire: absenceCommentaire,
+                difficultes: difficultes,
+                notesComplementaires: notesComplementaires,
+                nbSorties: nbSorties,
+                nbMaintenus: nbMaintenus,
+                updatedAt: updatedAt,
+                synced: synced,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$ReportDraftsTableTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $ReportDraftsTableTable,
-    ReportDraft,
-    $$ReportDraftsTableTableFilterComposer,
-    $$ReportDraftsTableTableOrderingComposer,
-    $$ReportDraftsTableTableAnnotationComposer,
-    $$ReportDraftsTableTableCreateCompanionBuilder,
-    $$ReportDraftsTableTableUpdateCompanionBuilder,
-    (
+typedef $$ReportDraftsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReportDraftsTableTable,
       ReportDraft,
-      BaseReferences<_$AppDatabase, $ReportDraftsTableTable, ReportDraft>
-    ),
-    ReportDraft,
-    PrefetchHooks Function()>;
-typedef $$SyncQueueTableTableCreateCompanionBuilder = SyncQueueTableCompanion
-    Function({
-  required String id,
-  required String tenantId,
-  required String operation,
-  required String endpoint,
-  required String payload,
-  required String createdAt,
-  Value<int> retryCount,
-  Value<String?> lastError,
-  Value<int> rowid,
-});
-typedef $$SyncQueueTableTableUpdateCompanionBuilder = SyncQueueTableCompanion
-    Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String> operation,
-  Value<String> endpoint,
-  Value<String> payload,
-  Value<String> createdAt,
-  Value<int> retryCount,
-  Value<String?> lastError,
-  Value<int> rowid,
-});
+      $$ReportDraftsTableTableFilterComposer,
+      $$ReportDraftsTableTableOrderingComposer,
+      $$ReportDraftsTableTableAnnotationComposer,
+      $$ReportDraftsTableTableCreateCompanionBuilder,
+      $$ReportDraftsTableTableUpdateCompanionBuilder,
+      (
+        ReportDraft,
+        BaseReferences<_$AppDatabase, $ReportDraftsTableTable, ReportDraft>,
+      ),
+      ReportDraft,
+      PrefetchHooks Function()
+    >;
+typedef $$SyncQueueTableTableCreateCompanionBuilder =
+    SyncQueueTableCompanion Function({
+      required String id,
+      required String tenantId,
+      required String operation,
+      required String endpoint,
+      required String payload,
+      required String createdAt,
+      Value<int> retryCount,
+      Value<String?> lastError,
+      Value<String> clientUuid,
+      Value<String> syncType,
+      Value<String> status,
+      Value<String> clientAt,
+      Value<String> photoBase64,
+      Value<String> photoMime,
+      Value<String> photoName,
+      Value<int> rowid,
+    });
+typedef $$SyncQueueTableTableUpdateCompanionBuilder =
+    SyncQueueTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> operation,
+      Value<String> endpoint,
+      Value<String> payload,
+      Value<String> createdAt,
+      Value<int> retryCount,
+      Value<String?> lastError,
+      Value<String> clientUuid,
+      Value<String> syncType,
+      Value<String> status,
+      Value<String> clientAt,
+      Value<String> photoBase64,
+      Value<String> photoMime,
+      Value<String> photoName,
+      Value<int> rowid,
+    });
 
 class $$SyncQueueTableTableFilterComposer
     extends Composer<_$AppDatabase, $SyncQueueTableTable> {
@@ -4461,28 +5673,79 @@ class $$SyncQueueTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get operation => $composableBuilder(
-      column: $table.operation, builder: (column) => ColumnFilters(column));
+    column: $table.operation,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get endpoint => $composableBuilder(
-      column: $table.endpoint, builder: (column) => ColumnFilters(column));
+    column: $table.endpoint,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get payload => $composableBuilder(
-      column: $table.payload, builder: (column) => ColumnFilters(column));
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get retryCount => $composableBuilder(
-      column: $table.retryCount, builder: (column) => ColumnFilters(column));
+    column: $table.retryCount,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get lastError => $composableBuilder(
-      column: $table.lastError, builder: (column) => ColumnFilters(column));
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncType => $composableBuilder(
+    column: $table.syncType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientAt => $composableBuilder(
+    column: $table.clientAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoBase64 => $composableBuilder(
+    column: $table.photoBase64,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoMime => $composableBuilder(
+    column: $table.photoMime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoName => $composableBuilder(
+    column: $table.photoName,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SyncQueueTableTableOrderingComposer
@@ -4495,28 +5758,79 @@ class $$SyncQueueTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get operation => $composableBuilder(
-      column: $table.operation, builder: (column) => ColumnOrderings(column));
+    column: $table.operation,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get endpoint => $composableBuilder(
-      column: $table.endpoint, builder: (column) => ColumnOrderings(column));
+    column: $table.endpoint,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get payload => $composableBuilder(
-      column: $table.payload, builder: (column) => ColumnOrderings(column));
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get createdAt => $composableBuilder(
-      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get retryCount => $composableBuilder(
-      column: $table.retryCount, builder: (column) => ColumnOrderings(column));
+    column: $table.retryCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get lastError => $composableBuilder(
-      column: $table.lastError, builder: (column) => ColumnOrderings(column));
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncType => $composableBuilder(
+    column: $table.syncType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientAt => $composableBuilder(
+    column: $table.clientAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoBase64 => $composableBuilder(
+    column: $table.photoBase64,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoMime => $composableBuilder(
+    column: $table.photoMime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoName => $composableBuilder(
+    column: $table.photoName,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncQueueTableTableAnnotationComposer
@@ -4547,30 +5861,62 @@ class $$SyncQueueTableTableAnnotationComposer
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   GeneratedColumn<int> get retryCount => $composableBuilder(
-      column: $table.retryCount, builder: (column) => column);
+    column: $table.retryCount,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get lastError =>
       $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncType =>
+      $composableBuilder(column: $table.syncType, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get clientAt =>
+      $composableBuilder(column: $table.clientAt, builder: (column) => column);
+
+  GeneratedColumn<String> get photoBase64 => $composableBuilder(
+    column: $table.photoBase64,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get photoMime =>
+      $composableBuilder(column: $table.photoMime, builder: (column) => column);
+
+  GeneratedColumn<String> get photoName =>
+      $composableBuilder(column: $table.photoName, builder: (column) => column);
 }
 
-class $$SyncQueueTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $SyncQueueTableTable,
-    SyncQueueItem,
-    $$SyncQueueTableTableFilterComposer,
-    $$SyncQueueTableTableOrderingComposer,
-    $$SyncQueueTableTableAnnotationComposer,
-    $$SyncQueueTableTableCreateCompanionBuilder,
-    $$SyncQueueTableTableUpdateCompanionBuilder,
-    (
-      SyncQueueItem,
-      BaseReferences<_$AppDatabase, $SyncQueueTableTable, SyncQueueItem>
-    ),
-    SyncQueueItem,
-    PrefetchHooks Function()> {
+class $$SyncQueueTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncQueueTableTable,
+          SyncQueueItem,
+          $$SyncQueueTableTableFilterComposer,
+          $$SyncQueueTableTableOrderingComposer,
+          $$SyncQueueTableTableAnnotationComposer,
+          $$SyncQueueTableTableCreateCompanionBuilder,
+          $$SyncQueueTableTableUpdateCompanionBuilder,
+          (
+            SyncQueueItem,
+            BaseReferences<_$AppDatabase, $SyncQueueTableTable, SyncQueueItem>,
+          ),
+          SyncQueueItem,
+          PrefetchHooks Function()
+        > {
   $$SyncQueueTableTableTableManager(
-      _$AppDatabase db, $SyncQueueTableTable table)
-      : super(TableManagerState(
+    _$AppDatabase db,
+    $SyncQueueTableTable table,
+  ) : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -4579,104 +5925,135 @@ class $$SyncQueueTableTableTableManager extends RootTableManager<
               $$SyncQueueTableTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$SyncQueueTableTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String> operation = const Value.absent(),
-            Value<String> endpoint = const Value.absent(),
-            Value<String> payload = const Value.absent(),
-            Value<String> createdAt = const Value.absent(),
-            Value<int> retryCount = const Value.absent(),
-            Value<String?> lastError = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              SyncQueueTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            operation: operation,
-            endpoint: endpoint,
-            payload: payload,
-            createdAt: createdAt,
-            retryCount: retryCount,
-            lastError: lastError,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            required String operation,
-            required String endpoint,
-            required String payload,
-            required String createdAt,
-            Value<int> retryCount = const Value.absent(),
-            Value<String?> lastError = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              SyncQueueTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            operation: operation,
-            endpoint: endpoint,
-            payload: payload,
-            createdAt: createdAt,
-            retryCount: retryCount,
-            lastError: lastError,
-            rowid: rowid,
-          ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> operation = const Value.absent(),
+                Value<String> endpoint = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<String> createdAt = const Value.absent(),
+                Value<int> retryCount = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String> clientUuid = const Value.absent(),
+                Value<String> syncType = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> clientAt = const Value.absent(),
+                Value<String> photoBase64 = const Value.absent(),
+                Value<String> photoMime = const Value.absent(),
+                Value<String> photoName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncQueueTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                operation: operation,
+                endpoint: endpoint,
+                payload: payload,
+                createdAt: createdAt,
+                retryCount: retryCount,
+                lastError: lastError,
+                clientUuid: clientUuid,
+                syncType: syncType,
+                status: status,
+                clientAt: clientAt,
+                photoBase64: photoBase64,
+                photoMime: photoMime,
+                photoName: photoName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String operation,
+                required String endpoint,
+                required String payload,
+                required String createdAt,
+                Value<int> retryCount = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String> clientUuid = const Value.absent(),
+                Value<String> syncType = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> clientAt = const Value.absent(),
+                Value<String> photoBase64 = const Value.absent(),
+                Value<String> photoMime = const Value.absent(),
+                Value<String> photoName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncQueueTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                operation: operation,
+                endpoint: endpoint,
+                payload: payload,
+                createdAt: createdAt,
+                retryCount: retryCount,
+                lastError: lastError,
+                clientUuid: clientUuid,
+                syncType: syncType,
+                status: status,
+                clientAt: clientAt,
+                photoBase64: photoBase64,
+                photoMime: photoMime,
+                photoName: photoName,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$SyncQueueTableTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $SyncQueueTableTable,
-    SyncQueueItem,
-    $$SyncQueueTableTableFilterComposer,
-    $$SyncQueueTableTableOrderingComposer,
-    $$SyncQueueTableTableAnnotationComposer,
-    $$SyncQueueTableTableCreateCompanionBuilder,
-    $$SyncQueueTableTableUpdateCompanionBuilder,
-    (
+typedef $$SyncQueueTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncQueueTableTable,
       SyncQueueItem,
-      BaseReferences<_$AppDatabase, $SyncQueueTableTable, SyncQueueItem>
-    ),
-    SyncQueueItem,
-    PrefetchHooks Function()>;
-typedef $$NetworkResourcesTableTableCreateCompanionBuilder
-    = NetworkResourcesTableCompanion Function({
-  required String id,
-  required String tenantId,
-  required String title,
-  Value<String?> description,
-  required String category,
-  required String resourceType,
-  Value<String?> fileUrl,
-  Value<String?> content,
-  required bool sharedWithPublic,
-  Value<int> downloads,
-  Value<bool> isActive,
-  required String lastSyncAt,
-  Value<int> rowid,
-});
-typedef $$NetworkResourcesTableTableUpdateCompanionBuilder
-    = NetworkResourcesTableCompanion Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String> title,
-  Value<String?> description,
-  Value<String> category,
-  Value<String> resourceType,
-  Value<String?> fileUrl,
-  Value<String?> content,
-  Value<bool> sharedWithPublic,
-  Value<int> downloads,
-  Value<bool> isActive,
-  Value<String> lastSyncAt,
-  Value<int> rowid,
-});
+      $$SyncQueueTableTableFilterComposer,
+      $$SyncQueueTableTableOrderingComposer,
+      $$SyncQueueTableTableAnnotationComposer,
+      $$SyncQueueTableTableCreateCompanionBuilder,
+      $$SyncQueueTableTableUpdateCompanionBuilder,
+      (
+        SyncQueueItem,
+        BaseReferences<_$AppDatabase, $SyncQueueTableTable, SyncQueueItem>,
+      ),
+      SyncQueueItem,
+      PrefetchHooks Function()
+    >;
+typedef $$NetworkResourcesTableTableCreateCompanionBuilder =
+    NetworkResourcesTableCompanion Function({
+      required String id,
+      required String tenantId,
+      required String title,
+      Value<String?> description,
+      required String category,
+      required String resourceType,
+      Value<String?> fileUrl,
+      Value<String?> content,
+      required bool sharedWithPublic,
+      Value<int> downloads,
+      Value<bool> isActive,
+      required String lastSyncAt,
+      Value<int> rowid,
+    });
+typedef $$NetworkResourcesTableTableUpdateCompanionBuilder =
+    NetworkResourcesTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> title,
+      Value<String?> description,
+      Value<String> category,
+      Value<String> resourceType,
+      Value<String?> fileUrl,
+      Value<String?> content,
+      Value<bool> sharedWithPublic,
+      Value<int> downloads,
+      Value<bool> isActive,
+      Value<String> lastSyncAt,
+      Value<int> rowid,
+    });
 
 class $$NetworkResourcesTableTableFilterComposer
     extends Composer<_$AppDatabase, $NetworkResourcesTableTable> {
@@ -4688,41 +6065,64 @@ class $$NetworkResourcesTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnFilters(column));
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnFilters(column));
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get category => $composableBuilder(
-      column: $table.category, builder: (column) => ColumnFilters(column));
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get resourceType => $composableBuilder(
-      column: $table.resourceType, builder: (column) => ColumnFilters(column));
+    column: $table.resourceType,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get fileUrl => $composableBuilder(
-      column: $table.fileUrl, builder: (column) => ColumnFilters(column));
+    column: $table.fileUrl,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get content => $composableBuilder(
-      column: $table.content, builder: (column) => ColumnFilters(column));
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic,
-      builder: (column) => ColumnFilters(column));
+    column: $table.sharedWithPublic,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get downloads => $composableBuilder(
-      column: $table.downloads, builder: (column) => ColumnFilters(column));
+    column: $table.downloads,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get isActive => $composableBuilder(
-      column: $table.isActive, builder: (column) => ColumnFilters(column));
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$NetworkResourcesTableTableOrderingComposer
@@ -4735,42 +6135,64 @@ class $$NetworkResourcesTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnOrderings(column));
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnOrderings(column));
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get category => $composableBuilder(
-      column: $table.category, builder: (column) => ColumnOrderings(column));
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get resourceType => $composableBuilder(
-      column: $table.resourceType,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.resourceType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get fileUrl => $composableBuilder(
-      column: $table.fileUrl, builder: (column) => ColumnOrderings(column));
+    column: $table.fileUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get content => $composableBuilder(
-      column: $table.content, builder: (column) => ColumnOrderings(column));
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.sharedWithPublic,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get downloads => $composableBuilder(
-      column: $table.downloads, builder: (column) => ColumnOrderings(column));
+    column: $table.downloads,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isActive => $composableBuilder(
-      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NetworkResourcesTableTableAnnotationComposer
@@ -4792,13 +6214,17 @@ class $$NetworkResourcesTableTableAnnotationComposer
       $composableBuilder(column: $table.title, builder: (column) => column);
 
   GeneratedColumn<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => column);
+    column: $table.description,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
   GeneratedColumn<String> get resourceType => $composableBuilder(
-      column: $table.resourceType, builder: (column) => column);
+    column: $table.resourceType,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get fileUrl =>
       $composableBuilder(column: $table.fileUrl, builder: (column) => column);
@@ -4807,7 +6233,9 @@ class $$NetworkResourcesTableTableAnnotationComposer
       $composableBuilder(column: $table.content, builder: (column) => column);
 
   GeneratedColumn<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic, builder: (column) => column);
+    column: $table.sharedWithPublic,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get downloads =>
       $composableBuilder(column: $table.downloads, builder: (column) => column);
@@ -4816,165 +6244,186 @@ class $$NetworkResourcesTableTableAnnotationComposer
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => column);
+    column: $table.lastSyncAt,
+    builder: (column) => column,
+  );
 }
 
-class $$NetworkResourcesTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $NetworkResourcesTableTable,
-    NetworkResourceLocal,
-    $$NetworkResourcesTableTableFilterComposer,
-    $$NetworkResourcesTableTableOrderingComposer,
-    $$NetworkResourcesTableTableAnnotationComposer,
-    $$NetworkResourcesTableTableCreateCompanionBuilder,
-    $$NetworkResourcesTableTableUpdateCompanionBuilder,
-    (
-      NetworkResourceLocal,
-      BaseReferences<_$AppDatabase, $NetworkResourcesTableTable,
-          NetworkResourceLocal>
-    ),
-    NetworkResourceLocal,
-    PrefetchHooks Function()> {
+class $$NetworkResourcesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NetworkResourcesTableTable,
+          NetworkResourceLocal,
+          $$NetworkResourcesTableTableFilterComposer,
+          $$NetworkResourcesTableTableOrderingComposer,
+          $$NetworkResourcesTableTableAnnotationComposer,
+          $$NetworkResourcesTableTableCreateCompanionBuilder,
+          $$NetworkResourcesTableTableUpdateCompanionBuilder,
+          (
+            NetworkResourceLocal,
+            BaseReferences<
+              _$AppDatabase,
+              $NetworkResourcesTableTable,
+              NetworkResourceLocal
+            >,
+          ),
+          NetworkResourceLocal,
+          PrefetchHooks Function()
+        > {
   $$NetworkResourcesTableTableTableManager(
-      _$AppDatabase db, $NetworkResourcesTableTable table)
-      : super(TableManagerState(
+    _$AppDatabase db,
+    $NetworkResourcesTableTable table,
+  ) : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
               $$NetworkResourcesTableTableFilterComposer(
-                  $db: db, $table: table),
+                $db: db,
+                $table: table,
+              ),
           createOrderingComposer: () =>
               $$NetworkResourcesTableTableOrderingComposer(
-                  $db: db, $table: table),
+                $db: db,
+                $table: table,
+              ),
           createComputedFieldComposer: () =>
               $$NetworkResourcesTableTableAnnotationComposer(
-                  $db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String> title = const Value.absent(),
-            Value<String?> description = const Value.absent(),
-            Value<String> category = const Value.absent(),
-            Value<String> resourceType = const Value.absent(),
-            Value<String?> fileUrl = const Value.absent(),
-            Value<String?> content = const Value.absent(),
-            Value<bool> sharedWithPublic = const Value.absent(),
-            Value<int> downloads = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            Value<String> lastSyncAt = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkResourcesTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            title: title,
-            description: description,
-            category: category,
-            resourceType: resourceType,
-            fileUrl: fileUrl,
-            content: content,
-            sharedWithPublic: sharedWithPublic,
-            downloads: downloads,
-            isActive: isActive,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            required String title,
-            Value<String?> description = const Value.absent(),
-            required String category,
-            required String resourceType,
-            Value<String?> fileUrl = const Value.absent(),
-            Value<String?> content = const Value.absent(),
-            required bool sharedWithPublic,
-            Value<int> downloads = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            required String lastSyncAt,
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkResourcesTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            title: title,
-            description: description,
-            category: category,
-            resourceType: resourceType,
-            fileUrl: fileUrl,
-            content: content,
-            sharedWithPublic: sharedWithPublic,
-            downloads: downloads,
-            isActive: isActive,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> resourceType = const Value.absent(),
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> content = const Value.absent(),
+                Value<bool> sharedWithPublic = const Value.absent(),
+                Value<int> downloads = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<String> lastSyncAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkResourcesTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                title: title,
+                description: description,
+                category: category,
+                resourceType: resourceType,
+                fileUrl: fileUrl,
+                content: content,
+                sharedWithPublic: sharedWithPublic,
+                downloads: downloads,
+                isActive: isActive,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String title,
+                Value<String?> description = const Value.absent(),
+                required String category,
+                required String resourceType,
+                Value<String?> fileUrl = const Value.absent(),
+                Value<String?> content = const Value.absent(),
+                required bool sharedWithPublic,
+                Value<int> downloads = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                required String lastSyncAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkResourcesTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                title: title,
+                description: description,
+                category: category,
+                resourceType: resourceType,
+                fileUrl: fileUrl,
+                content: content,
+                sharedWithPublic: sharedWithPublic,
+                downloads: downloads,
+                isActive: isActive,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$NetworkResourcesTableTableProcessedTableManager
-    = ProcessedTableManager<
-        _$AppDatabase,
-        $NetworkResourcesTableTable,
+typedef $$NetworkResourcesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NetworkResourcesTableTable,
+      NetworkResourceLocal,
+      $$NetworkResourcesTableTableFilterComposer,
+      $$NetworkResourcesTableTableOrderingComposer,
+      $$NetworkResourcesTableTableAnnotationComposer,
+      $$NetworkResourcesTableTableCreateCompanionBuilder,
+      $$NetworkResourcesTableTableUpdateCompanionBuilder,
+      (
         NetworkResourceLocal,
-        $$NetworkResourcesTableTableFilterComposer,
-        $$NetworkResourcesTableTableOrderingComposer,
-        $$NetworkResourcesTableTableAnnotationComposer,
-        $$NetworkResourcesTableTableCreateCompanionBuilder,
-        $$NetworkResourcesTableTableUpdateCompanionBuilder,
-        (
-          NetworkResourceLocal,
-          BaseReferences<_$AppDatabase, $NetworkResourcesTableTable,
-              NetworkResourceLocal>
-        ),
-        NetworkResourceLocal,
-        PrefetchHooks Function()>;
-typedef $$NetworkEventsTableTableCreateCompanionBuilder
-    = NetworkEventsTableCompanion Function({
-  required String id,
-  required String tenantId,
-  required String title,
-  Value<String?> description,
-  required String eventType,
-  Value<String?> location,
-  Value<String?> city,
-  Value<String?> country,
-  required String startsAt,
-  Value<String?> endsAt,
-  Value<int?> maxParticipants,
-  Value<int> currentParticipants,
-  Value<bool> isVirtual,
-  required bool sharedWithPublic,
-  Value<bool> isActive,
-  Value<bool> joinedByMe,
-  required String lastSyncAt,
-  Value<int> rowid,
-});
-typedef $$NetworkEventsTableTableUpdateCompanionBuilder
-    = NetworkEventsTableCompanion Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String> title,
-  Value<String?> description,
-  Value<String> eventType,
-  Value<String?> location,
-  Value<String?> city,
-  Value<String?> country,
-  Value<String> startsAt,
-  Value<String?> endsAt,
-  Value<int?> maxParticipants,
-  Value<int> currentParticipants,
-  Value<bool> isVirtual,
-  Value<bool> sharedWithPublic,
-  Value<bool> isActive,
-  Value<bool> joinedByMe,
-  Value<String> lastSyncAt,
-  Value<int> rowid,
-});
+        BaseReferences<
+          _$AppDatabase,
+          $NetworkResourcesTableTable,
+          NetworkResourceLocal
+        >,
+      ),
+      NetworkResourceLocal,
+      PrefetchHooks Function()
+    >;
+typedef $$NetworkEventsTableTableCreateCompanionBuilder =
+    NetworkEventsTableCompanion Function({
+      required String id,
+      required String tenantId,
+      required String title,
+      Value<String?> description,
+      required String eventType,
+      Value<String?> location,
+      Value<String?> city,
+      Value<String?> country,
+      required String startsAt,
+      Value<String?> endsAt,
+      Value<int?> maxParticipants,
+      Value<int> currentParticipants,
+      Value<bool> isVirtual,
+      required bool sharedWithPublic,
+      Value<bool> isActive,
+      Value<bool> joinedByMe,
+      required String lastSyncAt,
+      Value<int> rowid,
+    });
+typedef $$NetworkEventsTableTableUpdateCompanionBuilder =
+    NetworkEventsTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> title,
+      Value<String?> description,
+      Value<String> eventType,
+      Value<String?> location,
+      Value<String?> city,
+      Value<String?> country,
+      Value<String> startsAt,
+      Value<String?> endsAt,
+      Value<int?> maxParticipants,
+      Value<int> currentParticipants,
+      Value<bool> isVirtual,
+      Value<bool> sharedWithPublic,
+      Value<bool> isActive,
+      Value<bool> joinedByMe,
+      Value<String> lastSyncAt,
+      Value<int> rowid,
+    });
 
 class $$NetworkEventsTableTableFilterComposer
     extends Composer<_$AppDatabase, $NetworkEventsTableTable> {
@@ -4986,58 +6435,89 @@ class $$NetworkEventsTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnFilters(column));
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnFilters(column));
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get eventType => $composableBuilder(
-      column: $table.eventType, builder: (column) => ColumnFilters(column));
+    column: $table.eventType,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get location => $composableBuilder(
-      column: $table.location, builder: (column) => ColumnFilters(column));
+    column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get city => $composableBuilder(
-      column: $table.city, builder: (column) => ColumnFilters(column));
+    column: $table.city,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get country => $composableBuilder(
-      column: $table.country, builder: (column) => ColumnFilters(column));
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get startsAt => $composableBuilder(
-      column: $table.startsAt, builder: (column) => ColumnFilters(column));
+    column: $table.startsAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get endsAt => $composableBuilder(
-      column: $table.endsAt, builder: (column) => ColumnFilters(column));
+    column: $table.endsAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get maxParticipants => $composableBuilder(
-      column: $table.maxParticipants,
-      builder: (column) => ColumnFilters(column));
+    column: $table.maxParticipants,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get currentParticipants => $composableBuilder(
-      column: $table.currentParticipants,
-      builder: (column) => ColumnFilters(column));
+    column: $table.currentParticipants,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get isVirtual => $composableBuilder(
-      column: $table.isVirtual, builder: (column) => ColumnFilters(column));
+    column: $table.isVirtual,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic,
-      builder: (column) => ColumnFilters(column));
+    column: $table.sharedWithPublic,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get isActive => $composableBuilder(
-      column: $table.isActive, builder: (column) => ColumnFilters(column));
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get joinedByMe => $composableBuilder(
-      column: $table.joinedByMe, builder: (column) => ColumnFilters(column));
+    column: $table.joinedByMe,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$NetworkEventsTableTableOrderingComposer
@@ -5050,58 +6530,89 @@ class $$NetworkEventsTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get title => $composableBuilder(
-      column: $table.title, builder: (column) => ColumnOrderings(column));
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => ColumnOrderings(column));
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get eventType => $composableBuilder(
-      column: $table.eventType, builder: (column) => ColumnOrderings(column));
+    column: $table.eventType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get location => $composableBuilder(
-      column: $table.location, builder: (column) => ColumnOrderings(column));
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get city => $composableBuilder(
-      column: $table.city, builder: (column) => ColumnOrderings(column));
+    column: $table.city,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get country => $composableBuilder(
-      column: $table.country, builder: (column) => ColumnOrderings(column));
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get startsAt => $composableBuilder(
-      column: $table.startsAt, builder: (column) => ColumnOrderings(column));
+    column: $table.startsAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get endsAt => $composableBuilder(
-      column: $table.endsAt, builder: (column) => ColumnOrderings(column));
+    column: $table.endsAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get maxParticipants => $composableBuilder(
-      column: $table.maxParticipants,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.maxParticipants,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get currentParticipants => $composableBuilder(
-      column: $table.currentParticipants,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.currentParticipants,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isVirtual => $composableBuilder(
-      column: $table.isVirtual, builder: (column) => ColumnOrderings(column));
+    column: $table.isVirtual,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.sharedWithPublic,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isActive => $composableBuilder(
-      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get joinedByMe => $composableBuilder(
-      column: $table.joinedByMe, builder: (column) => ColumnOrderings(column));
+    column: $table.joinedByMe,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NetworkEventsTableTableAnnotationComposer
@@ -5123,7 +6634,9 @@ class $$NetworkEventsTableTableAnnotationComposer
       $composableBuilder(column: $table.title, builder: (column) => column);
 
   GeneratedColumn<String> get description => $composableBuilder(
-      column: $table.description, builder: (column) => column);
+    column: $table.description,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get eventType =>
       $composableBuilder(column: $table.eventType, builder: (column) => column);
@@ -5144,45 +6657,64 @@ class $$NetworkEventsTableTableAnnotationComposer
       $composableBuilder(column: $table.endsAt, builder: (column) => column);
 
   GeneratedColumn<int> get maxParticipants => $composableBuilder(
-      column: $table.maxParticipants, builder: (column) => column);
+    column: $table.maxParticipants,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get currentParticipants => $composableBuilder(
-      column: $table.currentParticipants, builder: (column) => column);
+    column: $table.currentParticipants,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isVirtual =>
       $composableBuilder(column: $table.isVirtual, builder: (column) => column);
 
   GeneratedColumn<bool> get sharedWithPublic => $composableBuilder(
-      column: $table.sharedWithPublic, builder: (column) => column);
+    column: $table.sharedWithPublic,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<bool> get joinedByMe => $composableBuilder(
-      column: $table.joinedByMe, builder: (column) => column);
+    column: $table.joinedByMe,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => column);
+    column: $table.lastSyncAt,
+    builder: (column) => column,
+  );
 }
 
-class $$NetworkEventsTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $NetworkEventsTableTable,
-    NetworkEventLocal,
-    $$NetworkEventsTableTableFilterComposer,
-    $$NetworkEventsTableTableOrderingComposer,
-    $$NetworkEventsTableTableAnnotationComposer,
-    $$NetworkEventsTableTableCreateCompanionBuilder,
-    $$NetworkEventsTableTableUpdateCompanionBuilder,
-    (
-      NetworkEventLocal,
-      BaseReferences<_$AppDatabase, $NetworkEventsTableTable, NetworkEventLocal>
-    ),
-    NetworkEventLocal,
-    PrefetchHooks Function()> {
+class $$NetworkEventsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NetworkEventsTableTable,
+          NetworkEventLocal,
+          $$NetworkEventsTableTableFilterComposer,
+          $$NetworkEventsTableTableOrderingComposer,
+          $$NetworkEventsTableTableAnnotationComposer,
+          $$NetworkEventsTableTableCreateCompanionBuilder,
+          $$NetworkEventsTableTableUpdateCompanionBuilder,
+          (
+            NetworkEventLocal,
+            BaseReferences<
+              _$AppDatabase,
+              $NetworkEventsTableTable,
+              NetworkEventLocal
+            >,
+          ),
+          NetworkEventLocal,
+          PrefetchHooks Function()
+        > {
   $$NetworkEventsTableTableTableManager(
-      _$AppDatabase db, $NetworkEventsTableTable table)
-      : super(TableManagerState(
+    _$AppDatabase db,
+    $NetworkEventsTableTable table,
+  ) : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
@@ -5191,141 +6723,150 @@ class $$NetworkEventsTableTableTableManager extends RootTableManager<
               $$NetworkEventsTableTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$NetworkEventsTableTableAnnotationComposer(
-                  $db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String> title = const Value.absent(),
-            Value<String?> description = const Value.absent(),
-            Value<String> eventType = const Value.absent(),
-            Value<String?> location = const Value.absent(),
-            Value<String?> city = const Value.absent(),
-            Value<String?> country = const Value.absent(),
-            Value<String> startsAt = const Value.absent(),
-            Value<String?> endsAt = const Value.absent(),
-            Value<int?> maxParticipants = const Value.absent(),
-            Value<int> currentParticipants = const Value.absent(),
-            Value<bool> isVirtual = const Value.absent(),
-            Value<bool> sharedWithPublic = const Value.absent(),
-            Value<bool> isActive = const Value.absent(),
-            Value<bool> joinedByMe = const Value.absent(),
-            Value<String> lastSyncAt = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkEventsTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            title: title,
-            description: description,
-            eventType: eventType,
-            location: location,
-            city: city,
-            country: country,
-            startsAt: startsAt,
-            endsAt: endsAt,
-            maxParticipants: maxParticipants,
-            currentParticipants: currentParticipants,
-            isVirtual: isVirtual,
-            sharedWithPublic: sharedWithPublic,
-            isActive: isActive,
-            joinedByMe: joinedByMe,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            required String title,
-            Value<String?> description = const Value.absent(),
-            required String eventType,
-            Value<String?> location = const Value.absent(),
-            Value<String?> city = const Value.absent(),
-            Value<String?> country = const Value.absent(),
-            required String startsAt,
-            Value<String?> endsAt = const Value.absent(),
-            Value<int?> maxParticipants = const Value.absent(),
-            Value<int> currentParticipants = const Value.absent(),
-            Value<bool> isVirtual = const Value.absent(),
-            required bool sharedWithPublic,
-            Value<bool> isActive = const Value.absent(),
-            Value<bool> joinedByMe = const Value.absent(),
-            required String lastSyncAt,
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkEventsTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            title: title,
-            description: description,
-            eventType: eventType,
-            location: location,
-            city: city,
-            country: country,
-            startsAt: startsAt,
-            endsAt: endsAt,
-            maxParticipants: maxParticipants,
-            currentParticipants: currentParticipants,
-            isVirtual: isVirtual,
-            sharedWithPublic: sharedWithPublic,
-            isActive: isActive,
-            joinedByMe: joinedByMe,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> eventType = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<String> startsAt = const Value.absent(),
+                Value<String?> endsAt = const Value.absent(),
+                Value<int?> maxParticipants = const Value.absent(),
+                Value<int> currentParticipants = const Value.absent(),
+                Value<bool> isVirtual = const Value.absent(),
+                Value<bool> sharedWithPublic = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> joinedByMe = const Value.absent(),
+                Value<String> lastSyncAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkEventsTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                title: title,
+                description: description,
+                eventType: eventType,
+                location: location,
+                city: city,
+                country: country,
+                startsAt: startsAt,
+                endsAt: endsAt,
+                maxParticipants: maxParticipants,
+                currentParticipants: currentParticipants,
+                isVirtual: isVirtual,
+                sharedWithPublic: sharedWithPublic,
+                isActive: isActive,
+                joinedByMe: joinedByMe,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String title,
+                Value<String?> description = const Value.absent(),
+                required String eventType,
+                Value<String?> location = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                required String startsAt,
+                Value<String?> endsAt = const Value.absent(),
+                Value<int?> maxParticipants = const Value.absent(),
+                Value<int> currentParticipants = const Value.absent(),
+                Value<bool> isVirtual = const Value.absent(),
+                required bool sharedWithPublic,
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> joinedByMe = const Value.absent(),
+                required String lastSyncAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkEventsTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                title: title,
+                description: description,
+                eventType: eventType,
+                location: location,
+                city: city,
+                country: country,
+                startsAt: startsAt,
+                endsAt: endsAt,
+                maxParticipants: maxParticipants,
+                currentParticipants: currentParticipants,
+                isVirtual: isVirtual,
+                sharedWithPublic: sharedWithPublic,
+                isActive: isActive,
+                joinedByMe: joinedByMe,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$NetworkEventsTableTableProcessedTableManager = ProcessedTableManager<
-    _$AppDatabase,
-    $NetworkEventsTableTable,
-    NetworkEventLocal,
-    $$NetworkEventsTableTableFilterComposer,
-    $$NetworkEventsTableTableOrderingComposer,
-    $$NetworkEventsTableTableAnnotationComposer,
-    $$NetworkEventsTableTableCreateCompanionBuilder,
-    $$NetworkEventsTableTableUpdateCompanionBuilder,
-    (
+typedef $$NetworkEventsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NetworkEventsTableTable,
       NetworkEventLocal,
-      BaseReferences<_$AppDatabase, $NetworkEventsTableTable, NetworkEventLocal>
-    ),
-    NetworkEventLocal,
-    PrefetchHooks Function()>;
-typedef $$NetworkDirectoryTableTableCreateCompanionBuilder
-    = NetworkDirectoryTableCompanion Function({
-  required String id,
-  required String tenantId,
-  Value<String?> churchName,
-  Value<String?> city,
-  Value<String?> country,
-  Value<String?> denomination,
-  Value<String?> pastorName,
-  Value<String?> contactEmail,
-  Value<String?> contactPhone,
-  Value<int?> memberCount,
-  Value<bool> isListed,
-  required String lastSyncAt,
-  Value<int> rowid,
-});
-typedef $$NetworkDirectoryTableTableUpdateCompanionBuilder
-    = NetworkDirectoryTableCompanion Function({
-  Value<String> id,
-  Value<String> tenantId,
-  Value<String?> churchName,
-  Value<String?> city,
-  Value<String?> country,
-  Value<String?> denomination,
-  Value<String?> pastorName,
-  Value<String?> contactEmail,
-  Value<String?> contactPhone,
-  Value<int?> memberCount,
-  Value<bool> isListed,
-  Value<String> lastSyncAt,
-  Value<int> rowid,
-});
+      $$NetworkEventsTableTableFilterComposer,
+      $$NetworkEventsTableTableOrderingComposer,
+      $$NetworkEventsTableTableAnnotationComposer,
+      $$NetworkEventsTableTableCreateCompanionBuilder,
+      $$NetworkEventsTableTableUpdateCompanionBuilder,
+      (
+        NetworkEventLocal,
+        BaseReferences<
+          _$AppDatabase,
+          $NetworkEventsTableTable,
+          NetworkEventLocal
+        >,
+      ),
+      NetworkEventLocal,
+      PrefetchHooks Function()
+    >;
+typedef $$NetworkDirectoryTableTableCreateCompanionBuilder =
+    NetworkDirectoryTableCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> churchName,
+      Value<String?> city,
+      Value<String?> country,
+      Value<String?> denomination,
+      Value<String?> pastorName,
+      Value<String?> contactEmail,
+      Value<String?> contactPhone,
+      Value<int?> memberCount,
+      Value<bool> isListed,
+      required String lastSyncAt,
+      Value<int> rowid,
+    });
+typedef $$NetworkDirectoryTableTableUpdateCompanionBuilder =
+    NetworkDirectoryTableCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> churchName,
+      Value<String?> city,
+      Value<String?> country,
+      Value<String?> denomination,
+      Value<String?> pastorName,
+      Value<String?> contactEmail,
+      Value<String?> contactPhone,
+      Value<int?> memberCount,
+      Value<bool> isListed,
+      Value<String> lastSyncAt,
+      Value<int> rowid,
+    });
 
 class $$NetworkDirectoryTableTableFilterComposer
     extends Composer<_$AppDatabase, $NetworkDirectoryTableTable> {
@@ -5337,40 +6878,64 @@ class $$NetworkDirectoryTableTableFilterComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnFilters<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnFilters(column));
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnFilters(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get churchName => $composableBuilder(
-      column: $table.churchName, builder: (column) => ColumnFilters(column));
+    column: $table.churchName,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get city => $composableBuilder(
-      column: $table.city, builder: (column) => ColumnFilters(column));
+    column: $table.city,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get country => $composableBuilder(
-      column: $table.country, builder: (column) => ColumnFilters(column));
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get denomination => $composableBuilder(
-      column: $table.denomination, builder: (column) => ColumnFilters(column));
+    column: $table.denomination,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get pastorName => $composableBuilder(
-      column: $table.pastorName, builder: (column) => ColumnFilters(column));
+    column: $table.pastorName,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get contactEmail => $composableBuilder(
-      column: $table.contactEmail, builder: (column) => ColumnFilters(column));
+    column: $table.contactEmail,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get contactPhone => $composableBuilder(
-      column: $table.contactPhone, builder: (column) => ColumnFilters(column));
+    column: $table.contactPhone,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<int> get memberCount => $composableBuilder(
-      column: $table.memberCount, builder: (column) => ColumnFilters(column));
+    column: $table.memberCount,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<bool> get isListed => $composableBuilder(
-      column: $table.isListed, builder: (column) => ColumnFilters(column));
+    column: $table.isListed,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$NetworkDirectoryTableTableOrderingComposer
@@ -5383,43 +6948,64 @@ class $$NetworkDirectoryTableTableOrderingComposer
     super.$removeJoinBuilderFromRootComposer,
   });
   ColumnOrderings<String> get id => $composableBuilder(
-      column: $table.id, builder: (column) => ColumnOrderings(column));
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get tenantId => $composableBuilder(
-      column: $table.tenantId, builder: (column) => ColumnOrderings(column));
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get churchName => $composableBuilder(
-      column: $table.churchName, builder: (column) => ColumnOrderings(column));
+    column: $table.churchName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get city => $composableBuilder(
-      column: $table.city, builder: (column) => ColumnOrderings(column));
+    column: $table.city,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get country => $composableBuilder(
-      column: $table.country, builder: (column) => ColumnOrderings(column));
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get denomination => $composableBuilder(
-      column: $table.denomination,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.denomination,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get pastorName => $composableBuilder(
-      column: $table.pastorName, builder: (column) => ColumnOrderings(column));
+    column: $table.pastorName,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get contactEmail => $composableBuilder(
-      column: $table.contactEmail,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.contactEmail,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get contactPhone => $composableBuilder(
-      column: $table.contactPhone,
-      builder: (column) => ColumnOrderings(column));
+    column: $table.contactPhone,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<int> get memberCount => $composableBuilder(
-      column: $table.memberCount, builder: (column) => ColumnOrderings(column));
+    column: $table.memberCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<bool> get isListed => $composableBuilder(
-      column: $table.isListed, builder: (column) => ColumnOrderings(column));
+    column: $table.isListed,
+    builder: (column) => ColumnOrderings(column),
+  );
 
   ColumnOrderings<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+    column: $table.lastSyncAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NetworkDirectoryTableTableAnnotationComposer
@@ -5438,7 +7024,9 @@ class $$NetworkDirectoryTableTableAnnotationComposer
       $composableBuilder(column: $table.tenantId, builder: (column) => column);
 
   GeneratedColumn<String> get churchName => $composableBuilder(
-      column: $table.churchName, builder: (column) => column);
+    column: $table.churchName,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get city =>
       $composableBuilder(column: $table.city, builder: (column) => column);
@@ -5447,141 +7035,172 @@ class $$NetworkDirectoryTableTableAnnotationComposer
       $composableBuilder(column: $table.country, builder: (column) => column);
 
   GeneratedColumn<String> get denomination => $composableBuilder(
-      column: $table.denomination, builder: (column) => column);
+    column: $table.denomination,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get pastorName => $composableBuilder(
-      column: $table.pastorName, builder: (column) => column);
+    column: $table.pastorName,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get contactEmail => $composableBuilder(
-      column: $table.contactEmail, builder: (column) => column);
+    column: $table.contactEmail,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get contactPhone => $composableBuilder(
-      column: $table.contactPhone, builder: (column) => column);
+    column: $table.contactPhone,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get memberCount => $composableBuilder(
-      column: $table.memberCount, builder: (column) => column);
+    column: $table.memberCount,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isListed =>
       $composableBuilder(column: $table.isListed, builder: (column) => column);
 
   GeneratedColumn<String> get lastSyncAt => $composableBuilder(
-      column: $table.lastSyncAt, builder: (column) => column);
+    column: $table.lastSyncAt,
+    builder: (column) => column,
+  );
 }
 
-class $$NetworkDirectoryTableTableTableManager extends RootTableManager<
-    _$AppDatabase,
-    $NetworkDirectoryTableTable,
-    NetworkDirectoryLocal,
-    $$NetworkDirectoryTableTableFilterComposer,
-    $$NetworkDirectoryTableTableOrderingComposer,
-    $$NetworkDirectoryTableTableAnnotationComposer,
-    $$NetworkDirectoryTableTableCreateCompanionBuilder,
-    $$NetworkDirectoryTableTableUpdateCompanionBuilder,
-    (
-      NetworkDirectoryLocal,
-      BaseReferences<_$AppDatabase, $NetworkDirectoryTableTable,
-          NetworkDirectoryLocal>
-    ),
-    NetworkDirectoryLocal,
-    PrefetchHooks Function()> {
+class $$NetworkDirectoryTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NetworkDirectoryTableTable,
+          NetworkDirectoryLocal,
+          $$NetworkDirectoryTableTableFilterComposer,
+          $$NetworkDirectoryTableTableOrderingComposer,
+          $$NetworkDirectoryTableTableAnnotationComposer,
+          $$NetworkDirectoryTableTableCreateCompanionBuilder,
+          $$NetworkDirectoryTableTableUpdateCompanionBuilder,
+          (
+            NetworkDirectoryLocal,
+            BaseReferences<
+              _$AppDatabase,
+              $NetworkDirectoryTableTable,
+              NetworkDirectoryLocal
+            >,
+          ),
+          NetworkDirectoryLocal,
+          PrefetchHooks Function()
+        > {
   $$NetworkDirectoryTableTableTableManager(
-      _$AppDatabase db, $NetworkDirectoryTableTable table)
-      : super(TableManagerState(
+    _$AppDatabase db,
+    $NetworkDirectoryTableTable table,
+  ) : super(
+        TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
               $$NetworkDirectoryTableTableFilterComposer(
-                  $db: db, $table: table),
+                $db: db,
+                $table: table,
+              ),
           createOrderingComposer: () =>
               $$NetworkDirectoryTableTableOrderingComposer(
-                  $db: db, $table: table),
+                $db: db,
+                $table: table,
+              ),
           createComputedFieldComposer: () =>
               $$NetworkDirectoryTableTableAnnotationComposer(
-                  $db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<String> id = const Value.absent(),
-            Value<String> tenantId = const Value.absent(),
-            Value<String?> churchName = const Value.absent(),
-            Value<String?> city = const Value.absent(),
-            Value<String?> country = const Value.absent(),
-            Value<String?> denomination = const Value.absent(),
-            Value<String?> pastorName = const Value.absent(),
-            Value<String?> contactEmail = const Value.absent(),
-            Value<String?> contactPhone = const Value.absent(),
-            Value<int?> memberCount = const Value.absent(),
-            Value<bool> isListed = const Value.absent(),
-            Value<String> lastSyncAt = const Value.absent(),
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkDirectoryTableCompanion(
-            id: id,
-            tenantId: tenantId,
-            churchName: churchName,
-            city: city,
-            country: country,
-            denomination: denomination,
-            pastorName: pastorName,
-            contactEmail: contactEmail,
-            contactPhone: contactPhone,
-            memberCount: memberCount,
-            isListed: isListed,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
-          createCompanionCallback: ({
-            required String id,
-            required String tenantId,
-            Value<String?> churchName = const Value.absent(),
-            Value<String?> city = const Value.absent(),
-            Value<String?> country = const Value.absent(),
-            Value<String?> denomination = const Value.absent(),
-            Value<String?> pastorName = const Value.absent(),
-            Value<String?> contactEmail = const Value.absent(),
-            Value<String?> contactPhone = const Value.absent(),
-            Value<int?> memberCount = const Value.absent(),
-            Value<bool> isListed = const Value.absent(),
-            required String lastSyncAt,
-            Value<int> rowid = const Value.absent(),
-          }) =>
-              NetworkDirectoryTableCompanion.insert(
-            id: id,
-            tenantId: tenantId,
-            churchName: churchName,
-            city: city,
-            country: country,
-            denomination: denomination,
-            pastorName: pastorName,
-            contactEmail: contactEmail,
-            contactPhone: contactPhone,
-            memberCount: memberCount,
-            isListed: isListed,
-            lastSyncAt: lastSyncAt,
-            rowid: rowid,
-          ),
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> churchName = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<String?> denomination = const Value.absent(),
+                Value<String?> pastorName = const Value.absent(),
+                Value<String?> contactEmail = const Value.absent(),
+                Value<String?> contactPhone = const Value.absent(),
+                Value<int?> memberCount = const Value.absent(),
+                Value<bool> isListed = const Value.absent(),
+                Value<String> lastSyncAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkDirectoryTableCompanion(
+                id: id,
+                tenantId: tenantId,
+                churchName: churchName,
+                city: city,
+                country: country,
+                denomination: denomination,
+                pastorName: pastorName,
+                contactEmail: contactEmail,
+                contactPhone: contactPhone,
+                memberCount: memberCount,
+                isListed: isListed,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> churchName = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<String?> denomination = const Value.absent(),
+                Value<String?> pastorName = const Value.absent(),
+                Value<String?> contactEmail = const Value.absent(),
+                Value<String?> contactPhone = const Value.absent(),
+                Value<int?> memberCount = const Value.absent(),
+                Value<bool> isListed = const Value.absent(),
+                required String lastSyncAt,
+                Value<int> rowid = const Value.absent(),
+              }) => NetworkDirectoryTableCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                churchName: churchName,
+                city: city,
+                country: country,
+                denomination: denomination,
+                pastorName: pastorName,
+                contactEmail: contactEmail,
+                contactPhone: contactPhone,
+                memberCount: memberCount,
+                isListed: isListed,
+                lastSyncAt: lastSyncAt,
+                rowid: rowid,
+              ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: null,
-        ));
+        ),
+      );
 }
 
-typedef $$NetworkDirectoryTableTableProcessedTableManager
-    = ProcessedTableManager<
-        _$AppDatabase,
-        $NetworkDirectoryTableTable,
+typedef $$NetworkDirectoryTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NetworkDirectoryTableTable,
+      NetworkDirectoryLocal,
+      $$NetworkDirectoryTableTableFilterComposer,
+      $$NetworkDirectoryTableTableOrderingComposer,
+      $$NetworkDirectoryTableTableAnnotationComposer,
+      $$NetworkDirectoryTableTableCreateCompanionBuilder,
+      $$NetworkDirectoryTableTableUpdateCompanionBuilder,
+      (
         NetworkDirectoryLocal,
-        $$NetworkDirectoryTableTableFilterComposer,
-        $$NetworkDirectoryTableTableOrderingComposer,
-        $$NetworkDirectoryTableTableAnnotationComposer,
-        $$NetworkDirectoryTableTableCreateCompanionBuilder,
-        $$NetworkDirectoryTableTableUpdateCompanionBuilder,
-        (
-          NetworkDirectoryLocal,
-          BaseReferences<_$AppDatabase, $NetworkDirectoryTableTable,
-              NetworkDirectoryLocal>
-        ),
-        NetworkDirectoryLocal,
-        PrefetchHooks Function()>;
+        BaseReferences<
+          _$AppDatabase,
+          $NetworkDirectoryTableTable,
+          NetworkDirectoryLocal
+        >,
+      ),
+      NetworkDirectoryLocal,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;

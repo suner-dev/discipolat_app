@@ -3,6 +3,7 @@ package com.discipolat.modules.spaces.api;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.spaces.domain.Space;
+import com.discipolat.modules.spaces.domain.SpaceBootstrapService;
 import com.discipolat.modules.spaces.domain.SpaceService;
 import com.discipolat.modules.spaces.domain.SpaceStatus;
 import com.discipolat.modules.spaces.domain.SpaceType;
@@ -28,9 +29,11 @@ import java.util.UUID;
 public class SpaceController {
 
     private final SpaceService spaceService;
+    private final SpaceBootstrapService spaceBootstrapService;
 
-    public SpaceController(SpaceService spaceService) {
+    public SpaceController(SpaceService spaceService, SpaceBootstrapService spaceBootstrapService) {
         this.spaceService = spaceService;
+        this.spaceBootstrapService = spaceBootstrapService;
     }
 
     private UUID tenantId() {
@@ -77,6 +80,19 @@ public class SpaceController {
                 "spaceId", spaceId.toString(),
                 "canCustomize", allowed
         ));
+    }
+
+    /**
+     * G5.3 — Bootstrap de l'espace : configuration résolue + modules + statuts +
+     * champs + permissions + widgets + UI. Le frontend génère l'expérience
+     * (nav, actions, widgets) depuis cette réponse unique — jamais codée par espace.
+     */
+    @GetMapping("/{spaceId}/bootstrap")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SpaceBootstrapService.SpaceBootstrap> bootstrap(
+            @PathVariable UUID spaceId,
+            @RequestParam(required = false) String entityType) {
+        return ResponseEntity.ok(spaceBootstrapService.bootstrap(tenantId(), spaceId, entityType));
     }
 
     @PostMapping

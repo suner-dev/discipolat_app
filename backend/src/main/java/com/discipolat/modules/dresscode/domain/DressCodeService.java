@@ -15,10 +15,26 @@ public class DressCodeService {
 
     private final DressCodeRepository dressCodeRepository;
     private final DressCodeRuleRepository ruleRepository;
+    /** §G3.4/§G6.4 — publication réelle : outbox (temps réel + historique) + notifications membres. */
+    private final com.discipolat.modules.core.service.OutboxPublisher outboxPublisher;
+    private final com.discipolat.modules.people.repository.SpaceMembershipRepository spaceMembershipRepository;
+    private final com.discipolat.modules.people.repository.PersonRepository personRepository;
+    private final com.discipolat.modules.users.domain.UserRepository userRepository;
+    private final com.discipolat.modules.notifications.domain.NotificationService notificationService;
 
-    public DressCodeService(DressCodeRepository dressCodeRepository, DressCodeRuleRepository ruleRepository) {
+    public DressCodeService(DressCodeRepository dressCodeRepository, DressCodeRuleRepository ruleRepository,
+                            com.discipolat.modules.core.service.OutboxPublisher outboxPublisher,
+                            com.discipolat.modules.people.repository.SpaceMembershipRepository spaceMembershipRepository,
+                            com.discipolat.modules.people.repository.PersonRepository personRepository,
+                            com.discipolat.modules.users.domain.UserRepository userRepository,
+                            com.discipolat.modules.notifications.domain.NotificationService notificationService) {
         this.dressCodeRepository = dressCodeRepository;
         this.ruleRepository = ruleRepository;
+        this.outboxPublisher = outboxPublisher;
+        this.spaceMembershipRepository = spaceMembershipRepository;
+        this.personRepository = personRepository;
+        this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +62,7 @@ public class DressCodeService {
             }
         }
 
+        publishIfNeeded(tenantId, saved);
         return saved;
     }
 
@@ -70,7 +87,54 @@ public class DressCodeService {
             }
         }
 
+        publishIfNeeded(tenantId, saved);
         return saved;
+    }
+
+    /**
+     * §G3.4 — un dress code PUBLIED émet réellement l'événement
+     * DressCodePublished (relay temps réel espace + historique métier via
+     * l'outbox) ET notifie les membres de l'espace concerné (web + mobile).
+     */
+    private void publishIfNeeded(UUID tenantId, DressCode saved) {
+        if (!"PUBLISHED".equalsIgnoreCase(saved.getStatus())) {
+            return;
+        }
+        try {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("title", saved.getTitle());
+            payload.put("dressCodeId", saved.getId().toString());
+            if (saved.getSpaceId() != null) payload.put("spaceId", saved.getSpaceId().toString());
+            if (saved.getEventId() != null) payload.put("eventId", saved.getEventId().toString());
+            outboxPublisher.publish(tenantId, "DRESS_CODE", saved.getId(), "DressCodePublished", payload);
+        } catch (RuntimeException e) {
+            // la notification ne bloque jamais l'enregistrement métier
+        }
+        notifySpaceMembers(tenantId, saved);
+    }
+
+    private void notifySpaceMembers(UUID tenantId, DressCode saved) {
+        if (saved.getSpaceId() == null) {
+            return;
+        }
+        try {
+            String message = "Nouvelle tenue « " + saved.getTitle() + " »"
+                    + (saved.getServiceName() != null ? " pour " + saved.getServiceName() : "")
+                    + (saved.getBeginsAt() != null ? " à partir de " + saved.getBeginsAt() : "") + ".";
+            for (var sm : spaceMembershipRepository.findByTenantIdAndSpaceIdAndStatus(tenantId, saved.getSpaceId(), "ACTIVE")) {
+                personRepository.findById(sm.getPersonId()).ifPresent(person -> {
+                    if (person.getEmailNormalized() == null) return;
+                    userRepository.findByTenantIdAndEmailIgnoreCase(tenantId, person.getEmailNormalized()).ifPresent(user ->
+                            notificationService.create(tenantId, user.getId(),
+                                    com.discipolat.common.enums.TypeNotification.INFORMATION,
+                                    com.discipolat.common.enums.CanalNotification.IN_APP,
+                                    "Tenue de service publiée", message,
+                                    saved.getId(), "DRESS_CODE"));
+                });
+            }
+        } catch (RuntimeException e) {
+            // notification défensive : jamais bloquante
+        }
     }
 
     public void archive(UUID tenantId, UUID id) {

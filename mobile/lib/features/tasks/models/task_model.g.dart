@@ -7,56 +7,56 @@ part of 'task_model.dart';
 // **************************************************************************
 
 _$TaskImpl _$$TaskImplFromJson(Map<String, dynamic> json) => _$TaskImpl(
-      id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      type: $enumDecode(_$TaskTypeEnumMap, json['type']),
-      priority: $enumDecode(_$TaskPriorityEnumMap, json['priority']),
-      status: $enumDecode(_$TaskStatusEnumMap, json['status']),
-      projectId: (json['projectId'] as num?)?.toInt(),
-      projectName: json['projectName'] as String?,
-      assignedToId: (json['assignedToId'] as num?)?.toInt(),
-      assignedToName: json['assignedToName'] as String?,
-      assignedById: (json['assignedById'] as num?)?.toInt(),
-      assignedByName: json['assignedByName'] as String?,
-      departmentId: (json['departmentId'] as num?)?.toInt(),
-      departmentName: json['departmentName'] as String?,
-      dueDate: json['dueDate'] == null
-          ? null
-          : DateTime.parse(json['dueDate'] as String),
-      startDate: json['startDate'] == null
-          ? null
-          : DateTime.parse(json['startDate'] as String),
-      completedDate: json['completedDate'] == null
-          ? null
-          : DateTime.parse(json['completedDate'] as String),
-      estimatedHours: (json['estimatedHours'] as num?)?.toInt(),
-      actualHours: (json['actualHours'] as num?)?.toInt(),
-      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      attachments: (json['attachments'] as List<dynamic>?)
-          ?.map((e) => TaskAttachment.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      comments: (json['comments'] as List<dynamic>?)
-          ?.map((e) => TaskComment.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      subtasks: (json['subtasks'] as List<dynamic>?)
-          ?.map((e) => Task.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      dependencies: (json['dependencies'] as List<dynamic>?)
-          ?.map((e) => TaskDependency.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      parentTaskId: (json['parentTaskId'] as num?)?.toInt(),
-      parentTaskTitle: json['parentTaskTitle'] as String?,
-      recurrenceRuleId: (json['recurrenceRuleId'] as num?)?.toInt(),
-      recurrencePattern: json['recurrencePattern'] as String?,
-      recurrenceEndDate: json['recurrenceEndDate'] == null
-          ? null
-          : DateTime.parse(json['recurrenceEndDate'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] == null
-          ? null
-          : DateTime.parse(json['updatedAt'] as String),
-    );
+  id: (json['id'] as num).toInt(),
+  title: json['title'] as String,
+  description: json['description'] as String?,
+  type: $enumDecode(_$TaskTypeEnumMap, json['type']),
+  priority: $enumDecode(_$TaskPriorityEnumMap, json['priority']),
+  status: $enumDecode(_$TaskStatusEnumMap, json['status']),
+  projectId: (json['projectId'] as num?)?.toInt(),
+  projectName: json['projectName'] as String?,
+  assignedToId: (json['assignedToId'] as num?)?.toInt(),
+  assignedToName: json['assignedToName'] as String?,
+  assignedById: (json['assignedById'] as num?)?.toInt(),
+  assignedByName: json['assignedByName'] as String?,
+  departmentId: (json['departmentId'] as num?)?.toInt(),
+  departmentName: json['departmentName'] as String?,
+  dueDate: json['dueDate'] == null
+      ? null
+      : DateTime.parse(json['dueDate'] as String),
+  startDate: json['startDate'] == null
+      ? null
+      : DateTime.parse(json['startDate'] as String),
+  completedDate: json['completedDate'] == null
+      ? null
+      : DateTime.parse(json['completedDate'] as String),
+  estimatedHours: (json['estimatedHours'] as num?)?.toInt(),
+  actualHours: (json['actualHours'] as num?)?.toInt(),
+  tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  attachments: (json['attachments'] as List<dynamic>?)
+      ?.map((e) => TaskAttachment.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  comments: (json['comments'] as List<dynamic>?)
+      ?.map((e) => TaskComment.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  subtasks: (json['subtasks'] as List<dynamic>?)
+      ?.map((e) => Task.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  dependencies: (json['dependencies'] as List<dynamic>?)
+      ?.map((e) => TaskDependency.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  parentTaskId: (json['parentTaskId'] as num?)?.toInt(),
+  parentTaskTitle: json['parentTaskTitle'] as String?,
+  recurrenceRuleId: (json['recurrenceRuleId'] as num?)?.toInt(),
+  recurrencePattern: json['recurrencePattern'] as String?,
+  recurrenceEndDate: json['recurrenceEndDate'] == null
+      ? null
+      : DateTime.parse(json['recurrenceEndDate'] as String),
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
+);
 
 Map<String, dynamic> _$$TaskImplToJson(_$TaskImpl instance) =>
     <String, dynamic>{
@@ -138,18 +138,18 @@ _$TaskAttachmentImpl _$$TaskAttachmentImplFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$$TaskAttachmentImplToJson(
-        _$TaskAttachmentImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'taskId': instance.taskId,
-      'fileName': instance.fileName,
-      'fileUrl': instance.fileUrl,
-      'mimeType': instance.mimeType,
-      'fileSize': instance.fileSize,
-      'uploadedById': instance.uploadedById,
-      'uploadedByName': instance.uploadedByName,
-      'uploadedAt': instance.uploadedAt.toIso8601String(),
-    };
+  _$TaskAttachmentImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'taskId': instance.taskId,
+  'fileName': instance.fileName,
+  'fileUrl': instance.fileUrl,
+  'mimeType': instance.mimeType,
+  'fileSize': instance.fileSize,
+  'uploadedById': instance.uploadedById,
+  'uploadedByName': instance.uploadedByName,
+  'uploadedAt': instance.uploadedAt.toIso8601String(),
+};
 
 _$TaskCommentImpl _$$TaskCommentImplFromJson(Map<String, dynamic> json) =>
     _$TaskCommentImpl(
@@ -191,14 +191,14 @@ _$TaskDependencyImpl _$$TaskDependencyImplFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$$TaskDependencyImplToJson(
-        _$TaskDependencyImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'taskId': instance.taskId,
-      'dependsOnTaskId': instance.dependsOnTaskId,
-      'dependsOnTaskTitle': instance.dependsOnTaskTitle,
-      'type': _$DependencyTypeEnumMap[instance.type]!,
-    };
+  _$TaskDependencyImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'taskId': instance.taskId,
+  'dependsOnTaskId': instance.dependsOnTaskId,
+  'dependsOnTaskTitle': instance.dependsOnTaskTitle,
+  'type': _$DependencyTypeEnumMap[instance.type]!,
+};
 
 const _$DependencyTypeEnumMap = {
   DependencyType.blocks: 'BLOCKS',
@@ -249,28 +249,28 @@ Map<String, dynamic> _$$TaskTemplateImplToJson(_$TaskTemplateImpl instance) =>
     };
 
 _$TaskTemplateSubtaskImpl _$$TaskTemplateSubtaskImplFromJson(
-        Map<String, dynamic> json) =>
-    _$TaskTemplateSubtaskImpl(
-      id: (json['id'] as num).toInt(),
-      templateId: (json['templateId'] as num).toInt(),
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      priority: $enumDecodeNullable(_$TaskPriorityEnumMap, json['priority']),
-      estimatedHours: (json['estimatedHours'] as num?)?.toInt(),
-      order: (json['order'] as num?)?.toInt(),
-    );
+  Map<String, dynamic> json,
+) => _$TaskTemplateSubtaskImpl(
+  id: (json['id'] as num).toInt(),
+  templateId: (json['templateId'] as num).toInt(),
+  title: json['title'] as String,
+  description: json['description'] as String?,
+  priority: $enumDecodeNullable(_$TaskPriorityEnumMap, json['priority']),
+  estimatedHours: (json['estimatedHours'] as num?)?.toInt(),
+  order: (json['order'] as num?)?.toInt(),
+);
 
 Map<String, dynamic> _$$TaskTemplateSubtaskImplToJson(
-        _$TaskTemplateSubtaskImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'templateId': instance.templateId,
-      'title': instance.title,
-      'description': instance.description,
-      'priority': _$TaskPriorityEnumMap[instance.priority],
-      'estimatedHours': instance.estimatedHours,
-      'order': instance.order,
-    };
+  _$TaskTemplateSubtaskImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'templateId': instance.templateId,
+  'title': instance.title,
+  'description': instance.description,
+  'priority': _$TaskPriorityEnumMap[instance.priority],
+  'estimatedHours': instance.estimatedHours,
+  'order': instance.order,
+};
 
 _$KanbanColumnImpl _$$KanbanColumnImplFromJson(Map<String, dynamic> json) =>
     _$KanbanColumnImpl(

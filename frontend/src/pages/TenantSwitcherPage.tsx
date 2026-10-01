@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
 import type { Tenant } from "@/types/tenant";
 import type { UserRole } from "@/types";
 
 export default function TenantSwitcherPage() {
   const { user, updateUser } = useAuth();
+  const { switchTenant: switchTenantCtx, currentTenant, isInitialized } = useTenant();
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,17 +28,22 @@ export default function TenantSwitcherPage() {
     }
   };
 
+  // G5.4 (§55) : bascule RÉELLE — POST /tenant-switcher/switch valide
+  // l'adhésion serveur et réémet des JWT portant le nouveau tenant ; le
+  // contexte tenant est rechargé et le cache de requêtes vidé sans
+  // rechargement de page (aucune perte de contexte de travail).
   const switchTenant = async (tenant: Tenant) => {
     try {
+      await switchTenantCtx(tenant.id);
       updateUser({ tenantId: tenant.id, role: (tenant.role as UserRole) || undefined });
-      window.location.href = "/";
+      navigate("/", { replace: true });
     } catch (err) {
       console.error("Erreur:", err);
-      alert("Impossible de changer d'organisation");
+      setError("Impossible de changer d'organisation");
     }
   };
 
-  if (loading) {
+  if (loading || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -109,14 +118,14 @@ export default function TenantSwitcherPage() {
           {tenants.map((tenant) => (
             <div key={tenant.id} onClick={() => switchTenant(tenant)}
               className={"cursor-pointer bg-white rounded-xl border-2 p-6 transition-all " +
-                (tenant.id === user?.tenantId
+                (tenant.id === (currentTenant?.id ?? user?.tenantId)
                   ? "border-indigo-500 ring-2 ring-indigo-200"
                   : "border-gray-200 hover:border-indigo-300 hover:shadow-md")}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <div className={"w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg " +
-                      (tenant.id === user?.tenantId ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600")}>
+                      (tenant.id === (currentTenant?.id ?? user?.tenantId) ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600")}>
                       {tenant.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -126,7 +135,7 @@ export default function TenantSwitcherPage() {
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <span className={"px-2 py-1 text-xs rounded-full " +
-                      (tenant.id === user?.tenantId ? "bg-indigo-100 text-indigo-700" : "bg-gray-100 text-gray-600")}>
+                      (tenant.id === (currentTenant?.id ?? user?.tenantId) ? "bg-indigo-100 text-indigo-700" : "bg-gray-100 text-gray-600")}>
                       {tenant.role}
                     </span>
                     <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">{tenant.plan}</span>

@@ -27,6 +27,11 @@ class _WhatsAppRemindersScreenState extends State<WhatsAppRemindersScreen> {
   int _selectedTab = 0;
 
   static const _commandDescriptions = [
+    // §G5.9 — commandes membre-first (portail basse connexion)
+    ('#tenue', 'Ma tenue des prochains cultes'),
+    ('#planning', 'Les événements à venir (7 jours)'),
+    ('#don 5000', 'Initier un don Mobile Money (FCFA)'),
+    ('#presence', 'Confirmer ma présence (flash)'),
     ('#rejoindre', 'S\'inscrire aux annonces générales'),
     ('#rejoindre famille <nom>', 'Recevoir les annonces d\'une famille'),
     ('#quitter famille <nom>', 'Se désabonner d\'une famille'),

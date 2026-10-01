@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   User, Mail, Shield, Calendar, CheckCircle, XCircle, Edit3, Save, X, Lock,
-  Eye, EyeOff, Loader2, Phone, Heart, Key, ChevronDown, ChevronUp,
-  Smartphone, Copy, Check, Download, Trash2,
+  Eye, EyeOff, Loader2, Phone, Heart, Key, ChevronDown, ChevronUp, Smartphone, Copy, Check, Download, Trash2, Sparkles, MessageCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
@@ -47,6 +46,17 @@ export default function ProfilePage() {
     (code && (dictionaries.label('SITUATION_FAMILIALE', code) || SITUATION_FALLBACK[code])) || code || '-';
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+  // §G5.9 — le profil complet (opt-in basse connexion inclus) vient de /users/me :
+  // la session au login ne porte pas ce champ réglable côté serveur.
+  const { data: meData } = useQuery({
+    queryKey: ['user-me'],
+    queryFn: async () => (await api.get('/users/me')).data,
+    staleTime: 30_000,
+  });
+  useEffect(() => {
+    if (meData) updateUser(meData);
+  }, [meData, updateUser]);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -63,6 +73,21 @@ export default function ProfilePage() {
     currentPassword: '', newPassword: '', confirmPassword: '',
   });
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
+
+  // §G5.9 — opt-in individuel au portail basse connexion (WhatsApp sortant / USSD).
+  const lowBandOptIn = user?.whatsappOptIn ?? false;
+  const optInMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const res = await api.put('/users/me', { whatsappOptIn: enabled });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      updateUser(data);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      toast.success(tText('Préférences basse connexion enregistrées'));
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof editData) => {
@@ -396,6 +421,41 @@ export default function ProfilePage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* §G5.9 — Portail basse connexion (WhatsApp / USSD) */}
+      <div className="glass-card p-6 mb-6 animate-slide-up border-l-[3px] border-l-green-500">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-green-100 dark:bg-green-900/30">
+              <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{tText('Portail basse connexion')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {tText('Recevez tenues, plannings, rappels et désignations par WhatsApp. Aucune donnée sensible ne transite par ce canal.')}
+              </p>
+              {!user?.phone && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  {tText('Ajoutez d\'abord un numéro de téléphone à votre profil.')}
+                </p>
+              )}
+            </div>
+          </div>
+          <button
+            role="switch"
+            aria-checked={lowBandOptIn}
+            onClick={() => optInMutation.mutate(!lowBandOptIn)}
+            disabled={optInMutation.isPending || !user?.phone}
+            className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
+              lowBandOptIn ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+            } disabled:opacity-50`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform mt-0.5 ${
+              lowBandOptIn ? 'translate-x-5.5 rtl:-translate-x-5.5' : 'translate-x-0.5'
+            }`} />
+          </button>
+        </div>
       </div>
 
       {/* Password change (toggle) */}

@@ -20,6 +20,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // §G5.8 — bus temps réel STOMP/SockJS (firehose outbox web ↔ mobile)
+      '/ws-church': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   build: {

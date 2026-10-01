@@ -27,4 +27,13 @@ public interface FamilyVisitRepository extends JpaRepository<FamilyVisit, UUID> 
     List<FamilyVisit> findByTenantIdAndVisitDateBetween(@Param("tenantId") UUID tenantId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
     Page<FamilyVisit> findByTenantIdAndDeletedFalseOrderByVisitDateDesc(UUID tenantId, Pageable pageable);
+
+    /**
+     * PORT Develop1 (§G4.1) : visite dues pour le planificateur quotidien.
+     * Volontairement NON scopé par tenant — le @Scheduled tourne hors contexte de
+     * requête et regroupe les rappels par tenant de chaque visite (FamilyVisit
+     * n'est pas filtré par le filtre Hibernate multi-tenant).
+     */
+    List<FamilyVisit> findByDeletedFalseAndNextActionDateLessThanEqualAndStatusNotIn(
+            LocalDate maxNextActionDate, List<String> excludedStatuses);
 }

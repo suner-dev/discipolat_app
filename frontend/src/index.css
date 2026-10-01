@@ -350,6 +350,17 @@
     @apply inline-flex items-center gap-1 text-xs font-medium mt-2 px-2 py-0.5 rounded-full;
   }
 
+  /* Family OS panel (§G4.1) — lignes de liste unifiées */
+  .os-list {
+    @apply rounded-xl border border-gray-200/60 dark:border-gray-700/60
+           divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden;
+  }
+
+  .os-row {
+    @apply flex items-center justify-between gap-3 px-3.5 py-2.5
+           bg-white/20 dark:bg-gray-800/20;
+  }
+
   .stat-trend-up {
     @apply stat-trend bg-green-100/80 dark:bg-green-900/30 text-green-700 dark:text-green-400;
   }

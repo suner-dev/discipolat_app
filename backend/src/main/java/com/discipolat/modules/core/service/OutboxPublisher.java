@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 @Service
@@ -23,6 +24,50 @@ public class OutboxPublisher {
     private final ProcessedEventRepository processedRepository;
 
     private final Map<String, Consumer<OutboxEvent>> consumers = new LinkedHashMap<>();
+
+    /**
+     * §G5.8 — Relais temps réel : la carte {@code consumers} n'accepte qu'un
+     * consommateur par type (dernier inscrit gagne) et le dispatcher polled
+     * toutes les 5 s — trop juste pour la garantie « web ↔ mobile < 5 s ».
+     * Ces relais sont invoqués dès la COMMITE de la transaction métier
+     * (après commit → jamais d'événement fantôme sur rollback), en plus de la
+     * file durable existante. Les clients dédupliquent par {@code eventId}.
+     */
+    private final List<Consumer<OutboxEvent>> streamRelays = new CopyOnWriteArrayList<>();
+
+    public void addStreamRelay(Consumer<OutboxEvent> relay) {
+        streamRelays.add(relay);
+    }
+
+    private void dispatchStream(OutboxEvent event) {
+        for (Consumer<OutboxEvent> relay : streamRelays) {
+            try {
+                relay.accept(event);
+            } catch (Exception e) {
+                // Le temps réel est best-effort : l'outbox durable reste la garantie.
+                log.warn("§G5.8 relais stream échoué pour {} (outbox #{}) : {}",
+                        event.getEventType(), event.getId(), e.getMessage());
+            }
+        }
+    }
+
+    /** Sauvegarde l'événement puis programme la diffusion stream après commit. */
+    private void saveAndScheduleStream(OutboxEvent event) {
+        OutboxEvent saved = outboxRepository.saveAndFlush(event);
+        if (org.springframework.transaction.support.TransactionSynchronizationManager
+                .isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager
+                    .registerSynchronization(
+                            new org.springframework.transaction.support.TransactionSynchronization() {
+                                @Override
+                                public void afterCommit() {
+                                    dispatchStream(saved);
+                                }
+                            });
+        } else {
+            dispatchStream(saved);
+        }
+    }
 
     /**
      * Enregistre un événement dans l'outbox (dans la MÊME transaction que la mutation métier).
@@ -43,7 +88,7 @@ public class OutboxPublisher {
                 .availableAt(OffsetDateTime.now())
                 .build();
 
-        outboxRepository.save(event);
+        saveAndScheduleStream(event);
     }
 
     /**
@@ -62,7 +107,7 @@ public class OutboxPublisher {
                 .availableAt(OffsetDateTime.now())
                 .build();
 
-        outboxRepository.save(event);
+        saveAndScheduleStream(event);
     }
 
     /**

@@ -36,13 +36,17 @@ interface ConfigDraft {
   rules: string;
 }
 
-const TRIGGER_TYPES = ['MEMBER_ABSENT', 'NEW_SOUL', 'EVENT_REMINDER', 'PRAYER_REQUEST', 'ANNIVERSARY', 'SCORE_DROP', 'CUSTOM'];
-const ACTION_TYPES = ['SEND_NOTIFICATION', 'SEND_EMAIL', 'UPDATE_FIELD', 'CREATE_TASK', 'TRIGGER_WEBHOOK', 'CUSTOM'];
+// §G6.4 — Les listes DOIVENT refléter les enums du serveur (Automation.
+// TriggerType / ActionType, français) : WorkflowAutomationController fait
+// valueOf(…) et renvoyait 400 pour chaque option anglaise de l’ancienne
+// liste — le bouton « Nouvelle automatisation » était cassé sauf CUSTOM.
+const TRIGGER_TYPES = ['ABSENCE_SOUTENUE', 'NOUVEAU_MEMBRE', 'RAPPORT_SOUMIS', 'EVENEMENT_A_VENIR', 'CUSTOM'];
+const ACTION_TYPES = ['ENVOYER_MESSAGE', 'CREER_TACHE', 'NOTIFIER', 'ASSIGNER_Faiseur', 'CREER_EVENEMENT', 'EMAIL'];
 
 export default function WorkflowPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [newAuto, setNewAuto] = useState({ nom: '', description: '', triggerType: 'MEMBER_ABSENT', triggerConfig: '{}', actionType: 'SEND_NOTIFICATION', actionConfig: '{}' });
+  const [newAuto, setNewAuto] = useState({ nom: '', description: '', triggerType: 'ABSENCE_SOUTENUE', triggerConfig: '{}', actionType: 'NOTIFIER', actionConfig: '{}' });
 
   const { data: automations = [], isLoading } = useQuery({
     queryKey: ['workflow-automations'],
@@ -57,7 +61,7 @@ export default function WorkflowPage() {
     onSuccess: () => {
       toast.success(tText('Automatisation créée'));
       setShowCreate(false);
-      setNewAuto({ nom: '', description: '', triggerType: 'MEMBER_ABSENT', triggerConfig: '{}', actionType: 'SEND_NOTIFICATION', actionConfig: '{}' });
+      setNewAuto({ nom: '', description: '', triggerType: 'ABSENCE_SOUTENUE', triggerConfig: '{}', actionType: 'NOTIFIER', actionConfig: '{}' });
       queryClient.invalidateQueries({ queryKey: ['workflow-automations'] });
     },
     onError: (e: unknown) => { if ((e as Error).message !== 'empty') toast.error(getErrorMessage(e)); },

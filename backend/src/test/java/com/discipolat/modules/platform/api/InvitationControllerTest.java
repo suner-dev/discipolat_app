@@ -38,6 +38,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -164,6 +165,8 @@ class InvitationControllerTest {
                 auditService,
                 emailService,
                 rateLimiter,
+                // PORT Develop1 — l'acceptation d'invitation enregistre aussi la personne.
+                mock(com.discipolat.modules.people.service.PeopleService.class),
                 "https://app.example.com"
         );
     }

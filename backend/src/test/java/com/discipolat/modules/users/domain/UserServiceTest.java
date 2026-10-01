@@ -341,4 +341,94 @@ class UserServiceTest {
         assertEquals(java.util.List.of(), result.get("dossierDocuments"));
         verify(dossierService, never()).dossierUtilisateur(any(), any());
     }
+
+    // ==================== §G5.9 — opt-in portail basse connexion ====================
+
+    @Test
+    void updateMyProfile_WhatsAppOptInWithPhone_ShouldEnable() {
+        UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        User user = User.builder()
+                .id(userId)
+                .email("utilisateur@discipolat.com")
+                .firstName("Test")
+                .lastName("Test")
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+        user.setPhone("+24100000000");
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = userService.updateMyProfile(null, null, null, null, null, true);
+
+        assertTrue(result.isWhatsappOptIn());
+    }
+
+    @Test
+    void updateMyProfile_WhatsAppOptInWithoutPhone_ShouldStayDisabled() {
+        UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        User user = User.builder()
+                .id(userId)
+                .email("utilisateur@discipolat.com")
+                .firstName("Test")
+                .lastName("Test")
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+        user.setPhone(null);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = userService.updateMyProfile(null, null, null, null, null, true);
+
+        assertFalse(result.isWhatsappOptIn());
+    }
+
+    @Test
+    void updateMyProfile_WhatsAppOptInFalse_ShouldRevokeAndKeepOtherFields() {
+        UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        User user = User.builder()
+                .id(userId)
+                .email("utilisateur@discipolat.com")
+                .firstName("Test")
+                .lastName("Test")
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+        user.setPhone("+24100000000");
+        user.setWhatsappOptIn(true);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = userService.updateMyProfile(null, null, null, null, null, false);
+
+        assertFalse(result.isWhatsappOptIn());
+        // null = champ non fourni → jamais d'écrasement silencieux
+        assertEquals("+24100000000", result.getPhone());
+    }
+
+    @Test
+    void updateMyProfile_NullOptIn_ShouldNotTouchPreference() {
+        UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        User user = User.builder()
+                .id(userId)
+                .email("utilisateur@discipolat.com")
+                .firstName("Test")
+                .lastName("Test")
+                .role(UserRole.MEMBRE)
+                .roles(new HashSet<>(Set.of(UserRole.MEMBRE)))
+                .statut(com.discipolat.modules.users.domain.UserStatus.ACTIVE)
+                .build();
+        user.setWhatsappOptIn(true);
+        when(userRepository.findById(userId)).thenReturn(java.util.Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User result = userService.updateMyProfile("Jean", null, null, null, null, null);
+
+        assertTrue(result.isWhatsappOptIn());
+        assertEquals("Jean", result.getFirstName());
+    }
 }

@@ -55,6 +55,7 @@ function buildUserFromAuthResponse(d: any): User {
     photoUrl: d.photoUrl || '',
     situationFamiliale: d.situationFamiliale || '',
     twoFactorEnabled: d.twoFactorEnabled || false,
+    whatsappOptIn: d.whatsappOptIn || false,
     createdAt: d.createdAt || new Date().toISOString(),
     updatedAt: d.updatedAt || new Date().toISOString(),
   };
@@ -316,4 +317,16 @@ export function useAuth() {
 }
 
 export { roleLabels };
+
+/**
+ * Variante tolérante de {@link useAuth} : retourne `undefined` hors provider.
+ *
+ * <p>PORT Develop1 — le `TenantProvider` doit pouvoir être monté seul (écran de
+ * sélection d'organisation, tests du bus de contexte) sans lever « useAuth must be
+ * used within an AuthProvider ». Les appelants existants gardent `useAuth`, qui
+ * continue d'échouer bruyamment : aucune protection de main n'est retirée.</p>
+ */
+export function useAuthOptional() {
+  return useContext(AuthContext);
+}
 

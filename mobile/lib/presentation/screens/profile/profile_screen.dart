@@ -12,17 +12,22 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/secure_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.apiService});
+
+  /// Injecté par les tests ; null → ApiService réel.
+  final ApiService? apiService;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _userInfo;
   Map<String, dynamic>? _dashboard;
   bool _isLoading = true;
+  // PORT Develop1 (§G5.9) — opt-in basse connexion (WhatsApp sortant / USSD).
+  bool _savingLowBand = false;
   int _currentNavIndex = 3;
 
   @override
@@ -66,6 +71,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await tenantSession.clear();
     AuthState().logout();
     if (mounted) context.go('/login');
+  }
+
+  /// PORT Develop1 (§G5.9) — opt-in individuel au portail basse connexion
+  /// (WhatsApp sortant / USSD) : PUT /users/me { whatsappOptIn }. La ligne de
+  /// téléphone est une condition d'éligibilité vérifiée aussi côté serveur.
+  Future<void> _toggleLowBand(bool value) async {
+    setState(() => _savingLowBand = true);
+    try {
+      final res = await _apiService.put('/users/me', data: {'whatsappOptIn': value});
+      if (mounted && res.statusCode == 200) {
+        setState(() {
+          _userInfo = {...?_userInfo, ...?res.data as Map<String, dynamic>?};
+          _savingLowBand = false;
+        });
+      } else if (mounted) {
+        setState(() => _savingLowBand = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).saveFailed)),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _savingLowBand = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).saveFailed)),
+        );
+      }
+    }
   }
 
   void _showLanguagePicker() {
@@ -112,6 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final email = _userInfo?['email'] ?? '—';
     final role = _userInfo?['role'] ?? 'MEMBRE';
     final phone = _userInfo?['phone'] ?? '—';
+    final hasPhone = phone is String && phone.trim().isNotEmpty && phone != '—';
     final initials =
         '${(firstName as String).isNotEmpty ? firstName[0] : ''}${(lastName as String).isNotEmpty ? lastName[0] : ''}';
 
@@ -216,6 +250,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         ?.toString()
                                         .substring(0, 10) ??
                                     '—'),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // PORT Develop1 (§G5.9) — Portail basse connexion
+                      // (WhatsApp / USSD) : opt-in membre.
+                      GlassCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.chat_outlined,
+                                    color: Colors.green, size: 22),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          AppLocalizations.of(context)
+                                              .profileLowBandTitle,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600)),
+                                      Text(
+                                          hasPhone
+                                              ? AppLocalizations.of(context)
+                                                  .profileLowBandHint
+                                              : AppLocalizations.of(context)
+                                                  .profileLowBandNeedPhone,
+                                          style: TextStyle(
+                                              color: hasPhone
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.4)
+                                                  : Colors.amber.withValues(
+                                                      alpha: 0.8),
+                                              fontSize: 11),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _userInfo?['whatsappOptIn'] == true,
+                                  activeColor: Colors.green,
+                                  onChanged: hasPhone && !_savingLowBand
+                                      ? _toggleLowBand
+                                      : null,
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),

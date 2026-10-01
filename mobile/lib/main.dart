@@ -53,6 +53,14 @@ class _DiscipolatAppState extends ConsumerState<DiscipolatApp> {
     ref.read(localeProvider.notifier).init();
     ref.read(tenantSessionProvider).init();
     _initAccessibilityServices();
+    // PORT Develop1 (§G5.6) — session expirée (401 irrattrapable après
+    // refresh) → redirection vers l'écran de reconnexion.
+    ApiService.onSessionExpired = () {
+      final path = appRouter.routerDelegate.currentConfiguration.uri.path;
+      if (path != '/login' && path != '/onboarding' && path != '/register') {
+        appRouter.go('/login');
+      }
+    };
     try {
       final pushService = PushNotificationService(ApiService());
       pushService.initialize();

@@ -62,6 +62,11 @@ public class SpaceMembership {
     protected void onCreate() {
         this.createdAt = OffsetDateTime.now();
         this.updatedAt = OffsetDateTime.now();
+        // §G6.4 — joined_at est NOT NULL mais les initialiseurs de champs ne
+        // passent pas par SpaceMembership.builder() : sécurité ici.
+        if (this.joinedAt == null) this.joinedAt = OffsetDateTime.now();
+        if (this.status == null) this.status = "ACTIVE";
+        if (this.membershipType == null) this.membershipType = "MEMBER";
     }
 
     @PreUpdate

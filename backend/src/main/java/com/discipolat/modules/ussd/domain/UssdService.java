@@ -23,17 +23,21 @@ public class UssdService {
     private final PaymentGatewayService paymentGatewayService;
     private final SecurityUtils securityUtils;
     private final CurrencyConfigRepository currencyConfigRepository;
+    /** §G5.9 — portail basse connexion : tenue/planning/présence/prière RÉELS. */
+    private final org.springframework.beans.factory.ObjectProvider<com.discipolat.modules.lowband.domain.LowBandPortalService> lowBandProvider;
 
     public UssdService(UssdSessionRepository sessionRepository,
                        UssdProperties properties,
                        PaymentGatewayService paymentGatewayService,
                        SecurityUtils securityUtils,
-                       CurrencyConfigRepository currencyConfigRepository) {
+                       CurrencyConfigRepository currencyConfigRepository,
+                       org.springframework.beans.factory.ObjectProvider<com.discipolat.modules.lowband.domain.LowBandPortalService> lowBandProvider) {
         this.sessionRepository = sessionRepository;
         this.properties = properties;
         this.paymentGatewayService = paymentGatewayService;
         this.securityUtils = securityUtils;
         this.currencyConfigRepository = currencyConfigRepository;
+        this.lowBandProvider = lowBandProvider;
     }
 
     public String handleUssdCallback(String sessionId, String phoneNumber, String text, String serviceCode) {
@@ -52,7 +56,7 @@ public class UssdService {
                     UssdSession newSession = UssdSession.builder()
                             .sessionId(sessionId)
                             .phoneNumber(phoneNumber)
-                            .tenantId(resolveTenantFromServiceCode(serviceCode))
+                            .tenantId(resolveTenant(phoneNumber, serviceCode))
                             .currentMenu("main")
                             .step(0)
                             .ended(false)
@@ -80,6 +84,22 @@ public class UssdService {
         return "XOF";
     }
 
+    /**
+     * §G5.9 — Résolution RÉELLE du tenant : le point d'entrée USSD est partagé,
+     * c'est le NUMÉRO APPELANT qui identifie l'église (fiche Person du répertoire,
+     * ambiguïté multi-tenants refusée). L'ancien fallback stockait le serviceCode
+     * dans tenantId → UUID.fromString échouait plus tard (paiement « erreur »).
+     * Sans résolution par numéro, on retombe sur le comportement de main.
+     */
+    private String resolveTenant(String phoneNumber, String serviceCode) {
+        var portal = lowBandProvider.getIfAvailable();
+        if (portal != null) {
+            java.util.UUID tenant = portal.resolveTenantByPhone(phoneNumber);
+            if (tenant != null) return tenant.toString();
+        }
+        return resolveTenantFromServiceCode(serviceCode);
+    }
+
     private String resolveTenantFromServiceCode(String serviceCode) {
         try {
             return securityUtils.getCurrentTenantId().toString();
@@ -97,6 +117,10 @@ public class UssdService {
             case "giving_confirm" -> handleGivingConfirm(session, text);
             case "prayer" -> handlePrayerMenu(session, text);
             case "events" -> handleEventsMenu(session, text);
+            case "dresscode" -> handleDressCodeMenu(session, text);
+            case "presence" -> handlePresenceMenu(session, text);
+            case "notifications" -> handleNotificationsMenu(session, text);
+            case "more" -> handleMoreMenu(session, text);
             case "account" -> handleAccountMenu(session, text);
             default -> {
                 session.setCurrentMenu("main");
@@ -107,45 +131,88 @@ public class UssdService {
         };
     }
 
+    /** §G5.9 — menu principal du contrat : 1-Événements · 2-Ma tenue · 3-Présence · 4-Dons · 5-Plus. */
     private String handleMainMenu(UssdSession session, String text) {
         if (text.isEmpty()) return showMainMenu();
         return switch (text) {
             case "1" -> {
+                session.setCurrentMenu("events");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showEvents(session);
+            }
+            case "2" -> {
+                session.setCurrentMenu("dresscode");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showDressCode(session);
+            }
+            case "3" -> {
+                session.setCurrentMenu("presence");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showPresence(session);
+            }
+            case "4" -> {
                 session.setCurrentMenu("giving");
                 session.setStep(1);
                 sessionRepository.save(session);
                 yield showGivingMenu();
             }
-            case "2" -> {
-                session.setCurrentMenu("prayer");
+            case "5" -> {
+                session.setCurrentMenu("more");
                 session.setStep(1);
                 sessionRepository.save(session);
-                yield showPrayerPrompt();
+                yield showMoreMenu();
             }
-            case "3" -> {
-                session.setCurrentMenu("events");
-                session.setStep(1);
-                sessionRepository.save(session);
-                yield showEvents();
-            }
-            case "4" -> {
-                session.setCurrentMenu("account");
-                session.setStep(1);
-                sessionRepository.save(session);
-                yield showAccount();
-            }
-            case "5" -> showContact();
             default -> "CON Choix invalide.\n" + showMainMenu();
         };
     }
 
     private String showMainMenu() {
-        return "CON Bienvenue chez Discipolat\n" +
-                "1. Dime & Offrande\n" +
-                "2. Demande de priere\n" +
-                "3. Evenements\n" +
-                "4. Mon compte\n" +
-                "5. Contact eglise";
+        return "CON Discipolat\n" +
+                "1. Evenements\n" +
+                "2. Ma tenue\n" +
+                "3. Presence (flash)\n" +
+                "4. Dime & Offrande\n" +
+                "5. Plus (priere, notifications, compte)";
+    }
+
+    private String handleMoreMenu(UssdSession session, String text) {
+        if (text.isEmpty()) return showMoreMenu();
+        return switch (text) {
+            case "1" -> {
+                session.setCurrentMenu("prayer");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showPrayerPrompt();
+            }
+            case "2" -> {
+                session.setCurrentMenu("notifications");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showNotifications(session);
+            }
+            case "3" -> {
+                session.setCurrentMenu("account");
+                session.setStep(1);
+                sessionRepository.save(session);
+                yield showAccount();
+            }
+            case "0" -> backToMain(session);
+            default -> "CON Choix invalide.\n" + showMoreMenu();
+        };
+    }
+
+    private String showMoreMenu() {
+        return "CON Plus:\n1. Demande de priere\n2. Notifications\n3. Mon compte\n0. Retour";
+    }
+
+    private String backToMain(UssdSession session) {
+        session.setCurrentMenu("main");
+        session.setStep(0);
+        sessionRepository.save(session);
+        return showMainMenu();
     }
 
     private String handleGivingMenu(UssdSession session, String text) {
@@ -235,6 +302,13 @@ public class UssdService {
 
         try {
             String ctx = session.getContextData();
+            // §G5.9 — tenant résolu par le numéro appelant ; sans église reconnue,
+            // aucun débit n'est initié (l'ancien code produisait une erreur opaque).
+            if (!isUuid(session.getTenantId())) {
+                session.setEnded(true);
+                sessionRepository.save(session);
+                return "END Numero non enregistre dans une eglise.\nInscrivez-vous via l'app ou votre responsable.";
+            }
             String operator = extractFromJson(ctx, "operator");
             String amount = extractFromJson(ctx, "amount");
             String phone = extractFromJson(ctx, "phone");
@@ -265,10 +339,15 @@ public class UssdService {
     private String handlePrayerMenu(UssdSession session, String text) {
         if (text.isEmpty()) return showPrayerPrompt();
         if (text.length() < 5) return "CON Demande trop courte.\nDecrivez votre besoin:";
-        log.info("[USSD] Demande de prière — tenant={}, phone={}", session.getTenantId(), session.getPhoneNumber());
+        // §G5.9 — la demande est RÉELLEMENT persistée (Prayer si compte lié,
+        // journal lowband_interaction toujours) — plus de simple log().
+        var portal = lowBandProvider.getIfAvailable();
+        String reply = portal != null
+                ? portal.ussdPrayer(tenantUuid(session), session.getPhoneNumber(), text)
+                : "END Service indisponible. Reessayez plus tard.";
         session.setEnded(true);
         sessionRepository.save(session);
-        return "END Demande de priere recue!\nL'equipe prierera pour vous.\nQue Dieu vous benisse!";
+        return "END " + reply;
     }
 
     private String showPrayerPrompt() {
@@ -276,27 +355,77 @@ public class UssdService {
     }
 
     private String handleEventsMenu(UssdSession session, String text) {
-        if ("0".equals(text)) {
-            session.setCurrentMenu("main");
-            session.setStep(0);
-            sessionRepository.save(session);
-            return showMainMenu();
-        }
-        return showEvents();
+        if ("0".equals(text)) return backToMain(session);
+        return showEvents(session);
     }
 
-    private String showEvents() {
-        return "CON Prochains evenements:\n1. Culte dimanche 10h\n2. Reunion priere mardi\n3. Formation samedi\n0. Retour";
+    /** §G5.9 — événements RÉELS du calendrier (7 prochains jours), plus de liste figée. */
+    private String showEvents(UssdSession session) {
+        var portal = lowBandProvider.getIfAvailable();
+        if (portal == null || !isUuid(session.getTenantId())) return "CON Service indisponible.";
+        return "CON " + portal.ussdPlanning(java.util.UUID.fromString(session.getTenantId())) + "\n0. Retour";
+    }
+
+    private String handleDressCodeMenu(UssdSession session, String text) {
+        if ("0".equals(text)) return backToMain(session);
+        return showDressCode(session);
+    }
+
+    private String showDressCode(UssdSession session) {
+        var portal = lowBandProvider.getIfAvailable();
+        if (portal == null || !isUuid(session.getTenantId())) return "CON Service indisponible.";
+        return "CON " + portal.ussdDressCode(java.util.UUID.fromString(session.getTenantId())) + "\n0. Retour";
+    }
+
+    private String handlePresenceMenu(UssdSession session, String text) {
+        if ("0".equals(text)) return backToMain(session);
+        return showPresence(session);
+    }
+
+    /** « Présence flash » : confirmation au culte en cours / prochain, par numéro. */
+    private String showPresence(UssdSession session) {
+        var portal = lowBandProvider.getIfAvailable();
+        if (portal == null || !isUuid(session.getTenantId())) return "END Service indisponible.";
+        String reply = portal.ussdPresence(java.util.UUID.fromString(session.getTenantId()),
+                session.getPhoneNumber());
+        session.setEnded(true);
+        sessionRepository.save(session);
+        return "END " + reply;
+    }
+
+    private String handleNotificationsMenu(UssdSession session, String text) {
+        if ("0".equals(text)) return backToMain(session);
+        return showNotifications(session);
+    }
+
+    private String showNotifications(UssdSession session) {
+        var portal = lowBandProvider.getIfAvailable();
+        if (portal == null || !isUuid(session.getTenantId())) return "CON Service indisponible.";
+        return "CON " + portal.ussdNotifications(java.util.UUID.fromString(session.getTenantId()),
+                session.getPhoneNumber()) + "\n0. Retour";
+    }
+
+    private static boolean isUuid(String s) {
+        if (s == null) return false;
+        try {
+            java.util.UUID.fromString(s);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private java.util.UUID tenantUuid(UssdSession session) {
+        return isUuid(session.getTenantId()) ? java.util.UUID.fromString(session.getTenantId()) : null;
     }
 
     private String handleAccountMenu(UssdSession session, String text) {
-        if ("0".equals(text)) {
-            session.setCurrentMenu("main");
-            session.setStep(0);
-            sessionRepository.save(session);
-            return showMainMenu();
-        }
-        return showAccount();
+        return switch (text) {
+            case "1" -> "CON Mon compte\n1. Historique dons\n2. Info eglise\n0. Retour\n(Historique disponible dans l'app Discipolat)";
+            case "2" -> showContact();
+            case "0" -> backToMain(session);
+            default -> "CON Mon compte\n1. Historique dons\n2. Info eglise\n0. Retour";
+        };
     }
 
     private String showAccount() {

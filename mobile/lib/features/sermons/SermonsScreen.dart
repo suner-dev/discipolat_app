@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/services/api_service.dart';
 import '../../../presentation/widgets/glass_theme.dart';
 import '../../../presentation/widgets/app_drawer.dart';
@@ -124,7 +125,14 @@ class _SermonsScreenState extends State<SermonsScreen> {
         title: const Text('Sermons'),
         backgroundColor: Colors.brown.shade700,
         foregroundColor: Colors.white,
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData)],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.translate),
+            tooltip: 'Traductions',
+            onPressed: () => context.push('/sermons/translations'),
+          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
+        ],
       ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(

@@ -63,6 +63,10 @@ public class AssetCheckout {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    /** Chemin serveur de la photo de dommage prise au retour (G5.6 — mobile terrain). */
+    @Column(name = "damage_photo_path", length = 512)
+    private String damagePhotoPath;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -104,6 +108,8 @@ public class AssetCheckout {
     public void setReturnedBy(UUID returnedBy) { this.returnedBy = returnedBy; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getDamagePhotoPath() { return damagePhotoPath; }
+    public void setDamagePhotoPath(String damagePhotoPath) { this.damagePhotoPath = damagePhotoPath; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -29,6 +29,13 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByDepartmentIdInAndDeletedAtIsNull(List<UUID> departmentIds);
     List<Event> findByDateDebutBetweenAndDeletedAtIsNull(LocalDateTime start, LocalDateTime end);
     List<Event> findByDepartmentIdIsNotNullAndDeletedAtIsNullAndDateDebutBetween(LocalDateTime start, LocalDateTime end);
+    /**
+     * G5.9 — Portail basse connexion (#PLANNING / #PRESENCE) : fenêtre
+     * d'événements d'UN SEUL tenant. La variante sans `TenantId` ne doit jamais
+     * être appelée depuis un canal anonyme.
+     */
+    List<Event> findByTenantIdAndDeletedAtIsNullAndDateDebutBetween(
+            UUID tenantId, LocalDateTime start, LocalDateTime end);
     long countByFamilleIdAndDeletedAtIsNull(UUID familleId);
 
     /**

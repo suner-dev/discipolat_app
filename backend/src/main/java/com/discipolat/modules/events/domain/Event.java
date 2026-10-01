@@ -60,6 +60,10 @@ public class Event {
     public static final String STATUT_EN_COURS = "EN_COURS";
     public static final String STATUT_TERMINE = "TERMINE";
     public static final String STATUT_ANNULE = "ANNULE";
+    // PORT Develop1 (§G3.4 archives) : statut posé par la clôture/archivage. Déjà
+    // admis par la contrainte event_status_check de V203 (union FR ∪ EN) — aucune
+    // migration nécessaire ; les quatre statuts FR du produit restent intacts.
+    public static final String STATUT_ARCHIVE = "ARCHIVED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

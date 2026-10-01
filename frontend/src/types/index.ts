@@ -22,6 +22,8 @@ export interface User {
   photoUrl?: string;
   situationFamiliale?: string;
   twoFactorEnabled?: boolean;
+  /** §G5.9 — opt-in individuel au portail basse connexion (WhatsApp sortant). */
+  whatsappOptIn?: boolean;
   createdAt: string;
   updatedAt: string;
 }

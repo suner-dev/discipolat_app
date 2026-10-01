@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/services/api_service.dart';
+import '../../../tenant_config.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/secure_screen.dart';
 
@@ -52,6 +53,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() { _isLoading = true; _error = null; });
 
     try {
+      // §G3.1 — inscription « au nom d'une église » : si une organisation est
+      // sélectionnée (uuid tenant), le compte naît rattaché à son répertoire.
+      final orgId = TenantConfig.currentOrgId;
+      final tenantUuid = orgId != null &&
+              RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+                  .hasMatch(orgId)
+          ? orgId
+          : null;
       await _apiService.post('/auth/register', data: {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
@@ -61,6 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'consentCgu': _consentCgu,
         'consentPrivacy': _consentPrivacy,
         'consentArt9': _consentArt9,
+        if (tenantUuid != null) 'tenantId': tenantUuid,
       });
       if (mounted) setState(() => _success = true);
     } on DioException catch (e) {

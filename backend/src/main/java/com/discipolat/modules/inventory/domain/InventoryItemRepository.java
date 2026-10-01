@@ -28,4 +28,10 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, UU
     long countByTenantIdAndDepartementId(UUID tenantId, UUID departementId);
 
     Optional<InventoryItem> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    /**
+     * PORT Develop1 (§G6.1) : résolution d'un QR code objet scanné sur le terrain.
+     * Le jeton est unique et scopé tenant — un QR d'un autre tenant ne résout rien.
+     */
+    Optional<InventoryItem> findByTenantIdAndQrToken(UUID tenantId, String qrToken);
 }

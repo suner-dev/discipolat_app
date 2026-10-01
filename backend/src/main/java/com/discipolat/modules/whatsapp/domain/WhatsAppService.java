@@ -35,6 +35,8 @@ public class WhatsAppService {
     private final RestClient restClient;
     private final CryptoService cryptoService;
     private final PlatformFeatureFlagService featureFlagService;
+    /** §G5.9 — commandes du portail basse connexion (#tenue/#planning/#don/#presence). */
+    private final org.springframework.beans.factory.ObjectProvider<com.discipolat.modules.lowband.domain.LowBandPortalService> lowBandProvider;
 
     /** Abonnés WhatsApp par famille (numéro → set de families) */
     private final Map<String, Set<String>> familySubscribers = new ConcurrentHashMap<>();
@@ -47,13 +49,15 @@ public class WhatsAppService {
                            WhatsAppReminderRepository reminderRepository,
                            SoulRepository soulRepository,
                            CryptoService cryptoService,
-                           PlatformFeatureFlagService featureFlagService) {
+                           PlatformFeatureFlagService featureFlagService,
+                           org.springframework.beans.factory.ObjectProvider<com.discipolat.modules.lowband.domain.LowBandPortalService> lowBandProvider) {
         this.configRepository = configRepository;
         this.messageRepository = messageRepository;
         this.reminderRepository = reminderRepository;
         this.soulRepository = soulRepository;
         this.cryptoService = cryptoService;
         this.featureFlagService = featureFlagService;
+        this.lowBandProvider = lowBandProvider;
         this.restClient = RestClient.create();
     }
 
@@ -263,6 +267,10 @@ public class WhatsAppService {
         } else if (body.startsWith("#aide")) {
             sendText(tenantId, phone,
                     "Commandes :\n" +
+                    "#tenue — ma tenue des prochains cultes\n" +
+                    "#planning — les événements à venir\n" +
+                    "#don 5000 — initier un don Mobile Money\n" +
+                    "#presence — confirmer ma présence (flash)\n" +
                     "#rejoindre — recevoir les annonces générales\n" +
                     "#rejoindre famille <nom> — annonces d'une famille\n" +
                     "#quitter famille <nom> — se désabonner d'une famille\n" +
@@ -270,6 +278,16 @@ public class WhatsAppService {
                     "#stop — se désabonner de tout\n" +
                     "#aide — cette aide",
                     null, null, WhatsAppMessage.Kind.COMMAND);
+        } else {
+            // §G5.9 — commandes du portail basse connexion (#tenue, #planning,
+            // #don, #presence) : service dédié, résolu par numéro, toggle tenant.
+            var lowBand = lowBandProvider.getIfAvailable();
+            if (lowBand != null) {
+                String reply = lowBand.handleWhatsAppCommand(tenantId, phone, body);
+                if (reply != null) {
+                    sendText(tenantId, phone, reply, null, null, WhatsAppMessage.Kind.COMMAND);
+                }
+            }
         }
     }
 

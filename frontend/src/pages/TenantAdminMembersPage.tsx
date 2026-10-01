@@ -2,9 +2,17 @@ import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import api from "@/lib/api";
+import { useI18n } from "@/i18n";
+import api, { getErrorMessage } from "@/lib/api";
 import toast from "react-hot-toast";
-import { Eye } from "lucide-react";
+import { Eye, UserPlus, Trash2, Loader2, X } from "lucide-react";
+
+/**
+ * G5.5 (§58 / §G3.2) — Membres du tenant : affectation de rôle RÉELLE
+ * (PUT /admin/members/{id}/role, isolation + dernier propriétaire gardé côté
+ * serveur), invitation réelle (POST /admin/invitations) et révocation
+ * (DELETE /admin/members/{id}). UI = confort, autorité = serveur.
+ */
 
 interface Member {
   membershipId: string;
@@ -21,22 +29,37 @@ interface Member {
   isActive: boolean;
 }
 
+interface RoleOption { key: string; label: string }
+
 export default function TenantAdminMembersPage() {
+  const { t } = useI18n();
   const { hasPermission, currentTenant } = useTenant();
   const { user } = useAuth();
   const { startImpersonation } = useImpersonation();
   const [members, setMembers] = useState<Member[]>([]);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [editTarget, setEditTarget] = useState<Member | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!hasPermission("USER_MANAGE")) {
+      setLoading(false);
       return;
     }
     fetchMembers();
-  }, [page, search, roleFilter]);
+  }, [page, roleFilter]);
+
+  useEffect(() => {
+    // Rôles du tenant pour l'éditeur d'affectation + le formulaire d'invitation.
+    api.get("/admin/roles")
+      .then((res) => setRoles((res.data || []).map((r: RoleOption) => ({ key: r.key, label: r.label }))))
+      .catch(() => setRoles([]));
+  }, []);
 
   const fetchMembers = async () => {
     try {
@@ -45,7 +68,6 @@ export default function TenantAdminMembersPage() {
       params.set("size", "20");
       if (search) params.set("search", search);
       if (roleFilter) params.set("role", roleFilter);
-      
       const res = await api.get(`/admin/members?${params}`);
       setMembers(res.data.content || []);
     } catch (error) {
@@ -55,19 +77,46 @@ export default function TenantAdminMembersPage() {
     }
   };
 
+  const changeRole = async (member: Member, roleKey: string) => {
+    setBusy(true);
+    try {
+      await api.put(`/admin/members/${member.membershipId}/role`, { roleKey });
+      toast.success(t("admin.memberRoleSaved"));
+      setEditTarget(null);
+      fetchMembers();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeMember = async (member: Member) => {
+    if (!window.confirm(t("admin.memberRemoveQ", { name: member.fullName || member.email }))) return;
+    try {
+      await api.delete(`/admin/members/${member.membershipId}`);
+      toast.success(t("admin.memberRemoved"));
+      fetchMembers();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
   if (loading) {
-    return <div className="p-8 text-center">Chargement...</div>;
+    return <div className="p-8 text-center">…</div>;
   }
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Membres</h1>
-        <button 
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        <h1 className="text-2xl font-bold">{t("admin.tMembers")}</h1>
+        <button
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!hasPermission("USER_INVITE")}
+          title={!hasPermission("USER_INVITE") ? "USER_INVITE" : undefined}
+          onClick={() => setInviteOpen(true)}
         >
-          + Inviter un membre
+          <UserPlus className="w-4 h-4" /> {t("admin.inviteTitle")}
         </button>
       </div>
 
@@ -77,22 +126,18 @@ export default function TenantAdminMembersPage() {
           placeholder="Rechercher par nom ou email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { setPage(0); fetchMembers(); } }}
           className="flex-1 px-4 py-2 border rounded-lg"
         />
         <select
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
+          onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
           className="px-4 py-2 border rounded-lg"
         >
           <option value="">Tous les rôles</option>
-          <option value="TENANT_OWNER">Propriétaire</option>
-          <option value="TENANT_ADMIN">Administrateur</option>
-          <option value="ADMIN">Admin</option>
-          <option value="PASTEUR">Pasteur</option>
-          <option value="RESPONSABLE">Responsable</option>
-          <option value="CHEF_DE_FAMILLE">Chef de famille</option>
-          <option value="FAISEUR">Faiseur</option>
-          <option value="MEMBRE">Membre</option>
+          {roles.map((r) => (
+            <option key={r.key} value={r.key}>{r.label}</option>
+          ))}
         </select>
       </div>
 
@@ -144,10 +189,20 @@ export default function TenantAdminMembersPage() {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <button
-                      className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+                      className="text-indigo-600 hover:text-indigo-900 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={!hasPermission("USER_MANAGE")}
+                      title={!hasPermission("USER_MANAGE") ? "USER_MANAGE" : undefined}
+                      onClick={() => setEditTarget(member)}
                     >
-                      Modifier
+                      {t("admin.edit")}
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={!hasPermission("USER_MANAGE") || member.userId === user?.id}
+                      title={!hasPermission("USER_MANAGE") ? "USER_MANAGE" : t("admin.memberRemove")}
+                      onClick={() => removeMember(member)}
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                     {/* §G1.9 — Impersonation (super admin plateforme uniquement, motif requis + journalisé) */}
                     {user?.platformSuperAdmin === true && (
@@ -205,6 +260,111 @@ export default function TenantAdminMembersPage() {
           </button>
         </div>
       )}
+
+      {/* Affectation de rôle (§G3.2) — serveur valide tenant + dernier propriétaire */}
+      {editTarget && (
+        <RoleModal
+          member={editTarget} roles={roles} busy={busy}
+          onClose={() => setEditTarget(null)}
+          onSave={(roleKey) => changeRole(editTarget, roleKey)}
+          t={t}
+        />
+      )}
+
+      {inviteOpen && (
+        <InviteModal
+          roles={roles} busy={busy}
+          onClose={() => setInviteOpen(false)}
+          onDone={() => { setInviteOpen(false); fetchMembers(); }}
+          t={t}
+        />
+      )}
+    </div>
+  );
+}
+
+function RoleModal({ member, roles, busy, onClose, onSave, t }: {
+  member: Member; roles: RoleOption[]; busy: boolean; onClose: () => void;
+  onSave: (roleKey: string) => void;
+  t: (k: string, p?: Record<string, string>) => string;
+}) {
+  const [roleKey, setRoleKey] = useState(member.role);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">{member.fullName || member.email}</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+        </div>
+        <label className="block text-sm font-medium mb-1">{t("admin.memberRoleLbl")}</label>
+        <select className="w-full px-3 py-2 border rounded-lg mb-4" value={roleKey} onChange={(e) => setRoleKey(e.target.value)}>
+          {roles.map((r) => <option key={r.key} value={r.key}>{r.label} ({r.key})</option>)}
+        </select>
+        <div className="flex justify-end gap-3">
+          <button className="px-4 py-2 border rounded-lg" onClick={onClose}>{t("admin.cancel")}</button>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-50"
+            disabled={busy || !roleKey || roleKey === member.role}
+            onClick={() => onSave(roleKey)}
+          >
+            {busy && <Loader2 className="w-4 h-4 animate-spin" />} {t("admin.save")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteModal({ roles, busy, onClose, onDone, t }: {
+  roles: RoleOption[]; busy: boolean; onClose: () => void; onDone: () => void;
+  t: (k: string, p?: Record<string, string>) => string;
+}) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("MEMBRE");
+  const [sending, setSending] = useState(false);
+
+  const send = async () => {
+    setSending(true);
+    try {
+      await api.post("/admin/invitations", { email: email.trim(), role });
+      toast.success(t("admin.inviteSent"));
+      setEmail("");
+      onDone();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold">{t("admin.inviteTitle")}</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+        </div>
+        <label className="block text-sm font-medium mb-1">Email</label>
+        <input type="email" className="w-full px-3 py-2 border rounded-lg mb-3" value={email}
+          onChange={(e) => setEmail(e.target.value)} placeholder="person@exemple.org" />
+        <label className="block text-sm font-medium mb-1">{t("admin.memberRoleLbl")}</label>
+        <select className="w-full px-3 py-2 border rounded-lg mb-4" value={role} onChange={(e) => setRole(e.target.value)}>
+          {(roles.length > 0 ? roles : [{ key: "MEMBRE", label: "Membre" }]).map((r) => (
+            <option key={r.key} value={r.key}>{r.label} ({r.key})</option>
+          ))}
+        </select>
+        <div className="flex justify-end gap-3">
+          <button className="px-4 py-2 border rounded-lg" onClick={onClose}>{t("admin.cancel")}</button>
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg disabled:opacity-50"
+            disabled={sending || busy || !/^\S+@\S+\.\S+$/.test(email.trim())}
+            onClick={send}
+          >
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            {t("admin.inviteSend")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

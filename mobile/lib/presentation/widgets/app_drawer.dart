@@ -58,6 +58,8 @@ class _AppDrawerState extends State<AppDrawer> {
     {'icon': Icons.map_rounded, 'title': 'Cartographie', 'route': '/map'},
     {'icon': Icons.favorite_rounded, 'title': 'Âmes', 'route': '/souls'},
     {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
+    // PORT Develop1 — ministère pastoral (écran §G6, parité web `/pastoral`).
+    {'icon': Icons.church_rounded, 'title': 'Ministère pastoral', 'route': '/pastoral'},
     {
       'icon': Icons.people_rounded,
       'title': 'CRM Faiseur',
@@ -212,6 +214,9 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Inventaire',
       'route': '/inventory'
     },
+    // PORT Develop1 — terrain connecté (§G5.6) : pointage QR + inventaire terrain.
+    {'icon': Icons.qr_code_scanner_rounded, 'title': 'Pointage QR', 'route': '/qr-checkin'},
+    {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire terrain', 'route': '/asset-field'},
     {
       'icon': Icons.notifications_rounded,
       'title': 'Notifications',
@@ -232,6 +237,8 @@ class _AppDrawerState extends State<AppDrawer> {
 
   // ── Section Administration (groupée dans le drawer) ──
   static const List<Map<String, Object>> _adminNav = [
+    // PORT Develop1 — console terrain super admin/responsable (§57).
+    {'icon': Icons.admin_panel_settings_rounded, 'title': 'Console terrain', 'route': '/admin-console'},
     {
       'icon': Icons.auto_fix_high_rounded,
       'title': 'Workflows',
@@ -252,6 +259,8 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Pages personnalisées',
       'route': '/admin/pages'
     },
+    // PORT Develop1 — paramètres de l'église (§G4.3), miroir du web.
+    {'icon': Icons.settings_rounded, 'title': 'Paramètres église', 'route': '/admin/settings'},
     {
       'icon': Icons.text_fields_rounded,
       'title': 'Champs personnalisés',
@@ -483,6 +492,9 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Inventaire',
       'route': '/inventory'
     },
+    // PORT Develop1 — terrain connecté (§G5.6).
+    {'icon': Icons.qr_code_scanner_rounded, 'title': 'Pointage QR', 'route': '/qr-checkin'},
+    {'icon': Icons.inventory_2_rounded, 'title': 'Inventaire terrain', 'route': '/asset-field'},
     {'icon': Icons.chat_rounded, 'title': 'Messagerie', 'route': '/messages'},
     {
       'icon': Icons.hub_rounded,
@@ -556,6 +568,8 @@ class _AppDrawerState extends State<AppDrawer> {
       'route': '/prayers/actions-de-grace'
     },
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    // PORT Develop1 — pointage QR terrain (§G5.6) chez le faiseur.
+    {'icon': Icons.qr_code_scanner_rounded, 'title': 'Pointage QR', 'route': '/qr-checkin'},
     {
       'icon': Icons.description_rounded,
       'title': 'Rapports',
@@ -597,6 +611,8 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Dashboard Chef',
       'route': '/dashboard/chef-famille'
     },
+    // PORT Develop1 — OS famille (§G4.5) : accès direct à l'espace famille.
+    {'icon': Icons.family_restroom_rounded, 'title': 'Espace famille', 'route': '/family-space'},
     {'icon': Icons.group_rounded, 'title': 'Familles', 'route': '/families'},
     {'icon': Icons.favorite_rounded, 'title': 'Disciples', 'route': '/souls'},
     {
@@ -845,6 +861,14 @@ class _AppDrawerState extends State<AppDrawer> {
         return l10n.navCommunications;
       case '/network':
         return l10n.networkTitle;
+      case '/admin-console':
+        return l10n.navAdminConsole;
+      case '/qr-checkin':
+        return l10n.qrCheckinTitle;
+      case '/asset-field':
+        return l10n.assetFieldTitle;
+      case '/admin/settings':
+        return l10n.navChurchSettings;
       case '/inventory':
         return l10n.navInventory;
       case '/notifications':

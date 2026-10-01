@@ -21,4 +21,7 @@ public interface FamilyActivityRepository extends JpaRepository<FamilyActivity, 
     Optional<FamilyActivity> findByReferenceId(UUID referenceId);
 
     Page<FamilyActivity> findByTenantIdOrderByActivityDateDesc(UUID tenantId, Pageable pageable);
+
+    /** G4.1 — journal d'activité limité à UNE famille (pas tout le tenant). */
+    Page<FamilyActivity> findByTenantIdAndFamilyIdOrderByActivityDateDesc(UUID tenantId, UUID familyId, Pageable pageable);
 }

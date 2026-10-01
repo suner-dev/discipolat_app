@@ -142,11 +142,11 @@ public class WorkflowEngineController {
         return ResponseEntity.ok(engine.reset(tenantId(), SecurityUtils.getCurrentUserId(), instanceId));
     }
 
-    /** Volet « Mon approbation ». */
+    /** Volet « Mon approbation » — enrichi (workflow, étape, entité) pour l'affichage terrain mobile §G5.5. */
     @GetMapping("/tasks/pending")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<WorkflowTask>> pendingTasks() {
-        return ResponseEntity.ok(engine.getPendingTasksFor(tenantId(), SecurityUtils.getCurrentUserId()));
+    public ResponseEntity<List<Map<String, Object>>> pendingTasks() {
+        return ResponseEntity.ok(engine.getPendingTasksForDetailed(tenantId(), SecurityUtils.getCurrentUserId()));
     }
 
     @PostMapping("/tasks/{taskId}/approve")

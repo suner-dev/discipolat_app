@@ -7,6 +7,7 @@ import MainLayout from '@/layouts/MainLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { RequireTenantAccess } from '@/components/guards/RouteGuards';
 import { useUsageTracking } from '@/hooks/useUsageTracking';
 
 /* ============================================================================
@@ -107,6 +108,11 @@ const TenantAdminModulesPage = lazy(() => import('@/pages/TenantAdminModulesPage
 const TenantAdminSettingsPage = lazy(() => import('@/pages/TenantAdminSettingsPage'));
 const TenantAdminBrandingPage = lazy(() => import('@/pages/TenantAdminBrandingPage'));
 const TenantAdminSubscriptionPage = lazy(() => import('@/pages/TenantAdminSubscriptionPage'));
+const TenantAdminSpacesPage = lazy(() => import('@/pages/TenantAdminSpacesPage'));
+const OrganizationBrowserPage = lazy(() => import('@/pages/OrganizationBrowserPage'));
+const PeopleDirectoryPage = lazy(() => import('@/pages/PeopleDirectoryPage'));
+const PastoralMinistryPage = lazy(() => import('@/pages/PastoralMinistryPage'));
+const SpaceOsPage = lazy(() => import('@/pages/SpaceOsPage'));
 const DressCodePage = lazy(() => import('@/pages/DressCodePage'));
 const TenantSwitcherPage = lazy(() => import('@/pages/TenantSwitcherPage'));
 const CustomPageView = lazy(() => import('@/pages/CustomPageView'));
@@ -207,6 +213,7 @@ const NetworkPage = lazy(() => import('@/pages/NetworkPage'));
 const PassportPage = lazy(() => import('@/pages/PassportPage'));
 const PassportVerifyPage = lazy(() => import('@/pages/PassportVerifyPage'));
 const AdminRequestsPage = lazy(() => import('@/pages/AdminRequestsPage'));
+const SyncConflictsPage = lazy(() => import('@/pages/SyncConflictsPage'));
 const EmergencyAidPage = lazy(() => import('@/pages/EmergencyAidPage'));
 const AidExchangePage = lazy(() => import('@/pages/AidExchangePage'));
 const Auth2faStatusPage = lazy(() => import('@/pages/Auth2faStatusPage'));
@@ -245,6 +252,7 @@ const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const BillingPage = lazy(() => import('@/pages/BillingPage'));
 const SpaceImportExportPage = lazy(() => import('@/pages/SpaceImportExportPage'));
+const LegacyMigrationPage = lazy(() => import('@/pages/LegacyMigrationPage'));
 const ConversationsPage = lazy(() => import('@/pages/ConversationsPage'));
 const CoursesPage = lazy(() => import('@/pages/CoursesPage'));
 const EquipmentPage = lazy(() => import('@/pages/EquipmentPage'));
@@ -361,6 +369,8 @@ export default function App() {
           <Route path="/auth/magic-link" element={<MagicLinkVerifyPage />} />
           {/* §G1.6 — Page PUBLIQUE d'acceptation d'invitation (invité sans compte) */}
           <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+          {/* §G6.9 — Annuaire PUBLIC « Églises sur Discipolat » (opt-in par tenant) */}
+          <Route path="/eglises" element={<PublicChurchesPage />} />
         </Route>
 
         <Route path="/verify-2fa" element={
@@ -449,6 +459,38 @@ export default function App() {
           <Route path="/families/:id" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
               <FamilyDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/spaces/:id" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+              {/* G5.4 : l'OS d'espace lit le bootstrap résolu serveur → exige un tenant actif */}
+              <RequireTenantAccess>
+                <SpaceOsPage />
+              </RequireTenantAccess>
+            </ProtectedRoute>
+          } />
+          {/* §G3.1/§G6.4 — répertoire des personnes : filtres « sans espace /
+              sans famille » réels + affectation (le serveur notifie la personne). */}
+          <Route path="/people" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER']}>
+              <RequireTenantAccess>
+                <PeopleDirectoryPage />
+              </RequireTenantAccess>
+            </ProtectedRoute>
+          } />
+          <Route path="/organization" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+              <RequireTenantAccess>
+                <OrganizationBrowserPage />
+              </RequireTenantAccess>
+            </ProtectedRoute>
+          } />
+          {/* §G4.3 — Ministère pastoral : lecture bergers/administration, écritures PASTOR_PRINCIPAL/ADMIN (miroir PastorateController). */}
+          <Route path="/pastoral" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'PASTOR_PRINCIPAL']}>
+              <RequireTenantAccess>
+                <PastoralMinistryPage />
+              </RequireTenantAccess>
             </ProtectedRoute>
           } />
           <Route path="/departments" element={
@@ -1044,6 +1086,7 @@ export default function App() {
           <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><NetworkPage /></ProtectedRoute>} />
           <Route path="/passport" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><PassportPage /></ProtectedRoute>} />
           <Route path="/admin-requests" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/sync-conflicts" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SyncConflictsPage /></ProtectedRoute>} />
           <Route path="/emergency-aid" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EmergencyAidPage /></ProtectedRoute>} />
           <Route path="/aid-exchange" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><AidExchangePage /></ProtectedRoute>} />
           <Route path="/2fa-status" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><Auth2faStatusPage /></ProtectedRoute>} />
@@ -1079,6 +1122,7 @@ export default function App() {
           <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']}><UserRolesPage /></ProtectedRoute>} />
           <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']}><ComplianceExportsPage /></ProtectedRoute>} />
           <Route path="/admin/space-import-export" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SpaceImportExportPage /></ProtectedRoute>} />
+          <Route path="/admin/legacy-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><LegacyMigrationPage /></ProtectedRoute>} />
           <Route path="/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
           <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CoursesPage /></ProtectedRoute>} />
           <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EquipmentPage /></ProtectedRoute>} />
@@ -1139,10 +1183,16 @@ export default function App() {
           <Route path="/admin/invitations" element={
             <ProtectedRoute scope="tenant"><TenantAdminInvitationsPage /></ProtectedRoute>
           } />
-          <Route path="/admin/modules" element={
+          {/* G5.5 : /admin/settings et /admin/modules étaient définis DEUX fois
+              (plateforme + tenant) — la seconde définition est inaccessible.
+              La console tenant déménage sur /tenant/* sans collision. */}
+          <Route path="/admin/spaces" element={
+            <ProtectedRoute scope="tenant"><TenantAdminSpacesPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant/modules" element={
             <ProtectedRoute scope="tenant"><TenantAdminModulesPage /></ProtectedRoute>
           } />
-          <Route path="/admin/settings" element={
+          <Route path="/tenant/settings" element={
             <ProtectedRoute scope="tenant"><TenantAdminSettingsPage /></ProtectedRoute>
           } />
           <Route path="/admin/branding" element={

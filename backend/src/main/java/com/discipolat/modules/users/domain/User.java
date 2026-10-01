@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.ParamDef;
 
@@ -31,6 +30,15 @@ public class User {
 
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
+
+    /**
+     * PORT Develop1 (§G5.4 bascule de tenant) : tenant ACTIF persistant d'un
+     * utilisateur multi-adhésions. Null = tenant « maison » (tenantId). Doit
+     * rester une adhésion ACTIVE, sinon les resolvers retombent sur tenantId.
+     * Colonne ajoutée par V207 (main occupait déjà V165 avec un autre contenu).
+     */
+    @Column(name = "active_tenant_id")
+    private UUID activeTenantId;
 
     @Column(name = "email", nullable = false)
     private String email;

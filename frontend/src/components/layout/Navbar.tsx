@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { WORKSPACE_HOME, ROLE_META, roleIcon, isTenantAdmin } from '@/workspaces';
 import BetaBadge from '@/components/beta/BetaBadge';
+import RealtimeBadge from '@/components/layout/RealtimeBadge';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { useTheme } from '@/hooks/useTheme';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ import type { Notification } from '@/types';
 
 interface NavbarProps {
   onMenuClick: () => void;
+  /** G5.1 — Ouvre la palette de commandes (Cmd/Ctrl+K). */
   openPalette?: () => void;
 }
 
@@ -176,8 +178,25 @@ export default function Navbar({ onMenuClick, openPalette }: NavbarProps) {
 
         {/* Right section */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* G5.1 — Déclencheur mobile de la palette (Develop1) ; le déclencheur
+              desktop de main reste seul, sous Ctrl/Cmd+K, plus bas. */}
+          {openPalette && (
+            <button
+              onClick={openPalette}
+              className="md:hidden p-2.5 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-300
+                         hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-all duration-200
+                         active:scale-95"
+              aria-label={t('commandPalette.trigger') || 'Rechercher'}
+            >
+              <Search className="w-[18px] h-[18px]" />
+            </button>
+          )}
+
           {/* Badge BÊTA (environnement de test uniquement) */}
           <BetaBadge className="hidden sm:inline-flex" />
+
+          {/* §G5.8 — indicateur de fraîcheur du bus temps réel */}
+          <RealtimeBadge />
 
           {/* Dark mode toggle */}
           <button

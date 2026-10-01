@@ -34,6 +34,8 @@ public class OutboxConsumers {
     private final ProcessedEventRepository processedRepository;
     private final NotificationService notificationService;
     private final PushNotificationService pushNotificationService;
+    /** §G5.9 — portail basse connexion : diffusion WhatsApp sortante (opt-in, toggle tenant). */
+    private final com.discipolat.modules.lowband.domain.LowBandNotifyService lowBandNotifyService;
 
     /**
      * Initialise tous les consommateurs canoniques (Annexe E).
@@ -73,6 +75,8 @@ public class OutboxConsumers {
         outboxPublisher.registerConsumer("StockLowAlert", this::consumeNotify);
         outboxPublisher.registerConsumer("MedicineExpiring", this::consumeNotify);
         outboxPublisher.registerConsumer("HealthReferralCreated", this::consumeNotify);
+        // G4.6 — le moteur de migration legacy notifie le responsable d'espace à la clôture
+        outboxPublisher.registerConsumer("LegacyMigrationCompleted", this::consumeNotify);
 
         // AUDIT - Journal d'audit technique (hash chain)
         outboxPublisher.registerConsumer("AssetCheckedOut", this::consumeAudit);
@@ -88,6 +92,7 @@ public class OutboxConsumers {
         outboxPublisher.registerConsumer("SpaceConfigChanged", this::consumeAudit);
         outboxPublisher.registerConsumer("StatusChanged", this::consumeAudit);
         outboxPublisher.registerConsumer("InvitationAccepted", this::consumeAudit);
+        outboxPublisher.registerConsumer("LegacyMigrationCompleted", this::consumeAudit);
 
         // BUSINESS_HISTORY - Historique métier par objet
         outboxPublisher.registerConsumer("AssetCheckedOut", this::consumeBusinessHistory);
@@ -115,6 +120,7 @@ public class OutboxConsumers {
         outboxPublisher.registerConsumer("CampaignStarted", this::consumeBusinessHistory);
         outboxPublisher.registerConsumer("KitDistributed", this::consumeBusinessHistory);
         outboxPublisher.registerConsumer("HealthReferralCreated", this::consumeBusinessHistory);
+        outboxPublisher.registerConsumer("LegacyMigrationCompleted", this::consumeBusinessHistory);
 
         // FINANCE - Auto-création dépenses (TCO, etc.)
         outboxPublisher.registerConsumer("AssetDamaged", this::consumeFinance);
@@ -139,7 +145,26 @@ public class OutboxConsumers {
         outboxPublisher.registerConsumer("TaskAssigned", this::consumeRealtime);
         outboxPublisher.registerConsumer("TaskCompleted", this::consumeRealtime);
 
-        log.info("Outbox consumers registered: {} event types", 29);
+        // §G5.8 — FIREHOSE : chaque événement commité (TOUT type) est poussé
+        // immédiatement sur /topic/tenant:{id}/events, sans attendre le poll
+        // de 5 s du dispatcher durable. Garantie « web ↔ mobile < 5 s ».
+        outboxPublisher.addStreamRelay(this::consumeStream);
+
+        // §G5.9 — Portail basse connexion : diffusion WhatsApp sortante vers les
+        // numéros OPT-IN (toggle tenant low_band_enabled, best-effort, jamais bloquant).
+        outboxPublisher.registerConsumer("DressCodePublished", lowBandNotifyService::consume);
+        outboxPublisher.registerConsumer("RoleAssigned", lowBandNotifyService::consume);
+        outboxPublisher.registerConsumer("PastorAppointed", lowBandNotifyService::consume);
+        outboxPublisher.registerConsumer("TaskAssigned", lowBandNotifyService::consume);
+        outboxPublisher.registerConsumer("StockLowAlert", lowBandNotifyService::consume);
+        outboxPublisher.registerConsumer("MedicineExpiring", lowBandNotifyService::consume);
+
+        log.info("Outbox consumers registered: {} event types + §G5.8 stream relay", 29);
+    }
+
+    /** Enveloppe firehose (dédupliquée côté client par eventId monotone). */
+    private void consumeStream(OutboxEvent event) {
+        realTimeService.pushOutboxEvent(event);
     }
 
     // ========== Consumer implementations ==========

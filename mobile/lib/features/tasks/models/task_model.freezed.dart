@@ -12,7 +12,8 @@ part of 'task_model.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 Task _$TaskFromJson(Map<String, dynamic> json) {
   return _Task.fromJson(json);
@@ -66,38 +67,39 @@ abstract class $TaskCopyWith<$Res> {
   factory $TaskCopyWith(Task value, $Res Function(Task) then) =
       _$TaskCopyWithImpl<$Res, Task>;
   @useResult
-  $Res call(
-      {int id,
-      String title,
-      String? description,
-      TaskType type,
-      TaskPriority priority,
-      TaskStatus status,
-      int? projectId,
-      String? projectName,
-      int? assignedToId,
-      String? assignedToName,
-      int? assignedById,
-      String? assignedByName,
-      int? departmentId,
-      String? departmentName,
-      DateTime? dueDate,
-      DateTime? startDate,
-      DateTime? completedDate,
-      int? estimatedHours,
-      int? actualHours,
-      List<String>? tags,
-      List<TaskAttachment>? attachments,
-      List<TaskComment>? comments,
-      List<Task>? subtasks,
-      List<TaskDependency>? dependencies,
-      int? parentTaskId,
-      String? parentTaskTitle,
-      int? recurrenceRuleId,
-      String? recurrencePattern,
-      DateTime? recurrenceEndDate,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String title,
+    String? description,
+    TaskType type,
+    TaskPriority priority,
+    TaskStatus status,
+    int? projectId,
+    String? projectName,
+    int? assignedToId,
+    String? assignedToName,
+    int? assignedById,
+    String? assignedByName,
+    int? departmentId,
+    String? departmentName,
+    DateTime? dueDate,
+    DateTime? startDate,
+    DateTime? completedDate,
+    int? estimatedHours,
+    int? actualHours,
+    List<String>? tags,
+    List<TaskAttachment>? attachments,
+    List<TaskComment>? comments,
+    List<Task>? subtasks,
+    List<TaskDependency>? dependencies,
+    int? parentTaskId,
+    String? parentTaskTitle,
+    int? recurrenceRuleId,
+    String? recurrencePattern,
+    DateTime? recurrenceEndDate,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -147,174 +149,179 @@ class _$TaskCopyWithImpl<$Res, $Val extends Task>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TaskType,
-      priority: null == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TaskStatus,
-      projectId: freezed == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projectName: freezed == projectName
-          ? _value.projectName
-          : projectName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedToId: freezed == assignedToId
-          ? _value.assignedToId
-          : assignedToId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedToName: freezed == assignedToName
-          ? _value.assignedToName
-          : assignedToName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedById: freezed == assignedById
-          ? _value.assignedById
-          : assignedById // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedByName: freezed == assignedByName
-          ? _value.assignedByName
-          : assignedByName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dueDate: freezed == dueDate
-          ? _value.dueDate
-          : dueDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      completedDate: freezed == completedDate
-          ? _value.completedDate
-          : completedDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      actualHours: freezed == actualHours
-          ? _value.actualHours
-          : actualHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      tags: freezed == tags
-          ? _value.tags
-          : tags // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      attachments: freezed == attachments
-          ? _value.attachments
-          : attachments // ignore: cast_nullable_to_non_nullable
-              as List<TaskAttachment>?,
-      comments: freezed == comments
-          ? _value.comments
-          : comments // ignore: cast_nullable_to_non_nullable
-              as List<TaskComment>?,
-      subtasks: freezed == subtasks
-          ? _value.subtasks
-          : subtasks // ignore: cast_nullable_to_non_nullable
-              as List<Task>?,
-      dependencies: freezed == dependencies
-          ? _value.dependencies
-          : dependencies // ignore: cast_nullable_to_non_nullable
-              as List<TaskDependency>?,
-      parentTaskId: freezed == parentTaskId
-          ? _value.parentTaskId
-          : parentTaskId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentTaskTitle: freezed == parentTaskTitle
-          ? _value.parentTaskTitle
-          : parentTaskTitle // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recurrenceRuleId: freezed == recurrenceRuleId
-          ? _value.recurrenceRuleId
-          : recurrenceRuleId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      recurrencePattern: freezed == recurrencePattern
-          ? _value.recurrencePattern
-          : recurrencePattern // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recurrenceEndDate: freezed == recurrenceEndDate
-          ? _value.recurrenceEndDate
-          : recurrenceEndDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as TaskType,
+            priority: null == priority
+                ? _value.priority
+                : priority // ignore: cast_nullable_to_non_nullable
+                      as TaskPriority,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TaskStatus,
+            projectId: freezed == projectId
+                ? _value.projectId
+                : projectId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            projectName: freezed == projectName
+                ? _value.projectName
+                : projectName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            assignedToId: freezed == assignedToId
+                ? _value.assignedToId
+                : assignedToId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            assignedToName: freezed == assignedToName
+                ? _value.assignedToName
+                : assignedToName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            assignedById: freezed == assignedById
+                ? _value.assignedById
+                : assignedById // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            assignedByName: freezed == assignedByName
+                ? _value.assignedByName
+                : assignedByName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            departmentId: freezed == departmentId
+                ? _value.departmentId
+                : departmentId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            departmentName: freezed == departmentName
+                ? _value.departmentName
+                : departmentName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            dueDate: freezed == dueDate
+                ? _value.dueDate
+                : dueDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            startDate: freezed == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            completedDate: freezed == completedDate
+                ? _value.completedDate
+                : completedDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            estimatedHours: freezed == estimatedHours
+                ? _value.estimatedHours
+                : estimatedHours // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            actualHours: freezed == actualHours
+                ? _value.actualHours
+                : actualHours // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            tags: freezed == tags
+                ? _value.tags
+                : tags // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            attachments: freezed == attachments
+                ? _value.attachments
+                : attachments // ignore: cast_nullable_to_non_nullable
+                      as List<TaskAttachment>?,
+            comments: freezed == comments
+                ? _value.comments
+                : comments // ignore: cast_nullable_to_non_nullable
+                      as List<TaskComment>?,
+            subtasks: freezed == subtasks
+                ? _value.subtasks
+                : subtasks // ignore: cast_nullable_to_non_nullable
+                      as List<Task>?,
+            dependencies: freezed == dependencies
+                ? _value.dependencies
+                : dependencies // ignore: cast_nullable_to_non_nullable
+                      as List<TaskDependency>?,
+            parentTaskId: freezed == parentTaskId
+                ? _value.parentTaskId
+                : parentTaskId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            parentTaskTitle: freezed == parentTaskTitle
+                ? _value.parentTaskTitle
+                : parentTaskTitle // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            recurrenceRuleId: freezed == recurrenceRuleId
+                ? _value.recurrenceRuleId
+                : recurrenceRuleId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            recurrencePattern: freezed == recurrencePattern
+                ? _value.recurrencePattern
+                : recurrencePattern // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            recurrenceEndDate: freezed == recurrenceEndDate
+                ? _value.recurrenceEndDate
+                : recurrenceEndDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TaskImplCopyWith<$Res> implements $TaskCopyWith<$Res> {
   factory _$$TaskImplCopyWith(
-          _$TaskImpl value, $Res Function(_$TaskImpl) then) =
-      __$$TaskImplCopyWithImpl<$Res>;
+    _$TaskImpl value,
+    $Res Function(_$TaskImpl) then,
+  ) = __$$TaskImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String title,
-      String? description,
-      TaskType type,
-      TaskPriority priority,
-      TaskStatus status,
-      int? projectId,
-      String? projectName,
-      int? assignedToId,
-      String? assignedToName,
-      int? assignedById,
-      String? assignedByName,
-      int? departmentId,
-      String? departmentName,
-      DateTime? dueDate,
-      DateTime? startDate,
-      DateTime? completedDate,
-      int? estimatedHours,
-      int? actualHours,
-      List<String>? tags,
-      List<TaskAttachment>? attachments,
-      List<TaskComment>? comments,
-      List<Task>? subtasks,
-      List<TaskDependency>? dependencies,
-      int? parentTaskId,
-      String? parentTaskTitle,
-      int? recurrenceRuleId,
-      String? recurrencePattern,
-      DateTime? recurrenceEndDate,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String title,
+    String? description,
+    TaskType type,
+    TaskPriority priority,
+    TaskStatus status,
+    int? projectId,
+    String? projectName,
+    int? assignedToId,
+    String? assignedToName,
+    int? assignedById,
+    String? assignedByName,
+    int? departmentId,
+    String? departmentName,
+    DateTime? dueDate,
+    DateTime? startDate,
+    DateTime? completedDate,
+    int? estimatedHours,
+    int? actualHours,
+    List<String>? tags,
+    List<TaskAttachment>? attachments,
+    List<TaskComment>? comments,
+    List<Task>? subtasks,
+    List<TaskDependency>? dependencies,
+    int? parentTaskId,
+    String? parentTaskTitle,
+    int? recurrenceRuleId,
+    String? recurrencePattern,
+    DateTime? recurrenceEndDate,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -322,7 +329,7 @@ class __$$TaskImplCopyWithImpl<$Res>
     extends _$TaskCopyWithImpl<$Res, _$TaskImpl>
     implements _$$TaskImplCopyWith<$Res> {
   __$$TaskImplCopyWithImpl(_$TaskImpl _value, $Res Function(_$TaskImpl) _then)
-      : super(_value, _then);
+    : super(_value, _then);
 
   /// Create a copy of Task
   /// with the given fields replaced by the non-null parameter values.
@@ -361,176 +368,178 @@ class __$$TaskImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$TaskImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TaskType,
-      priority: null == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TaskStatus,
-      projectId: freezed == projectId
-          ? _value.projectId
-          : projectId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      projectName: freezed == projectName
-          ? _value.projectName
-          : projectName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedToId: freezed == assignedToId
-          ? _value.assignedToId
-          : assignedToId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedToName: freezed == assignedToName
-          ? _value.assignedToName
-          : assignedToName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedById: freezed == assignedById
-          ? _value.assignedById
-          : assignedById // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedByName: freezed == assignedByName
-          ? _value.assignedByName
-          : assignedByName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      dueDate: freezed == dueDate
-          ? _value.dueDate
-          : dueDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      startDate: freezed == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      completedDate: freezed == completedDate
-          ? _value.completedDate
-          : completedDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      actualHours: freezed == actualHours
-          ? _value.actualHours
-          : actualHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      tags: freezed == tags
-          ? _value._tags
-          : tags // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      attachments: freezed == attachments
-          ? _value._attachments
-          : attachments // ignore: cast_nullable_to_non_nullable
-              as List<TaskAttachment>?,
-      comments: freezed == comments
-          ? _value._comments
-          : comments // ignore: cast_nullable_to_non_nullable
-              as List<TaskComment>?,
-      subtasks: freezed == subtasks
-          ? _value._subtasks
-          : subtasks // ignore: cast_nullable_to_non_nullable
-              as List<Task>?,
-      dependencies: freezed == dependencies
-          ? _value._dependencies
-          : dependencies // ignore: cast_nullable_to_non_nullable
-              as List<TaskDependency>?,
-      parentTaskId: freezed == parentTaskId
-          ? _value.parentTaskId
-          : parentTaskId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentTaskTitle: freezed == parentTaskTitle
-          ? _value.parentTaskTitle
-          : parentTaskTitle // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recurrenceRuleId: freezed == recurrenceRuleId
-          ? _value.recurrenceRuleId
-          : recurrenceRuleId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      recurrencePattern: freezed == recurrencePattern
-          ? _value.recurrencePattern
-          : recurrencePattern // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recurrenceEndDate: freezed == recurrenceEndDate
-          ? _value.recurrenceEndDate
-          : recurrenceEndDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$TaskImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as TaskType,
+        priority: null == priority
+            ? _value.priority
+            : priority // ignore: cast_nullable_to_non_nullable
+                  as TaskPriority,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TaskStatus,
+        projectId: freezed == projectId
+            ? _value.projectId
+            : projectId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        projectName: freezed == projectName
+            ? _value.projectName
+            : projectName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        assignedToId: freezed == assignedToId
+            ? _value.assignedToId
+            : assignedToId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        assignedToName: freezed == assignedToName
+            ? _value.assignedToName
+            : assignedToName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        assignedById: freezed == assignedById
+            ? _value.assignedById
+            : assignedById // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        assignedByName: freezed == assignedByName
+            ? _value.assignedByName
+            : assignedByName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        departmentId: freezed == departmentId
+            ? _value.departmentId
+            : departmentId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        departmentName: freezed == departmentName
+            ? _value.departmentName
+            : departmentName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        dueDate: freezed == dueDate
+            ? _value.dueDate
+            : dueDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        startDate: freezed == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        completedDate: freezed == completedDate
+            ? _value.completedDate
+            : completedDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        estimatedHours: freezed == estimatedHours
+            ? _value.estimatedHours
+            : estimatedHours // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        actualHours: freezed == actualHours
+            ? _value.actualHours
+            : actualHours // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        tags: freezed == tags
+            ? _value._tags
+            : tags // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        attachments: freezed == attachments
+            ? _value._attachments
+            : attachments // ignore: cast_nullable_to_non_nullable
+                  as List<TaskAttachment>?,
+        comments: freezed == comments
+            ? _value._comments
+            : comments // ignore: cast_nullable_to_non_nullable
+                  as List<TaskComment>?,
+        subtasks: freezed == subtasks
+            ? _value._subtasks
+            : subtasks // ignore: cast_nullable_to_non_nullable
+                  as List<Task>?,
+        dependencies: freezed == dependencies
+            ? _value._dependencies
+            : dependencies // ignore: cast_nullable_to_non_nullable
+                  as List<TaskDependency>?,
+        parentTaskId: freezed == parentTaskId
+            ? _value.parentTaskId
+            : parentTaskId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        parentTaskTitle: freezed == parentTaskTitle
+            ? _value.parentTaskTitle
+            : parentTaskTitle // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        recurrenceRuleId: freezed == recurrenceRuleId
+            ? _value.recurrenceRuleId
+            : recurrenceRuleId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        recurrencePattern: freezed == recurrencePattern
+            ? _value.recurrencePattern
+            : recurrencePattern // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        recurrenceEndDate: freezed == recurrenceEndDate
+            ? _value.recurrenceEndDate
+            : recurrenceEndDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskImpl extends _Task {
-  const _$TaskImpl(
-      {required this.id,
-      required this.title,
-      this.description,
-      required this.type,
-      required this.priority,
-      required this.status,
-      this.projectId,
-      this.projectName,
-      this.assignedToId,
-      this.assignedToName,
-      this.assignedById,
-      this.assignedByName,
-      this.departmentId,
-      this.departmentName,
-      this.dueDate,
-      this.startDate,
-      this.completedDate,
-      this.estimatedHours,
-      this.actualHours,
-      final List<String>? tags,
-      final List<TaskAttachment>? attachments,
-      final List<TaskComment>? comments,
-      final List<Task>? subtasks,
-      final List<TaskDependency>? dependencies,
-      this.parentTaskId,
-      this.parentTaskTitle,
-      this.recurrenceRuleId,
-      this.recurrencePattern,
-      this.recurrenceEndDate,
-      required this.createdAt,
-      this.updatedAt})
-      : _tags = tags,
-        _attachments = attachments,
-        _comments = comments,
-        _subtasks = subtasks,
-        _dependencies = dependencies,
-        super._();
+  const _$TaskImpl({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.type,
+    required this.priority,
+    required this.status,
+    this.projectId,
+    this.projectName,
+    this.assignedToId,
+    this.assignedToName,
+    this.assignedById,
+    this.assignedByName,
+    this.departmentId,
+    this.departmentName,
+    this.dueDate,
+    this.startDate,
+    this.completedDate,
+    this.estimatedHours,
+    this.actualHours,
+    final List<String>? tags,
+    final List<TaskAttachment>? attachments,
+    final List<TaskComment>? comments,
+    final List<Task>? subtasks,
+    final List<TaskDependency>? dependencies,
+    this.parentTaskId,
+    this.parentTaskTitle,
+    this.recurrenceRuleId,
+    this.recurrencePattern,
+    this.recurrenceEndDate,
+    required this.createdAt,
+    this.updatedAt,
+  }) : _tags = tags,
+       _attachments = attachments,
+       _comments = comments,
+       _subtasks = subtasks,
+       _dependencies = dependencies,
+       super._();
 
   factory _$TaskImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskImplFromJson(json);
@@ -682,12 +691,16 @@ class _$TaskImpl extends _Task {
             (identical(other.actualHours, actualHours) ||
                 other.actualHours == actualHours) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
-            const DeepCollectionEquality()
-                .equals(other._attachments, _attachments) &&
+            const DeepCollectionEquality().equals(
+              other._attachments,
+              _attachments,
+            ) &&
             const DeepCollectionEquality().equals(other._comments, _comments) &&
             const DeepCollectionEquality().equals(other._subtasks, _subtasks) &&
-            const DeepCollectionEquality()
-                .equals(other._dependencies, _dependencies) &&
+            const DeepCollectionEquality().equals(
+              other._dependencies,
+              _dependencies,
+            ) &&
             (identical(other.parentTaskId, parentTaskId) ||
                 other.parentTaskId == parentTaskId) &&
             (identical(other.parentTaskTitle, parentTaskTitle) ||
@@ -707,39 +720,39 @@ class _$TaskImpl extends _Task {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        title,
-        description,
-        type,
-        priority,
-        status,
-        projectId,
-        projectName,
-        assignedToId,
-        assignedToName,
-        assignedById,
-        assignedByName,
-        departmentId,
-        departmentName,
-        dueDate,
-        startDate,
-        completedDate,
-        estimatedHours,
-        actualHours,
-        const DeepCollectionEquality().hash(_tags),
-        const DeepCollectionEquality().hash(_attachments),
-        const DeepCollectionEquality().hash(_comments),
-        const DeepCollectionEquality().hash(_subtasks),
-        const DeepCollectionEquality().hash(_dependencies),
-        parentTaskId,
-        parentTaskTitle,
-        recurrenceRuleId,
-        recurrencePattern,
-        recurrenceEndDate,
-        createdAt,
-        updatedAt
-      ]);
+    runtimeType,
+    id,
+    title,
+    description,
+    type,
+    priority,
+    status,
+    projectId,
+    projectName,
+    assignedToId,
+    assignedToName,
+    assignedById,
+    assignedByName,
+    departmentId,
+    departmentName,
+    dueDate,
+    startDate,
+    completedDate,
+    estimatedHours,
+    actualHours,
+    const DeepCollectionEquality().hash(_tags),
+    const DeepCollectionEquality().hash(_attachments),
+    const DeepCollectionEquality().hash(_comments),
+    const DeepCollectionEquality().hash(_subtasks),
+    const DeepCollectionEquality().hash(_dependencies),
+    parentTaskId,
+    parentTaskTitle,
+    recurrenceRuleId,
+    recurrencePattern,
+    recurrenceEndDate,
+    createdAt,
+    updatedAt,
+  ]);
 
   /// Create a copy of Task
   /// with the given fields replaced by the non-null parameter values.
@@ -751,45 +764,44 @@ class _$TaskImpl extends _Task {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskImplToJson(
-      this,
-    );
+    return _$$TaskImplToJson(this);
   }
 }
 
 abstract class _Task extends Task {
-  const factory _Task(
-      {required final int id,
-      required final String title,
-      final String? description,
-      required final TaskType type,
-      required final TaskPriority priority,
-      required final TaskStatus status,
-      final int? projectId,
-      final String? projectName,
-      final int? assignedToId,
-      final String? assignedToName,
-      final int? assignedById,
-      final String? assignedByName,
-      final int? departmentId,
-      final String? departmentName,
-      final DateTime? dueDate,
-      final DateTime? startDate,
-      final DateTime? completedDate,
-      final int? estimatedHours,
-      final int? actualHours,
-      final List<String>? tags,
-      final List<TaskAttachment>? attachments,
-      final List<TaskComment>? comments,
-      final List<Task>? subtasks,
-      final List<TaskDependency>? dependencies,
-      final int? parentTaskId,
-      final String? parentTaskTitle,
-      final int? recurrenceRuleId,
-      final String? recurrencePattern,
-      final DateTime? recurrenceEndDate,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$TaskImpl;
+  const factory _Task({
+    required final int id,
+    required final String title,
+    final String? description,
+    required final TaskType type,
+    required final TaskPriority priority,
+    required final TaskStatus status,
+    final int? projectId,
+    final String? projectName,
+    final int? assignedToId,
+    final String? assignedToName,
+    final int? assignedById,
+    final String? assignedByName,
+    final int? departmentId,
+    final String? departmentName,
+    final DateTime? dueDate,
+    final DateTime? startDate,
+    final DateTime? completedDate,
+    final int? estimatedHours,
+    final int? actualHours,
+    final List<String>? tags,
+    final List<TaskAttachment>? attachments,
+    final List<TaskComment>? comments,
+    final List<Task>? subtasks,
+    final List<TaskDependency>? dependencies,
+    final int? parentTaskId,
+    final String? parentTaskTitle,
+    final int? recurrenceRuleId,
+    final String? recurrencePattern,
+    final DateTime? recurrenceEndDate,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$TaskImpl;
   const _Task._() : super._();
 
   factory _Task.fromJson(Map<String, dynamic> json) = _$TaskImpl.fromJson;
@@ -894,19 +906,21 @@ mixin _$TaskAttachment {
 /// @nodoc
 abstract class $TaskAttachmentCopyWith<$Res> {
   factory $TaskAttachmentCopyWith(
-          TaskAttachment value, $Res Function(TaskAttachment) then) =
-      _$TaskAttachmentCopyWithImpl<$Res, TaskAttachment>;
+    TaskAttachment value,
+    $Res Function(TaskAttachment) then,
+  ) = _$TaskAttachmentCopyWithImpl<$Res, TaskAttachment>;
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      String fileName,
-      String fileUrl,
-      String mimeType,
-      int fileSize,
-      int? uploadedById,
-      String? uploadedByName,
-      DateTime uploadedAt});
+  $Res call({
+    int id,
+    int taskId,
+    String fileName,
+    String fileUrl,
+    String mimeType,
+    int fileSize,
+    int? uploadedById,
+    String? uploadedByName,
+    DateTime uploadedAt,
+  });
 }
 
 /// @nodoc
@@ -934,65 +948,70 @@ class _$TaskAttachmentCopyWithImpl<$Res, $Val extends TaskAttachment>
     Object? uploadedByName = freezed,
     Object? uploadedAt = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      fileName: null == fileName
-          ? _value.fileName
-          : fileName // ignore: cast_nullable_to_non_nullable
-              as String,
-      fileUrl: null == fileUrl
-          ? _value.fileUrl
-          : fileUrl // ignore: cast_nullable_to_non_nullable
-              as String,
-      mimeType: null == mimeType
-          ? _value.mimeType
-          : mimeType // ignore: cast_nullable_to_non_nullable
-              as String,
-      fileSize: null == fileSize
-          ? _value.fileSize
-          : fileSize // ignore: cast_nullable_to_non_nullable
-              as int,
-      uploadedById: freezed == uploadedById
-          ? _value.uploadedById
-          : uploadedById // ignore: cast_nullable_to_non_nullable
-              as int?,
-      uploadedByName: freezed == uploadedByName
-          ? _value.uploadedByName
-          : uploadedByName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      uploadedAt: null == uploadedAt
-          ? _value.uploadedAt
-          : uploadedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            taskId: null == taskId
+                ? _value.taskId
+                : taskId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            fileName: null == fileName
+                ? _value.fileName
+                : fileName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            fileUrl: null == fileUrl
+                ? _value.fileUrl
+                : fileUrl // ignore: cast_nullable_to_non_nullable
+                      as String,
+            mimeType: null == mimeType
+                ? _value.mimeType
+                : mimeType // ignore: cast_nullable_to_non_nullable
+                      as String,
+            fileSize: null == fileSize
+                ? _value.fileSize
+                : fileSize // ignore: cast_nullable_to_non_nullable
+                      as int,
+            uploadedById: freezed == uploadedById
+                ? _value.uploadedById
+                : uploadedById // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            uploadedByName: freezed == uploadedByName
+                ? _value.uploadedByName
+                : uploadedByName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            uploadedAt: null == uploadedAt
+                ? _value.uploadedAt
+                : uploadedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TaskAttachmentImplCopyWith<$Res>
     implements $TaskAttachmentCopyWith<$Res> {
-  factory _$$TaskAttachmentImplCopyWith(_$TaskAttachmentImpl value,
-          $Res Function(_$TaskAttachmentImpl) then) =
-      __$$TaskAttachmentImplCopyWithImpl<$Res>;
+  factory _$$TaskAttachmentImplCopyWith(
+    _$TaskAttachmentImpl value,
+    $Res Function(_$TaskAttachmentImpl) then,
+  ) = __$$TaskAttachmentImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      String fileName,
-      String fileUrl,
-      String mimeType,
-      int fileSize,
-      int? uploadedById,
-      String? uploadedByName,
-      DateTime uploadedAt});
+  $Res call({
+    int id,
+    int taskId,
+    String fileName,
+    String fileUrl,
+    String mimeType,
+    int fileSize,
+    int? uploadedById,
+    String? uploadedByName,
+    DateTime uploadedAt,
+  });
 }
 
 /// @nodoc
@@ -1000,8 +1019,9 @@ class __$$TaskAttachmentImplCopyWithImpl<$Res>
     extends _$TaskAttachmentCopyWithImpl<$Res, _$TaskAttachmentImpl>
     implements _$$TaskAttachmentImplCopyWith<$Res> {
   __$$TaskAttachmentImplCopyWithImpl(
-      _$TaskAttachmentImpl _value, $Res Function(_$TaskAttachmentImpl) _then)
-      : super(_value, _then);
+    _$TaskAttachmentImpl _value,
+    $Res Function(_$TaskAttachmentImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskAttachment
   /// with the given fields replaced by the non-null parameter values.
@@ -1018,60 +1038,63 @@ class __$$TaskAttachmentImplCopyWithImpl<$Res>
     Object? uploadedByName = freezed,
     Object? uploadedAt = null,
   }) {
-    return _then(_$TaskAttachmentImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      fileName: null == fileName
-          ? _value.fileName
-          : fileName // ignore: cast_nullable_to_non_nullable
-              as String,
-      fileUrl: null == fileUrl
-          ? _value.fileUrl
-          : fileUrl // ignore: cast_nullable_to_non_nullable
-              as String,
-      mimeType: null == mimeType
-          ? _value.mimeType
-          : mimeType // ignore: cast_nullable_to_non_nullable
-              as String,
-      fileSize: null == fileSize
-          ? _value.fileSize
-          : fileSize // ignore: cast_nullable_to_non_nullable
-              as int,
-      uploadedById: freezed == uploadedById
-          ? _value.uploadedById
-          : uploadedById // ignore: cast_nullable_to_non_nullable
-              as int?,
-      uploadedByName: freezed == uploadedByName
-          ? _value.uploadedByName
-          : uploadedByName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      uploadedAt: null == uploadedAt
-          ? _value.uploadedAt
-          : uploadedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
+    return _then(
+      _$TaskAttachmentImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        taskId: null == taskId
+            ? _value.taskId
+            : taskId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        fileName: null == fileName
+            ? _value.fileName
+            : fileName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        fileUrl: null == fileUrl
+            ? _value.fileUrl
+            : fileUrl // ignore: cast_nullable_to_non_nullable
+                  as String,
+        mimeType: null == mimeType
+            ? _value.mimeType
+            : mimeType // ignore: cast_nullable_to_non_nullable
+                  as String,
+        fileSize: null == fileSize
+            ? _value.fileSize
+            : fileSize // ignore: cast_nullable_to_non_nullable
+                  as int,
+        uploadedById: freezed == uploadedById
+            ? _value.uploadedById
+            : uploadedById // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        uploadedByName: freezed == uploadedByName
+            ? _value.uploadedByName
+            : uploadedByName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        uploadedAt: null == uploadedAt
+            ? _value.uploadedAt
+            : uploadedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskAttachmentImpl implements _TaskAttachment {
-  const _$TaskAttachmentImpl(
-      {required this.id,
-      required this.taskId,
-      required this.fileName,
-      required this.fileUrl,
-      required this.mimeType,
-      required this.fileSize,
-      this.uploadedById,
-      this.uploadedByName,
-      required this.uploadedAt});
+  const _$TaskAttachmentImpl({
+    required this.id,
+    required this.taskId,
+    required this.fileName,
+    required this.fileUrl,
+    required this.mimeType,
+    required this.fileSize,
+    this.uploadedById,
+    this.uploadedByName,
+    required this.uploadedAt,
+  });
 
   factory _$TaskAttachmentImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskAttachmentImplFromJson(json);
@@ -1124,8 +1147,18 @@ class _$TaskAttachmentImpl implements _TaskAttachment {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, taskId, fileName, fileUrl,
-      mimeType, fileSize, uploadedById, uploadedByName, uploadedAt);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    taskId,
+    fileName,
+    fileUrl,
+    mimeType,
+    fileSize,
+    uploadedById,
+    uploadedByName,
+    uploadedAt,
+  );
 
   /// Create a copy of TaskAttachment
   /// with the given fields replaced by the non-null parameter values.
@@ -1134,27 +1167,28 @@ class _$TaskAttachmentImpl implements _TaskAttachment {
   @pragma('vm:prefer-inline')
   _$$TaskAttachmentImplCopyWith<_$TaskAttachmentImpl> get copyWith =>
       __$$TaskAttachmentImplCopyWithImpl<_$TaskAttachmentImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskAttachmentImplToJson(
-      this,
-    );
+    return _$$TaskAttachmentImplToJson(this);
   }
 }
 
 abstract class _TaskAttachment implements TaskAttachment {
-  const factory _TaskAttachment(
-      {required final int id,
-      required final int taskId,
-      required final String fileName,
-      required final String fileUrl,
-      required final String mimeType,
-      required final int fileSize,
-      final int? uploadedById,
-      final String? uploadedByName,
-      required final DateTime uploadedAt}) = _$TaskAttachmentImpl;
+  const factory _TaskAttachment({
+    required final int id,
+    required final int taskId,
+    required final String fileName,
+    required final String fileUrl,
+    required final String mimeType,
+    required final int fileSize,
+    final int? uploadedById,
+    final String? uploadedByName,
+    required final DateTime uploadedAt,
+  }) = _$TaskAttachmentImpl;
 
   factory _TaskAttachment.fromJson(Map<String, dynamic> json) =
       _$TaskAttachmentImpl.fromJson;
@@ -1216,20 +1250,22 @@ mixin _$TaskComment {
 /// @nodoc
 abstract class $TaskCommentCopyWith<$Res> {
   factory $TaskCommentCopyWith(
-          TaskComment value, $Res Function(TaskComment) then) =
-      _$TaskCommentCopyWithImpl<$Res, TaskComment>;
+    TaskComment value,
+    $Res Function(TaskComment) then,
+  ) = _$TaskCommentCopyWithImpl<$Res, TaskComment>;
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int authorId,
-      String authorName,
-      String content,
-      int? parentCommentId,
-      String? parentAuthorName,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      bool isSystem});
+  $Res call({
+    int id,
+    int taskId,
+    int authorId,
+    String authorName,
+    String content,
+    int? parentCommentId,
+    String? parentAuthorName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    bool isSystem,
+  });
 }
 
 /// @nodoc
@@ -1258,48 +1294,51 @@ class _$TaskCommentCopyWithImpl<$Res, $Val extends TaskComment>
     Object? updatedAt = freezed,
     Object? isSystem = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      authorId: null == authorId
-          ? _value.authorId
-          : authorId // ignore: cast_nullable_to_non_nullable
-              as int,
-      authorName: null == authorName
-          ? _value.authorName
-          : authorName // ignore: cast_nullable_to_non_nullable
-              as String,
-      content: null == content
-          ? _value.content
-          : content // ignore: cast_nullable_to_non_nullable
-              as String,
-      parentCommentId: freezed == parentCommentId
-          ? _value.parentCommentId
-          : parentCommentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentAuthorName: freezed == parentAuthorName
-          ? _value.parentAuthorName
-          : parentAuthorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isSystem: null == isSystem
-          ? _value.isSystem
-          : isSystem // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            taskId: null == taskId
+                ? _value.taskId
+                : taskId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            authorId: null == authorId
+                ? _value.authorId
+                : authorId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            authorName: null == authorName
+                ? _value.authorName
+                : authorName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            content: null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                      as String,
+            parentCommentId: freezed == parentCommentId
+                ? _value.parentCommentId
+                : parentCommentId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            parentAuthorName: freezed == parentAuthorName
+                ? _value.parentAuthorName
+                : parentAuthorName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            isSystem: null == isSystem
+                ? _value.isSystem
+                : isSystem // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -1307,21 +1346,23 @@ class _$TaskCommentCopyWithImpl<$Res, $Val extends TaskComment>
 abstract class _$$TaskCommentImplCopyWith<$Res>
     implements $TaskCommentCopyWith<$Res> {
   factory _$$TaskCommentImplCopyWith(
-          _$TaskCommentImpl value, $Res Function(_$TaskCommentImpl) then) =
-      __$$TaskCommentImplCopyWithImpl<$Res>;
+    _$TaskCommentImpl value,
+    $Res Function(_$TaskCommentImpl) then,
+  ) = __$$TaskCommentImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int authorId,
-      String authorName,
-      String content,
-      int? parentCommentId,
-      String? parentAuthorName,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      bool isSystem});
+  $Res call({
+    int id,
+    int taskId,
+    int authorId,
+    String authorName,
+    String content,
+    int? parentCommentId,
+    String? parentAuthorName,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    bool isSystem,
+  });
 }
 
 /// @nodoc
@@ -1329,8 +1370,9 @@ class __$$TaskCommentImplCopyWithImpl<$Res>
     extends _$TaskCommentCopyWithImpl<$Res, _$TaskCommentImpl>
     implements _$$TaskCommentImplCopyWith<$Res> {
   __$$TaskCommentImplCopyWithImpl(
-      _$TaskCommentImpl _value, $Res Function(_$TaskCommentImpl) _then)
-      : super(_value, _then);
+    _$TaskCommentImpl _value,
+    $Res Function(_$TaskCommentImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskComment
   /// with the given fields replaced by the non-null parameter values.
@@ -1348,65 +1390,68 @@ class __$$TaskCommentImplCopyWithImpl<$Res>
     Object? updatedAt = freezed,
     Object? isSystem = null,
   }) {
-    return _then(_$TaskCommentImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      authorId: null == authorId
-          ? _value.authorId
-          : authorId // ignore: cast_nullable_to_non_nullable
-              as int,
-      authorName: null == authorName
-          ? _value.authorName
-          : authorName // ignore: cast_nullable_to_non_nullable
-              as String,
-      content: null == content
-          ? _value.content
-          : content // ignore: cast_nullable_to_non_nullable
-              as String,
-      parentCommentId: freezed == parentCommentId
-          ? _value.parentCommentId
-          : parentCommentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      parentAuthorName: freezed == parentAuthorName
-          ? _value.parentAuthorName
-          : parentAuthorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isSystem: null == isSystem
-          ? _value.isSystem
-          : isSystem // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$TaskCommentImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        taskId: null == taskId
+            ? _value.taskId
+            : taskId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        authorId: null == authorId
+            ? _value.authorId
+            : authorId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        authorName: null == authorName
+            ? _value.authorName
+            : authorName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        content: null == content
+            ? _value.content
+            : content // ignore: cast_nullable_to_non_nullable
+                  as String,
+        parentCommentId: freezed == parentCommentId
+            ? _value.parentCommentId
+            : parentCommentId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        parentAuthorName: freezed == parentAuthorName
+            ? _value.parentAuthorName
+            : parentAuthorName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        isSystem: null == isSystem
+            ? _value.isSystem
+            : isSystem // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskCommentImpl implements _TaskComment {
-  const _$TaskCommentImpl(
-      {required this.id,
-      required this.taskId,
-      required this.authorId,
-      required this.authorName,
-      required this.content,
-      this.parentCommentId,
-      this.parentAuthorName,
-      required this.createdAt,
-      this.updatedAt,
-      this.isSystem = false});
+  const _$TaskCommentImpl({
+    required this.id,
+    required this.taskId,
+    required this.authorId,
+    required this.authorName,
+    required this.content,
+    this.parentCommentId,
+    this.parentAuthorName,
+    required this.createdAt,
+    this.updatedAt,
+    this.isSystem = false,
+  });
 
   factory _$TaskCommentImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskCommentImplFromJson(json);
@@ -1465,17 +1510,18 @@ class _$TaskCommentImpl implements _TaskComment {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      taskId,
-      authorId,
-      authorName,
-      content,
-      parentCommentId,
-      parentAuthorName,
-      createdAt,
-      updatedAt,
-      isSystem);
+    runtimeType,
+    id,
+    taskId,
+    authorId,
+    authorName,
+    content,
+    parentCommentId,
+    parentAuthorName,
+    createdAt,
+    updatedAt,
+    isSystem,
+  );
 
   /// Create a copy of TaskComment
   /// with the given fields replaced by the non-null parameter values.
@@ -1487,24 +1533,23 @@ class _$TaskCommentImpl implements _TaskComment {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskCommentImplToJson(
-      this,
-    );
+    return _$$TaskCommentImplToJson(this);
   }
 }
 
 abstract class _TaskComment implements TaskComment {
-  const factory _TaskComment(
-      {required final int id,
-      required final int taskId,
-      required final int authorId,
-      required final String authorName,
-      required final String content,
-      final int? parentCommentId,
-      final String? parentAuthorName,
-      required final DateTime createdAt,
-      final DateTime? updatedAt,
-      final bool isSystem}) = _$TaskCommentImpl;
+  const factory _TaskComment({
+    required final int id,
+    required final int taskId,
+    required final int authorId,
+    required final String authorName,
+    required final String content,
+    final int? parentCommentId,
+    final String? parentAuthorName,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+    final bool isSystem,
+  }) = _$TaskCommentImpl;
 
   factory _TaskComment.fromJson(Map<String, dynamic> json) =
       _$TaskCommentImpl.fromJson;
@@ -1563,15 +1608,17 @@ mixin _$TaskDependency {
 /// @nodoc
 abstract class $TaskDependencyCopyWith<$Res> {
   factory $TaskDependencyCopyWith(
-          TaskDependency value, $Res Function(TaskDependency) then) =
-      _$TaskDependencyCopyWithImpl<$Res, TaskDependency>;
+    TaskDependency value,
+    $Res Function(TaskDependency) then,
+  ) = _$TaskDependencyCopyWithImpl<$Res, TaskDependency>;
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int dependsOnTaskId,
-      String dependsOnTaskTitle,
-      DependencyType type});
+  $Res call({
+    int id,
+    int taskId,
+    int dependsOnTaskId,
+    String dependsOnTaskTitle,
+    DependencyType type,
+  });
 }
 
 /// @nodoc
@@ -1595,45 +1642,50 @@ class _$TaskDependencyCopyWithImpl<$Res, $Val extends TaskDependency>
     Object? dependsOnTaskTitle = null,
     Object? type = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      dependsOnTaskId: null == dependsOnTaskId
-          ? _value.dependsOnTaskId
-          : dependsOnTaskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      dependsOnTaskTitle: null == dependsOnTaskTitle
-          ? _value.dependsOnTaskTitle
-          : dependsOnTaskTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as DependencyType,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            taskId: null == taskId
+                ? _value.taskId
+                : taskId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            dependsOnTaskId: null == dependsOnTaskId
+                ? _value.dependsOnTaskId
+                : dependsOnTaskId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            dependsOnTaskTitle: null == dependsOnTaskTitle
+                ? _value.dependsOnTaskTitle
+                : dependsOnTaskTitle // ignore: cast_nullable_to_non_nullable
+                      as String,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as DependencyType,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TaskDependencyImplCopyWith<$Res>
     implements $TaskDependencyCopyWith<$Res> {
-  factory _$$TaskDependencyImplCopyWith(_$TaskDependencyImpl value,
-          $Res Function(_$TaskDependencyImpl) then) =
-      __$$TaskDependencyImplCopyWithImpl<$Res>;
+  factory _$$TaskDependencyImplCopyWith(
+    _$TaskDependencyImpl value,
+    $Res Function(_$TaskDependencyImpl) then,
+  ) = __$$TaskDependencyImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int dependsOnTaskId,
-      String dependsOnTaskTitle,
-      DependencyType type});
+  $Res call({
+    int id,
+    int taskId,
+    int dependsOnTaskId,
+    String dependsOnTaskTitle,
+    DependencyType type,
+  });
 }
 
 /// @nodoc
@@ -1641,8 +1693,9 @@ class __$$TaskDependencyImplCopyWithImpl<$Res>
     extends _$TaskDependencyCopyWithImpl<$Res, _$TaskDependencyImpl>
     implements _$$TaskDependencyImplCopyWith<$Res> {
   __$$TaskDependencyImplCopyWithImpl(
-      _$TaskDependencyImpl _value, $Res Function(_$TaskDependencyImpl) _then)
-      : super(_value, _then);
+    _$TaskDependencyImpl _value,
+    $Res Function(_$TaskDependencyImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskDependency
   /// with the given fields replaced by the non-null parameter values.
@@ -1655,40 +1708,43 @@ class __$$TaskDependencyImplCopyWithImpl<$Res>
     Object? dependsOnTaskTitle = null,
     Object? type = null,
   }) {
-    return _then(_$TaskDependencyImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      dependsOnTaskId: null == dependsOnTaskId
-          ? _value.dependsOnTaskId
-          : dependsOnTaskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      dependsOnTaskTitle: null == dependsOnTaskTitle
-          ? _value.dependsOnTaskTitle
-          : dependsOnTaskTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as DependencyType,
-    ));
+    return _then(
+      _$TaskDependencyImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        taskId: null == taskId
+            ? _value.taskId
+            : taskId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        dependsOnTaskId: null == dependsOnTaskId
+            ? _value.dependsOnTaskId
+            : dependsOnTaskId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        dependsOnTaskTitle: null == dependsOnTaskTitle
+            ? _value.dependsOnTaskTitle
+            : dependsOnTaskTitle // ignore: cast_nullable_to_non_nullable
+                  as String,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as DependencyType,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskDependencyImpl implements _TaskDependency {
-  const _$TaskDependencyImpl(
-      {required this.id,
-      required this.taskId,
-      required this.dependsOnTaskId,
-      required this.dependsOnTaskTitle,
-      required this.type});
+  const _$TaskDependencyImpl({
+    required this.id,
+    required this.taskId,
+    required this.dependsOnTaskId,
+    required this.dependsOnTaskTitle,
+    required this.type,
+  });
 
   factory _$TaskDependencyImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskDependencyImplFromJson(json);
@@ -1726,7 +1782,13 @@ class _$TaskDependencyImpl implements _TaskDependency {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, taskId, dependsOnTaskId, dependsOnTaskTitle, type);
+    runtimeType,
+    id,
+    taskId,
+    dependsOnTaskId,
+    dependsOnTaskTitle,
+    type,
+  );
 
   /// Create a copy of TaskDependency
   /// with the given fields replaced by the non-null parameter values.
@@ -1735,23 +1797,24 @@ class _$TaskDependencyImpl implements _TaskDependency {
   @pragma('vm:prefer-inline')
   _$$TaskDependencyImplCopyWith<_$TaskDependencyImpl> get copyWith =>
       __$$TaskDependencyImplCopyWithImpl<_$TaskDependencyImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskDependencyImplToJson(
-      this,
-    );
+    return _$$TaskDependencyImplToJson(this);
   }
 }
 
 abstract class _TaskDependency implements TaskDependency {
-  const factory _TaskDependency(
-      {required final int id,
-      required final int taskId,
-      required final int dependsOnTaskId,
-      required final String dependsOnTaskTitle,
-      required final DependencyType type}) = _$TaskDependencyImpl;
+  const factory _TaskDependency({
+    required final int id,
+    required final int taskId,
+    required final int dependsOnTaskId,
+    required final String dependsOnTaskTitle,
+    required final DependencyType type,
+  }) = _$TaskDependencyImpl;
 
   factory _TaskDependency.fromJson(Map<String, dynamic> json) =
       _$TaskDependencyImpl.fromJson;
@@ -1808,23 +1871,25 @@ mixin _$TaskTemplate {
 /// @nodoc
 abstract class $TaskTemplateCopyWith<$Res> {
   factory $TaskTemplateCopyWith(
-          TaskTemplate value, $Res Function(TaskTemplate) then) =
-      _$TaskTemplateCopyWithImpl<$Res, TaskTemplate>;
+    TaskTemplate value,
+    $Res Function(TaskTemplate) then,
+  ) = _$TaskTemplateCopyWithImpl<$Res, TaskTemplate>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      TaskType type,
-      TaskPriority priority,
-      String? estimatedHours,
-      List<String>? defaultTags,
-      List<TaskTemplateSubtask>? subtasks,
-      int? departmentId,
-      String? departmentName,
-      bool isActive,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    TaskType type,
+    TaskPriority priority,
+    String? estimatedHours,
+    List<String>? defaultTags,
+    List<TaskTemplateSubtask>? subtasks,
+    int? departmentId,
+    String? departmentName,
+    bool isActive,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1856,60 +1921,63 @@ class _$TaskTemplateCopyWithImpl<$Res, $Val extends TaskTemplate>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TaskType,
-      priority: null == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as String?,
-      defaultTags: freezed == defaultTags
-          ? _value.defaultTags
-          : defaultTags // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      subtasks: freezed == subtasks
-          ? _value.subtasks
-          : subtasks // ignore: cast_nullable_to_non_nullable
-              as List<TaskTemplateSubtask>?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as TaskType,
+            priority: null == priority
+                ? _value.priority
+                : priority // ignore: cast_nullable_to_non_nullable
+                      as TaskPriority,
+            estimatedHours: freezed == estimatedHours
+                ? _value.estimatedHours
+                : estimatedHours // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            defaultTags: freezed == defaultTags
+                ? _value.defaultTags
+                : defaultTags // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            subtasks: freezed == subtasks
+                ? _value.subtasks
+                : subtasks // ignore: cast_nullable_to_non_nullable
+                      as List<TaskTemplateSubtask>?,
+            departmentId: freezed == departmentId
+                ? _value.departmentId
+                : departmentId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            departmentName: freezed == departmentName
+                ? _value.departmentName
+                : departmentName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -1917,24 +1985,26 @@ class _$TaskTemplateCopyWithImpl<$Res, $Val extends TaskTemplate>
 abstract class _$$TaskTemplateImplCopyWith<$Res>
     implements $TaskTemplateCopyWith<$Res> {
   factory _$$TaskTemplateImplCopyWith(
-          _$TaskTemplateImpl value, $Res Function(_$TaskTemplateImpl) then) =
-      __$$TaskTemplateImplCopyWithImpl<$Res>;
+    _$TaskTemplateImpl value,
+    $Res Function(_$TaskTemplateImpl) then,
+  ) = __$$TaskTemplateImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      TaskType type,
-      TaskPriority priority,
-      String? estimatedHours,
-      List<String>? defaultTags,
-      List<TaskTemplateSubtask>? subtasks,
-      int? departmentId,
-      String? departmentName,
-      bool isActive,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    TaskType type,
+    TaskPriority priority,
+    String? estimatedHours,
+    List<String>? defaultTags,
+    List<TaskTemplateSubtask>? subtasks,
+    int? departmentId,
+    String? departmentName,
+    bool isActive,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -1942,8 +2012,9 @@ class __$$TaskTemplateImplCopyWithImpl<$Res>
     extends _$TaskTemplateCopyWithImpl<$Res, _$TaskTemplateImpl>
     implements _$$TaskTemplateImplCopyWith<$Res> {
   __$$TaskTemplateImplCopyWithImpl(
-      _$TaskTemplateImpl _value, $Res Function(_$TaskTemplateImpl) _then)
-      : super(_value, _then);
+    _$TaskTemplateImpl _value,
+    $Res Function(_$TaskTemplateImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskTemplate
   /// with the given fields replaced by the non-null parameter values.
@@ -1964,82 +2035,84 @@ class __$$TaskTemplateImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$TaskTemplateImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as TaskType,
-      priority: null == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as String?,
-      defaultTags: freezed == defaultTags
-          ? _value._defaultTags
-          : defaultTags // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      subtasks: freezed == subtasks
-          ? _value._subtasks
-          : subtasks // ignore: cast_nullable_to_non_nullable
-              as List<TaskTemplateSubtask>?,
-      departmentId: freezed == departmentId
-          ? _value.departmentId
-          : departmentId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      departmentName: freezed == departmentName
-          ? _value.departmentName
-          : departmentName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$TaskTemplateImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as TaskType,
+        priority: null == priority
+            ? _value.priority
+            : priority // ignore: cast_nullable_to_non_nullable
+                  as TaskPriority,
+        estimatedHours: freezed == estimatedHours
+            ? _value.estimatedHours
+            : estimatedHours // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        defaultTags: freezed == defaultTags
+            ? _value._defaultTags
+            : defaultTags // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        subtasks: freezed == subtasks
+            ? _value._subtasks
+            : subtasks // ignore: cast_nullable_to_non_nullable
+                  as List<TaskTemplateSubtask>?,
+        departmentId: freezed == departmentId
+            ? _value.departmentId
+            : departmentId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        departmentName: freezed == departmentName
+            ? _value.departmentName
+            : departmentName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskTemplateImpl implements _TaskTemplate {
-  const _$TaskTemplateImpl(
-      {required this.id,
-      required this.name,
-      this.description,
-      required this.type,
-      required this.priority,
-      this.estimatedHours,
-      final List<String>? defaultTags,
-      final List<TaskTemplateSubtask>? subtasks,
-      this.departmentId,
-      this.departmentName,
-      this.isActive = true,
-      required this.createdAt,
-      this.updatedAt})
-      : _defaultTags = defaultTags,
-        _subtasks = subtasks;
+  const _$TaskTemplateImpl({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.type,
+    required this.priority,
+    this.estimatedHours,
+    final List<String>? defaultTags,
+    final List<TaskTemplateSubtask>? subtasks,
+    this.departmentId,
+    this.departmentName,
+    this.isActive = true,
+    required this.createdAt,
+    this.updatedAt,
+  }) : _defaultTags = defaultTags,
+       _subtasks = subtasks;
 
   factory _$TaskTemplateImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskTemplateImplFromJson(json);
@@ -2107,8 +2180,10 @@ class _$TaskTemplateImpl implements _TaskTemplate {
                 other.priority == priority) &&
             (identical(other.estimatedHours, estimatedHours) ||
                 other.estimatedHours == estimatedHours) &&
-            const DeepCollectionEquality()
-                .equals(other._defaultTags, _defaultTags) &&
+            const DeepCollectionEquality().equals(
+              other._defaultTags,
+              _defaultTags,
+            ) &&
             const DeepCollectionEquality().equals(other._subtasks, _subtasks) &&
             (identical(other.departmentId, departmentId) ||
                 other.departmentId == departmentId) &&
@@ -2125,20 +2200,21 @@ class _$TaskTemplateImpl implements _TaskTemplate {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      description,
-      type,
-      priority,
-      estimatedHours,
-      const DeepCollectionEquality().hash(_defaultTags),
-      const DeepCollectionEquality().hash(_subtasks),
-      departmentId,
-      departmentName,
-      isActive,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    description,
+    type,
+    priority,
+    estimatedHours,
+    const DeepCollectionEquality().hash(_defaultTags),
+    const DeepCollectionEquality().hash(_subtasks),
+    departmentId,
+    departmentName,
+    isActive,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of TaskTemplate
   /// with the given fields replaced by the non-null parameter values.
@@ -2150,27 +2226,26 @@ class _$TaskTemplateImpl implements _TaskTemplate {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskTemplateImplToJson(
-      this,
-    );
+    return _$$TaskTemplateImplToJson(this);
   }
 }
 
 abstract class _TaskTemplate implements TaskTemplate {
-  const factory _TaskTemplate(
-      {required final int id,
-      required final String name,
-      final String? description,
-      required final TaskType type,
-      required final TaskPriority priority,
-      final String? estimatedHours,
-      final List<String>? defaultTags,
-      final List<TaskTemplateSubtask>? subtasks,
-      final int? departmentId,
-      final String? departmentName,
-      final bool isActive,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$TaskTemplateImpl;
+  const factory _TaskTemplate({
+    required final int id,
+    required final String name,
+    final String? description,
+    required final TaskType type,
+    required final TaskPriority priority,
+    final String? estimatedHours,
+    final List<String>? defaultTags,
+    final List<TaskTemplateSubtask>? subtasks,
+    final int? departmentId,
+    final String? departmentName,
+    final bool isActive,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$TaskTemplateImpl;
 
   factory _TaskTemplate.fromJson(Map<String, dynamic> json) =
       _$TaskTemplateImpl.fromJson;
@@ -2237,17 +2312,19 @@ mixin _$TaskTemplateSubtask {
 /// @nodoc
 abstract class $TaskTemplateSubtaskCopyWith<$Res> {
   factory $TaskTemplateSubtaskCopyWith(
-          TaskTemplateSubtask value, $Res Function(TaskTemplateSubtask) then) =
-      _$TaskTemplateSubtaskCopyWithImpl<$Res, TaskTemplateSubtask>;
+    TaskTemplateSubtask value,
+    $Res Function(TaskTemplateSubtask) then,
+  ) = _$TaskTemplateSubtaskCopyWithImpl<$Res, TaskTemplateSubtask>;
   @useResult
-  $Res call(
-      {int id,
-      int templateId,
-      String title,
-      String? description,
-      TaskPriority? priority,
-      int? estimatedHours,
-      int? order});
+  $Res call({
+    int id,
+    int templateId,
+    String title,
+    String? description,
+    TaskPriority? priority,
+    int? estimatedHours,
+    int? order,
+  });
 }
 
 /// @nodoc
@@ -2273,64 +2350,70 @@ class _$TaskTemplateSubtaskCopyWithImpl<$Res, $Val extends TaskTemplateSubtask>
     Object? estimatedHours = freezed,
     Object? order = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      templateId: null == templateId
-          ? _value.templateId
-          : templateId // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      priority: freezed == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority?,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      order: freezed == order
-          ? _value.order
-          : order // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            templateId: null == templateId
+                ? _value.templateId
+                : templateId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            priority: freezed == priority
+                ? _value.priority
+                : priority // ignore: cast_nullable_to_non_nullable
+                      as TaskPriority?,
+            estimatedHours: freezed == estimatedHours
+                ? _value.estimatedHours
+                : estimatedHours // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            order: freezed == order
+                ? _value.order
+                : order // ignore: cast_nullable_to_non_nullable
+                      as int?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TaskTemplateSubtaskImplCopyWith<$Res>
     implements $TaskTemplateSubtaskCopyWith<$Res> {
-  factory _$$TaskTemplateSubtaskImplCopyWith(_$TaskTemplateSubtaskImpl value,
-          $Res Function(_$TaskTemplateSubtaskImpl) then) =
-      __$$TaskTemplateSubtaskImplCopyWithImpl<$Res>;
+  factory _$$TaskTemplateSubtaskImplCopyWith(
+    _$TaskTemplateSubtaskImpl value,
+    $Res Function(_$TaskTemplateSubtaskImpl) then,
+  ) = __$$TaskTemplateSubtaskImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int templateId,
-      String title,
-      String? description,
-      TaskPriority? priority,
-      int? estimatedHours,
-      int? order});
+  $Res call({
+    int id,
+    int templateId,
+    String title,
+    String? description,
+    TaskPriority? priority,
+    int? estimatedHours,
+    int? order,
+  });
 }
 
 /// @nodoc
 class __$$TaskTemplateSubtaskImplCopyWithImpl<$Res>
     extends _$TaskTemplateSubtaskCopyWithImpl<$Res, _$TaskTemplateSubtaskImpl>
     implements _$$TaskTemplateSubtaskImplCopyWith<$Res> {
-  __$$TaskTemplateSubtaskImplCopyWithImpl(_$TaskTemplateSubtaskImpl _value,
-      $Res Function(_$TaskTemplateSubtaskImpl) _then)
-      : super(_value, _then);
+  __$$TaskTemplateSubtaskImplCopyWithImpl(
+    _$TaskTemplateSubtaskImpl _value,
+    $Res Function(_$TaskTemplateSubtaskImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskTemplateSubtask
   /// with the given fields replaced by the non-null parameter values.
@@ -2345,50 +2428,53 @@ class __$$TaskTemplateSubtaskImplCopyWithImpl<$Res>
     Object? estimatedHours = freezed,
     Object? order = freezed,
   }) {
-    return _then(_$TaskTemplateSubtaskImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      templateId: null == templateId
-          ? _value.templateId
-          : templateId // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      priority: freezed == priority
-          ? _value.priority
-          : priority // ignore: cast_nullable_to_non_nullable
-              as TaskPriority?,
-      estimatedHours: freezed == estimatedHours
-          ? _value.estimatedHours
-          : estimatedHours // ignore: cast_nullable_to_non_nullable
-              as int?,
-      order: freezed == order
-          ? _value.order
-          : order // ignore: cast_nullable_to_non_nullable
-              as int?,
-    ));
+    return _then(
+      _$TaskTemplateSubtaskImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        templateId: null == templateId
+            ? _value.templateId
+            : templateId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        priority: freezed == priority
+            ? _value.priority
+            : priority // ignore: cast_nullable_to_non_nullable
+                  as TaskPriority?,
+        estimatedHours: freezed == estimatedHours
+            ? _value.estimatedHours
+            : estimatedHours // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        order: freezed == order
+            ? _value.order
+            : order // ignore: cast_nullable_to_non_nullable
+                  as int?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskTemplateSubtaskImpl implements _TaskTemplateSubtask {
-  const _$TaskTemplateSubtaskImpl(
-      {required this.id,
-      required this.templateId,
-      required this.title,
-      this.description,
-      this.priority,
-      this.estimatedHours,
-      this.order});
+  const _$TaskTemplateSubtaskImpl({
+    required this.id,
+    required this.templateId,
+    required this.title,
+    this.description,
+    this.priority,
+    this.estimatedHours,
+    this.order,
+  });
 
   factory _$TaskTemplateSubtaskImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskTemplateSubtaskImplFromJson(json);
@@ -2433,8 +2519,16 @@ class _$TaskTemplateSubtaskImpl implements _TaskTemplateSubtask {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, templateId, title,
-      description, priority, estimatedHours, order);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    templateId,
+    title,
+    description,
+    priority,
+    estimatedHours,
+    order,
+  );
 
   /// Create a copy of TaskTemplateSubtask
   /// with the given fields replaced by the non-null parameter values.
@@ -2443,25 +2537,26 @@ class _$TaskTemplateSubtaskImpl implements _TaskTemplateSubtask {
   @pragma('vm:prefer-inline')
   _$$TaskTemplateSubtaskImplCopyWith<_$TaskTemplateSubtaskImpl> get copyWith =>
       __$$TaskTemplateSubtaskImplCopyWithImpl<_$TaskTemplateSubtaskImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskTemplateSubtaskImplToJson(
-      this,
-    );
+    return _$$TaskTemplateSubtaskImplToJson(this);
   }
 }
 
 abstract class _TaskTemplateSubtask implements TaskTemplateSubtask {
-  const factory _TaskTemplateSubtask(
-      {required final int id,
-      required final int templateId,
-      required final String title,
-      final String? description,
-      final TaskPriority? priority,
-      final int? estimatedHours,
-      final int? order}) = _$TaskTemplateSubtaskImpl;
+  const factory _TaskTemplateSubtask({
+    required final int id,
+    required final int templateId,
+    required final String title,
+    final String? description,
+    final TaskPriority? priority,
+    final int? estimatedHours,
+    final int? order,
+  }) = _$TaskTemplateSubtaskImpl;
 
   factory _TaskTemplateSubtask.fromJson(Map<String, dynamic> json) =
       _$TaskTemplateSubtaskImpl.fromJson;
@@ -2516,17 +2611,19 @@ mixin _$KanbanColumn {
 /// @nodoc
 abstract class $KanbanColumnCopyWith<$Res> {
   factory $KanbanColumnCopyWith(
-          KanbanColumn value, $Res Function(KanbanColumn) then) =
-      _$KanbanColumnCopyWithImpl<$Res, KanbanColumn>;
+    KanbanColumn value,
+    $Res Function(KanbanColumn) then,
+  ) = _$KanbanColumnCopyWithImpl<$Res, KanbanColumn>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      TaskStatus status,
-      int order,
-      int? wipLimit,
-      String? color,
-      bool isActive});
+  $Res call({
+    int id,
+    String name,
+    TaskStatus status,
+    int order,
+    int? wipLimit,
+    String? color,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2552,36 +2649,39 @@ class _$KanbanColumnCopyWithImpl<$Res, $Val extends KanbanColumn>
     Object? color = freezed,
     Object? isActive = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TaskStatus,
-      order: null == order
-          ? _value.order
-          : order // ignore: cast_nullable_to_non_nullable
-              as int,
-      wipLimit: freezed == wipLimit
-          ? _value.wipLimit
-          : wipLimit // ignore: cast_nullable_to_non_nullable
-              as int?,
-      color: freezed == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as TaskStatus,
+            order: null == order
+                ? _value.order
+                : order // ignore: cast_nullable_to_non_nullable
+                      as int,
+            wipLimit: freezed == wipLimit
+                ? _value.wipLimit
+                : wipLimit // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            color: freezed == color
+                ? _value.color
+                : color // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2589,18 +2689,20 @@ class _$KanbanColumnCopyWithImpl<$Res, $Val extends KanbanColumn>
 abstract class _$$KanbanColumnImplCopyWith<$Res>
     implements $KanbanColumnCopyWith<$Res> {
   factory _$$KanbanColumnImplCopyWith(
-          _$KanbanColumnImpl value, $Res Function(_$KanbanColumnImpl) then) =
-      __$$KanbanColumnImplCopyWithImpl<$Res>;
+    _$KanbanColumnImpl value,
+    $Res Function(_$KanbanColumnImpl) then,
+  ) = __$$KanbanColumnImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      TaskStatus status,
-      int order,
-      int? wipLimit,
-      String? color,
-      bool isActive});
+  $Res call({
+    int id,
+    String name,
+    TaskStatus status,
+    int order,
+    int? wipLimit,
+    String? color,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2608,8 +2710,9 @@ class __$$KanbanColumnImplCopyWithImpl<$Res>
     extends _$KanbanColumnCopyWithImpl<$Res, _$KanbanColumnImpl>
     implements _$$KanbanColumnImplCopyWith<$Res> {
   __$$KanbanColumnImplCopyWithImpl(
-      _$KanbanColumnImpl _value, $Res Function(_$KanbanColumnImpl) _then)
-      : super(_value, _then);
+    _$KanbanColumnImpl _value,
+    $Res Function(_$KanbanColumnImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of KanbanColumn
   /// with the given fields replaced by the non-null parameter values.
@@ -2624,50 +2727,53 @@ class __$$KanbanColumnImplCopyWithImpl<$Res>
     Object? color = freezed,
     Object? isActive = null,
   }) {
-    return _then(_$KanbanColumnImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as TaskStatus,
-      order: null == order
-          ? _value.order
-          : order // ignore: cast_nullable_to_non_nullable
-              as int,
-      wipLimit: freezed == wipLimit
-          ? _value.wipLimit
-          : wipLimit // ignore: cast_nullable_to_non_nullable
-              as int?,
-      color: freezed == color
-          ? _value.color
-          : color // ignore: cast_nullable_to_non_nullable
-              as String?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$KanbanColumnImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as TaskStatus,
+        order: null == order
+            ? _value.order
+            : order // ignore: cast_nullable_to_non_nullable
+                  as int,
+        wipLimit: freezed == wipLimit
+            ? _value.wipLimit
+            : wipLimit // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        color: freezed == color
+            ? _value.color
+            : color // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$KanbanColumnImpl implements _KanbanColumn {
-  const _$KanbanColumnImpl(
-      {required this.id,
-      required this.name,
-      required this.status,
-      required this.order,
-      this.wipLimit,
-      this.color,
-      this.isActive = true});
+  const _$KanbanColumnImpl({
+    required this.id,
+    required this.name,
+    required this.status,
+    required this.order,
+    this.wipLimit,
+    this.color,
+    this.isActive = true,
+  });
 
   factory _$KanbanColumnImpl.fromJson(Map<String, dynamic> json) =>
       _$$KanbanColumnImplFromJson(json);
@@ -2712,7 +2818,15 @@ class _$KanbanColumnImpl implements _KanbanColumn {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, name, status, order, wipLimit, color, isActive);
+    runtimeType,
+    id,
+    name,
+    status,
+    order,
+    wipLimit,
+    color,
+    isActive,
+  );
 
   /// Create a copy of KanbanColumn
   /// with the given fields replaced by the non-null parameter values.
@@ -2724,21 +2838,20 @@ class _$KanbanColumnImpl implements _KanbanColumn {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$KanbanColumnImplToJson(
-      this,
-    );
+    return _$$KanbanColumnImplToJson(this);
   }
 }
 
 abstract class _KanbanColumn implements KanbanColumn {
-  const factory _KanbanColumn(
-      {required final int id,
-      required final String name,
-      required final TaskStatus status,
-      required final int order,
-      final int? wipLimit,
-      final String? color,
-      final bool isActive}) = _$KanbanColumnImpl;
+  const factory _KanbanColumn({
+    required final int id,
+    required final String name,
+    required final TaskStatus status,
+    required final int order,
+    final int? wipLimit,
+    final String? color,
+    final bool isActive,
+  }) = _$KanbanColumnImpl;
 
   factory _KanbanColumn.fromJson(Map<String, dynamic> json) =
       _$KanbanColumnImpl.fromJson;
@@ -2795,19 +2908,21 @@ mixin _$TaskTimeEntry {
 /// @nodoc
 abstract class $TaskTimeEntryCopyWith<$Res> {
   factory $TaskTimeEntryCopyWith(
-          TaskTimeEntry value, $Res Function(TaskTimeEntry) then) =
-      _$TaskTimeEntryCopyWithImpl<$Res, TaskTimeEntry>;
+    TaskTimeEntry value,
+    $Res Function(TaskTimeEntry) then,
+  ) = _$TaskTimeEntryCopyWithImpl<$Res, TaskTimeEntry>;
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int userId,
-      String userName,
-      DateTime startTime,
-      DateTime? endTime,
-      int? durationMinutes,
-      String? description,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    int taskId,
+    int userId,
+    String userName,
+    DateTime startTime,
+    DateTime? endTime,
+    int? durationMinutes,
+    String? description,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -2835,44 +2950,47 @@ class _$TaskTimeEntryCopyWithImpl<$Res, $Val extends TaskTimeEntry>
     Object? description = freezed,
     Object? createdAt = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userName: null == userName
-          ? _value.userName
-          : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      startTime: null == startTime
-          ? _value.startTime
-          : startTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endTime: freezed == endTime
-          ? _value.endTime
-          : endTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      durationMinutes: freezed == durationMinutes
-          ? _value.durationMinutes
-          : durationMinutes // ignore: cast_nullable_to_non_nullable
-              as int?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            taskId: null == taskId
+                ? _value.taskId
+                : taskId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            userId: null == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            userName: null == userName
+                ? _value.userName
+                : userName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            startTime: null == startTime
+                ? _value.startTime
+                : startTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endTime: freezed == endTime
+                ? _value.endTime
+                : endTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            durationMinutes: freezed == durationMinutes
+                ? _value.durationMinutes
+                : durationMinutes // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2880,20 +2998,22 @@ class _$TaskTimeEntryCopyWithImpl<$Res, $Val extends TaskTimeEntry>
 abstract class _$$TaskTimeEntryImplCopyWith<$Res>
     implements $TaskTimeEntryCopyWith<$Res> {
   factory _$$TaskTimeEntryImplCopyWith(
-          _$TaskTimeEntryImpl value, $Res Function(_$TaskTimeEntryImpl) then) =
-      __$$TaskTimeEntryImplCopyWithImpl<$Res>;
+    _$TaskTimeEntryImpl value,
+    $Res Function(_$TaskTimeEntryImpl) then,
+  ) = __$$TaskTimeEntryImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int taskId,
-      int userId,
-      String userName,
-      DateTime startTime,
-      DateTime? endTime,
-      int? durationMinutes,
-      String? description,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    int taskId,
+    int userId,
+    String userName,
+    DateTime startTime,
+    DateTime? endTime,
+    int? durationMinutes,
+    String? description,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -2901,8 +3021,9 @@ class __$$TaskTimeEntryImplCopyWithImpl<$Res>
     extends _$TaskTimeEntryCopyWithImpl<$Res, _$TaskTimeEntryImpl>
     implements _$$TaskTimeEntryImplCopyWith<$Res> {
   __$$TaskTimeEntryImplCopyWithImpl(
-      _$TaskTimeEntryImpl _value, $Res Function(_$TaskTimeEntryImpl) _then)
-      : super(_value, _then);
+    _$TaskTimeEntryImpl _value,
+    $Res Function(_$TaskTimeEntryImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TaskTimeEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -2919,60 +3040,63 @@ class __$$TaskTimeEntryImplCopyWithImpl<$Res>
     Object? description = freezed,
     Object? createdAt = null,
   }) {
-    return _then(_$TaskTimeEntryImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      taskId: null == taskId
-          ? _value.taskId
-          : taskId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userName: null == userName
-          ? _value.userName
-          : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      startTime: null == startTime
-          ? _value.startTime
-          : startTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endTime: freezed == endTime
-          ? _value.endTime
-          : endTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      durationMinutes: freezed == durationMinutes
-          ? _value.durationMinutes
-          : durationMinutes // ignore: cast_nullable_to_non_nullable
-              as int?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
+    return _then(
+      _$TaskTimeEntryImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        taskId: null == taskId
+            ? _value.taskId
+            : taskId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        userId: null == userId
+            ? _value.userId
+            : userId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        userName: null == userName
+            ? _value.userName
+            : userName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        startTime: null == startTime
+            ? _value.startTime
+            : startTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endTime: freezed == endTime
+            ? _value.endTime
+            : endTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        durationMinutes: freezed == durationMinutes
+            ? _value.durationMinutes
+            : durationMinutes // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TaskTimeEntryImpl implements _TaskTimeEntry {
-  const _$TaskTimeEntryImpl(
-      {required this.id,
-      required this.taskId,
-      required this.userId,
-      required this.userName,
-      required this.startTime,
-      this.endTime,
-      this.durationMinutes,
-      this.description,
-      required this.createdAt});
+  const _$TaskTimeEntryImpl({
+    required this.id,
+    required this.taskId,
+    required this.userId,
+    required this.userName,
+    required this.startTime,
+    this.endTime,
+    this.durationMinutes,
+    this.description,
+    required this.createdAt,
+  });
 
   factory _$TaskTimeEntryImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskTimeEntryImplFromJson(json);
@@ -3024,8 +3148,18 @@ class _$TaskTimeEntryImpl implements _TaskTimeEntry {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, taskId, userId, userName,
-      startTime, endTime, durationMinutes, description, createdAt);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    taskId,
+    userId,
+    userName,
+    startTime,
+    endTime,
+    durationMinutes,
+    description,
+    createdAt,
+  );
 
   /// Create a copy of TaskTimeEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -3037,23 +3171,22 @@ class _$TaskTimeEntryImpl implements _TaskTimeEntry {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TaskTimeEntryImplToJson(
-      this,
-    );
+    return _$$TaskTimeEntryImplToJson(this);
   }
 }
 
 abstract class _TaskTimeEntry implements TaskTimeEntry {
-  const factory _TaskTimeEntry(
-      {required final int id,
-      required final int taskId,
-      required final int userId,
-      required final String userName,
-      required final DateTime startTime,
-      final DateTime? endTime,
-      final int? durationMinutes,
-      final String? description,
-      required final DateTime createdAt}) = _$TaskTimeEntryImpl;
+  const factory _TaskTimeEntry({
+    required final int id,
+    required final int taskId,
+    required final int userId,
+    required final String userName,
+    required final DateTime startTime,
+    final DateTime? endTime,
+    final int? durationMinutes,
+    final String? description,
+    required final DateTime createdAt,
+  }) = _$TaskTimeEntryImpl;
 
   factory _TaskTimeEntry.fromJson(Map<String, dynamic> json) =
       _$TaskTimeEntryImpl.fromJson;

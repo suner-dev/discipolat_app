@@ -48,6 +48,12 @@ public record RegisterRequest(
         Boolean consentArt9,
 
         /** Version des documents acceptés (optionnelle : résolue côté serveur). */
-        String legalVersion
+        String legalVersion,
+
+        /** §G3.1 — s'inscrire « au nom d'une église » : slug public (lien /register?tenant=…). */
+        String tenantSlug,
+
+        /** Variante mobile : identifiant technique du tenant sélectionné. */
+        java.util.UUID tenantId
 ) {
 }

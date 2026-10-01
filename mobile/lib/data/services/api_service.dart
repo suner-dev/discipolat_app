@@ -14,6 +14,12 @@ class ApiService {
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
 
+  // PORT Develop1 (§G5.6) — callbacks globaux : session expirée (401
+  // irrattrapable après refresh) → reconnexion ; 403 → état « accès refusé »
+  // de l'écran courant. Posés dans `main.dart` / écrans.
+  static void Function()? onSessionExpired;
+  static void Function()? onAccessDenied;
+
   /// Crée une instance d'ApiService.
   ///
   /// [baseUrl] peut être omis pour utiliser la configuration automatique
@@ -52,10 +58,21 @@ class ApiService {
         if (error.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
-            final retryResponse = await _dio.fetch(error.requestOptions);
-            handler.resolve(retryResponse);
-            return;
+            try {
+              final retryResponse = await _dio.fetch(error.requestOptions);
+              handler.resolve(retryResponse);
+              return;
+            } on DioException catch (retryError) {
+              // Le rejet persiste après refresh : on laisse remonter l'erreur
+              // originale plutôt que de perdre le contexte du request.
+              handler.next(retryError);
+              return;
+            }
           }
+          // Session irrattrapable → écran de reconnexion (G5.6)
+          onSessionExpired?.call();
+        } else if (error.response?.statusCode == 403) {
+          onAccessDenied?.call();
         }
         handler.next(error);
       },
@@ -120,21 +137,35 @@ class ApiService {
           Map<String, dynamic>? queryParameters}) =>
       _dio.delete(path, queryParameters: params ?? queryParameters);
 
+  /// §G5.7 — vrai défaut réseau/serveur injoignable (pas une erreur métier).
+  /// Utilisé par les écrans de terrain (QR checkin, inventaire) pour décider
+  /// d'enfileter l'opération dans la file hors-ligne idempotente.
+  static bool isOfflineError(Object e) =>
+      e is DioException &&
+      e.response == null &&
+      (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout);
+
   /// Envoie un fichier (multipart/form-data) sur [path].
   /// [fieldName] est le nom du champ multipart attendu par le backend.
+  /// [mimeType] optionnel : type réel du fichier (ex. image/jpeg pour les
+  /// photos de terrain — scan QR, dommage d'actif). Défaut : audio/wav.
   Future<Response> postMultipart(
     String path, {
     required String fieldName,
     required Uint8List fileBytes,
     required String filename,
     Map<String, dynamic>? data,
+    DioMediaType? mimeType,
   }) {
     return postFile(
       path,
       fieldName: fieldName,
       fileBytes: fileBytes,
       filename: filename,
-      contentType: DioMediaType('audio', 'wav'),
+      contentType: mimeType ?? DioMediaType('audio', 'wav'),
       data: data,
     );
   }

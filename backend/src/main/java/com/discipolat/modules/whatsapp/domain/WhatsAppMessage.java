@@ -21,7 +21,10 @@ public class WhatsAppMessage {
 
     public enum Direction { INBOUND, OUTBOUND }
     public enum Status { RECEIVED, QUEUED, SENT, DELIVERED, READ, FAILED }
-    public enum Kind { TEXT, TEMPLATE, COMMAND, BROADCAST, REMINDER }
+    // NOTIFICATION : PORT Develop1 (§G5.9 portail basse connexion) — message
+    // sortant de rappel/annonce. Colonne sans contrainte CHECK (V95), la valeur
+    // tient en VARCHAR(16) : aucune migration requise, aucune valeur retirée.
+    public enum Kind { TEXT, TEMPLATE, COMMAND, BROADCAST, REMINDER, NOTIFICATION }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

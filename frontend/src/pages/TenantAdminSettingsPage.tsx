@@ -53,6 +53,39 @@ export default function TenantAdminSettingsPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-lg font-semibold mb-4">Portail basse connexion — WhatsApp &amp; USSD</h2>
+          <p className="text-sm text-gray-500 mb-3">
+            Permet aux membres sans smartphone de consulter leur tenue (#tenue), le planning (#planning),
+            confirmer leur présence (#presence) et donner (#don) via WhatsApp ou un menu USSD.
+            Uniquement des données membre-first, vers les numéros opt-in ; aucune donnée sensible ne sort par ce canal.
+          </p>
+          <label className="flex items-center gap-3 text-sm font-medium cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings?.lowBandEnabled ?? false}
+              onChange={(e) => setSettings({ ...settings, lowBandEnabled: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            Activer le portail basse connexion pour cette église
+          </label>
+        </div>
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-lg font-semibold mb-4">Terrain mobile — mode hors-ligne</h2>
+          <p className="text-sm text-gray-500 mb-3">
+            Contrôle ce que les appareils mobiles peuvent écrire sans connexion (file de synchronisation idempotente, rejeu par lot à la reconnexion).
+          </p>
+          <label className="block text-sm font-medium mb-1">offline_mode</label>
+          <select
+            className="border rounded-lg px-3 py-2 w-full"
+            value={settings?.offlineMode || "LECTURE"}
+            onChange={(e) => setSettings({ ...settings, offlineMode: e.target.value })}
+          >
+            <option value="LECTURE">LECTURE — aucune écriture hors-ligne</option>
+            <option value="FIELD_OPS">FIELD_OPS — opérations critiques terrain (pointage QR, sortie/retour matériel + photo)</option>
+            <option value="FULL">FULL — toutes les opérations synchronisables</option>
+          </select>
+        </div>
+        <div className="bg-white rounded-lg border p-6">
           <h2 className="text-lg font-semibold mb-4">Région & Langue</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

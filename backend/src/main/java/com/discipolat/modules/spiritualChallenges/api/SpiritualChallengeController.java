@@ -74,4 +74,11 @@ public class SpiritualChallengeController {
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.getStats());
     }
+
+    /** Gamification de l'utilisateur connecté : streak, points, niveau, badges. */
+    @GetMapping("/my/stats")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> myStats() {
+        return ResponseEntity.ok(service.getGamificationStats(SecurityUtils.getCurrentUserId()));
+    }
 }

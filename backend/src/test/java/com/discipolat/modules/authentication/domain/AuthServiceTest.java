@@ -57,6 +57,14 @@ class AuthServiceTest {
     private RefreshTokenSessionService refreshTokenSessionService;
     @Mock
     private TenantStatusGuard tenantStatusGuard;
+    @Mock
+    // PORT Develop1 — AuthService accepte en plus la persistance du tenant actif
+    // et l'enregistrement des personnes ; les mocks suivent le constructeur reel.
+    private com.discipolat.modules.tenants.domain.ActiveTenantService activeTenantService;
+    @Mock
+    private com.discipolat.modules.people.service.PeopleService peopleService;
+    @Mock
+    private com.discipolat.modules.tenants.domain.TenantRepository tenantRepository;
 
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
@@ -72,7 +80,11 @@ class AuthServiceTest {
         authService = new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                  activationTokenRepository, passwordResetTokenRepository, emailService,
                  tenantRegistrationService, tokenRevocationService, refreshTokenSessionService,
-                tenantStatusGuard, "http://localhost:5173");
+                tenantStatusGuard,
+                // PORT Develop1 : trois dependances supplementaires (tenant actif,
+                // personnes, lecture tenant) -- voir AuthService.portee.
+                activeTenantService, peopleService, tenantRepository,
+                "http://localhost:5173");
 
         userId = UUID.randomUUID();
         testUser = User.builder()

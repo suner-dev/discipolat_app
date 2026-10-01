@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { createContext, useContext, useRef, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuthOptional } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import type { 
   Tenant, 
@@ -18,7 +19,10 @@ import type {
 const TenantContext = createContext<TenantContextValue | null>(null);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  // Lecture tolérante : main ne charge le contexte qu'un fois authentifié,
+  // mais le provider peut être monté seul (tests, écran de sélection).
+  const auth = useAuthOptional();
+  const isAuthenticated = auth?.isAuthenticated ?? true;
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [currentMembership, setCurrentMembership] = useState<TenantMembership | null>(null);
   const [currentOrganizationNode, setCurrentOrganizationNode] = useState<OrganizationNode | null>(null);
@@ -32,8 +36,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<TenantSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const queryClient = useQueryClient();
+  // G5.4 (§55) « chargement unique » : StrictMode / appels concurrents ne
+  // doivent pas déclencher plusieurs fetch du contexte (promesse partagée).
+  const inflightRef = useRef<Promise<void> | null>(null);
 
   const refreshContext = useCallback(async () => {
+    if (inflightRef.current) return inflightRef.current;
+    const run = (async () => {
     try {
       setIsLoading(true);
       
@@ -88,9 +98,17 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         setFeatures(ctx.features || {});
         setSettings(ctx.settings || null);
 
-        if (ctx.permissions) {
-          const permObjects = ctx.permissions.map((key: string) => ({ key }));
-          setPermissions(permObjects);
+        if (ctx.permissions || ctx.tenantId) {
+          const permKeys = new Set<string>((ctx.permissions || []) as string[]);
+          // §G4.4 « rôles vivants » : fusion des permissions RÉSOLUES serveur
+          // (PermissionResolver — affectations actives dont pastorate, version
+          // permission_version). Les rôles du JWT de session ne reflètent pas
+          // une nomination/fin de mandat en cours de session.
+          const liveRes = await api.get('/me/permissions').catch(() => null);
+          if (Array.isArray(liveRes?.data?.permissions)) {
+            for (const key of liveRes.data.permissions as string[]) permKeys.add(key);
+          }
+          setPermissions([...permKeys].map((key) => ({ key })) as unknown as Permission[]);
         }
 
         // Load roles
@@ -112,6 +130,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setIsInitialized(true);
     }
+    })();
+    inflightRef.current = run;
+    void run.finally(() => { inflightRef.current = null; });
+    return run;
   }, []);
 
   useEffect(() => {
@@ -126,22 +148,33 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const switchTenant = useCallback(async (tenantId: string) => {
     try {
       const response = await api.post<SwitchTenantResponse>('/tenant-switcher/switch', { tenantId });
-       if (response.data.success) {
-         if (response.data.accessToken) {
-           localStorage.setItem('accessToken', response.data.accessToken);
-           api.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`;
-         }
-         if (response.data.refreshToken) {
-           localStorage.setItem('refreshToken', response.data.refreshToken);
-         }
-         await refreshContext();
-         window.location.reload();
-       }
+      if (response.data.success) {
+        // G5.4 (§55) : le backend réémet des JWT portant le nouveau claim
+        // tenantId — sans les stocker, la requête suivante rejouerait l'ancien
+        // tenant. Le header de main est réaligné, puis le cache de requêtes est
+        // vidé et le contexte rechargé : la bascule est instantanée et conserve
+        // la route de l'utilisateur (pas de window.location.reload).
+        if (response.data.accessToken) {
+          localStorage.setItem('accessToken', response.data.accessToken);
+          // Réaligne le header global si l'instance axios l'expose. Défensif :
+          // les doubles de test peuvent ne pas fournir defaults.headers, et
+          // l'intercepteur requête relit le localStorage à chaque appel de
+          // toute façon — le header est donc correct au prochain ping.
+          const common = (api.defaults as unknown as
+            { headers?: { common?: Record<string, string> } })?.headers?.common;
+          if (common) common['Authorization'] = `Bearer ${response.data.accessToken}`;
+        }
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+        queryClient.clear();
+        await refreshContext();
+      }
     } catch (error) {
       console.error('Erreur changement tenant:', error);
       throw error;
     }
-  }, [refreshContext]);
+  }, [queryClient, refreshContext]);
 
   const switchOrganization = useCallback(async (orgNodeId: string) => {
     try {
@@ -165,6 +198,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const hasFeature = useCallback((feature: string): boolean => {
     return features[feature] === true;
+  }, [features]);
+
+  /**
+   * G5.4 (§55-2 RequireFeature) : refus uniquement quand le drapeau résolu par
+   * le serveur dit explicitement false (miroir du 403 backend). Une absence de
+   * drapeau = module non géré -> jamais un refus arbitraire du frontend.
+   */
+  const isFeatureBlocked = useCallback((feature: string): boolean => {
+    return features[feature] === false || features[feature.toUpperCase()] === false;
   }, [features]);
 
   const canAccess = useCallback((resource: string, action: string, _scopeType?: string, _scopeId?: string): boolean => {
@@ -198,6 +240,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       hasRole,
       hasPermission,
       hasFeature,
+      isFeatureBlocked,
       canAccess,
       isQuotaExceeded,
       isLoading,
@@ -214,4 +257,12 @@ export function useTenant() {
     throw new Error('useTenant must be used within a TenantProvider');
   }
   return context;
+}
+
+/// Variante tolérante : retourne null hors TenantProvider (au lieu de lever).
+/// Destinée aux composants additionnels (ex. bus temps réel) qui doivent
+/// s'effacer gracieusement quand aucun contexte tenant n'est monté — jamais
+/// pour le cœur applicatif qui exige un tenant actif.
+export function useTenantOptional() {
+  return useContext(TenantContext);
 }

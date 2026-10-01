@@ -8,5 +8,7 @@ public record UpdateProfileRequest(
         @Size(max = 100) String lastName,
         @Size(max = 20) String phone,
         LocalDate dateNaissance,
-        String situationFamiliale
+        String situationFamiliale,
+        /** §G5.9 — opt-in individuel au portail basse connexion (WhatsApp sortant). */
+        Boolean whatsappOptIn
 ) {}

@@ -150,23 +150,23 @@ const _$AccountTypeEnumMap = {
 };
 
 _$BudgetImpl _$$BudgetImplFromJson(Map<String, dynamic> json) => _$BudgetImpl(
-      id: (json['id'] as num).toInt(),
-      name: json['name'] as String,
-      code: json['code'] as String,
-      allocatedAmount: (json['allocatedAmount'] as num).toDouble(),
-      spentAmount: (json['spentAmount'] as num?)?.toDouble() ?? 0.0,
-      currency: json['currency'] as String,
-      startDate: DateTime.parse(json['startDate'] as String),
-      endDate: DateTime.parse(json['endDate'] as String),
-      isActive: json['isActive'] as bool? ?? true,
-      description: json['description'] as String?,
-      departmentId: (json['departmentId'] as num?)?.toInt(),
-      departmentName: json['departmentName'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] == null
-          ? null
-          : DateTime.parse(json['updatedAt'] as String),
-    );
+  id: (json['id'] as num).toInt(),
+  name: json['name'] as String,
+  code: json['code'] as String,
+  allocatedAmount: (json['allocatedAmount'] as num).toDouble(),
+  spentAmount: (json['spentAmount'] as num?)?.toDouble() ?? 0.0,
+  currency: json['currency'] as String,
+  startDate: DateTime.parse(json['startDate'] as String),
+  endDate: DateTime.parse(json['endDate'] as String),
+  isActive: json['isActive'] as bool? ?? true,
+  description: json['description'] as String?,
+  departmentId: (json['departmentId'] as num?)?.toInt(),
+  departmentName: json['departmentName'] as String?,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
+);
 
 Map<String, dynamic> _$$BudgetImplToJson(_$BudgetImpl instance) =>
     <String, dynamic>{

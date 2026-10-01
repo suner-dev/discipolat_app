@@ -20,7 +20,9 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/church-events")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+// §G3.3/§G3.4 — les responsables de département/famille programment et pilotent
+// leurs événements (le service garde le scope) ; legacy DEPARTMENT_LEADER/FAMILY_LEADER conservés.
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
 public class ChurchEventController {
 
     private final ChurchEventService churchEventService;
@@ -86,6 +88,35 @@ public class ChurchEventController {
         UUID actorId = SecurityUtils.getCurrentUserId();
         churchEventService.deleteChurchEvent(tenantId, actorId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ========== ARCHIVES (§G3.4 / §G6.4) ==========
+
+    /** Clôturage + archive intégrale versionnée (dress codes, équipes, tâches, programme, matériel, présences). */
+    @PostMapping("/{eventId}/archive")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'DEPARTMENT_LEADER')")
+    public ResponseEntity<com.discipolat.modules.events.domain.ChurchEventArchive> archiveEvent(
+            @PathVariable UUID eventId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(churchEventService.archiveEvent(tenantId, actorId, eventId));
+    }
+
+    /** Écran « Archives » : consultation par années / mois / espace. */
+    @GetMapping("/archives")
+    public ResponseEntity<List<com.discipolat.modules.events.domain.ChurchEventArchive>> getArchives(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) UUID spaceId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(churchEventService.getArchives(tenantId, year, month, spaceId));
+    }
+
+    @GetMapping("/archives/{archiveId}")
+    public ResponseEntity<com.discipolat.modules.events.domain.ChurchEventArchive> getArchive(
+            @PathVariable UUID archiveId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(churchEventService.getArchive(tenantId, archiveId));
     }
 
     // ========== SPACES ==========

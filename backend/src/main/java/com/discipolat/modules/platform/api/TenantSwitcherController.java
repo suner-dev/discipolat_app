@@ -36,6 +36,8 @@ public class TenantSwitcherController {
     private final RefreshTokenSessionService refreshTokenSessionService;
     /** Lecture cross-tenant déclarée : voir {@link CrossTenantScopeAccess} (constat H4). */
     private final CrossTenantScopeAccess crossTenantRead;
+    private final ActiveTenantService activeTenantService;
+    private final TenantFeatureService tenantFeatureService;
 
     public TenantSwitcherController(TenantRepository tenantRepository,
                                     TenantMembershipRepository membershipRepository,
@@ -45,12 +47,14 @@ public class TenantSwitcherController {
                                     OrganizationNodeRepository orgNodeRepository,
                                     OrganizationNodeService orgNodeService,
                                     TenantSubscriptionRepository subscriptionRepository,
-                                      SaasPlanRepository planRepository,
-                                      TenantService tenantService,
-                                      TenantStatusGuard tenantStatusGuard,
-                                      JwtTokenProvider jwtTokenProvider,
-                                      RefreshTokenSessionService refreshTokenSessionService,
-                                      CrossTenantScopeAccess crossTenantRead) {
+                                    SaasPlanRepository planRepository,
+                                    TenantService tenantService,
+                                    TenantStatusGuard tenantStatusGuard,
+                                    JwtTokenProvider jwtTokenProvider,
+                                    RefreshTokenSessionService refreshTokenSessionService,
+                                    CrossTenantScopeAccess crossTenantRead,
+                                    ActiveTenantService activeTenantService,
+                                    TenantFeatureService tenantFeatureService) {
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
@@ -65,6 +69,8 @@ public class TenantSwitcherController {
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenSessionService = refreshTokenSessionService;
         this.crossTenantRead = crossTenantRead;
+        this.activeTenantService = activeTenantService;
+        this.tenantFeatureService = tenantFeatureService;
     }
 
     // ==================== CONTEXTE COURANT ====================
@@ -102,20 +108,43 @@ public class TenantSwitcherController {
         List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
 
         // Get active membership (the one matching current scope)
+        // §G6.4 — E2E CP2 : orElse(get(0)) était évalué EAGER : un compte rattaché
+        // à son tenant maison SANS ligne de membership (self-signup §G3.1, comptes
+        // semés) levait IndexOutOfBounds → 500 sur toutes les pages gardées.
         TenantMembership activeMembership = memberships.stream()
                 .filter(m -> m.getScopeType() == MembershipScopeType.TENANT || m.getScopeId() == null)
                 .findFirst()
-                .orElse(memberships.get(0));
+                .orElseGet(() -> memberships.isEmpty() ? null : memberships.get(0));
 
-        // Get roles and permissions for this membership
+        String roleKey;
         Set<String> permissions = new HashSet<>();
-        if (activeMembership.getRole() != null) {
-            permissions = permissionRepository.findByRoleId(activeMembership.getRole().getId())
-                    .stream().map(Permission::getKey).collect(Collectors.toSet());
-        }
+        MembershipScopeType scopeType = MembershipScopeType.TENANT;
+        UUID scopeId = null;
+        List<OrganizationNode> accessibleNodes;
 
-        // Get organization nodes user has access to
-        List<OrganizationNode> accessibleNodes = getAccessibleNodes(userId, tenantId, activeMembership);
+        if (activeMembership != null) {
+            roleKey = activeMembership.getRole() != null ? activeMembership.getRole().getKey() : "UNKNOWN";
+            scopeType = activeMembership.getScopeType();
+            scopeId = activeMembership.getScopeId();
+            if (activeMembership.getRole() != null) {
+                permissions = permissionRepository.findByRoleId(activeMembership.getRole().getId())
+                        .stream().map(Permission::getKey).collect(Collectors.toSet());
+            }
+            accessibleNodes = getAccessibleNodes(userId, tenantId, activeMembership);
+        } else {
+            // Fallback tenant maison : rôle porté par le compte (jamais un 500),
+            // permissions résolues du catalogue si une Role porte cette clé.
+            com.discipolat.common.domain.UserRole sessionRole = userRepository.findById(userId)
+                    .map(u -> u.getActiveRole() != null ? u.getActiveRole() : u.getRole())
+                    .orElse(null);
+            roleKey = sessionRole != null ? sessionRole.name() : "UNKNOWN";
+            permissions = roleRepository.findByTenantIdAndKey(tenantId, roleKey)
+                    .or(() -> roleRepository.findByTenantIdIsNullAndKey(roleKey))
+                    .map(role -> permissionRepository.findByRoleId(role.getId())
+                            .stream().map(Permission::getKey).collect(Collectors.toSet()))
+                    .orElseGet(HashSet::new);
+            accessibleNodes = orgNodeRepository.findByTenantId(tenantId);
+        }
 
         // Get subscription
         Optional<TenantSubscription> subscription = subscriptionRepository.findCurrentByTenantId(tenantId);
@@ -128,9 +157,9 @@ public class TenantSwitcherController {
         context.put("tenantSlug", tenant.getSlug());
         context.put("tenantStatus", tenant.getStatus().name());
         context.put("plan", tenant.getPlan());
-        context.put("role", activeMembership.getRole() != null ? activeMembership.getRole().getKey() : "UNKNOWN");
-        context.put("scopeType", activeMembership.getScopeType().name());
-        context.put("scopeId", activeMembership.getScopeId() != null ? activeMembership.getScopeId().toString() : null);
+        context.put("role", roleKey);
+        context.put("scopeType", scopeType.name());
+        context.put("scopeId", scopeId != null ? scopeId.toString() : null);
         context.put("permissions", permissions);
         context.put("accessibleNodes", accessibleNodes.stream().map(n -> Map.of(
                 "id", n.getId().toString(),
@@ -149,7 +178,16 @@ public class TenantSwitcherController {
                 )).orElse(null)
         )).orElse(null));
         context.put("branding", parseJson(tenant.getBrandingJson()));
-        context.put("features", parseJson(tenant.getFeaturesJson()));
+        // G5.4 (§55-2 RequireFeature) : les drapeaux canoniques d'activation
+        // des modules (G1.3, table tenant_feature) priment sur le JSON legacy
+        // du tenant — le frontend doit voir exactement ce que le backend refuse.
+        Map<String, Object> features = new LinkedHashMap<>();
+        Object legacyFeatures = parseJson(tenant.getFeaturesJson());
+        if (legacyFeatures instanceof Map<?, ?> lf) {
+            lf.forEach((k, v) -> { if (k instanceof String ks) features.put(ks.toUpperCase(), v); });
+        }
+        tenantFeatureService.getFeatureFlags(tenantId).forEach((code, enabled) -> features.put(code, enabled));
+        context.put("features", features);
         context.put("settings", parseJson(tenant.getSettingsJson()));
 
         return ResponseEntity.ok(context);
@@ -224,6 +262,14 @@ public class TenantSwitcherController {
         UUID currentTenantId = TenantContext.getTenantId();
         User user = userRepository.findByIdWithActiveMembershipInTenant(userId, currentTenantId)
                 .orElseThrow(() -> new IllegalStateException("Utilisateur introuvable"));
+
+        // PORT Develop1 (§G5.4 / point #55) — le choix est aussi PERSISTE dans
+        // users.active_tenant_id (migration V207) : sans cela, le rechargement de
+        // session repartait sur le tenant d'origine. Les jetons restent réémis par le
+        // flux de main ci-dessous (famille de sessions refresh-token incluse), d'ou
+        // markActiveTenant seul, appele pendant que le contexte porte encore le
+        // tenant d'origine de l'utilisateur.
+        activeTenantService.markActiveTenant(user, newTenantId);
 
         // Set new tenant context
         TenantContext.setTenantId(newTenantId);

@@ -78,6 +78,10 @@ public class Person {
     protected void onCreate() {
         this.createdAt = OffsetDateTime.now();
         this.updatedAt = OffsetDateTime.now();
+        // §G6.4 — les initialiseurs de champs ne s'appliquent PAS via
+        // Person.builder() (piège Lombok) : garantir ici les colonnes NOT NULL.
+        if (this.status == null) this.status = "ACTIVE";
+        if (this.visibilityScope == null) this.visibilityScope = "CHURCH";
     }
 
     @PreUpdate

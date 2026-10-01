@@ -7,11 +7,16 @@ import {
   Plus, Pencil, Building2, Loader2, Save, Globe, Calendar,
   Search, Filter, Users, Activity, Eye, AlertTriangle,
   Shield, X, RefreshCw, BarChart3, Ban, RotateCcw, CheckCircle2,
+  // PORT Develop1 (§57 / §G1.9) — archivage et impersonation super admin.
+  Archive, UserCheck,
 } from 'lucide-react';
 import type { Tenant, TenantStatus } from '@/types';
 import { QuotaUsageCards } from '@/components/admin/QuotaUsageCards';
 import { normalizeQuotaUsage } from '@/types/quota';
 import { EmptyState, SkeletonDashboard, VisuallyHidden } from '@/components/ui/UXComponents';
+import { useImpersonationOptional } from '@/contexts/ImpersonationContext';
+import { useAuthOptional } from '@/contexts/AuthContext';
+import { isPlatformAdmin } from '@/workspaces';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
@@ -120,6 +125,12 @@ const EMPTY_FORM: TenantForm = { name: '', slug: '', plan: '' };
 
 export default function AdminTenantsPage() {
   const queryClient = useQueryClient();
+  // PORT Develop1 — impersonation (§G1.9) : réservée au super admin plateforme.
+  // Consommation tolérante : hors AuthProvider/ImpersonationProvider (tests
+  // unitaires isolés, rendus autonomes), le bloc s'efface sans lever.
+  const authUser = useAuthOptional()?.user;
+  const startImpersonation = useImpersonationOptional()?.startImpersonation;
+  const isSuperAdmin = isPlatformAdmin(authUser?.role);
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<TenantForm>(EMPTY_FORM);
@@ -251,6 +262,37 @@ export default function AdminTenantsPage() {
     },
     onError: (err: unknown) => toast.error(describeError(err)),
   });
+
+  /**
+   * PORT Develop1 (§57) — cycle de vie super admin via les endpoints dedies
+   * `POST /platform/admin/tenants/{id}/archive` (SuperAdminController:317, statut
+   * CANCELLED + journalisation serveur). Les suspend/réactiver de main restent
+   * les leurs : rien n'est deplace, seulement ajoute.
+   */
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => api.post(`/platform/admin/tenants/${id}/archive`),
+    onSuccess: () => {
+      invalidate();
+      setDetailTenant(null);
+      toast.success(tText('Église archivée'));
+    },
+    onError: (err: unknown) => toast.error(describeError(err)),
+  });
+
+  // PORT Develop1 (§G1.9) — impersonation depuis la fiche tenant : motif
+  // obligatoire, la demande est journalisee cote serveur.
+  const impersonateTenant = async (tenant: Tenant) => {
+    const email = window.prompt(
+      tText('Email du membre à impersoner dans {name}').replace('{name}', tenant.name),
+    );
+    if (!email || !email.trim()) return;
+    const reason = window.prompt(tText("Motif de l'impersonation (obligatoire, journalisé) :"));
+    if (!reason || !reason.trim()) {
+      toast.error(tText('Un motif est requis pour impersoner'));
+      return;
+    }
+    await startImpersonation?.(email.trim(), reason.trim(), tenant.id);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -602,6 +644,25 @@ export default function AdminTenantsPage() {
                         : <Ban className="w-4 h-4" />}
                     </button>
                   )}
+                  {/* PORT Develop1 (§57) — archivage, distinct de la suspension. */}
+                  {t.status !== 'CANCELLED' && (
+                    <button
+                      type="button"
+                      aria-label={tText('Archiver l\u2019église')}
+                      disabled={archiveMutation.isPending}
+                      className="btn-icon text-gray-400 hover:text-gray-700 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 disabled:opacity-50"
+                      onClick={() => {
+                        if (confirm(`${tText('Archiver cette église ?')} « ${t.name} » ?`)) {
+                          archiveMutation.mutate(t.id);
+                        }
+                      }}
+                      title={tText('Archiver (statut annulée, données conservées)')}
+                    >
+                      {archiveMutation.isPending
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Archive className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -784,6 +845,23 @@ export default function AdminTenantsPage() {
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <RotateCcw className="w-3.5 h-3.5" />}
                     {tText('Réactiver cette église')}
+                  </button>
+                </div>
+              )}
+
+              {/* PORT Develop1 (§G1.9) — porte d'entree de l'impersonation. */}
+              {isSuperAdmin && (
+                <div className="p-3 rounded-xl bg-violet-50/60 dark:bg-violet-900/10 border border-violet-200/50 dark:border-violet-800/30">
+                  <p className="text-xs text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                    <UserCheck className="w-4 h-4" />
+                    {tText('Support technique : se faire passer pour un membre de cette église.')}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm mt-2 text-violet-600"
+                    onClick={() => impersonateTenant(detailTenant)}
+                  >
+                    {tText('Impersoner un membre')}
                   </button>
                 </div>
               )}

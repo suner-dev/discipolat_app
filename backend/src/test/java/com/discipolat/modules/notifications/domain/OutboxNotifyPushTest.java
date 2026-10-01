@@ -54,6 +54,8 @@ class OutboxNotifyPushTest {
     @Mock private PushGateway pushGateway;
     @Mock private PushTokenRepository pushTokenRepository;
     @Mock private NotificationPreferenceRepository notificationPreferenceRepository;
+    // PORT Develop1 — relais des notifications vers le portail basse connexion.
+    @Mock private com.discipolat.modules.lowband.domain.LowBandNotifyService lowBandNotifyService;
 
     private UUID tenantId;
     private UUID userId;
@@ -64,7 +66,8 @@ class OutboxNotifyPushTest {
         PushNotificationService pushService = new PushNotificationService(
                 pushGateway, pushTokenRepository, notificationPreferenceRepository);
         consumers = new OutboxConsumers(outboxPublisher, auditEventService, realTimeService, sseBroadcaster,
-                outboxRepository, processedRepository, notificationService, pushService);
+                outboxRepository, processedRepository, notificationService, pushService,
+                lowBandNotifyService);
         tenantId = UUID.randomUUID();
         userId = UUID.randomUUID();
         consumers.registerAllConsumers();

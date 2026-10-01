@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
-import type { DashboardKPI, Alert } from '@/types';
+import type { DashboardKPI, Alert, AuditRecentActivity } from '@/types';
 import {
   Heart,
   Users,
@@ -20,6 +20,9 @@ import {
   ChevronRight,
   Star,
   ThumbsUp,
+  Calendar,
+  // PORT Develop1 — le bloc « Activité récente » du tableau de bord.
+  Activity,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getI18nLocale } from '@/i18n';
@@ -120,6 +123,40 @@ export default function DashboardPage() {
       return res.data as { mois: number; data: { semaine: string; taux: number }[] };
     },
     enabled: isPasteurOrAdmin,
+  });
+
+  // === G5.2 — Church OS (niveau 1) : coups d'œil temps réel, 100 % données réelles.
+  // Espaces métier (départements) — accès ADMIN/PASTEUR/RESPONSABLE.
+  const { data: spaces = [] } = useQuery({
+    queryKey: ['dashboard', 'spaces'],
+    queryFn: async () => {
+      const res = await api.get('/departments', { params: { size: 8, sortBy: 'nom', sortDir: 'asc' } });
+      return (res.data?.content ?? []) as { id: string; nom: string; description?: string }[];
+    },
+    enabled: isPasteurOrAdmin,
+    staleTime: 60_000,
+  });
+
+  // Événements à venir (agenda consolidé) — PASTEUR/ADMIN.
+  const { data: upcomingEvents = [] } = useQuery({
+    queryKey: ['dashboard', 'upcoming-events'],
+    queryFn: async () => {
+      const res = await api.get('/events', { params: { upcomingOnly: true, size: 5, sort: 'dateDebut,asc' } });
+      return (res.data?.content ?? []) as { id: string; titre: string; dateDebut: string; lieu?: string }[];
+    },
+    enabled: isPasteurOrAdmin,
+    staleTime: 60_000,
+  });
+
+  // Fil d'activité récente (journal d'audit) — ADMIN/PASTEUR.
+  const { data: recentActivity = [] } = useQuery({
+    queryKey: ['audit', 'recent'],
+    queryFn: async () => {
+      const res = await api.get('/audit/recent', { params: { limit: 8 } });
+      return res.data as AuditRecentActivity[];
+    },
+    enabled: isPasteurOrAdmin,
+    staleTime: 30_000,
   });
 
   const kpiData = kpi || DEFAULT_KPI;
@@ -470,6 +507,111 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* G5.2 — Church OS (niveau 1) : espaces, événements à venir, activité récente.
+          Uniquement pour les super-utilisateurs ; toutes les données viennent de la
+          vraie API (aucun mock), chaque panneau est cliquable vers son module. */}
+      {isPasteurOrAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Espaces métier (départements) */}
+          <div className="glass-card p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-amber-500" /> {tText('Espaces')}
+              </h3>
+              <Link to="/departments" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {tText('Voir tout')} <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {spaces.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {spaces.slice(0, 6).map((s) => (
+                  <Link
+                    key={s.id}
+                    to={`/departments/${s.id}`}
+                    className="rounded-xl border border-white/20 dark:border-white/[0.06] bg-white/40 dark:bg-gray-800/30 p-3 hover:border-amber-500/40 transition-colors"
+                  >
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{s.nom}</p>
+                    {s.description && <p className="text-[10px] text-gray-400 truncate mt-0.5">{s.description}</p>}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 py-6 text-center">{tText('Aucun espace')}</p>
+            )}
+          </div>
+
+          {/* Événements à venir */}
+          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '100ms' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-orange-500" /> {tText('Événements à venir')}
+              </h3>
+              <Link to="/events" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {tText('Voir tout')} <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {upcomingEvents.map((e) => (
+                  <Link
+                    key={e.id}
+                    to="/events"
+                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white flex-shrink-0">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{e.titre}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(e.dateDebut).toLocaleDateString(getI18nLocale(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {e.lieu ? ` · ${e.lieu}` : ''}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 py-6 text-center">{tText('Aucun événement à venir')}</p>
+            )}
+          </div>
+
+          {/* Activité récente */}
+          <div className="glass-card p-6 animate-slide-up" style={{ animationDelay: '200ms' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary-500" /> {tText('Activité récente')}
+              </h3>
+              <Link to="/audit" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {tText('Voir tout')} <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {recentActivity.length > 0 ? (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {recentActivity.map((a) => (
+                  <div key={a.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0 mt-0.5">
+                      {a.utilisateurNom?.charAt(0) || '?'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
+                        <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
+                        {' '}{a.action?.toLowerCase().replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-[9px] text-gray-400">
+                        {a.entiteType} · {new Date(a.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 py-6 text-center">{tText('Aucune activité récente')}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Role-aware dashboard for non-PASTEUR roles */}
       {!isPasteurOrAdmin && (

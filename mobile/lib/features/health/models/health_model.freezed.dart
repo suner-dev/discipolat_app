@@ -12,7 +12,8 @@ part of 'health_model.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 Patient _$PatientFromJson(Map<String, dynamic> json) {
   return _Patient.fromJson(json);
@@ -58,30 +59,31 @@ abstract class $PatientCopyWith<$Res> {
   factory $PatientCopyWith(Patient value, $Res Function(Patient) then) =
       _$PatientCopyWithImpl<$Res, Patient>;
   @useResult
-  $Res call(
-      {int id,
-      String firstName,
-      String lastName,
-      DateTime dateOfBirth,
-      String gender,
-      String? phone,
-      String? email,
-      String? address,
-      String? emergencyContactName,
-      String? emergencyContactPhone,
-      String? bloodType,
-      List<String>? allergies,
-      List<String>? chronicConditions,
-      List<String>? currentMedications,
-      String? insuranceProvider,
-      String? insuranceNumber,
-      String? photoUrl,
-      PatientStatus status,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      int? familyId,
-      String? familyName});
+  $Res call({
+    int id,
+    String firstName,
+    String lastName,
+    DateTime dateOfBirth,
+    String gender,
+    String? phone,
+    String? email,
+    String? address,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? bloodType,
+    List<String>? allergies,
+    List<String>? chronicConditions,
+    List<String>? currentMedications,
+    String? insuranceProvider,
+    String? insuranceNumber,
+    String? photoUrl,
+    PatientStatus status,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    int? familyId,
+    String? familyName,
+  });
 }
 
 /// @nodoc
@@ -123,134 +125,139 @@ class _$PatientCopyWithImpl<$Res, $Val extends Patient>
     Object? familyId = freezed,
     Object? familyName = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      firstName: null == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
-              as String,
-      lastName: null == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dateOfBirth: null == dateOfBirth
-          ? _value.dateOfBirth
-          : dateOfBirth // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      gender: null == gender
-          ? _value.gender
-          : gender // ignore: cast_nullable_to_non_nullable
-              as String,
-      phone: freezed == phone
-          ? _value.phone
-          : phone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      email: freezed == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
-              as String?,
-      address: freezed == address
-          ? _value.address
-          : address // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactName: freezed == emergencyContactName
-          ? _value.emergencyContactName
-          : emergencyContactName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactPhone: freezed == emergencyContactPhone
-          ? _value.emergencyContactPhone
-          : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      bloodType: freezed == bloodType
-          ? _value.bloodType
-          : bloodType // ignore: cast_nullable_to_non_nullable
-              as String?,
-      allergies: freezed == allergies
-          ? _value.allergies
-          : allergies // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      chronicConditions: freezed == chronicConditions
-          ? _value.chronicConditions
-          : chronicConditions // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      currentMedications: freezed == currentMedications
-          ? _value.currentMedications
-          : currentMedications // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      insuranceProvider: freezed == insuranceProvider
-          ? _value.insuranceProvider
-          : insuranceProvider // ignore: cast_nullable_to_non_nullable
-              as String?,
-      insuranceNumber: freezed == insuranceNumber
-          ? _value.insuranceNumber
-          : insuranceNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      photoUrl: freezed == photoUrl
-          ? _value.photoUrl
-          : photoUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as PatientStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      familyId: freezed == familyId
-          ? _value.familyId
-          : familyId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      familyName: freezed == familyName
-          ? _value.familyName
-          : familyName // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            firstName: null == firstName
+                ? _value.firstName
+                : firstName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            lastName: null == lastName
+                ? _value.lastName
+                : lastName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            dateOfBirth: null == dateOfBirth
+                ? _value.dateOfBirth
+                : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            gender: null == gender
+                ? _value.gender
+                : gender // ignore: cast_nullable_to_non_nullable
+                      as String,
+            phone: freezed == phone
+                ? _value.phone
+                : phone // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            email: freezed == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            address: freezed == address
+                ? _value.address
+                : address // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            emergencyContactName: freezed == emergencyContactName
+                ? _value.emergencyContactName
+                : emergencyContactName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            emergencyContactPhone: freezed == emergencyContactPhone
+                ? _value.emergencyContactPhone
+                : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            bloodType: freezed == bloodType
+                ? _value.bloodType
+                : bloodType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            allergies: freezed == allergies
+                ? _value.allergies
+                : allergies // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            chronicConditions: freezed == chronicConditions
+                ? _value.chronicConditions
+                : chronicConditions // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            currentMedications: freezed == currentMedications
+                ? _value.currentMedications
+                : currentMedications // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            insuranceProvider: freezed == insuranceProvider
+                ? _value.insuranceProvider
+                : insuranceProvider // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            insuranceNumber: freezed == insuranceNumber
+                ? _value.insuranceNumber
+                : insuranceNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            photoUrl: freezed == photoUrl
+                ? _value.photoUrl
+                : photoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as PatientStatus,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            familyId: freezed == familyId
+                ? _value.familyId
+                : familyId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            familyName: freezed == familyName
+                ? _value.familyName
+                : familyName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$PatientImplCopyWith<$Res> implements $PatientCopyWith<$Res> {
   factory _$$PatientImplCopyWith(
-          _$PatientImpl value, $Res Function(_$PatientImpl) then) =
-      __$$PatientImplCopyWithImpl<$Res>;
+    _$PatientImpl value,
+    $Res Function(_$PatientImpl) then,
+  ) = __$$PatientImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String firstName,
-      String lastName,
-      DateTime dateOfBirth,
-      String gender,
-      String? phone,
-      String? email,
-      String? address,
-      String? emergencyContactName,
-      String? emergencyContactPhone,
-      String? bloodType,
-      List<String>? allergies,
-      List<String>? chronicConditions,
-      List<String>? currentMedications,
-      String? insuranceProvider,
-      String? insuranceNumber,
-      String? photoUrl,
-      PatientStatus status,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt,
-      int? familyId,
-      String? familyName});
+  $Res call({
+    int id,
+    String firstName,
+    String lastName,
+    DateTime dateOfBirth,
+    String gender,
+    String? phone,
+    String? email,
+    String? address,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? bloodType,
+    List<String>? allergies,
+    List<String>? chronicConditions,
+    List<String>? currentMedications,
+    String? insuranceProvider,
+    String? insuranceNumber,
+    String? photoUrl,
+    PatientStatus status,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+    int? familyId,
+    String? familyName,
+  });
 }
 
 /// @nodoc
@@ -258,8 +265,9 @@ class __$$PatientImplCopyWithImpl<$Res>
     extends _$PatientCopyWithImpl<$Res, _$PatientImpl>
     implements _$$PatientImplCopyWith<$Res> {
   __$$PatientImplCopyWithImpl(
-      _$PatientImpl _value, $Res Function(_$PatientImpl) _then)
-      : super(_value, _then);
+    _$PatientImpl _value,
+    $Res Function(_$PatientImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Patient
   /// with the given fields replaced by the non-null parameter values.
@@ -290,134 +298,136 @@ class __$$PatientImplCopyWithImpl<$Res>
     Object? familyId = freezed,
     Object? familyName = freezed,
   }) {
-    return _then(_$PatientImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      firstName: null == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
-              as String,
-      lastName: null == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dateOfBirth: null == dateOfBirth
-          ? _value.dateOfBirth
-          : dateOfBirth // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      gender: null == gender
-          ? _value.gender
-          : gender // ignore: cast_nullable_to_non_nullable
-              as String,
-      phone: freezed == phone
-          ? _value.phone
-          : phone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      email: freezed == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
-              as String?,
-      address: freezed == address
-          ? _value.address
-          : address // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactName: freezed == emergencyContactName
-          ? _value.emergencyContactName
-          : emergencyContactName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      emergencyContactPhone: freezed == emergencyContactPhone
-          ? _value.emergencyContactPhone
-          : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
-              as String?,
-      bloodType: freezed == bloodType
-          ? _value.bloodType
-          : bloodType // ignore: cast_nullable_to_non_nullable
-              as String?,
-      allergies: freezed == allergies
-          ? _value._allergies
-          : allergies // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      chronicConditions: freezed == chronicConditions
-          ? _value._chronicConditions
-          : chronicConditions // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      currentMedications: freezed == currentMedications
-          ? _value._currentMedications
-          : currentMedications // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      insuranceProvider: freezed == insuranceProvider
-          ? _value.insuranceProvider
-          : insuranceProvider // ignore: cast_nullable_to_non_nullable
-              as String?,
-      insuranceNumber: freezed == insuranceNumber
-          ? _value.insuranceNumber
-          : insuranceNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      photoUrl: freezed == photoUrl
-          ? _value.photoUrl
-          : photoUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as PatientStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      familyId: freezed == familyId
-          ? _value.familyId
-          : familyId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      familyName: freezed == familyName
-          ? _value.familyName
-          : familyName // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+    return _then(
+      _$PatientImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        firstName: null == firstName
+            ? _value.firstName
+            : firstName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        lastName: null == lastName
+            ? _value.lastName
+            : lastName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        dateOfBirth: null == dateOfBirth
+            ? _value.dateOfBirth
+            : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        gender: null == gender
+            ? _value.gender
+            : gender // ignore: cast_nullable_to_non_nullable
+                  as String,
+        phone: freezed == phone
+            ? _value.phone
+            : phone // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        email: freezed == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        address: freezed == address
+            ? _value.address
+            : address // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        emergencyContactName: freezed == emergencyContactName
+            ? _value.emergencyContactName
+            : emergencyContactName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        emergencyContactPhone: freezed == emergencyContactPhone
+            ? _value.emergencyContactPhone
+            : emergencyContactPhone // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        bloodType: freezed == bloodType
+            ? _value.bloodType
+            : bloodType // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        allergies: freezed == allergies
+            ? _value._allergies
+            : allergies // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        chronicConditions: freezed == chronicConditions
+            ? _value._chronicConditions
+            : chronicConditions // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        currentMedications: freezed == currentMedications
+            ? _value._currentMedications
+            : currentMedications // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        insuranceProvider: freezed == insuranceProvider
+            ? _value.insuranceProvider
+            : insuranceProvider // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        insuranceNumber: freezed == insuranceNumber
+            ? _value.insuranceNumber
+            : insuranceNumber // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        photoUrl: freezed == photoUrl
+            ? _value.photoUrl
+            : photoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as PatientStatus,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        familyId: freezed == familyId
+            ? _value.familyId
+            : familyId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        familyName: freezed == familyName
+            ? _value.familyName
+            : familyName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$PatientImpl extends _Patient {
-  const _$PatientImpl(
-      {required this.id,
-      required this.firstName,
-      required this.lastName,
-      required this.dateOfBirth,
-      required this.gender,
-      this.phone,
-      this.email,
-      this.address,
-      this.emergencyContactName,
-      this.emergencyContactPhone,
-      this.bloodType,
-      final List<String>? allergies,
-      final List<String>? chronicConditions,
-      final List<String>? currentMedications,
-      this.insuranceProvider,
-      this.insuranceNumber,
-      this.photoUrl,
-      required this.status,
-      this.notes,
-      required this.createdAt,
-      this.updatedAt,
-      this.familyId,
-      this.familyName})
-      : _allergies = allergies,
-        _chronicConditions = chronicConditions,
-        _currentMedications = currentMedications,
-        super._();
+  const _$PatientImpl({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.dateOfBirth,
+    required this.gender,
+    this.phone,
+    this.email,
+    this.address,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
+    this.bloodType,
+    final List<String>? allergies,
+    final List<String>? chronicConditions,
+    final List<String>? currentMedications,
+    this.insuranceProvider,
+    this.insuranceNumber,
+    this.photoUrl,
+    required this.status,
+    this.notes,
+    required this.createdAt,
+    this.updatedAt,
+    this.familyId,
+    this.familyName,
+  }) : _allergies = allergies,
+       _chronicConditions = chronicConditions,
+       _currentMedications = currentMedications,
+       super._();
 
   factory _$PatientImpl.fromJson(Map<String, dynamic> json) =>
       _$$PatientImplFromJson(json);
@@ -522,12 +532,18 @@ class _$PatientImpl extends _Patient {
                 other.emergencyContactPhone == emergencyContactPhone) &&
             (identical(other.bloodType, bloodType) ||
                 other.bloodType == bloodType) &&
-            const DeepCollectionEquality()
-                .equals(other._allergies, _allergies) &&
-            const DeepCollectionEquality()
-                .equals(other._chronicConditions, _chronicConditions) &&
-            const DeepCollectionEquality()
-                .equals(other._currentMedications, _currentMedications) &&
+            const DeepCollectionEquality().equals(
+              other._allergies,
+              _allergies,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._chronicConditions,
+              _chronicConditions,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._currentMedications,
+              _currentMedications,
+            ) &&
             (identical(other.insuranceProvider, insuranceProvider) ||
                 other.insuranceProvider == insuranceProvider) &&
             (identical(other.insuranceNumber, insuranceNumber) ||
@@ -549,31 +565,31 @@ class _$PatientImpl extends _Patient {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        firstName,
-        lastName,
-        dateOfBirth,
-        gender,
-        phone,
-        email,
-        address,
-        emergencyContactName,
-        emergencyContactPhone,
-        bloodType,
-        const DeepCollectionEquality().hash(_allergies),
-        const DeepCollectionEquality().hash(_chronicConditions),
-        const DeepCollectionEquality().hash(_currentMedications),
-        insuranceProvider,
-        insuranceNumber,
-        photoUrl,
-        status,
-        notes,
-        createdAt,
-        updatedAt,
-        familyId,
-        familyName
-      ]);
+    runtimeType,
+    id,
+    firstName,
+    lastName,
+    dateOfBirth,
+    gender,
+    phone,
+    email,
+    address,
+    emergencyContactName,
+    emergencyContactPhone,
+    bloodType,
+    const DeepCollectionEquality().hash(_allergies),
+    const DeepCollectionEquality().hash(_chronicConditions),
+    const DeepCollectionEquality().hash(_currentMedications),
+    insuranceProvider,
+    insuranceNumber,
+    photoUrl,
+    status,
+    notes,
+    createdAt,
+    updatedAt,
+    familyId,
+    familyName,
+  ]);
 
   /// Create a copy of Patient
   /// with the given fields replaced by the non-null parameter values.
@@ -585,37 +601,36 @@ class _$PatientImpl extends _Patient {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$PatientImplToJson(
-      this,
-    );
+    return _$$PatientImplToJson(this);
   }
 }
 
 abstract class _Patient extends Patient {
-  const factory _Patient(
-      {required final int id,
-      required final String firstName,
-      required final String lastName,
-      required final DateTime dateOfBirth,
-      required final String gender,
-      final String? phone,
-      final String? email,
-      final String? address,
-      final String? emergencyContactName,
-      final String? emergencyContactPhone,
-      final String? bloodType,
-      final List<String>? allergies,
-      final List<String>? chronicConditions,
-      final List<String>? currentMedications,
-      final String? insuranceProvider,
-      final String? insuranceNumber,
-      final String? photoUrl,
-      required final PatientStatus status,
-      final String? notes,
-      required final DateTime createdAt,
-      final DateTime? updatedAt,
-      final int? familyId,
-      final String? familyName}) = _$PatientImpl;
+  const factory _Patient({
+    required final int id,
+    required final String firstName,
+    required final String lastName,
+    required final DateTime dateOfBirth,
+    required final String gender,
+    final String? phone,
+    final String? email,
+    final String? address,
+    final String? emergencyContactName,
+    final String? emergencyContactPhone,
+    final String? bloodType,
+    final List<String>? allergies,
+    final List<String>? chronicConditions,
+    final List<String>? currentMedications,
+    final String? insuranceProvider,
+    final String? insuranceNumber,
+    final String? photoUrl,
+    required final PatientStatus status,
+    final String? notes,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+    final int? familyId,
+    final String? familyName,
+  }) = _$PatientImpl;
   const _Patient._() : super._();
 
   factory _Patient.fromJson(Map<String, dynamic> json) = _$PatientImpl.fromJson;
@@ -714,29 +729,31 @@ mixin _$Consultation {
 /// @nodoc
 abstract class $ConsultationCopyWith<$Res> {
   factory $ConsultationCopyWith(
-          Consultation value, $Res Function(Consultation) then) =
-      _$ConsultationCopyWithImpl<$Res, Consultation>;
+    Consultation value,
+    $Res Function(Consultation) then,
+  ) = _$ConsultationCopyWithImpl<$Res, Consultation>;
   @useResult
-  $Res call(
-      {int id,
-      int patientId,
-      String patientName,
-      int doctorId,
-      String doctorName,
-      DateTime dateTime,
-      ConsultationType type,
-      String? chiefComplaint,
-      String? diagnosis,
-      String? treatmentPlan,
-      String? notes,
-      List<VitalSigns>? vitalSigns,
-      List<Prescription>? prescriptions,
-      ConsultationStatus status,
-      double? fee,
-      String? paymentStatus,
-      DateTime? nextAppointment,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    int patientId,
+    String patientName,
+    int doctorId,
+    String doctorName,
+    DateTime dateTime,
+    ConsultationType type,
+    String? chiefComplaint,
+    String? diagnosis,
+    String? treatmentPlan,
+    String? notes,
+    List<VitalSigns>? vitalSigns,
+    List<Prescription>? prescriptions,
+    ConsultationStatus status,
+    double? fee,
+    String? paymentStatus,
+    DateTime? nextAppointment,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -774,84 +791,87 @@ class _$ConsultationCopyWithImpl<$Res, $Val extends Consultation>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientId: null == patientId
-          ? _value.patientId
-          : patientId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientName: null == patientName
-          ? _value.patientName
-          : patientName // ignore: cast_nullable_to_non_nullable
-              as String,
-      doctorId: null == doctorId
-          ? _value.doctorId
-          : doctorId // ignore: cast_nullable_to_non_nullable
-              as int,
-      doctorName: null == doctorName
-          ? _value.doctorName
-          : doctorName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dateTime: null == dateTime
-          ? _value.dateTime
-          : dateTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as ConsultationType,
-      chiefComplaint: freezed == chiefComplaint
-          ? _value.chiefComplaint
-          : chiefComplaint // ignore: cast_nullable_to_non_nullable
-              as String?,
-      diagnosis: freezed == diagnosis
-          ? _value.diagnosis
-          : diagnosis // ignore: cast_nullable_to_non_nullable
-              as String?,
-      treatmentPlan: freezed == treatmentPlan
-          ? _value.treatmentPlan
-          : treatmentPlan // ignore: cast_nullable_to_non_nullable
-              as String?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      vitalSigns: freezed == vitalSigns
-          ? _value.vitalSigns
-          : vitalSigns // ignore: cast_nullable_to_non_nullable
-              as List<VitalSigns>?,
-      prescriptions: freezed == prescriptions
-          ? _value.prescriptions
-          : prescriptions // ignore: cast_nullable_to_non_nullable
-              as List<Prescription>?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as ConsultationStatus,
-      fee: freezed == fee
-          ? _value.fee
-          : fee // ignore: cast_nullable_to_non_nullable
-              as double?,
-      paymentStatus: freezed == paymentStatus
-          ? _value.paymentStatus
-          : paymentStatus // ignore: cast_nullable_to_non_nullable
-              as String?,
-      nextAppointment: freezed == nextAppointment
-          ? _value.nextAppointment
-          : nextAppointment // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            patientId: null == patientId
+                ? _value.patientId
+                : patientId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            patientName: null == patientName
+                ? _value.patientName
+                : patientName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            doctorId: null == doctorId
+                ? _value.doctorId
+                : doctorId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            doctorName: null == doctorName
+                ? _value.doctorName
+                : doctorName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            dateTime: null == dateTime
+                ? _value.dateTime
+                : dateTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as ConsultationType,
+            chiefComplaint: freezed == chiefComplaint
+                ? _value.chiefComplaint
+                : chiefComplaint // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            diagnosis: freezed == diagnosis
+                ? _value.diagnosis
+                : diagnosis // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            treatmentPlan: freezed == treatmentPlan
+                ? _value.treatmentPlan
+                : treatmentPlan // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            vitalSigns: freezed == vitalSigns
+                ? _value.vitalSigns
+                : vitalSigns // ignore: cast_nullable_to_non_nullable
+                      as List<VitalSigns>?,
+            prescriptions: freezed == prescriptions
+                ? _value.prescriptions
+                : prescriptions // ignore: cast_nullable_to_non_nullable
+                      as List<Prescription>?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as ConsultationStatus,
+            fee: freezed == fee
+                ? _value.fee
+                : fee // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            paymentStatus: freezed == paymentStatus
+                ? _value.paymentStatus
+                : paymentStatus // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            nextAppointment: freezed == nextAppointment
+                ? _value.nextAppointment
+                : nextAppointment // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -859,30 +879,32 @@ class _$ConsultationCopyWithImpl<$Res, $Val extends Consultation>
 abstract class _$$ConsultationImplCopyWith<$Res>
     implements $ConsultationCopyWith<$Res> {
   factory _$$ConsultationImplCopyWith(
-          _$ConsultationImpl value, $Res Function(_$ConsultationImpl) then) =
-      __$$ConsultationImplCopyWithImpl<$Res>;
+    _$ConsultationImpl value,
+    $Res Function(_$ConsultationImpl) then,
+  ) = __$$ConsultationImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int patientId,
-      String patientName,
-      int doctorId,
-      String doctorName,
-      DateTime dateTime,
-      ConsultationType type,
-      String? chiefComplaint,
-      String? diagnosis,
-      String? treatmentPlan,
-      String? notes,
-      List<VitalSigns>? vitalSigns,
-      List<Prescription>? prescriptions,
-      ConsultationStatus status,
-      double? fee,
-      String? paymentStatus,
-      DateTime? nextAppointment,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    int patientId,
+    String patientName,
+    int doctorId,
+    String doctorName,
+    DateTime dateTime,
+    ConsultationType type,
+    String? chiefComplaint,
+    String? diagnosis,
+    String? treatmentPlan,
+    String? notes,
+    List<VitalSigns>? vitalSigns,
+    List<Prescription>? prescriptions,
+    ConsultationStatus status,
+    double? fee,
+    String? paymentStatus,
+    DateTime? nextAppointment,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -890,8 +912,9 @@ class __$$ConsultationImplCopyWithImpl<$Res>
     extends _$ConsultationCopyWithImpl<$Res, _$ConsultationImpl>
     implements _$$ConsultationImplCopyWith<$Res> {
   __$$ConsultationImplCopyWithImpl(
-      _$ConsultationImpl _value, $Res Function(_$ConsultationImpl) _then)
-      : super(_value, _then);
+    _$ConsultationImpl _value,
+    $Res Function(_$ConsultationImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Consultation
   /// with the given fields replaced by the non-null parameter values.
@@ -918,112 +941,114 @@ class __$$ConsultationImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$ConsultationImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientId: null == patientId
-          ? _value.patientId
-          : patientId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientName: null == patientName
-          ? _value.patientName
-          : patientName // ignore: cast_nullable_to_non_nullable
-              as String,
-      doctorId: null == doctorId
-          ? _value.doctorId
-          : doctorId // ignore: cast_nullable_to_non_nullable
-              as int,
-      doctorName: null == doctorName
-          ? _value.doctorName
-          : doctorName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dateTime: null == dateTime
-          ? _value.dateTime
-          : dateTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as ConsultationType,
-      chiefComplaint: freezed == chiefComplaint
-          ? _value.chiefComplaint
-          : chiefComplaint // ignore: cast_nullable_to_non_nullable
-              as String?,
-      diagnosis: freezed == diagnosis
-          ? _value.diagnosis
-          : diagnosis // ignore: cast_nullable_to_non_nullable
-              as String?,
-      treatmentPlan: freezed == treatmentPlan
-          ? _value.treatmentPlan
-          : treatmentPlan // ignore: cast_nullable_to_non_nullable
-              as String?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      vitalSigns: freezed == vitalSigns
-          ? _value._vitalSigns
-          : vitalSigns // ignore: cast_nullable_to_non_nullable
-              as List<VitalSigns>?,
-      prescriptions: freezed == prescriptions
-          ? _value._prescriptions
-          : prescriptions // ignore: cast_nullable_to_non_nullable
-              as List<Prescription>?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as ConsultationStatus,
-      fee: freezed == fee
-          ? _value.fee
-          : fee // ignore: cast_nullable_to_non_nullable
-              as double?,
-      paymentStatus: freezed == paymentStatus
-          ? _value.paymentStatus
-          : paymentStatus // ignore: cast_nullable_to_non_nullable
-              as String?,
-      nextAppointment: freezed == nextAppointment
-          ? _value.nextAppointment
-          : nextAppointment // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$ConsultationImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        patientId: null == patientId
+            ? _value.patientId
+            : patientId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        patientName: null == patientName
+            ? _value.patientName
+            : patientName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        doctorId: null == doctorId
+            ? _value.doctorId
+            : doctorId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        doctorName: null == doctorName
+            ? _value.doctorName
+            : doctorName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        dateTime: null == dateTime
+            ? _value.dateTime
+            : dateTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as ConsultationType,
+        chiefComplaint: freezed == chiefComplaint
+            ? _value.chiefComplaint
+            : chiefComplaint // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        diagnosis: freezed == diagnosis
+            ? _value.diagnosis
+            : diagnosis // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        treatmentPlan: freezed == treatmentPlan
+            ? _value.treatmentPlan
+            : treatmentPlan // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        vitalSigns: freezed == vitalSigns
+            ? _value._vitalSigns
+            : vitalSigns // ignore: cast_nullable_to_non_nullable
+                  as List<VitalSigns>?,
+        prescriptions: freezed == prescriptions
+            ? _value._prescriptions
+            : prescriptions // ignore: cast_nullable_to_non_nullable
+                  as List<Prescription>?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as ConsultationStatus,
+        fee: freezed == fee
+            ? _value.fee
+            : fee // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        paymentStatus: freezed == paymentStatus
+            ? _value.paymentStatus
+            : paymentStatus // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        nextAppointment: freezed == nextAppointment
+            ? _value.nextAppointment
+            : nextAppointment // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$ConsultationImpl implements _Consultation {
-  const _$ConsultationImpl(
-      {required this.id,
-      required this.patientId,
-      required this.patientName,
-      required this.doctorId,
-      required this.doctorName,
-      required this.dateTime,
-      required this.type,
-      this.chiefComplaint,
-      this.diagnosis,
-      this.treatmentPlan,
-      this.notes,
-      final List<VitalSigns>? vitalSigns,
-      final List<Prescription>? prescriptions,
-      required this.status,
-      this.fee,
-      this.paymentStatus,
-      this.nextAppointment,
-      required this.createdAt,
-      this.updatedAt})
-      : _vitalSigns = vitalSigns,
-        _prescriptions = prescriptions;
+  const _$ConsultationImpl({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.doctorId,
+    required this.doctorName,
+    required this.dateTime,
+    required this.type,
+    this.chiefComplaint,
+    this.diagnosis,
+    this.treatmentPlan,
+    this.notes,
+    final List<VitalSigns>? vitalSigns,
+    final List<Prescription>? prescriptions,
+    required this.status,
+    this.fee,
+    this.paymentStatus,
+    this.nextAppointment,
+    required this.createdAt,
+    this.updatedAt,
+  }) : _vitalSigns = vitalSigns,
+       _prescriptions = prescriptions;
 
   factory _$ConsultationImpl.fromJson(Map<String, dynamic> json) =>
       _$$ConsultationImplFromJson(json);
@@ -1112,10 +1137,14 @@ class _$ConsultationImpl implements _Consultation {
             (identical(other.treatmentPlan, treatmentPlan) ||
                 other.treatmentPlan == treatmentPlan) &&
             (identical(other.notes, notes) || other.notes == notes) &&
-            const DeepCollectionEquality()
-                .equals(other._vitalSigns, _vitalSigns) &&
-            const DeepCollectionEquality()
-                .equals(other._prescriptions, _prescriptions) &&
+            const DeepCollectionEquality().equals(
+              other._vitalSigns,
+              _vitalSigns,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._prescriptions,
+              _prescriptions,
+            ) &&
             (identical(other.status, status) || other.status == status) &&
             (identical(other.fee, fee) || other.fee == fee) &&
             (identical(other.paymentStatus, paymentStatus) ||
@@ -1131,27 +1160,27 @@ class _$ConsultationImpl implements _Consultation {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        patientId,
-        patientName,
-        doctorId,
-        doctorName,
-        dateTime,
-        type,
-        chiefComplaint,
-        diagnosis,
-        treatmentPlan,
-        notes,
-        const DeepCollectionEquality().hash(_vitalSigns),
-        const DeepCollectionEquality().hash(_prescriptions),
-        status,
-        fee,
-        paymentStatus,
-        nextAppointment,
-        createdAt,
-        updatedAt
-      ]);
+    runtimeType,
+    id,
+    patientId,
+    patientName,
+    doctorId,
+    doctorName,
+    dateTime,
+    type,
+    chiefComplaint,
+    diagnosis,
+    treatmentPlan,
+    notes,
+    const DeepCollectionEquality().hash(_vitalSigns),
+    const DeepCollectionEquality().hash(_prescriptions),
+    status,
+    fee,
+    paymentStatus,
+    nextAppointment,
+    createdAt,
+    updatedAt,
+  ]);
 
   /// Create a copy of Consultation
   /// with the given fields replaced by the non-null parameter values.
@@ -1163,33 +1192,32 @@ class _$ConsultationImpl implements _Consultation {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$ConsultationImplToJson(
-      this,
-    );
+    return _$$ConsultationImplToJson(this);
   }
 }
 
 abstract class _Consultation implements Consultation {
-  const factory _Consultation(
-      {required final int id,
-      required final int patientId,
-      required final String patientName,
-      required final int doctorId,
-      required final String doctorName,
-      required final DateTime dateTime,
-      required final ConsultationType type,
-      final String? chiefComplaint,
-      final String? diagnosis,
-      final String? treatmentPlan,
-      final String? notes,
-      final List<VitalSigns>? vitalSigns,
-      final List<Prescription>? prescriptions,
-      required final ConsultationStatus status,
-      final double? fee,
-      final String? paymentStatus,
-      final DateTime? nextAppointment,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$ConsultationImpl;
+  const factory _Consultation({
+    required final int id,
+    required final int patientId,
+    required final String patientName,
+    required final int doctorId,
+    required final String doctorName,
+    required final DateTime dateTime,
+    required final ConsultationType type,
+    final String? chiefComplaint,
+    final String? diagnosis,
+    final String? treatmentPlan,
+    final String? notes,
+    final List<VitalSigns>? vitalSigns,
+    final List<Prescription>? prescriptions,
+    required final ConsultationStatus status,
+    final double? fee,
+    final String? paymentStatus,
+    final DateTime? nextAppointment,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$ConsultationImpl;
 
   factory _Consultation.fromJson(Map<String, dynamic> json) =
       _$ConsultationImpl.fromJson;
@@ -1270,19 +1298,21 @@ mixin _$VitalSigns {
 /// @nodoc
 abstract class $VitalSignsCopyWith<$Res> {
   factory $VitalSignsCopyWith(
-          VitalSigns value, $Res Function(VitalSigns) then) =
-      _$VitalSignsCopyWithImpl<$Res, VitalSigns>;
+    VitalSigns value,
+    $Res Function(VitalSigns) then,
+  ) = _$VitalSignsCopyWithImpl<$Res, VitalSigns>;
   @useResult
-  $Res call(
-      {double? temperature,
-      int? heartRate,
-      int? systolicBP,
-      int? diastolicBP,
-      int? respiratoryRate,
-      double? oxygenSaturation,
-      double? weight,
-      double? height,
-      double? bmi});
+  $Res call({
+    double? temperature,
+    int? heartRate,
+    int? systolicBP,
+    int? diastolicBP,
+    int? respiratoryRate,
+    double? oxygenSaturation,
+    double? weight,
+    double? height,
+    double? bmi,
+  });
 }
 
 /// @nodoc
@@ -1310,44 +1340,47 @@ class _$VitalSignsCopyWithImpl<$Res, $Val extends VitalSigns>
     Object? height = freezed,
     Object? bmi = freezed,
   }) {
-    return _then(_value.copyWith(
-      temperature: freezed == temperature
-          ? _value.temperature
-          : temperature // ignore: cast_nullable_to_non_nullable
-              as double?,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as int?,
-      systolicBP: freezed == systolicBP
-          ? _value.systolicBP
-          : systolicBP // ignore: cast_nullable_to_non_nullable
-              as int?,
-      diastolicBP: freezed == diastolicBP
-          ? _value.diastolicBP
-          : diastolicBP // ignore: cast_nullable_to_non_nullable
-              as int?,
-      respiratoryRate: freezed == respiratoryRate
-          ? _value.respiratoryRate
-          : respiratoryRate // ignore: cast_nullable_to_non_nullable
-              as int?,
-      oxygenSaturation: freezed == oxygenSaturation
-          ? _value.oxygenSaturation
-          : oxygenSaturation // ignore: cast_nullable_to_non_nullable
-              as double?,
-      weight: freezed == weight
-          ? _value.weight
-          : weight // ignore: cast_nullable_to_non_nullable
-              as double?,
-      height: freezed == height
-          ? _value.height
-          : height // ignore: cast_nullable_to_non_nullable
-              as double?,
-      bmi: freezed == bmi
-          ? _value.bmi
-          : bmi // ignore: cast_nullable_to_non_nullable
-              as double?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            temperature: freezed == temperature
+                ? _value.temperature
+                : temperature // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            heartRate: freezed == heartRate
+                ? _value.heartRate
+                : heartRate // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            systolicBP: freezed == systolicBP
+                ? _value.systolicBP
+                : systolicBP // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            diastolicBP: freezed == diastolicBP
+                ? _value.diastolicBP
+                : diastolicBP // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            respiratoryRate: freezed == respiratoryRate
+                ? _value.respiratoryRate
+                : respiratoryRate // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            oxygenSaturation: freezed == oxygenSaturation
+                ? _value.oxygenSaturation
+                : oxygenSaturation // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            weight: freezed == weight
+                ? _value.weight
+                : weight // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            height: freezed == height
+                ? _value.height
+                : height // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            bmi: freezed == bmi
+                ? _value.bmi
+                : bmi // ignore: cast_nullable_to_non_nullable
+                      as double?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -1355,20 +1388,22 @@ class _$VitalSignsCopyWithImpl<$Res, $Val extends VitalSigns>
 abstract class _$$VitalSignsImplCopyWith<$Res>
     implements $VitalSignsCopyWith<$Res> {
   factory _$$VitalSignsImplCopyWith(
-          _$VitalSignsImpl value, $Res Function(_$VitalSignsImpl) then) =
-      __$$VitalSignsImplCopyWithImpl<$Res>;
+    _$VitalSignsImpl value,
+    $Res Function(_$VitalSignsImpl) then,
+  ) = __$$VitalSignsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {double? temperature,
-      int? heartRate,
-      int? systolicBP,
-      int? diastolicBP,
-      int? respiratoryRate,
-      double? oxygenSaturation,
-      double? weight,
-      double? height,
-      double? bmi});
+  $Res call({
+    double? temperature,
+    int? heartRate,
+    int? systolicBP,
+    int? diastolicBP,
+    int? respiratoryRate,
+    double? oxygenSaturation,
+    double? weight,
+    double? height,
+    double? bmi,
+  });
 }
 
 /// @nodoc
@@ -1376,8 +1411,9 @@ class __$$VitalSignsImplCopyWithImpl<$Res>
     extends _$VitalSignsCopyWithImpl<$Res, _$VitalSignsImpl>
     implements _$$VitalSignsImplCopyWith<$Res> {
   __$$VitalSignsImplCopyWithImpl(
-      _$VitalSignsImpl _value, $Res Function(_$VitalSignsImpl) _then)
-      : super(_value, _then);
+    _$VitalSignsImpl _value,
+    $Res Function(_$VitalSignsImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of VitalSigns
   /// with the given fields replaced by the non-null parameter values.
@@ -1394,60 +1430,63 @@ class __$$VitalSignsImplCopyWithImpl<$Res>
     Object? height = freezed,
     Object? bmi = freezed,
   }) {
-    return _then(_$VitalSignsImpl(
-      temperature: freezed == temperature
-          ? _value.temperature
-          : temperature // ignore: cast_nullable_to_non_nullable
-              as double?,
-      heartRate: freezed == heartRate
-          ? _value.heartRate
-          : heartRate // ignore: cast_nullable_to_non_nullable
-              as int?,
-      systolicBP: freezed == systolicBP
-          ? _value.systolicBP
-          : systolicBP // ignore: cast_nullable_to_non_nullable
-              as int?,
-      diastolicBP: freezed == diastolicBP
-          ? _value.diastolicBP
-          : diastolicBP // ignore: cast_nullable_to_non_nullable
-              as int?,
-      respiratoryRate: freezed == respiratoryRate
-          ? _value.respiratoryRate
-          : respiratoryRate // ignore: cast_nullable_to_non_nullable
-              as int?,
-      oxygenSaturation: freezed == oxygenSaturation
-          ? _value.oxygenSaturation
-          : oxygenSaturation // ignore: cast_nullable_to_non_nullable
-              as double?,
-      weight: freezed == weight
-          ? _value.weight
-          : weight // ignore: cast_nullable_to_non_nullable
-              as double?,
-      height: freezed == height
-          ? _value.height
-          : height // ignore: cast_nullable_to_non_nullable
-              as double?,
-      bmi: freezed == bmi
-          ? _value.bmi
-          : bmi // ignore: cast_nullable_to_non_nullable
-              as double?,
-    ));
+    return _then(
+      _$VitalSignsImpl(
+        temperature: freezed == temperature
+            ? _value.temperature
+            : temperature // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        heartRate: freezed == heartRate
+            ? _value.heartRate
+            : heartRate // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        systolicBP: freezed == systolicBP
+            ? _value.systolicBP
+            : systolicBP // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        diastolicBP: freezed == diastolicBP
+            ? _value.diastolicBP
+            : diastolicBP // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        respiratoryRate: freezed == respiratoryRate
+            ? _value.respiratoryRate
+            : respiratoryRate // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        oxygenSaturation: freezed == oxygenSaturation
+            ? _value.oxygenSaturation
+            : oxygenSaturation // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        weight: freezed == weight
+            ? _value.weight
+            : weight // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        height: freezed == height
+            ? _value.height
+            : height // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        bmi: freezed == bmi
+            ? _value.bmi
+            : bmi // ignore: cast_nullable_to_non_nullable
+                  as double?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$VitalSignsImpl implements _VitalSigns {
-  const _$VitalSignsImpl(
-      {this.temperature,
-      this.heartRate,
-      this.systolicBP,
-      this.diastolicBP,
-      this.respiratoryRate,
-      this.oxygenSaturation,
-      this.weight,
-      this.height,
-      this.bmi});
+  const _$VitalSignsImpl({
+    this.temperature,
+    this.heartRate,
+    this.systolicBP,
+    this.diastolicBP,
+    this.respiratoryRate,
+    this.oxygenSaturation,
+    this.weight,
+    this.height,
+    this.bmi,
+  });
 
   factory _$VitalSignsImpl.fromJson(Map<String, dynamic> json) =>
       _$$VitalSignsImplFromJson(json);
@@ -1501,16 +1540,17 @@ class _$VitalSignsImpl implements _VitalSigns {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      temperature,
-      heartRate,
-      systolicBP,
-      diastolicBP,
-      respiratoryRate,
-      oxygenSaturation,
-      weight,
-      height,
-      bmi);
+    runtimeType,
+    temperature,
+    heartRate,
+    systolicBP,
+    diastolicBP,
+    respiratoryRate,
+    oxygenSaturation,
+    weight,
+    height,
+    bmi,
+  );
 
   /// Create a copy of VitalSigns
   /// with the given fields replaced by the non-null parameter values.
@@ -1522,23 +1562,22 @@ class _$VitalSignsImpl implements _VitalSigns {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$VitalSignsImplToJson(
-      this,
-    );
+    return _$$VitalSignsImplToJson(this);
   }
 }
 
 abstract class _VitalSigns implements VitalSigns {
-  const factory _VitalSigns(
-      {final double? temperature,
-      final int? heartRate,
-      final int? systolicBP,
-      final int? diastolicBP,
-      final int? respiratoryRate,
-      final double? oxygenSaturation,
-      final double? weight,
-      final double? height,
-      final double? bmi}) = _$VitalSignsImpl;
+  const factory _VitalSigns({
+    final double? temperature,
+    final int? heartRate,
+    final int? systolicBP,
+    final int? diastolicBP,
+    final int? respiratoryRate,
+    final double? oxygenSaturation,
+    final double? weight,
+    final double? height,
+    final double? bmi,
+  }) = _$VitalSignsImpl;
 
   factory _VitalSigns.fromJson(Map<String, dynamic> json) =
       _$VitalSignsImpl.fromJson;
@@ -1601,21 +1640,23 @@ mixin _$Prescription {
 /// @nodoc
 abstract class $PrescriptionCopyWith<$Res> {
   factory $PrescriptionCopyWith(
-          Prescription value, $Res Function(Prescription) then) =
-      _$PrescriptionCopyWithImpl<$Res, Prescription>;
+    Prescription value,
+    $Res Function(Prescription) then,
+  ) = _$PrescriptionCopyWithImpl<$Res, Prescription>;
   @useResult
-  $Res call(
-      {int id,
-      int consultationId,
-      int medicationId,
-      String medicationName,
-      String dosage,
-      String frequency,
-      String duration,
-      String? instructions,
-      DateTime startDate,
-      DateTime? endDate,
-      bool isActive});
+  $Res call({
+    int id,
+    int consultationId,
+    int medicationId,
+    String medicationName,
+    String dosage,
+    String frequency,
+    String duration,
+    String? instructions,
+    DateTime startDate,
+    DateTime? endDate,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -1645,52 +1686,55 @@ class _$PrescriptionCopyWithImpl<$Res, $Val extends Prescription>
     Object? endDate = freezed,
     Object? isActive = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      consultationId: null == consultationId
-          ? _value.consultationId
-          : consultationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dosage: null == dosage
-          ? _value.dosage
-          : dosage // ignore: cast_nullable_to_non_nullable
-              as String,
-      frequency: null == frequency
-          ? _value.frequency
-          : frequency // ignore: cast_nullable_to_non_nullable
-              as String,
-      duration: null == duration
-          ? _value.duration
-          : duration // ignore: cast_nullable_to_non_nullable
-              as String,
-      instructions: freezed == instructions
-          ? _value.instructions
-          : instructions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: freezed == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            consultationId: null == consultationId
+                ? _value.consultationId
+                : consultationId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationId: null == medicationId
+                ? _value.medicationId
+                : medicationId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationName: null == medicationName
+                ? _value.medicationName
+                : medicationName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            dosage: null == dosage
+                ? _value.dosage
+                : dosage // ignore: cast_nullable_to_non_nullable
+                      as String,
+            frequency: null == frequency
+                ? _value.frequency
+                : frequency // ignore: cast_nullable_to_non_nullable
+                      as String,
+            duration: null == duration
+                ? _value.duration
+                : duration // ignore: cast_nullable_to_non_nullable
+                      as String,
+            instructions: freezed == instructions
+                ? _value.instructions
+                : instructions // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            startDate: null == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endDate: freezed == endDate
+                ? _value.endDate
+                : endDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -1698,22 +1742,24 @@ class _$PrescriptionCopyWithImpl<$Res, $Val extends Prescription>
 abstract class _$$PrescriptionImplCopyWith<$Res>
     implements $PrescriptionCopyWith<$Res> {
   factory _$$PrescriptionImplCopyWith(
-          _$PrescriptionImpl value, $Res Function(_$PrescriptionImpl) then) =
-      __$$PrescriptionImplCopyWithImpl<$Res>;
+    _$PrescriptionImpl value,
+    $Res Function(_$PrescriptionImpl) then,
+  ) = __$$PrescriptionImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int consultationId,
-      int medicationId,
-      String medicationName,
-      String dosage,
-      String frequency,
-      String duration,
-      String? instructions,
-      DateTime startDate,
-      DateTime? endDate,
-      bool isActive});
+  $Res call({
+    int id,
+    int consultationId,
+    int medicationId,
+    String medicationName,
+    String dosage,
+    String frequency,
+    String duration,
+    String? instructions,
+    DateTime startDate,
+    DateTime? endDate,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -1721,8 +1767,9 @@ class __$$PrescriptionImplCopyWithImpl<$Res>
     extends _$PrescriptionCopyWithImpl<$Res, _$PrescriptionImpl>
     implements _$$PrescriptionImplCopyWith<$Res> {
   __$$PrescriptionImplCopyWithImpl(
-      _$PrescriptionImpl _value, $Res Function(_$PrescriptionImpl) _then)
-      : super(_value, _then);
+    _$PrescriptionImpl _value,
+    $Res Function(_$PrescriptionImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Prescription
   /// with the given fields replaced by the non-null parameter values.
@@ -1741,70 +1788,73 @@ class __$$PrescriptionImplCopyWithImpl<$Res>
     Object? endDate = freezed,
     Object? isActive = null,
   }) {
-    return _then(_$PrescriptionImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      consultationId: null == consultationId
-          ? _value.consultationId
-          : consultationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      dosage: null == dosage
-          ? _value.dosage
-          : dosage // ignore: cast_nullable_to_non_nullable
-              as String,
-      frequency: null == frequency
-          ? _value.frequency
-          : frequency // ignore: cast_nullable_to_non_nullable
-              as String,
-      duration: null == duration
-          ? _value.duration
-          : duration // ignore: cast_nullable_to_non_nullable
-              as String,
-      instructions: freezed == instructions
-          ? _value.instructions
-          : instructions // ignore: cast_nullable_to_non_nullable
-              as String?,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: freezed == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$PrescriptionImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        consultationId: null == consultationId
+            ? _value.consultationId
+            : consultationId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationId: null == medicationId
+            ? _value.medicationId
+            : medicationId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationName: null == medicationName
+            ? _value.medicationName
+            : medicationName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        dosage: null == dosage
+            ? _value.dosage
+            : dosage // ignore: cast_nullable_to_non_nullable
+                  as String,
+        frequency: null == frequency
+            ? _value.frequency
+            : frequency // ignore: cast_nullable_to_non_nullable
+                  as String,
+        duration: null == duration
+            ? _value.duration
+            : duration // ignore: cast_nullable_to_non_nullable
+                  as String,
+        instructions: freezed == instructions
+            ? _value.instructions
+            : instructions // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        startDate: null == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endDate: freezed == endDate
+            ? _value.endDate
+            : endDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$PrescriptionImpl implements _Prescription {
-  const _$PrescriptionImpl(
-      {required this.id,
-      required this.consultationId,
-      required this.medicationId,
-      required this.medicationName,
-      required this.dosage,
-      required this.frequency,
-      required this.duration,
-      this.instructions,
-      required this.startDate,
-      this.endDate,
-      this.isActive = false});
+  const _$PrescriptionImpl({
+    required this.id,
+    required this.consultationId,
+    required this.medicationId,
+    required this.medicationName,
+    required this.dosage,
+    required this.frequency,
+    required this.duration,
+    this.instructions,
+    required this.startDate,
+    this.endDate,
+    this.isActive = false,
+  });
 
   factory _$PrescriptionImpl.fromJson(Map<String, dynamic> json) =>
       _$$PrescriptionImplFromJson(json);
@@ -1867,18 +1917,19 @@ class _$PrescriptionImpl implements _Prescription {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      consultationId,
-      medicationId,
-      medicationName,
-      dosage,
-      frequency,
-      duration,
-      instructions,
-      startDate,
-      endDate,
-      isActive);
+    runtimeType,
+    id,
+    consultationId,
+    medicationId,
+    medicationName,
+    dosage,
+    frequency,
+    duration,
+    instructions,
+    startDate,
+    endDate,
+    isActive,
+  );
 
   /// Create a copy of Prescription
   /// with the given fields replaced by the non-null parameter values.
@@ -1890,25 +1941,24 @@ class _$PrescriptionImpl implements _Prescription {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$PrescriptionImplToJson(
-      this,
-    );
+    return _$$PrescriptionImplToJson(this);
   }
 }
 
 abstract class _Prescription implements Prescription {
-  const factory _Prescription(
-      {required final int id,
-      required final int consultationId,
-      required final int medicationId,
-      required final String medicationName,
-      required final String dosage,
-      required final String frequency,
-      required final String duration,
-      final String? instructions,
-      required final DateTime startDate,
-      final DateTime? endDate,
-      final bool isActive}) = _$PrescriptionImpl;
+  const factory _Prescription({
+    required final int id,
+    required final int consultationId,
+    required final int medicationId,
+    required final String medicationName,
+    required final String dosage,
+    required final String frequency,
+    required final String duration,
+    final String? instructions,
+    required final DateTime startDate,
+    final DateTime? endDate,
+    final bool isActive,
+  }) = _$PrescriptionImpl;
 
   factory _Prescription.fromJson(Map<String, dynamic> json) =
       _$PrescriptionImpl.fromJson;
@@ -1977,23 +2027,25 @@ mixin _$Medication {
 /// @nodoc
 abstract class $MedicationCopyWith<$Res> {
   factory $MedicationCopyWith(
-          Medication value, $Res Function(Medication) then) =
-      _$MedicationCopyWithImpl<$Res, Medication>;
+    Medication value,
+    $Res Function(Medication) then,
+  ) = _$MedicationCopyWithImpl<$Res, Medication>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? genericName,
-      String? brandName,
-      String? form,
-      String? strength,
-      String? manufacturer,
-      String? category,
-      String? description,
-      double? unitPrice,
-      String? unit,
-      bool requiresPrescription,
-      bool isActive});
+  $Res call({
+    int id,
+    String name,
+    String? genericName,
+    String? brandName,
+    String? form,
+    String? strength,
+    String? manufacturer,
+    String? category,
+    String? description,
+    double? unitPrice,
+    String? unit,
+    bool requiresPrescription,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2025,60 +2077,63 @@ class _$MedicationCopyWithImpl<$Res, $Val extends Medication>
     Object? requiresPrescription = null,
     Object? isActive = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      genericName: freezed == genericName
-          ? _value.genericName
-          : genericName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      brandName: freezed == brandName
-          ? _value.brandName
-          : brandName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      form: freezed == form
-          ? _value.form
-          : form // ignore: cast_nullable_to_non_nullable
-              as String?,
-      strength: freezed == strength
-          ? _value.strength
-          : strength // ignore: cast_nullable_to_non_nullable
-              as String?,
-      manufacturer: freezed == manufacturer
-          ? _value.manufacturer
-          : manufacturer // ignore: cast_nullable_to_non_nullable
-              as String?,
-      category: freezed == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as String?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      unitPrice: freezed == unitPrice
-          ? _value.unitPrice
-          : unitPrice // ignore: cast_nullable_to_non_nullable
-              as double?,
-      unit: freezed == unit
-          ? _value.unit
-          : unit // ignore: cast_nullable_to_non_nullable
-              as String?,
-      requiresPrescription: null == requiresPrescription
-          ? _value.requiresPrescription
-          : requiresPrescription // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            genericName: freezed == genericName
+                ? _value.genericName
+                : genericName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            brandName: freezed == brandName
+                ? _value.brandName
+                : brandName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            form: freezed == form
+                ? _value.form
+                : form // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            strength: freezed == strength
+                ? _value.strength
+                : strength // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            manufacturer: freezed == manufacturer
+                ? _value.manufacturer
+                : manufacturer // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            category: freezed == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            unitPrice: freezed == unitPrice
+                ? _value.unitPrice
+                : unitPrice // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            unit: freezed == unit
+                ? _value.unit
+                : unit // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            requiresPrescription: null == requiresPrescription
+                ? _value.requiresPrescription
+                : requiresPrescription // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2086,24 +2141,26 @@ class _$MedicationCopyWithImpl<$Res, $Val extends Medication>
 abstract class _$$MedicationImplCopyWith<$Res>
     implements $MedicationCopyWith<$Res> {
   factory _$$MedicationImplCopyWith(
-          _$MedicationImpl value, $Res Function(_$MedicationImpl) then) =
-      __$$MedicationImplCopyWithImpl<$Res>;
+    _$MedicationImpl value,
+    $Res Function(_$MedicationImpl) then,
+  ) = __$$MedicationImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? genericName,
-      String? brandName,
-      String? form,
-      String? strength,
-      String? manufacturer,
-      String? category,
-      String? description,
-      double? unitPrice,
-      String? unit,
-      bool requiresPrescription,
-      bool isActive});
+  $Res call({
+    int id,
+    String name,
+    String? genericName,
+    String? brandName,
+    String? form,
+    String? strength,
+    String? manufacturer,
+    String? category,
+    String? description,
+    double? unitPrice,
+    String? unit,
+    bool requiresPrescription,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2111,8 +2168,9 @@ class __$$MedicationImplCopyWithImpl<$Res>
     extends _$MedicationCopyWithImpl<$Res, _$MedicationImpl>
     implements _$$MedicationImplCopyWith<$Res> {
   __$$MedicationImplCopyWithImpl(
-      _$MedicationImpl _value, $Res Function(_$MedicationImpl) _then)
-      : super(_value, _then);
+    _$MedicationImpl _value,
+    $Res Function(_$MedicationImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of Medication
   /// with the given fields replaced by the non-null parameter values.
@@ -2133,80 +2191,83 @@ class __$$MedicationImplCopyWithImpl<$Res>
     Object? requiresPrescription = null,
     Object? isActive = null,
   }) {
-    return _then(_$MedicationImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      genericName: freezed == genericName
-          ? _value.genericName
-          : genericName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      brandName: freezed == brandName
-          ? _value.brandName
-          : brandName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      form: freezed == form
-          ? _value.form
-          : form // ignore: cast_nullable_to_non_nullable
-              as String?,
-      strength: freezed == strength
-          ? _value.strength
-          : strength // ignore: cast_nullable_to_non_nullable
-              as String?,
-      manufacturer: freezed == manufacturer
-          ? _value.manufacturer
-          : manufacturer // ignore: cast_nullable_to_non_nullable
-              as String?,
-      category: freezed == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as String?,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      unitPrice: freezed == unitPrice
-          ? _value.unitPrice
-          : unitPrice // ignore: cast_nullable_to_non_nullable
-              as double?,
-      unit: freezed == unit
-          ? _value.unit
-          : unit // ignore: cast_nullable_to_non_nullable
-              as String?,
-      requiresPrescription: null == requiresPrescription
-          ? _value.requiresPrescription
-          : requiresPrescription // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$MedicationImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        genericName: freezed == genericName
+            ? _value.genericName
+            : genericName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        brandName: freezed == brandName
+            ? _value.brandName
+            : brandName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        form: freezed == form
+            ? _value.form
+            : form // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        strength: freezed == strength
+            ? _value.strength
+            : strength // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        manufacturer: freezed == manufacturer
+            ? _value.manufacturer
+            : manufacturer // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        category: freezed == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        unitPrice: freezed == unitPrice
+            ? _value.unitPrice
+            : unitPrice // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        unit: freezed == unit
+            ? _value.unit
+            : unit // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        requiresPrescription: null == requiresPrescription
+            ? _value.requiresPrescription
+            : requiresPrescription // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$MedicationImpl implements _Medication {
-  const _$MedicationImpl(
-      {required this.id,
-      required this.name,
-      this.genericName,
-      this.brandName,
-      this.form,
-      this.strength,
-      this.manufacturer,
-      this.category,
-      this.description,
-      this.unitPrice,
-      this.unit,
-      this.requiresPrescription = true,
-      this.isActive = true});
+  const _$MedicationImpl({
+    required this.id,
+    required this.name,
+    this.genericName,
+    this.brandName,
+    this.form,
+    this.strength,
+    this.manufacturer,
+    this.category,
+    this.description,
+    this.unitPrice,
+    this.unit,
+    this.requiresPrescription = true,
+    this.isActive = true,
+  });
 
   factory _$MedicationImpl.fromJson(Map<String, dynamic> json) =>
       _$$MedicationImplFromJson(json);
@@ -2277,20 +2338,21 @@ class _$MedicationImpl implements _Medication {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      genericName,
-      brandName,
-      form,
-      strength,
-      manufacturer,
-      category,
-      description,
-      unitPrice,
-      unit,
-      requiresPrescription,
-      isActive);
+    runtimeType,
+    id,
+    name,
+    genericName,
+    brandName,
+    form,
+    strength,
+    manufacturer,
+    category,
+    description,
+    unitPrice,
+    unit,
+    requiresPrescription,
+    isActive,
+  );
 
   /// Create a copy of Medication
   /// with the given fields replaced by the non-null parameter values.
@@ -2302,27 +2364,26 @@ class _$MedicationImpl implements _Medication {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$MedicationImplToJson(
-      this,
-    );
+    return _$$MedicationImplToJson(this);
   }
 }
 
 abstract class _Medication implements Medication {
-  const factory _Medication(
-      {required final int id,
-      required final String name,
-      final String? genericName,
-      final String? brandName,
-      final String? form,
-      final String? strength,
-      final String? manufacturer,
-      final String? category,
-      final String? description,
-      final double? unitPrice,
-      final String? unit,
-      final bool requiresPrescription,
-      final bool isActive}) = _$MedicationImpl;
+  const factory _Medication({
+    required final int id,
+    required final String name,
+    final String? genericName,
+    final String? brandName,
+    final String? form,
+    final String? strength,
+    final String? manufacturer,
+    final String? category,
+    final String? description,
+    final double? unitPrice,
+    final String? unit,
+    final bool requiresPrescription,
+    final bool isActive,
+  }) = _$MedicationImpl;
 
   factory _Medication.fromJson(Map<String, dynamic> json) =
       _$MedicationImpl.fromJson;
@@ -2395,23 +2456,25 @@ mixin _$PharmacyStock {
 /// @nodoc
 abstract class $PharmacyStockCopyWith<$Res> {
   factory $PharmacyStockCopyWith(
-          PharmacyStock value, $Res Function(PharmacyStock) then) =
-      _$PharmacyStockCopyWithImpl<$Res, PharmacyStock>;
+    PharmacyStock value,
+    $Res Function(PharmacyStock) then,
+  ) = _$PharmacyStockCopyWithImpl<$Res, PharmacyStock>;
   @useResult
-  $Res call(
-      {int id,
-      int medicationId,
-      String medicationName,
-      int quantity,
-      int minStockLevel,
-      int maxStockLevel,
-      String location,
-      DateTime expiryDate,
-      String? batchNumber,
-      double? unitCost,
-      double? sellingPrice,
-      int reservedQuantity,
-      bool isActive});
+  $Res call({
+    int id,
+    int medicationId,
+    String medicationName,
+    int quantity,
+    int minStockLevel,
+    int maxStockLevel,
+    String location,
+    DateTime expiryDate,
+    String? batchNumber,
+    double? unitCost,
+    double? sellingPrice,
+    int reservedQuantity,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2443,60 +2506,63 @@ class _$PharmacyStockCopyWithImpl<$Res, $Val extends PharmacyStock>
     Object? reservedQuantity = null,
     Object? isActive = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      quantity: null == quantity
-          ? _value.quantity
-          : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      minStockLevel: null == minStockLevel
-          ? _value.minStockLevel
-          : minStockLevel // ignore: cast_nullable_to_non_nullable
-              as int,
-      maxStockLevel: null == maxStockLevel
-          ? _value.maxStockLevel
-          : maxStockLevel // ignore: cast_nullable_to_non_nullable
-              as int,
-      location: null == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String,
-      expiryDate: null == expiryDate
-          ? _value.expiryDate
-          : expiryDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      batchNumber: freezed == batchNumber
-          ? _value.batchNumber
-          : batchNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      unitCost: freezed == unitCost
-          ? _value.unitCost
-          : unitCost // ignore: cast_nullable_to_non_nullable
-              as double?,
-      sellingPrice: freezed == sellingPrice
-          ? _value.sellingPrice
-          : sellingPrice // ignore: cast_nullable_to_non_nullable
-              as double?,
-      reservedQuantity: null == reservedQuantity
-          ? _value.reservedQuantity
-          : reservedQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationId: null == medicationId
+                ? _value.medicationId
+                : medicationId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationName: null == medicationName
+                ? _value.medicationName
+                : medicationName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            quantity: null == quantity
+                ? _value.quantity
+                : quantity // ignore: cast_nullable_to_non_nullable
+                      as int,
+            minStockLevel: null == minStockLevel
+                ? _value.minStockLevel
+                : minStockLevel // ignore: cast_nullable_to_non_nullable
+                      as int,
+            maxStockLevel: null == maxStockLevel
+                ? _value.maxStockLevel
+                : maxStockLevel // ignore: cast_nullable_to_non_nullable
+                      as int,
+            location: null == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String,
+            expiryDate: null == expiryDate
+                ? _value.expiryDate
+                : expiryDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            batchNumber: freezed == batchNumber
+                ? _value.batchNumber
+                : batchNumber // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            unitCost: freezed == unitCost
+                ? _value.unitCost
+                : unitCost // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            sellingPrice: freezed == sellingPrice
+                ? _value.sellingPrice
+                : sellingPrice // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            reservedQuantity: null == reservedQuantity
+                ? _value.reservedQuantity
+                : reservedQuantity // ignore: cast_nullable_to_non_nullable
+                      as int,
+            isActive: null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -2504,24 +2570,26 @@ class _$PharmacyStockCopyWithImpl<$Res, $Val extends PharmacyStock>
 abstract class _$$PharmacyStockImplCopyWith<$Res>
     implements $PharmacyStockCopyWith<$Res> {
   factory _$$PharmacyStockImplCopyWith(
-          _$PharmacyStockImpl value, $Res Function(_$PharmacyStockImpl) then) =
-      __$$PharmacyStockImplCopyWithImpl<$Res>;
+    _$PharmacyStockImpl value,
+    $Res Function(_$PharmacyStockImpl) then,
+  ) = __$$PharmacyStockImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int medicationId,
-      String medicationName,
-      int quantity,
-      int minStockLevel,
-      int maxStockLevel,
-      String location,
-      DateTime expiryDate,
-      String? batchNumber,
-      double? unitCost,
-      double? sellingPrice,
-      int reservedQuantity,
-      bool isActive});
+  $Res call({
+    int id,
+    int medicationId,
+    String medicationName,
+    int quantity,
+    int minStockLevel,
+    int maxStockLevel,
+    String location,
+    DateTime expiryDate,
+    String? batchNumber,
+    double? unitCost,
+    double? sellingPrice,
+    int reservedQuantity,
+    bool isActive,
+  });
 }
 
 /// @nodoc
@@ -2529,8 +2597,9 @@ class __$$PharmacyStockImplCopyWithImpl<$Res>
     extends _$PharmacyStockCopyWithImpl<$Res, _$PharmacyStockImpl>
     implements _$$PharmacyStockImplCopyWith<$Res> {
   __$$PharmacyStockImplCopyWithImpl(
-      _$PharmacyStockImpl _value, $Res Function(_$PharmacyStockImpl) _then)
-      : super(_value, _then);
+    _$PharmacyStockImpl _value,
+    $Res Function(_$PharmacyStockImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of PharmacyStock
   /// with the given fields replaced by the non-null parameter values.
@@ -2551,81 +2620,83 @@ class __$$PharmacyStockImplCopyWithImpl<$Res>
     Object? reservedQuantity = null,
     Object? isActive = null,
   }) {
-    return _then(_$PharmacyStockImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      quantity: null == quantity
-          ? _value.quantity
-          : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      minStockLevel: null == minStockLevel
-          ? _value.minStockLevel
-          : minStockLevel // ignore: cast_nullable_to_non_nullable
-              as int,
-      maxStockLevel: null == maxStockLevel
-          ? _value.maxStockLevel
-          : maxStockLevel // ignore: cast_nullable_to_non_nullable
-              as int,
-      location: null == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String,
-      expiryDate: null == expiryDate
-          ? _value.expiryDate
-          : expiryDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      batchNumber: freezed == batchNumber
-          ? _value.batchNumber
-          : batchNumber // ignore: cast_nullable_to_non_nullable
-              as String?,
-      unitCost: freezed == unitCost
-          ? _value.unitCost
-          : unitCost // ignore: cast_nullable_to_non_nullable
-              as double?,
-      sellingPrice: freezed == sellingPrice
-          ? _value.sellingPrice
-          : sellingPrice // ignore: cast_nullable_to_non_nullable
-              as double?,
-      reservedQuantity: null == reservedQuantity
-          ? _value.reservedQuantity
-          : reservedQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      isActive: null == isActive
-          ? _value.isActive
-          : isActive // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$PharmacyStockImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationId: null == medicationId
+            ? _value.medicationId
+            : medicationId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationName: null == medicationName
+            ? _value.medicationName
+            : medicationName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        quantity: null == quantity
+            ? _value.quantity
+            : quantity // ignore: cast_nullable_to_non_nullable
+                  as int,
+        minStockLevel: null == minStockLevel
+            ? _value.minStockLevel
+            : minStockLevel // ignore: cast_nullable_to_non_nullable
+                  as int,
+        maxStockLevel: null == maxStockLevel
+            ? _value.maxStockLevel
+            : maxStockLevel // ignore: cast_nullable_to_non_nullable
+                  as int,
+        location: null == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String,
+        expiryDate: null == expiryDate
+            ? _value.expiryDate
+            : expiryDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        batchNumber: freezed == batchNumber
+            ? _value.batchNumber
+            : batchNumber // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        unitCost: freezed == unitCost
+            ? _value.unitCost
+            : unitCost // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        sellingPrice: freezed == sellingPrice
+            ? _value.sellingPrice
+            : sellingPrice // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        reservedQuantity: null == reservedQuantity
+            ? _value.reservedQuantity
+            : reservedQuantity // ignore: cast_nullable_to_non_nullable
+                  as int,
+        isActive: null == isActive
+            ? _value.isActive
+            : isActive // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$PharmacyStockImpl extends _PharmacyStock {
-  const _$PharmacyStockImpl(
-      {required this.id,
-      required this.medicationId,
-      required this.medicationName,
-      required this.quantity,
-      required this.minStockLevel,
-      required this.maxStockLevel,
-      required this.location,
-      required this.expiryDate,
-      this.batchNumber,
-      this.unitCost,
-      this.sellingPrice,
-      this.reservedQuantity = 0,
-      this.isActive = true})
-      : super._();
+  const _$PharmacyStockImpl({
+    required this.id,
+    required this.medicationId,
+    required this.medicationName,
+    required this.quantity,
+    required this.minStockLevel,
+    required this.maxStockLevel,
+    required this.location,
+    required this.expiryDate,
+    this.batchNumber,
+    this.unitCost,
+    this.sellingPrice,
+    this.reservedQuantity = 0,
+    this.isActive = true,
+  }) : super._();
 
   factory _$PharmacyStockImpl.fromJson(Map<String, dynamic> json) =>
       _$$PharmacyStockImplFromJson(json);
@@ -2699,20 +2770,21 @@ class _$PharmacyStockImpl extends _PharmacyStock {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      medicationId,
-      medicationName,
-      quantity,
-      minStockLevel,
-      maxStockLevel,
-      location,
-      expiryDate,
-      batchNumber,
-      unitCost,
-      sellingPrice,
-      reservedQuantity,
-      isActive);
+    runtimeType,
+    id,
+    medicationId,
+    medicationName,
+    quantity,
+    minStockLevel,
+    maxStockLevel,
+    location,
+    expiryDate,
+    batchNumber,
+    unitCost,
+    sellingPrice,
+    reservedQuantity,
+    isActive,
+  );
 
   /// Create a copy of PharmacyStock
   /// with the given fields replaced by the non-null parameter values.
@@ -2724,27 +2796,26 @@ class _$PharmacyStockImpl extends _PharmacyStock {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$PharmacyStockImplToJson(
-      this,
-    );
+    return _$$PharmacyStockImplToJson(this);
   }
 }
 
 abstract class _PharmacyStock extends PharmacyStock {
-  const factory _PharmacyStock(
-      {required final int id,
-      required final int medicationId,
-      required final String medicationName,
-      required final int quantity,
-      required final int minStockLevel,
-      required final int maxStockLevel,
-      required final String location,
-      required final DateTime expiryDate,
-      final String? batchNumber,
-      final double? unitCost,
-      final double? sellingPrice,
-      final int reservedQuantity,
-      final bool isActive}) = _$PharmacyStockImpl;
+  const factory _PharmacyStock({
+    required final int id,
+    required final int medicationId,
+    required final String medicationName,
+    required final int quantity,
+    required final int minStockLevel,
+    required final int maxStockLevel,
+    required final String location,
+    required final DateTime expiryDate,
+    final String? batchNumber,
+    final double? unitCost,
+    final double? sellingPrice,
+    final int reservedQuantity,
+    final bool isActive,
+  }) = _$PharmacyStockImpl;
   const _PharmacyStock._() : super._();
 
   factory _PharmacyStock.fromJson(Map<String, dynamic> json) =
@@ -2823,28 +2894,30 @@ mixin _$HealthCampaign {
 /// @nodoc
 abstract class $HealthCampaignCopyWith<$Res> {
   factory $HealthCampaignCopyWith(
-          HealthCampaign value, $Res Function(HealthCampaign) then) =
-      _$HealthCampaignCopyWithImpl<$Res, HealthCampaign>;
+    HealthCampaign value,
+    $Res Function(HealthCampaign) then,
+  ) = _$HealthCampaignCopyWithImpl<$Res, HealthCampaign>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      CampaignType type,
-      DateTime startDate,
-      DateTime endDate,
-      String? location,
-      int? targetPopulation,
-      int registeredCount,
-      int attendedCount,
-      CampaignStatus status,
-      int? coordinatorId,
-      String? coordinatorName,
-      List<String>? targetGroups,
-      List<String>? servicesOffered,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    CampaignType type,
+    DateTime startDate,
+    DateTime endDate,
+    String? location,
+    int? targetPopulation,
+    int registeredCount,
+    int attendedCount,
+    CampaignStatus status,
+    int? coordinatorId,
+    String? coordinatorName,
+    List<String>? targetGroups,
+    List<String>? servicesOffered,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -2881,110 +2954,115 @@ class _$HealthCampaignCopyWithImpl<$Res, $Val extends HealthCampaign>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as CampaignType,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      targetPopulation: freezed == targetPopulation
-          ? _value.targetPopulation
-          : targetPopulation // ignore: cast_nullable_to_non_nullable
-              as int?,
-      registeredCount: null == registeredCount
-          ? _value.registeredCount
-          : registeredCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      attendedCount: null == attendedCount
-          ? _value.attendedCount
-          : attendedCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as CampaignStatus,
-      coordinatorId: freezed == coordinatorId
-          ? _value.coordinatorId
-          : coordinatorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      coordinatorName: freezed == coordinatorName
-          ? _value.coordinatorName
-          : coordinatorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      targetGroups: freezed == targetGroups
-          ? _value.targetGroups
-          : targetGroups // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      servicesOffered: freezed == servicesOffered
-          ? _value.servicesOffered
-          : servicesOffered // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as CampaignType,
+            startDate: null == startDate
+                ? _value.startDate
+                : startDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endDate: null == endDate
+                ? _value.endDate
+                : endDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            location: freezed == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            targetPopulation: freezed == targetPopulation
+                ? _value.targetPopulation
+                : targetPopulation // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            registeredCount: null == registeredCount
+                ? _value.registeredCount
+                : registeredCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            attendedCount: null == attendedCount
+                ? _value.attendedCount
+                : attendedCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as CampaignStatus,
+            coordinatorId: freezed == coordinatorId
+                ? _value.coordinatorId
+                : coordinatorId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            coordinatorName: freezed == coordinatorName
+                ? _value.coordinatorName
+                : coordinatorName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            targetGroups: freezed == targetGroups
+                ? _value.targetGroups
+                : targetGroups // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            servicesOffered: freezed == servicesOffered
+                ? _value.servicesOffered
+                : servicesOffered // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$HealthCampaignImplCopyWith<$Res>
     implements $HealthCampaignCopyWith<$Res> {
-  factory _$$HealthCampaignImplCopyWith(_$HealthCampaignImpl value,
-          $Res Function(_$HealthCampaignImpl) then) =
-      __$$HealthCampaignImplCopyWithImpl<$Res>;
+  factory _$$HealthCampaignImplCopyWith(
+    _$HealthCampaignImpl value,
+    $Res Function(_$HealthCampaignImpl) then,
+  ) = __$$HealthCampaignImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      CampaignType type,
-      DateTime startDate,
-      DateTime endDate,
-      String? location,
-      int? targetPopulation,
-      int registeredCount,
-      int attendedCount,
-      CampaignStatus status,
-      int? coordinatorId,
-      String? coordinatorName,
-      List<String>? targetGroups,
-      List<String>? servicesOffered,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    CampaignType type,
+    DateTime startDate,
+    DateTime endDate,
+    String? location,
+    int? targetPopulation,
+    int registeredCount,
+    int attendedCount,
+    CampaignStatus status,
+    int? coordinatorId,
+    String? coordinatorName,
+    List<String>? targetGroups,
+    List<String>? servicesOffered,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -2992,8 +3070,9 @@ class __$$HealthCampaignImplCopyWithImpl<$Res>
     extends _$HealthCampaignCopyWithImpl<$Res, _$HealthCampaignImpl>
     implements _$$HealthCampaignImplCopyWith<$Res> {
   __$$HealthCampaignImplCopyWithImpl(
-      _$HealthCampaignImpl _value, $Res Function(_$HealthCampaignImpl) _then)
-      : super(_value, _then);
+    _$HealthCampaignImpl _value,
+    $Res Function(_$HealthCampaignImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of HealthCampaign
   /// with the given fields replaced by the non-null parameter values.
@@ -3019,108 +3098,110 @@ class __$$HealthCampaignImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$HealthCampaignImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as CampaignType,
-      startDate: null == startDate
-          ? _value.startDate
-          : startDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endDate: null == endDate
-          ? _value.endDate
-          : endDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      targetPopulation: freezed == targetPopulation
-          ? _value.targetPopulation
-          : targetPopulation // ignore: cast_nullable_to_non_nullable
-              as int?,
-      registeredCount: null == registeredCount
-          ? _value.registeredCount
-          : registeredCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      attendedCount: null == attendedCount
-          ? _value.attendedCount
-          : attendedCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as CampaignStatus,
-      coordinatorId: freezed == coordinatorId
-          ? _value.coordinatorId
-          : coordinatorId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      coordinatorName: freezed == coordinatorName
-          ? _value.coordinatorName
-          : coordinatorName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      targetGroups: freezed == targetGroups
-          ? _value._targetGroups
-          : targetGroups // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      servicesOffered: freezed == servicesOffered
-          ? _value._servicesOffered
-          : servicesOffered // ignore: cast_nullable_to_non_nullable
-              as List<String>?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$HealthCampaignImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as CampaignType,
+        startDate: null == startDate
+            ? _value.startDate
+            : startDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endDate: null == endDate
+            ? _value.endDate
+            : endDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        location: freezed == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        targetPopulation: freezed == targetPopulation
+            ? _value.targetPopulation
+            : targetPopulation // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        registeredCount: null == registeredCount
+            ? _value.registeredCount
+            : registeredCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        attendedCount: null == attendedCount
+            ? _value.attendedCount
+            : attendedCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as CampaignStatus,
+        coordinatorId: freezed == coordinatorId
+            ? _value.coordinatorId
+            : coordinatorId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        coordinatorName: freezed == coordinatorName
+            ? _value.coordinatorName
+            : coordinatorName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        targetGroups: freezed == targetGroups
+            ? _value._targetGroups
+            : targetGroups // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        servicesOffered: freezed == servicesOffered
+            ? _value._servicesOffered
+            : servicesOffered // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$HealthCampaignImpl extends _HealthCampaign {
-  const _$HealthCampaignImpl(
-      {required this.id,
-      required this.name,
-      this.description,
-      required this.type,
-      required this.startDate,
-      required this.endDate,
-      this.location,
-      this.targetPopulation,
-      this.registeredCount = 0,
-      this.attendedCount = 0,
-      required this.status,
-      this.coordinatorId,
-      this.coordinatorName,
-      final List<String>? targetGroups,
-      final List<String>? servicesOffered,
-      this.notes,
-      required this.createdAt,
-      this.updatedAt})
-      : _targetGroups = targetGroups,
-        _servicesOffered = servicesOffered,
-        super._();
+  const _$HealthCampaignImpl({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.type,
+    required this.startDate,
+    required this.endDate,
+    this.location,
+    this.targetPopulation,
+    this.registeredCount = 0,
+    this.attendedCount = 0,
+    required this.status,
+    this.coordinatorId,
+    this.coordinatorName,
+    final List<String>? targetGroups,
+    final List<String>? servicesOffered,
+    this.notes,
+    required this.createdAt,
+    this.updatedAt,
+  }) : _targetGroups = targetGroups,
+       _servicesOffered = servicesOffered,
+       super._();
 
   factory _$HealthCampaignImpl.fromJson(Map<String, dynamic> json) =>
       _$$HealthCampaignImplFromJson(json);
@@ -3211,10 +3292,14 @@ class _$HealthCampaignImpl extends _HealthCampaign {
                 other.coordinatorId == coordinatorId) &&
             (identical(other.coordinatorName, coordinatorName) ||
                 other.coordinatorName == coordinatorName) &&
-            const DeepCollectionEquality()
-                .equals(other._targetGroups, _targetGroups) &&
-            const DeepCollectionEquality()
-                .equals(other._servicesOffered, _servicesOffered) &&
+            const DeepCollectionEquality().equals(
+              other._targetGroups,
+              _targetGroups,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._servicesOffered,
+              _servicesOffered,
+            ) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -3225,25 +3310,26 @@ class _$HealthCampaignImpl extends _HealthCampaign {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      description,
-      type,
-      startDate,
-      endDate,
-      location,
-      targetPopulation,
-      registeredCount,
-      attendedCount,
-      status,
-      coordinatorId,
-      coordinatorName,
-      const DeepCollectionEquality().hash(_targetGroups),
-      const DeepCollectionEquality().hash(_servicesOffered),
-      notes,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    description,
+    type,
+    startDate,
+    endDate,
+    location,
+    targetPopulation,
+    registeredCount,
+    attendedCount,
+    status,
+    coordinatorId,
+    coordinatorName,
+    const DeepCollectionEquality().hash(_targetGroups),
+    const DeepCollectionEquality().hash(_servicesOffered),
+    notes,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of HealthCampaign
   /// with the given fields replaced by the non-null parameter values.
@@ -3252,36 +3338,37 @@ class _$HealthCampaignImpl extends _HealthCampaign {
   @pragma('vm:prefer-inline')
   _$$HealthCampaignImplCopyWith<_$HealthCampaignImpl> get copyWith =>
       __$$HealthCampaignImplCopyWithImpl<_$HealthCampaignImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$HealthCampaignImplToJson(
-      this,
-    );
+    return _$$HealthCampaignImplToJson(this);
   }
 }
 
 abstract class _HealthCampaign extends HealthCampaign {
-  const factory _HealthCampaign(
-      {required final int id,
-      required final String name,
-      final String? description,
-      required final CampaignType type,
-      required final DateTime startDate,
-      required final DateTime endDate,
-      final String? location,
-      final int? targetPopulation,
-      final int registeredCount,
-      final int attendedCount,
-      required final CampaignStatus status,
-      final int? coordinatorId,
-      final String? coordinatorName,
-      final List<String>? targetGroups,
-      final List<String>? servicesOffered,
-      final String? notes,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$HealthCampaignImpl;
+  const factory _HealthCampaign({
+    required final int id,
+    required final String name,
+    final String? description,
+    required final CampaignType type,
+    required final DateTime startDate,
+    required final DateTime endDate,
+    final String? location,
+    final int? targetPopulation,
+    final int registeredCount,
+    final int attendedCount,
+    required final CampaignStatus status,
+    final int? coordinatorId,
+    final String? coordinatorName,
+    final List<String>? targetGroups,
+    final List<String>? servicesOffered,
+    final String? notes,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$HealthCampaignImpl;
   const _HealthCampaign._() : super._();
 
   factory _HealthCampaign.fromJson(Map<String, dynamic> json) =
@@ -3360,18 +3447,20 @@ mixin _$CampaignParticipant {
 /// @nodoc
 abstract class $CampaignParticipantCopyWith<$Res> {
   factory $CampaignParticipantCopyWith(
-          CampaignParticipant value, $Res Function(CampaignParticipant) then) =
-      _$CampaignParticipantCopyWithImpl<$Res, CampaignParticipant>;
+    CampaignParticipant value,
+    $Res Function(CampaignParticipant) then,
+  ) = _$CampaignParticipantCopyWithImpl<$Res, CampaignParticipant>;
   @useResult
-  $Res call(
-      {int id,
-      int campaignId,
-      int patientId,
-      String patientName,
-      DateTime registrationDate,
-      DateTime? attendanceDate,
-      ParticipationStatus status,
-      String? notes});
+  $Res call({
+    int id,
+    int campaignId,
+    int patientId,
+    String patientName,
+    DateTime registrationDate,
+    DateTime? attendanceDate,
+    ParticipationStatus status,
+    String? notes,
+  });
 }
 
 /// @nodoc
@@ -3398,69 +3487,75 @@ class _$CampaignParticipantCopyWithImpl<$Res, $Val extends CampaignParticipant>
     Object? status = null,
     Object? notes = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      campaignId: null == campaignId
-          ? _value.campaignId
-          : campaignId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientId: null == patientId
-          ? _value.patientId
-          : patientId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientName: null == patientName
-          ? _value.patientName
-          : patientName // ignore: cast_nullable_to_non_nullable
-              as String,
-      registrationDate: null == registrationDate
-          ? _value.registrationDate
-          : registrationDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      attendanceDate: freezed == attendanceDate
-          ? _value.attendanceDate
-          : attendanceDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as ParticipationStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            campaignId: null == campaignId
+                ? _value.campaignId
+                : campaignId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            patientId: null == patientId
+                ? _value.patientId
+                : patientId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            patientName: null == patientName
+                ? _value.patientName
+                : patientName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            registrationDate: null == registrationDate
+                ? _value.registrationDate
+                : registrationDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            attendanceDate: freezed == attendanceDate
+                ? _value.attendanceDate
+                : attendanceDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as ParticipationStatus,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$CampaignParticipantImplCopyWith<$Res>
     implements $CampaignParticipantCopyWith<$Res> {
-  factory _$$CampaignParticipantImplCopyWith(_$CampaignParticipantImpl value,
-          $Res Function(_$CampaignParticipantImpl) then) =
-      __$$CampaignParticipantImplCopyWithImpl<$Res>;
+  factory _$$CampaignParticipantImplCopyWith(
+    _$CampaignParticipantImpl value,
+    $Res Function(_$CampaignParticipantImpl) then,
+  ) = __$$CampaignParticipantImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int campaignId,
-      int patientId,
-      String patientName,
-      DateTime registrationDate,
-      DateTime? attendanceDate,
-      ParticipationStatus status,
-      String? notes});
+  $Res call({
+    int id,
+    int campaignId,
+    int patientId,
+    String patientName,
+    DateTime registrationDate,
+    DateTime? attendanceDate,
+    ParticipationStatus status,
+    String? notes,
+  });
 }
 
 /// @nodoc
 class __$$CampaignParticipantImplCopyWithImpl<$Res>
     extends _$CampaignParticipantCopyWithImpl<$Res, _$CampaignParticipantImpl>
     implements _$$CampaignParticipantImplCopyWith<$Res> {
-  __$$CampaignParticipantImplCopyWithImpl(_$CampaignParticipantImpl _value,
-      $Res Function(_$CampaignParticipantImpl) _then)
-      : super(_value, _then);
+  __$$CampaignParticipantImplCopyWithImpl(
+    _$CampaignParticipantImpl _value,
+    $Res Function(_$CampaignParticipantImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of CampaignParticipant
   /// with the given fields replaced by the non-null parameter values.
@@ -3476,55 +3571,58 @@ class __$$CampaignParticipantImplCopyWithImpl<$Res>
     Object? status = null,
     Object? notes = freezed,
   }) {
-    return _then(_$CampaignParticipantImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      campaignId: null == campaignId
-          ? _value.campaignId
-          : campaignId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientId: null == patientId
-          ? _value.patientId
-          : patientId // ignore: cast_nullable_to_non_nullable
-              as int,
-      patientName: null == patientName
-          ? _value.patientName
-          : patientName // ignore: cast_nullable_to_non_nullable
-              as String,
-      registrationDate: null == registrationDate
-          ? _value.registrationDate
-          : registrationDate // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      attendanceDate: freezed == attendanceDate
-          ? _value.attendanceDate
-          : attendanceDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as ParticipationStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+    return _then(
+      _$CampaignParticipantImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        campaignId: null == campaignId
+            ? _value.campaignId
+            : campaignId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        patientId: null == patientId
+            ? _value.patientId
+            : patientId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        patientName: null == patientName
+            ? _value.patientName
+            : patientName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        registrationDate: null == registrationDate
+            ? _value.registrationDate
+            : registrationDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        attendanceDate: freezed == attendanceDate
+            ? _value.attendanceDate
+            : attendanceDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as ParticipationStatus,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$CampaignParticipantImpl implements _CampaignParticipant {
-  const _$CampaignParticipantImpl(
-      {required this.id,
-      required this.campaignId,
-      required this.patientId,
-      required this.patientName,
-      required this.registrationDate,
-      this.attendanceDate,
-      required this.status,
-      this.notes});
+  const _$CampaignParticipantImpl({
+    required this.id,
+    required this.campaignId,
+    required this.patientId,
+    required this.patientName,
+    required this.registrationDate,
+    this.attendanceDate,
+    required this.status,
+    this.notes,
+  });
 
   factory _$CampaignParticipantImpl.fromJson(Map<String, dynamic> json) =>
       _$$CampaignParticipantImplFromJson(json);
@@ -3573,8 +3671,17 @@ class _$CampaignParticipantImpl implements _CampaignParticipant {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, campaignId, patientId,
-      patientName, registrationDate, attendanceDate, status, notes);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    campaignId,
+    patientId,
+    patientName,
+    registrationDate,
+    attendanceDate,
+    status,
+    notes,
+  );
 
   /// Create a copy of CampaignParticipant
   /// with the given fields replaced by the non-null parameter values.
@@ -3583,26 +3690,27 @@ class _$CampaignParticipantImpl implements _CampaignParticipant {
   @pragma('vm:prefer-inline')
   _$$CampaignParticipantImplCopyWith<_$CampaignParticipantImpl> get copyWith =>
       __$$CampaignParticipantImplCopyWithImpl<_$CampaignParticipantImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$CampaignParticipantImplToJson(
-      this,
-    );
+    return _$$CampaignParticipantImplToJson(this);
   }
 }
 
 abstract class _CampaignParticipant implements CampaignParticipant {
-  const factory _CampaignParticipant(
-      {required final int id,
-      required final int campaignId,
-      required final int patientId,
-      required final String patientName,
-      required final DateTime registrationDate,
-      final DateTime? attendanceDate,
-      required final ParticipationStatus status,
-      final String? notes}) = _$CampaignParticipantImpl;
+  const factory _CampaignParticipant({
+    required final int id,
+    required final int campaignId,
+    required final int patientId,
+    required final String patientName,
+    required final DateTime registrationDate,
+    final DateTime? attendanceDate,
+    required final ParticipationStatus status,
+    final String? notes,
+  }) = _$CampaignParticipantImpl;
 
   factory _CampaignParticipant.fromJson(Map<String, dynamic> json) =
       _$CampaignParticipantImpl.fromJson;
@@ -3666,24 +3774,26 @@ mixin _$MedicalKit {
 /// @nodoc
 abstract class $MedicalKitCopyWith<$Res> {
   factory $MedicalKitCopyWith(
-          MedicalKit value, $Res Function(MedicalKit) then) =
-      _$MedicalKitCopyWithImpl<$Res, MedicalKit>;
+    MedicalKit value,
+    $Res Function(MedicalKit) then,
+  ) = _$MedicalKitCopyWithImpl<$Res, MedicalKit>;
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      KitType type,
-      List<KitItem> items,
-      String? location,
-      int? assignedToId,
-      String? assignedToName,
-      DateTime? lastInspectionDate,
-      DateTime? nextInspectionDate,
-      KitStatus status,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    KitType type,
+    List<KitItem> items,
+    String? location,
+    int? assignedToId,
+    String? assignedToName,
+    DateTime? lastInspectionDate,
+    DateTime? nextInspectionDate,
+    KitStatus status,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -3716,64 +3826,67 @@ class _$MedicalKitCopyWithImpl<$Res, $Val extends MedicalKit>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as KitType,
-      items: null == items
-          ? _value.items
-          : items // ignore: cast_nullable_to_non_nullable
-              as List<KitItem>,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedToId: freezed == assignedToId
-          ? _value.assignedToId
-          : assignedToId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedToName: freezed == assignedToName
-          ? _value.assignedToName
-          : assignedToName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      lastInspectionDate: freezed == lastInspectionDate
-          ? _value.lastInspectionDate
-          : lastInspectionDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      nextInspectionDate: freezed == nextInspectionDate
-          ? _value.nextInspectionDate
-          : nextInspectionDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as KitStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            type: null == type
+                ? _value.type
+                : type // ignore: cast_nullable_to_non_nullable
+                      as KitType,
+            items: null == items
+                ? _value.items
+                : items // ignore: cast_nullable_to_non_nullable
+                      as List<KitItem>,
+            location: freezed == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            assignedToId: freezed == assignedToId
+                ? _value.assignedToId
+                : assignedToId // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            assignedToName: freezed == assignedToName
+                ? _value.assignedToName
+                : assignedToName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            lastInspectionDate: freezed == lastInspectionDate
+                ? _value.lastInspectionDate
+                : lastInspectionDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            nextInspectionDate: freezed == nextInspectionDate
+                ? _value.nextInspectionDate
+                : nextInspectionDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as KitStatus,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -3781,25 +3894,27 @@ class _$MedicalKitCopyWithImpl<$Res, $Val extends MedicalKit>
 abstract class _$$MedicalKitImplCopyWith<$Res>
     implements $MedicalKitCopyWith<$Res> {
   factory _$$MedicalKitImplCopyWith(
-          _$MedicalKitImpl value, $Res Function(_$MedicalKitImpl) then) =
-      __$$MedicalKitImplCopyWithImpl<$Res>;
+    _$MedicalKitImpl value,
+    $Res Function(_$MedicalKitImpl) then,
+  ) = __$$MedicalKitImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String name,
-      String? description,
-      KitType type,
-      List<KitItem> items,
-      String? location,
-      int? assignedToId,
-      String? assignedToName,
-      DateTime? lastInspectionDate,
-      DateTime? nextInspectionDate,
-      KitStatus status,
-      String? notes,
-      DateTime createdAt,
-      DateTime? updatedAt});
+  $Res call({
+    int id,
+    String name,
+    String? description,
+    KitType type,
+    List<KitItem> items,
+    String? location,
+    int? assignedToId,
+    String? assignedToName,
+    DateTime? lastInspectionDate,
+    DateTime? nextInspectionDate,
+    KitStatus status,
+    String? notes,
+    DateTime createdAt,
+    DateTime? updatedAt,
+  });
 }
 
 /// @nodoc
@@ -3807,8 +3922,9 @@ class __$$MedicalKitImplCopyWithImpl<$Res>
     extends _$MedicalKitCopyWithImpl<$Res, _$MedicalKitImpl>
     implements _$$MedicalKitImplCopyWith<$Res> {
   __$$MedicalKitImplCopyWithImpl(
-      _$MedicalKitImpl _value, $Res Function(_$MedicalKitImpl) _then)
-      : super(_value, _then);
+    _$MedicalKitImpl _value,
+    $Res Function(_$MedicalKitImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of MedicalKit
   /// with the given fields replaced by the non-null parameter values.
@@ -3830,87 +3946,89 @@ class __$$MedicalKitImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
-    return _then(_$MedicalKitImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      name: null == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as KitType,
-      items: null == items
-          ? _value._items
-          : items // ignore: cast_nullable_to_non_nullable
-              as List<KitItem>,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      assignedToId: freezed == assignedToId
-          ? _value.assignedToId
-          : assignedToId // ignore: cast_nullable_to_non_nullable
-              as int?,
-      assignedToName: freezed == assignedToName
-          ? _value.assignedToName
-          : assignedToName // ignore: cast_nullable_to_non_nullable
-              as String?,
-      lastInspectionDate: freezed == lastInspectionDate
-          ? _value.lastInspectionDate
-          : lastInspectionDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      nextInspectionDate: freezed == nextInspectionDate
-          ? _value.nextInspectionDate
-          : nextInspectionDate // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as KitStatus,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$MedicalKitImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        type: null == type
+            ? _value.type
+            : type // ignore: cast_nullable_to_non_nullable
+                  as KitType,
+        items: null == items
+            ? _value._items
+            : items // ignore: cast_nullable_to_non_nullable
+                  as List<KitItem>,
+        location: freezed == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        assignedToId: freezed == assignedToId
+            ? _value.assignedToId
+            : assignedToId // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        assignedToName: freezed == assignedToName
+            ? _value.assignedToName
+            : assignedToName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        lastInspectionDate: freezed == lastInspectionDate
+            ? _value.lastInspectionDate
+            : lastInspectionDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        nextInspectionDate: freezed == nextInspectionDate
+            ? _value.nextInspectionDate
+            : nextInspectionDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as KitStatus,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$MedicalKitImpl extends _MedicalKit {
-  const _$MedicalKitImpl(
-      {required this.id,
-      required this.name,
-      this.description,
-      required this.type,
-      required final List<KitItem> items,
-      this.location,
-      this.assignedToId,
-      this.assignedToName,
-      this.lastInspectionDate,
-      this.nextInspectionDate,
-      required this.status,
-      this.notes,
-      required this.createdAt,
-      this.updatedAt})
-      : _items = items,
-        super._();
+  const _$MedicalKitImpl({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.type,
+    required final List<KitItem> items,
+    this.location,
+    this.assignedToId,
+    this.assignedToName,
+    this.lastInspectionDate,
+    this.nextInspectionDate,
+    required this.status,
+    this.notes,
+    required this.createdAt,
+    this.updatedAt,
+  }) : _items = items,
+       super._();
 
   factory _$MedicalKitImpl.fromJson(Map<String, dynamic> json) =>
       _$$MedicalKitImplFromJson(json);
@@ -3987,21 +4105,22 @@ class _$MedicalKitImpl extends _MedicalKit {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      name,
-      description,
-      type,
-      const DeepCollectionEquality().hash(_items),
-      location,
-      assignedToId,
-      assignedToName,
-      lastInspectionDate,
-      nextInspectionDate,
-      status,
-      notes,
-      createdAt,
-      updatedAt);
+    runtimeType,
+    id,
+    name,
+    description,
+    type,
+    const DeepCollectionEquality().hash(_items),
+    location,
+    assignedToId,
+    assignedToName,
+    lastInspectionDate,
+    nextInspectionDate,
+    status,
+    notes,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of MedicalKit
   /// with the given fields replaced by the non-null parameter values.
@@ -4013,28 +4132,27 @@ class _$MedicalKitImpl extends _MedicalKit {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$MedicalKitImplToJson(
-      this,
-    );
+    return _$$MedicalKitImplToJson(this);
   }
 }
 
 abstract class _MedicalKit extends MedicalKit {
-  const factory _MedicalKit(
-      {required final int id,
-      required final String name,
-      final String? description,
-      required final KitType type,
-      required final List<KitItem> items,
-      final String? location,
-      final int? assignedToId,
-      final String? assignedToName,
-      final DateTime? lastInspectionDate,
-      final DateTime? nextInspectionDate,
-      required final KitStatus status,
-      final String? notes,
-      required final DateTime createdAt,
-      final DateTime? updatedAt}) = _$MedicalKitImpl;
+  const factory _MedicalKit({
+    required final int id,
+    required final String name,
+    final String? description,
+    required final KitType type,
+    required final List<KitItem> items,
+    final String? location,
+    final int? assignedToId,
+    final String? assignedToName,
+    final DateTime? lastInspectionDate,
+    final DateTime? nextInspectionDate,
+    required final KitStatus status,
+    final String? notes,
+    required final DateTime createdAt,
+    final DateTime? updatedAt,
+  }) = _$MedicalKitImpl;
   const _MedicalKit._() : super._();
 
   factory _MedicalKit.fromJson(Map<String, dynamic> json) =
@@ -4105,14 +4223,15 @@ abstract class $KitItemCopyWith<$Res> {
   factory $KitItemCopyWith(KitItem value, $Res Function(KitItem) then) =
       _$KitItemCopyWithImpl<$Res, KitItem>;
   @useResult
-  $Res call(
-      {int id,
-      int kitId,
-      int medicationId,
-      String medicationName,
-      int requiredQuantity,
-      int currentQuantity,
-      String? notes});
+  $Res call({
+    int id,
+    int kitId,
+    int medicationId,
+    String medicationName,
+    int requiredQuantity,
+    int currentQuantity,
+    String? notes,
+  });
 }
 
 /// @nodoc
@@ -4138,54 +4257,59 @@ class _$KitItemCopyWithImpl<$Res, $Val extends KitItem>
     Object? currentQuantity = null,
     Object? notes = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      kitId: null == kitId
-          ? _value.kitId
-          : kitId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      requiredQuantity: null == requiredQuantity
-          ? _value.requiredQuantity
-          : requiredQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      currentQuantity: null == currentQuantity
-          ? _value.currentQuantity
-          : currentQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            kitId: null == kitId
+                ? _value.kitId
+                : kitId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationId: null == medicationId
+                ? _value.medicationId
+                : medicationId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            medicationName: null == medicationName
+                ? _value.medicationName
+                : medicationName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            requiredQuantity: null == requiredQuantity
+                ? _value.requiredQuantity
+                : requiredQuantity // ignore: cast_nullable_to_non_nullable
+                      as int,
+            currentQuantity: null == currentQuantity
+                ? _value.currentQuantity
+                : currentQuantity // ignore: cast_nullable_to_non_nullable
+                      as int,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$KitItemImplCopyWith<$Res> implements $KitItemCopyWith<$Res> {
   factory _$$KitItemImplCopyWith(
-          _$KitItemImpl value, $Res Function(_$KitItemImpl) then) =
-      __$$KitItemImplCopyWithImpl<$Res>;
+    _$KitItemImpl value,
+    $Res Function(_$KitItemImpl) then,
+  ) = __$$KitItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int kitId,
-      int medicationId,
-      String medicationName,
-      int requiredQuantity,
-      int currentQuantity,
-      String? notes});
+  $Res call({
+    int id,
+    int kitId,
+    int medicationId,
+    String medicationName,
+    int requiredQuantity,
+    int currentQuantity,
+    String? notes,
+  });
 }
 
 /// @nodoc
@@ -4193,8 +4317,9 @@ class __$$KitItemImplCopyWithImpl<$Res>
     extends _$KitItemCopyWithImpl<$Res, _$KitItemImpl>
     implements _$$KitItemImplCopyWith<$Res> {
   __$$KitItemImplCopyWithImpl(
-      _$KitItemImpl _value, $Res Function(_$KitItemImpl) _then)
-      : super(_value, _then);
+    _$KitItemImpl _value,
+    $Res Function(_$KitItemImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of KitItem
   /// with the given fields replaced by the non-null parameter values.
@@ -4209,51 +4334,53 @@ class __$$KitItemImplCopyWithImpl<$Res>
     Object? currentQuantity = null,
     Object? notes = freezed,
   }) {
-    return _then(_$KitItemImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      kitId: null == kitId
-          ? _value.kitId
-          : kitId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationId: null == medicationId
-          ? _value.medicationId
-          : medicationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      medicationName: null == medicationName
-          ? _value.medicationName
-          : medicationName // ignore: cast_nullable_to_non_nullable
-              as String,
-      requiredQuantity: null == requiredQuantity
-          ? _value.requiredQuantity
-          : requiredQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      currentQuantity: null == currentQuantity
-          ? _value.currentQuantity
-          : currentQuantity // ignore: cast_nullable_to_non_nullable
-              as int,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
+    return _then(
+      _$KitItemImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        kitId: null == kitId
+            ? _value.kitId
+            : kitId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationId: null == medicationId
+            ? _value.medicationId
+            : medicationId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        medicationName: null == medicationName
+            ? _value.medicationName
+            : medicationName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        requiredQuantity: null == requiredQuantity
+            ? _value.requiredQuantity
+            : requiredQuantity // ignore: cast_nullable_to_non_nullable
+                  as int,
+        currentQuantity: null == currentQuantity
+            ? _value.currentQuantity
+            : currentQuantity // ignore: cast_nullable_to_non_nullable
+                  as int,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$KitItemImpl extends _KitItem {
-  const _$KitItemImpl(
-      {required this.id,
-      required this.kitId,
-      required this.medicationId,
-      required this.medicationName,
-      required this.requiredQuantity,
-      required this.currentQuantity,
-      this.notes})
-      : super._();
+  const _$KitItemImpl({
+    required this.id,
+    required this.kitId,
+    required this.medicationId,
+    required this.medicationName,
+    required this.requiredQuantity,
+    required this.currentQuantity,
+    this.notes,
+  }) : super._();
 
   factory _$KitItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$KitItemImplFromJson(json);
@@ -4298,8 +4425,16 @@ class _$KitItemImpl extends _KitItem {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, kitId, medicationId,
-      medicationName, requiredQuantity, currentQuantity, notes);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    kitId,
+    medicationId,
+    medicationName,
+    requiredQuantity,
+    currentQuantity,
+    notes,
+  );
 
   /// Create a copy of KitItem
   /// with the given fields replaced by the non-null parameter values.
@@ -4311,21 +4446,20 @@ class _$KitItemImpl extends _KitItem {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$KitItemImplToJson(
-      this,
-    );
+    return _$$KitItemImplToJson(this);
   }
 }
 
 abstract class _KitItem extends KitItem {
-  const factory _KitItem(
-      {required final int id,
-      required final int kitId,
-      required final int medicationId,
-      required final String medicationName,
-      required final int requiredQuantity,
-      required final int currentQuantity,
-      final String? notes}) = _$KitItemImpl;
+  const factory _KitItem({
+    required final int id,
+    required final int kitId,
+    required final int medicationId,
+    required final String medicationName,
+    required final int requiredQuantity,
+    required final int currentQuantity,
+    final String? notes,
+  }) = _$KitItemImpl;
   const _KitItem._() : super._();
 
   factory _KitItem.fromJson(Map<String, dynamic> json) = _$KitItemImpl.fromJson;
@@ -4386,18 +4520,19 @@ abstract class $StaffDutyCopyWith<$Res> {
   factory $StaffDutyCopyWith(StaffDuty value, $Res Function(StaffDuty) then) =
       _$StaffDutyCopyWithImpl<$Res, StaffDuty>;
   @useResult
-  $Res call(
-      {int id,
-      int staffId,
-      String staffName,
-      String role,
-      DateTime startTime,
-      DateTime endTime,
-      DutyStatus status,
-      String? location,
-      String? notes,
-      DateTime? actualStartTime,
-      DateTime? actualEndTime});
+  $Res call({
+    int id,
+    int staffId,
+    String staffName,
+    String role,
+    DateTime startTime,
+    DateTime endTime,
+    DutyStatus status,
+    String? location,
+    String? notes,
+    DateTime? actualStartTime,
+    DateTime? actualEndTime,
+  });
 }
 
 /// @nodoc
@@ -4427,52 +4562,55 @@ class _$StaffDutyCopyWithImpl<$Res, $Val extends StaffDuty>
     Object? actualStartTime = freezed,
     Object? actualEndTime = freezed,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      staffId: null == staffId
-          ? _value.staffId
-          : staffId // ignore: cast_nullable_to_non_nullable
-              as int,
-      staffName: null == staffName
-          ? _value.staffName
-          : staffName // ignore: cast_nullable_to_non_nullable
-              as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
-              as String,
-      startTime: null == startTime
-          ? _value.startTime
-          : startTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endTime: null == endTime
-          ? _value.endTime
-          : endTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as DutyStatus,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      actualStartTime: freezed == actualStartTime
-          ? _value.actualStartTime
-          : actualStartTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      actualEndTime: freezed == actualEndTime
-          ? _value.actualEndTime
-          : actualEndTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            staffId: null == staffId
+                ? _value.staffId
+                : staffId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            staffName: null == staffName
+                ? _value.staffName
+                : staffName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            role: null == role
+                ? _value.role
+                : role // ignore: cast_nullable_to_non_nullable
+                      as String,
+            startTime: null == startTime
+                ? _value.startTime
+                : startTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            endTime: null == endTime
+                ? _value.endTime
+                : endTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as DutyStatus,
+            location: freezed == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            notes: freezed == notes
+                ? _value.notes
+                : notes // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            actualStartTime: freezed == actualStartTime
+                ? _value.actualStartTime
+                : actualStartTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            actualEndTime: freezed == actualEndTime
+                ? _value.actualEndTime
+                : actualEndTime // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -4480,22 +4618,24 @@ class _$StaffDutyCopyWithImpl<$Res, $Val extends StaffDuty>
 abstract class _$$StaffDutyImplCopyWith<$Res>
     implements $StaffDutyCopyWith<$Res> {
   factory _$$StaffDutyImplCopyWith(
-          _$StaffDutyImpl value, $Res Function(_$StaffDutyImpl) then) =
-      __$$StaffDutyImplCopyWithImpl<$Res>;
+    _$StaffDutyImpl value,
+    $Res Function(_$StaffDutyImpl) then,
+  ) = __$$StaffDutyImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      int staffId,
-      String staffName,
-      String role,
-      DateTime startTime,
-      DateTime endTime,
-      DutyStatus status,
-      String? location,
-      String? notes,
-      DateTime? actualStartTime,
-      DateTime? actualEndTime});
+  $Res call({
+    int id,
+    int staffId,
+    String staffName,
+    String role,
+    DateTime startTime,
+    DateTime endTime,
+    DutyStatus status,
+    String? location,
+    String? notes,
+    DateTime? actualStartTime,
+    DateTime? actualEndTime,
+  });
 }
 
 /// @nodoc
@@ -4503,8 +4643,9 @@ class __$$StaffDutyImplCopyWithImpl<$Res>
     extends _$StaffDutyCopyWithImpl<$Res, _$StaffDutyImpl>
     implements _$$StaffDutyImplCopyWith<$Res> {
   __$$StaffDutyImplCopyWithImpl(
-      _$StaffDutyImpl _value, $Res Function(_$StaffDutyImpl) _then)
-      : super(_value, _then);
+    _$StaffDutyImpl _value,
+    $Res Function(_$StaffDutyImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of StaffDuty
   /// with the given fields replaced by the non-null parameter values.
@@ -4523,70 +4664,73 @@ class __$$StaffDutyImplCopyWithImpl<$Res>
     Object? actualStartTime = freezed,
     Object? actualEndTime = freezed,
   }) {
-    return _then(_$StaffDutyImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      staffId: null == staffId
-          ? _value.staffId
-          : staffId // ignore: cast_nullable_to_non_nullable
-              as int,
-      staffName: null == staffName
-          ? _value.staffName
-          : staffName // ignore: cast_nullable_to_non_nullable
-              as String,
-      role: null == role
-          ? _value.role
-          : role // ignore: cast_nullable_to_non_nullable
-              as String,
-      startTime: null == startTime
-          ? _value.startTime
-          : startTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      endTime: null == endTime
-          ? _value.endTime
-          : endTime // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as DutyStatus,
-      location: freezed == location
-          ? _value.location
-          : location // ignore: cast_nullable_to_non_nullable
-              as String?,
-      notes: freezed == notes
-          ? _value.notes
-          : notes // ignore: cast_nullable_to_non_nullable
-              as String?,
-      actualStartTime: freezed == actualStartTime
-          ? _value.actualStartTime
-          : actualStartTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      actualEndTime: freezed == actualEndTime
-          ? _value.actualEndTime
-          : actualEndTime // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-    ));
+    return _then(
+      _$StaffDutyImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        staffId: null == staffId
+            ? _value.staffId
+            : staffId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        staffName: null == staffName
+            ? _value.staffName
+            : staffName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        role: null == role
+            ? _value.role
+            : role // ignore: cast_nullable_to_non_nullable
+                  as String,
+        startTime: null == startTime
+            ? _value.startTime
+            : startTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        endTime: null == endTime
+            ? _value.endTime
+            : endTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as DutyStatus,
+        location: freezed == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        notes: freezed == notes
+            ? _value.notes
+            : notes // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        actualStartTime: freezed == actualStartTime
+            ? _value.actualStartTime
+            : actualStartTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        actualEndTime: freezed == actualEndTime
+            ? _value.actualEndTime
+            : actualEndTime // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$StaffDutyImpl implements _StaffDuty {
-  const _$StaffDutyImpl(
-      {required this.id,
-      required this.staffId,
-      required this.staffName,
-      required this.role,
-      required this.startTime,
-      required this.endTime,
-      required this.status,
-      this.location,
-      this.notes,
-      this.actualStartTime,
-      this.actualEndTime});
+  const _$StaffDutyImpl({
+    required this.id,
+    required this.staffId,
+    required this.staffName,
+    required this.role,
+    required this.startTime,
+    required this.endTime,
+    required this.status,
+    this.location,
+    this.notes,
+    this.actualStartTime,
+    this.actualEndTime,
+  });
 
   factory _$StaffDutyImpl.fromJson(Map<String, dynamic> json) =>
       _$$StaffDutyImplFromJson(json);
@@ -4645,18 +4789,19 @@ class _$StaffDutyImpl implements _StaffDuty {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      staffId,
-      staffName,
-      role,
-      startTime,
-      endTime,
-      status,
-      location,
-      notes,
-      actualStartTime,
-      actualEndTime);
+    runtimeType,
+    id,
+    staffId,
+    staffName,
+    role,
+    startTime,
+    endTime,
+    status,
+    location,
+    notes,
+    actualStartTime,
+    actualEndTime,
+  );
 
   /// Create a copy of StaffDuty
   /// with the given fields replaced by the non-null parameter values.
@@ -4668,25 +4813,24 @@ class _$StaffDutyImpl implements _StaffDuty {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$StaffDutyImplToJson(
-      this,
-    );
+    return _$$StaffDutyImplToJson(this);
   }
 }
 
 abstract class _StaffDuty implements StaffDuty {
-  const factory _StaffDuty(
-      {required final int id,
-      required final int staffId,
-      required final String staffName,
-      required final String role,
-      required final DateTime startTime,
-      required final DateTime endTime,
-      required final DutyStatus status,
-      final String? location,
-      final String? notes,
-      final DateTime? actualStartTime,
-      final DateTime? actualEndTime}) = _$StaffDutyImpl;
+  const factory _StaffDuty({
+    required final int id,
+    required final int staffId,
+    required final String staffName,
+    required final String role,
+    required final DateTime startTime,
+    required final DateTime endTime,
+    required final DutyStatus status,
+    final String? location,
+    final String? notes,
+    final DateTime? actualStartTime,
+    final DateTime? actualEndTime,
+  }) = _$StaffDutyImpl;
 
   factory _StaffDuty.fromJson(Map<String, dynamic> json) =
       _$StaffDutyImpl.fromJson;

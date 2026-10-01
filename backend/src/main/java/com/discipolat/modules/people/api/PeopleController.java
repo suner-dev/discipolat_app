@@ -23,7 +23,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/people")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+// §G3.1 — les responsables (département/famille) parcourent le répertoire et
+// affectent depuis la liste « sans espace » ; le service applique le scope
+// (spaceService.canCustomize) comme seule source de vérité.
+@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
 public class PeopleController {
 
     private final PeopleService peopleService;

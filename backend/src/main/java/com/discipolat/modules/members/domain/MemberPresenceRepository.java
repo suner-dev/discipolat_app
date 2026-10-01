@@ -23,6 +23,14 @@ public interface MemberPresenceRepository extends JpaRepository<MemberPresence, 
     /** Présence d'une âme pour une semaine (saisie par le responsable). */
     Optional<MemberPresence> findBySoulIdAndSemaine(UUID soulId, LocalDate semaine);
 
+    /**
+     * PORT Develop1 (§G7 synchronisation hors ligne) : test de conflit LWW — une
+     * présence du tenant a-t-elle été modifiée APRÈS la saisie terrain ? Scopé
+     * tenant : une écriture d'un autre tenant ne doit jamais faire croire à un
+     * conflit local.
+     */
+    List<MemberPresence> findByTenantIdAndUpdatedAtAfter(UUID tenantId, java.time.LocalDateTime after);
+
     /** Présences des membres d'un groupe d'âmes (famille ou département), semaine la plus récente d'abord. */
     List<MemberPresence> findBySoulIdInOrderBySemaineDesc(List<UUID> soulIds);
 

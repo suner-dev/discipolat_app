@@ -20,11 +20,18 @@ public class AssetMaintenanceController {
 
     private final InventoryService inventoryService;
     private final AssetMaintenanceRepository maintenanceRepository;
+    /** §G6.4 — cycle maintenance → finance : coût clôturé = dépense liée à l'actif. */
+    private final com.discipolat.modules.finances.domain.FinanceTransactionRepository financeTransactionRepository;
+    private final com.discipolat.modules.core.service.OutboxPublisher outboxPublisher;
 
     public AssetMaintenanceController(InventoryService inventoryService,
-                                       AssetMaintenanceRepository maintenanceRepository) {
+                                       AssetMaintenanceRepository maintenanceRepository,
+                                       com.discipolat.modules.finances.domain.FinanceTransactionRepository financeTransactionRepository,
+                                       com.discipolat.modules.core.service.OutboxPublisher outboxPublisher) {
         this.inventoryService = inventoryService;
         this.maintenanceRepository = maintenanceRepository;
+        this.financeTransactionRepository = financeTransactionRepository;
+        this.outboxPublisher = outboxPublisher;
     }
 
     @PostMapping("/{itemId}/maintenance")
@@ -53,6 +60,9 @@ public class AssetMaintenanceController {
                 .filter(m -> m.getTenantId().equals(tenantId))
                 .orElseThrow(() -> new RuntimeException("Maintenance not found"));
 
+        // transition SEULE vers COMPLETED (idempotence des PUT suivants)
+        final boolean wasCompleted = "COMPLETED".equals(maintenance.getStatus());
+
         if (request.maintenanceType() != null) maintenance.setMaintenanceType(request.maintenanceType());
         if (request.title() != null) maintenance.setTitle(request.title());
         if (request.description() != null) maintenance.setDescription(request.description());
@@ -68,6 +78,29 @@ public class AssetMaintenanceController {
         }
 
         AssetMaintenance saved = maintenanceRepository.save(maintenance);
+
+        // §G6.4 — passage à COMPLETED (transition seule, pas les PUT suivants)
+        // avec un coût déclaré → dépense FINANCE auto-créée et LIÉE à l'actif
+        // (référence ASSET:<itemId> dans la description, traçable pour le TCO).
+        if ("COMPLETED".equals(saved.getStatus()) && !wasCompleted
+                && saved.getCost() != null && saved.getCost() > 0) {
+            com.discipolat.modules.finances.domain.FinanceTransaction expense =
+                    com.discipolat.modules.finances.domain.FinanceTransaction.builder()
+                            .tenantId(tenantId)
+                            .type(com.discipolat.modules.finances.domain.FinanceTransaction.TransactionType.DEPENSE)
+                            .categorie("MAINTENANCE")
+                            .montant(java.math.BigDecimal.valueOf(saved.getCost()))
+                            .description("Maintenance « " + saved.getTitle() + " » — ASSET:" + saved.getItemId())
+                            .dateTransaction(java.time.LocalDate.now())
+                            .build();
+            financeTransactionRepository.save(expense);
+            Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("amount", saved.getCost());
+            payload.put("assetId", saved.getItemId().toString());
+            payload.put("maintenanceId", saved.getId().toString());
+            payload.put("transactionId", expense.getId().toString());
+            outboxPublisher.publish(tenantId, "FINANCE_TRANSACTION", expense.getId(), "ExpenseCreated", payload);
+        }
         return ResponseEntity.ok(saved);
     }
 

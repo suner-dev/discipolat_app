@@ -130,6 +130,19 @@ class SyncQueueTable extends Table {
   TextColumn get createdAt => text()(); // ISO timestamp
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
   TextColumn? get lastError => text().nullable()();
+  /// §G5.7 — UUID v4 généré à la saisie terrain, jamais régénéré :
+  /// clé d'idempotence serveur (rejeu après réseau instable → doublon ignoré).
+  TextColumn get clientUuid => text().withDefault(const Constant(''))();
+  /// §G5.7 — type d'opération dispatché par POST /sync/batch (QR_CHECKIN, …).
+  TextColumn get syncType => text().withDefault(const Constant(''))();
+  /// PENDING | SYNCED | FAILED_MAX_RETRIES
+  TextColumn get status => text().withDefault(const Constant('PENDING'))();
+  /// Horodatage local de la saisie (résolution de conflits LWW serveur).
+  TextColumn get clientAt => text().withDefault(const Constant(''))();
+  /// Photo éventuelle (dommage matériel) encodée base64, remontée au batch.
+  TextColumn get photoBase64 => text().withDefault(const Constant(''))();
+  TextColumn get photoMime => text().withDefault(const Constant('image/jpeg'))();
+  TextColumn get photoName => text().withDefault(const Constant('photo.jpg'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -145,7 +158,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -156,6 +169,8 @@ class AppDatabase extends _$AppDatabase {
           // Cache hors-ligne : on peut reconstruire à volonté sans perte
           // définitive (les sources de vérité restent côté serveur).
           // La montée v1 → v2 ajoute la colonne tenant_id (isolation).
+          // La montée v3 → v4 ajoute client_uuid/sync_type/statut/LWW/photo
+          // (§G5.7 — file d'écriture idempotente).
           for (final table in allTables) {
             await m.deleteTable(table.actualTableName);
           }
@@ -217,15 +232,21 @@ class AppDatabase extends _$AppDatabase {
 
   // ==================== SYNC QUEUE ====================
 
-  Future<void> addToSyncQueue(SyncQueueItem item) {
+  Future<void> addToSyncQueue(Insertable<SyncQueueItem> item) {
     return into(syncQueueTable).insert(item);
   }
 
   Future<List<SyncQueueItem>> getPendingSyncItems(String tenantId) {
     return (select(syncQueueTable)
-          ..where((t) => t.tenantId.equals(tenantId))
+          ..where((t) => t.tenantId.equals(tenantId) & t.status.equals('PENDING'))
           ..orderBy([(t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.asc)]))
         .get();
+  }
+
+  /// §G5.7 — changement de statut d'un item de la file (PENDING/SYNCED/FAILED_MAX_RETRIES).
+  Future<void> setSyncStatus(String id, String status) {
+    return (update(syncQueueTable)..where((t) => t.id.equals(id)))
+        .write(SyncQueueTableCompanion(status: Value(status)));
   }
 
   Future<void> removeSyncItem(String id, {String? tenantId}) {

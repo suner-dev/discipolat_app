@@ -302,27 +302,27 @@ _$HealthCampaignImpl _$$HealthCampaignImplFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$$HealthCampaignImplToJson(
-        _$HealthCampaignImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'name': instance.name,
-      'description': instance.description,
-      'type': _$CampaignTypeEnumMap[instance.type]!,
-      'startDate': instance.startDate.toIso8601String(),
-      'endDate': instance.endDate.toIso8601String(),
-      'location': instance.location,
-      'targetPopulation': instance.targetPopulation,
-      'registeredCount': instance.registeredCount,
-      'attendedCount': instance.attendedCount,
-      'status': _$CampaignStatusEnumMap[instance.status]!,
-      'coordinatorId': instance.coordinatorId,
-      'coordinatorName': instance.coordinatorName,
-      'targetGroups': instance.targetGroups,
-      'servicesOffered': instance.servicesOffered,
-      'notes': instance.notes,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt?.toIso8601String(),
-    };
+  _$HealthCampaignImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'name': instance.name,
+  'description': instance.description,
+  'type': _$CampaignTypeEnumMap[instance.type]!,
+  'startDate': instance.startDate.toIso8601String(),
+  'endDate': instance.endDate.toIso8601String(),
+  'location': instance.location,
+  'targetPopulation': instance.targetPopulation,
+  'registeredCount': instance.registeredCount,
+  'attendedCount': instance.attendedCount,
+  'status': _$CampaignStatusEnumMap[instance.status]!,
+  'coordinatorId': instance.coordinatorId,
+  'coordinatorName': instance.coordinatorName,
+  'targetGroups': instance.targetGroups,
+  'servicesOffered': instance.servicesOffered,
+  'notes': instance.notes,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'updatedAt': instance.updatedAt?.toIso8601String(),
+};
 
 const _$CampaignTypeEnumMap = {
   CampaignType.vaccination: 'VACCINATION',
@@ -342,32 +342,32 @@ const _$CampaignStatusEnumMap = {
 };
 
 _$CampaignParticipantImpl _$$CampaignParticipantImplFromJson(
-        Map<String, dynamic> json) =>
-    _$CampaignParticipantImpl(
-      id: (json['id'] as num).toInt(),
-      campaignId: (json['campaignId'] as num).toInt(),
-      patientId: (json['patientId'] as num).toInt(),
-      patientName: json['patientName'] as String,
-      registrationDate: DateTime.parse(json['registrationDate'] as String),
-      attendanceDate: json['attendanceDate'] == null
-          ? null
-          : DateTime.parse(json['attendanceDate'] as String),
-      status: $enumDecode(_$ParticipationStatusEnumMap, json['status']),
-      notes: json['notes'] as String?,
-    );
+  Map<String, dynamic> json,
+) => _$CampaignParticipantImpl(
+  id: (json['id'] as num).toInt(),
+  campaignId: (json['campaignId'] as num).toInt(),
+  patientId: (json['patientId'] as num).toInt(),
+  patientName: json['patientName'] as String,
+  registrationDate: DateTime.parse(json['registrationDate'] as String),
+  attendanceDate: json['attendanceDate'] == null
+      ? null
+      : DateTime.parse(json['attendanceDate'] as String),
+  status: $enumDecode(_$ParticipationStatusEnumMap, json['status']),
+  notes: json['notes'] as String?,
+);
 
 Map<String, dynamic> _$$CampaignParticipantImplToJson(
-        _$CampaignParticipantImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'campaignId': instance.campaignId,
-      'patientId': instance.patientId,
-      'patientName': instance.patientName,
-      'registrationDate': instance.registrationDate.toIso8601String(),
-      'attendanceDate': instance.attendanceDate?.toIso8601String(),
-      'status': _$ParticipationStatusEnumMap[instance.status]!,
-      'notes': instance.notes,
-    };
+  _$CampaignParticipantImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'campaignId': instance.campaignId,
+  'patientId': instance.patientId,
+  'patientName': instance.patientName,
+  'registrationDate': instance.registrationDate.toIso8601String(),
+  'attendanceDate': instance.attendanceDate?.toIso8601String(),
+  'status': _$ParticipationStatusEnumMap[instance.status]!,
+  'notes': instance.notes,
+};
 
 const _$ParticipationStatusEnumMap = {
   ParticipationStatus.registered: 'REGISTERED',

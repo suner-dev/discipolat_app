@@ -24,10 +24,30 @@ interface ProviderStatus {
   fallback: boolean;
 }
 
+interface UsageBucket {
+  label?: string;
+  type?: string;
+  model?: string;
+  total?: number;
+  count?: number;
+  credits?: number;
+}
+
+interface AiCreditsDashboard {
+  totalCredits?: number;
+  totalRequests?: number;
+  monthlyLimit?: number | null;
+  usedThisMonth?: number;
+  remainingThisMonth?: number | null;
+  byType?: UsageBucket[];
+  byModel?: UsageBucket[];
+}
+
 export default function AiDashboardPage() {
   const [summary, setSummary] = useState<AiSummary | null>(null);
   const [narrative, setNarrative] = useState<KpiNarrative | null>(null);
   const [providers, setProviders] = useState<ProviderStatus | null>(null);
+  const [credits, setCredits] = useState<AiCreditsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [chatMessage, setChatMessage] = useState("");
   const [chatResponse, setChatResponse] = useState("");
@@ -37,14 +57,18 @@ export default function AiDashboardPage() {
 
   const fetchAiData = async () => {
     try {
-      const [s, n, p] = await Promise.all([
+      const [s, n, p, c] = await Promise.all([
         api.get("/ai/module/summary").catch(() => null),
         api.get("/ai/module/kpi-narrative").catch(() => null),
         api.get("/ai/module/providers").catch(() => null),
+        // §G6.2 — self-service crédits IA (ADMIN/PASTEUR/TENANT_ADMIN). Un 403
+        // (membre ordinaire) est avalé ici : le bloc s'affiche seulement si données.
+        api.get("/ai/credits/dashboard").catch(() => null),
       ]);
       if (s?.data) setSummary(s.data);
       if (n?.data) setNarrative(n.data);
       if (p?.data?.providers) setProviders(p.data.providers);
+      if (c?.data) setCredits(c.data as AiCreditsDashboard);
     } catch (e) { console.error("IA error:", e); }
     finally { setLoading(false); }
   };
@@ -99,6 +123,62 @@ export default function AiDashboardPage() {
           GROQ_API_KEY, GEMINI_API_KEY, MISTRAL_API_KEY, HUGGINGFACE_API_KEY.
         </p>
       </div>
+
+      {/* Usage & crédits IA (self-service, §G6.2) */}
+      {credits && (
+        <div className="rounded-xl bg-white dark:bg-gray-800 border p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">Usage &amp; crédits IA</h3>
+            <span className="text-xs text-gray-400">
+              {credits.totalRequests ?? 0} requêtes · {credits.totalCredits ?? 0} crédits
+            </span>
+          </div>
+          {credits.monthlyLimit != null ? (
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>{credits.usedThisMonth ?? 0} / {credits.monthlyLimit} crédits ce mois</span>
+                <span>{credits.remainingThisMonth ?? 0} restants</span>
+              </div>
+              <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-600"
+                  style={{
+                    width: `${Math.min(100, Math.round(((credits.usedThisMonth ?? 0) / (credits.monthlyLimit || 1)) * 100))}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Plan sans quota IA mensuel — usage illimité.</p>
+          )}
+          {((credits.byType?.length ?? 0) > 0 || (credits.byModel?.length ?? 0) > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase mb-2">Par type</p>
+                <ul className="space-y-1">
+                  {(credits.byType ?? []).slice(0, 6).map((b, i) => (
+                    <li key={i} className="flex justify-between text-sm">
+                      <span>{b.label || b.type || `#${i + 1}`}</span>
+                      <span className="text-gray-500">{b.total ?? b.credits ?? b.count ?? 0}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase mb-2">Par modèle</p>
+                <ul className="space-y-1">
+                  {(credits.byModel ?? []).slice(0, 6).map((b, i) => (
+                    <li key={i} className="flex justify-between text-sm">
+                      <span>{b.label || b.model || `#${i + 1}`}</span>
+                      <span className="text-gray-500">{b.total ?? b.credits ?? b.count ?? 0}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Chat */}
       <div className="rounded-xl bg-white dark:bg-gray-800 border p-5">

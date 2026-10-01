@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.families.domain.*;
 import com.discipolat.modules.families.service.FamilyOSService;
+import com.discipolat.modules.souls.domain.Soul;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -61,7 +62,7 @@ public class FamilyOSController {
     public ResponseEntity<FamilyVisit> updateVisit(@PathVariable UUID familyId, @PathVariable UUID visitId, @RequestBody FamilyVisit visit) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(familyOSService.updateVisit(tenantId, actorId, visitId, visit));
+        return ResponseEntity.ok(familyOSService.updateVisit(tenantId, actorId, familyId, visitId, visit));
     }
 
     // ========== RECEPTIONS ==========
@@ -124,13 +125,24 @@ public class FamilyOSController {
 
     // ========== G4.2: SEARCH & ADD MEMBERS ==========
 
+    /**
+     * G4.2 — membres non affectés candidats, données minimales uniquement
+     * ({soulId, userId, prenom, nom}) — scope: CHURCH (défaut) | CAMPUS.
+     */
     @GetMapping("/search-souls")
-    public ResponseEntity<List<com.discipolat.modules.users.domain.User>> searchSouls(
+    public ResponseEntity<List<Map<String, Object>>> searchSouls(
             @PathVariable UUID familyId,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "CHURCH") String scope) {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(familyOSService.searchSoulsForFamily(tenantId, familyId, search, scope));
+    }
+
+    /** Membres actuels de la famille (âmes rattachées). */
+    @GetMapping("/members")
+    public ResponseEntity<List<Soul>> getMembers(@PathVariable UUID familyId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(familyOSService.getFamilySouls(tenantId, familyId));
     }
 
     @PostMapping("/members")

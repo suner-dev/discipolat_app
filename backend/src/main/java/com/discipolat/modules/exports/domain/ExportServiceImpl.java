@@ -2,6 +2,8 @@ package com.discipolat.modules.exports.domain;
 
 import com.discipolat.common.infrastructure.config.TenantFileIsolationConfig;
 import com.discipolat.common.multitenancy.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.discipolat.modules.alerts.domain.Alert;
 import com.discipolat.modules.alerts.domain.AlertRepository;
 import com.discipolat.modules.compliance.domain.DataExportRecord;
@@ -58,6 +60,8 @@ import java.util.zip.ZipOutputStream;
 @Transactional
 public class ExportServiceImpl implements ExportService {
 
+    private static final Logger log = LoggerFactory.getLogger(ExportServiceImpl.class);
+
     private final Path exportDir;
     private final Map<UUID, ExportResult> exportStore = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -98,10 +102,13 @@ public class ExportServiceImpl implements ExportService {
         java.util.UUID tenantUuid = TenantContext.getCurrentTenantId();
         String tenantId = tenantUuid != null ? tenantUuid.toString() : "default";
         this.exportDir = Paths.get(exportDirPath, tenantId).toAbsolutePath().normalize();
+        // §G6.5 — création paresseuse du dossier : un répertoire d'exports qui
+        // n'est pas préparable au démarrage ne doit pas empêcher le boot de
+        // l'application (la création est retentée à l'écriture).
         try {
             Files.createDirectories(this.exportDir);
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot create export directory", e);
+        } catch (IOException | RuntimeException e) {
+            log.error("⚠️ Dossier d'exports non prêt: {} ({}) — création reportée à l'écriture", exportDir, e.getMessage());
         }
         this.soulRepository = soulRepository;
         this.familyRepository = familyRepository;
@@ -155,7 +162,11 @@ public class ExportServiceImpl implements ExportService {
         result.setStatus("PROCESSING");
         try {
             byte[] fileData = generateExportFile(request);
-            Path filePath = exportDir.resolve(fileName);
+            Files.createDirectories(exportDir);
+            Path filePath = exportDir.resolve(fileName).normalize();
+            if (!filePath.startsWith(exportDir)) {
+                throw new SecurityException("Chemin d'export hors du dossier autorisé");
+            }
             Files.write(filePath, fileData);
 
             result.setStatus("COMPLETED");

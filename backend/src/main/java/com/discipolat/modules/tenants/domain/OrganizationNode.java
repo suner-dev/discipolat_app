@@ -86,8 +86,12 @@ public class OrganizationNode {
     @Builder.Default
     private Integer sortOrder = 0;
 
-    @Column(name = "metadata_json", columnDefinition = "jsonb")
+    // §G6.4 — Sans SqlTypes.JSON, Hibernate binds VARCHAR et Postgres refuse
+    // « column … is of type jsonb but expression is of type character varying »
+    // à la moindre insertion (installation vierge). Même convention que
+    // TenantSettings / SpaceModule.
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata_json", columnDefinition = "jsonb")
     private String metadataJson;
 
     // ===== G1.7 §53 — Héritage de configuration =====
@@ -99,8 +103,8 @@ public class OrganizationNode {
     private ConfigSource configSource = ConfigSource.DEFAULT;
 
     /** Configuration résolue (cache), invalidée par l'événement config-changed. */
-    @Column(name = "resolved_config_json", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "resolved_config_json", columnDefinition = "jsonb")
     private String resolvedConfigJson;
 
     public enum ConfigSource {

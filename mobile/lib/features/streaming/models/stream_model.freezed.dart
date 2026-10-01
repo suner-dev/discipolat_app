@@ -12,7 +12,8 @@ part of 'stream_model.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 StreamModel _$StreamModelFromJson(Map<String, dynamic> json) {
   return _StreamModel.fromJson(json);
@@ -47,23 +48,25 @@ mixin _$StreamModel {
 /// @nodoc
 abstract class $StreamModelCopyWith<$Res> {
   factory $StreamModelCopyWith(
-          StreamModel value, $Res Function(StreamModel) then) =
-      _$StreamModelCopyWithImpl<$Res, StreamModel>;
+    StreamModel value,
+    $Res Function(StreamModel) then,
+  ) = _$StreamModelCopyWithImpl<$Res, StreamModel>;
   @useResult
-  $Res call(
-      {int id,
-      String title,
-      String? description,
-      StreamStatus status,
-      String? streamUrl,
-      String? thumbnailUrl,
-      String? recordingUrl,
-      DateTime scheduledAt,
-      DateTime? startedAt,
-      DateTime? endedAt,
-      int viewerCount,
-      int totalViews,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    String title,
+    String? description,
+    StreamStatus status,
+    String? streamUrl,
+    String? thumbnailUrl,
+    String? recordingUrl,
+    DateTime scheduledAt,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int viewerCount,
+    int totalViews,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -95,60 +98,63 @@ class _$StreamModelCopyWithImpl<$Res, $Val extends StreamModel>
     Object? totalViews = null,
     Object? createdAt = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as StreamStatus,
-      streamUrl: freezed == streamUrl
-          ? _value.streamUrl
-          : streamUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      thumbnailUrl: freezed == thumbnailUrl
-          ? _value.thumbnailUrl
-          : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recordingUrl: freezed == recordingUrl
-          ? _value.recordingUrl
-          : recordingUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      scheduledAt: null == scheduledAt
-          ? _value.scheduledAt
-          : scheduledAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      startedAt: freezed == startedAt
-          ? _value.startedAt
-          : startedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      endedAt: freezed == endedAt
-          ? _value.endedAt
-          : endedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      viewerCount: null == viewerCount
-          ? _value.viewerCount
-          : viewerCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      totalViews: null == totalViews
-          ? _value.totalViews
-          : totalViews // ignore: cast_nullable_to_non_nullable
-              as int,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            title: null == title
+                ? _value.title
+                : title // ignore: cast_nullable_to_non_nullable
+                      as String,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as StreamStatus,
+            streamUrl: freezed == streamUrl
+                ? _value.streamUrl
+                : streamUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            thumbnailUrl: freezed == thumbnailUrl
+                ? _value.thumbnailUrl
+                : thumbnailUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            recordingUrl: freezed == recordingUrl
+                ? _value.recordingUrl
+                : recordingUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            scheduledAt: null == scheduledAt
+                ? _value.scheduledAt
+                : scheduledAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            startedAt: freezed == startedAt
+                ? _value.startedAt
+                : startedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            endedAt: freezed == endedAt
+                ? _value.endedAt
+                : endedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            viewerCount: null == viewerCount
+                ? _value.viewerCount
+                : viewerCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            totalViews: null == totalViews
+                ? _value.totalViews
+                : totalViews // ignore: cast_nullable_to_non_nullable
+                      as int,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+          )
+          as $Val,
+    );
   }
 }
 
@@ -156,24 +162,26 @@ class _$StreamModelCopyWithImpl<$Res, $Val extends StreamModel>
 abstract class _$$StreamModelImplCopyWith<$Res>
     implements $StreamModelCopyWith<$Res> {
   factory _$$StreamModelImplCopyWith(
-          _$StreamModelImpl value, $Res Function(_$StreamModelImpl) then) =
-      __$$StreamModelImplCopyWithImpl<$Res>;
+    _$StreamModelImpl value,
+    $Res Function(_$StreamModelImpl) then,
+  ) = __$$StreamModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String title,
-      String? description,
-      StreamStatus status,
-      String? streamUrl,
-      String? thumbnailUrl,
-      String? recordingUrl,
-      DateTime scheduledAt,
-      DateTime? startedAt,
-      DateTime? endedAt,
-      int viewerCount,
-      int totalViews,
-      DateTime createdAt});
+  $Res call({
+    int id,
+    String title,
+    String? description,
+    StreamStatus status,
+    String? streamUrl,
+    String? thumbnailUrl,
+    String? recordingUrl,
+    DateTime scheduledAt,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int viewerCount,
+    int totalViews,
+    DateTime createdAt,
+  });
 }
 
 /// @nodoc
@@ -181,8 +189,9 @@ class __$$StreamModelImplCopyWithImpl<$Res>
     extends _$StreamModelCopyWithImpl<$Res, _$StreamModelImpl>
     implements _$$StreamModelImplCopyWith<$Res> {
   __$$StreamModelImplCopyWithImpl(
-      _$StreamModelImpl _value, $Res Function(_$StreamModelImpl) _then)
-      : super(_value, _then);
+    _$StreamModelImpl _value,
+    $Res Function(_$StreamModelImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of StreamModel
   /// with the given fields replaced by the non-null parameter values.
@@ -203,80 +212,83 @@ class __$$StreamModelImplCopyWithImpl<$Res>
     Object? totalViews = null,
     Object? createdAt = null,
   }) {
-    return _then(_$StreamModelImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      title: null == title
-          ? _value.title
-          : title // ignore: cast_nullable_to_non_nullable
-              as String,
-      description: freezed == description
-          ? _value.description
-          : description // ignore: cast_nullable_to_non_nullable
-              as String?,
-      status: null == status
-          ? _value.status
-          : status // ignore: cast_nullable_to_non_nullable
-              as StreamStatus,
-      streamUrl: freezed == streamUrl
-          ? _value.streamUrl
-          : streamUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      thumbnailUrl: freezed == thumbnailUrl
-          ? _value.thumbnailUrl
-          : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      recordingUrl: freezed == recordingUrl
-          ? _value.recordingUrl
-          : recordingUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
-      scheduledAt: null == scheduledAt
-          ? _value.scheduledAt
-          : scheduledAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      startedAt: freezed == startedAt
-          ? _value.startedAt
-          : startedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      endedAt: freezed == endedAt
-          ? _value.endedAt
-          : endedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      viewerCount: null == viewerCount
-          ? _value.viewerCount
-          : viewerCount // ignore: cast_nullable_to_non_nullable
-              as int,
-      totalViews: null == totalViews
-          ? _value.totalViews
-          : totalViews // ignore: cast_nullable_to_non_nullable
-              as int,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
+    return _then(
+      _$StreamModelImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        title: null == title
+            ? _value.title
+            : title // ignore: cast_nullable_to_non_nullable
+                  as String,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as StreamStatus,
+        streamUrl: freezed == streamUrl
+            ? _value.streamUrl
+            : streamUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        thumbnailUrl: freezed == thumbnailUrl
+            ? _value.thumbnailUrl
+            : thumbnailUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        recordingUrl: freezed == recordingUrl
+            ? _value.recordingUrl
+            : recordingUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        scheduledAt: null == scheduledAt
+            ? _value.scheduledAt
+            : scheduledAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        startedAt: freezed == startedAt
+            ? _value.startedAt
+            : startedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        endedAt: freezed == endedAt
+            ? _value.endedAt
+            : endedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        viewerCount: null == viewerCount
+            ? _value.viewerCount
+            : viewerCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        totalViews: null == totalViews
+            ? _value.totalViews
+            : totalViews // ignore: cast_nullable_to_non_nullable
+                  as int,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$StreamModelImpl implements _StreamModel {
-  const _$StreamModelImpl(
-      {required this.id,
-      required this.title,
-      this.description,
-      required this.status,
-      this.streamUrl,
-      this.thumbnailUrl,
-      this.recordingUrl,
-      required this.scheduledAt,
-      this.startedAt,
-      this.endedAt,
-      this.viewerCount = 0,
-      this.totalViews = 0,
-      required this.createdAt});
+  const _$StreamModelImpl({
+    required this.id,
+    required this.title,
+    this.description,
+    required this.status,
+    this.streamUrl,
+    this.thumbnailUrl,
+    this.recordingUrl,
+    required this.scheduledAt,
+    this.startedAt,
+    this.endedAt,
+    this.viewerCount = 0,
+    this.totalViews = 0,
+    required this.createdAt,
+  });
 
   factory _$StreamModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$StreamModelImplFromJson(json);
@@ -347,20 +359,21 @@ class _$StreamModelImpl implements _StreamModel {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      title,
-      description,
-      status,
-      streamUrl,
-      thumbnailUrl,
-      recordingUrl,
-      scheduledAt,
-      startedAt,
-      endedAt,
-      viewerCount,
-      totalViews,
-      createdAt);
+    runtimeType,
+    id,
+    title,
+    description,
+    status,
+    streamUrl,
+    thumbnailUrl,
+    recordingUrl,
+    scheduledAt,
+    startedAt,
+    endedAt,
+    viewerCount,
+    totalViews,
+    createdAt,
+  );
 
   /// Create a copy of StreamModel
   /// with the given fields replaced by the non-null parameter values.
@@ -372,27 +385,26 @@ class _$StreamModelImpl implements _StreamModel {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$StreamModelImplToJson(
-      this,
-    );
+    return _$$StreamModelImplToJson(this);
   }
 }
 
 abstract class _StreamModel implements StreamModel {
-  const factory _StreamModel(
-      {required final int id,
-      required final String title,
-      final String? description,
-      required final StreamStatus status,
-      final String? streamUrl,
-      final String? thumbnailUrl,
-      final String? recordingUrl,
-      required final DateTime scheduledAt,
-      final DateTime? startedAt,
-      final DateTime? endedAt,
-      final int viewerCount,
-      final int totalViews,
-      required final DateTime createdAt}) = _$StreamModelImpl;
+  const factory _StreamModel({
+    required final int id,
+    required final String title,
+    final String? description,
+    required final StreamStatus status,
+    final String? streamUrl,
+    final String? thumbnailUrl,
+    final String? recordingUrl,
+    required final DateTime scheduledAt,
+    final DateTime? startedAt,
+    final DateTime? endedAt,
+    final int viewerCount,
+    final int totalViews,
+    required final DateTime createdAt,
+  }) = _$StreamModelImpl;
 
   factory _StreamModel.fromJson(Map<String, dynamic> json) =
       _$StreamModelImpl.fromJson;
@@ -460,18 +472,20 @@ mixin _$StreamChatMessage {
 /// @nodoc
 abstract class $StreamChatMessageCopyWith<$Res> {
   factory $StreamChatMessageCopyWith(
-          StreamChatMessage value, $Res Function(StreamChatMessage) then) =
-      _$StreamChatMessageCopyWithImpl<$Res, StreamChatMessage>;
+    StreamChatMessage value,
+    $Res Function(StreamChatMessage) then,
+  ) = _$StreamChatMessageCopyWithImpl<$Res, StreamChatMessage>;
   @useResult
-  $Res call(
-      {int id,
-      String senderName,
-      String content,
-      String messageType,
-      String? emoji,
-      DateTime createdAt,
-      bool isSystem,
-      bool isOwn});
+  $Res call({
+    int id,
+    String senderName,
+    String content,
+    String messageType,
+    String? emoji,
+    DateTime createdAt,
+    bool isSystem,
+    bool isOwn,
+  });
 }
 
 /// @nodoc
@@ -498,69 +512,75 @@ class _$StreamChatMessageCopyWithImpl<$Res, $Val extends StreamChatMessage>
     Object? isSystem = null,
     Object? isOwn = null,
   }) {
-    return _then(_value.copyWith(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      senderName: null == senderName
-          ? _value.senderName
-          : senderName // ignore: cast_nullable_to_non_nullable
-              as String,
-      content: null == content
-          ? _value.content
-          : content // ignore: cast_nullable_to_non_nullable
-              as String,
-      messageType: null == messageType
-          ? _value.messageType
-          : messageType // ignore: cast_nullable_to_non_nullable
-              as String,
-      emoji: freezed == emoji
-          ? _value.emoji
-          : emoji // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      isSystem: null == isSystem
-          ? _value.isSystem
-          : isSystem // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isOwn: null == isOwn
-          ? _value.isOwn
-          : isOwn // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as int,
+            senderName: null == senderName
+                ? _value.senderName
+                : senderName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            content: null == content
+                ? _value.content
+                : content // ignore: cast_nullable_to_non_nullable
+                      as String,
+            messageType: null == messageType
+                ? _value.messageType
+                : messageType // ignore: cast_nullable_to_non_nullable
+                      as String,
+            emoji: freezed == emoji
+                ? _value.emoji
+                : emoji // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            isSystem: null == isSystem
+                ? _value.isSystem
+                : isSystem // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isOwn: null == isOwn
+                ? _value.isOwn
+                : isOwn // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$StreamChatMessageImplCopyWith<$Res>
     implements $StreamChatMessageCopyWith<$Res> {
-  factory _$$StreamChatMessageImplCopyWith(_$StreamChatMessageImpl value,
-          $Res Function(_$StreamChatMessageImpl) then) =
-      __$$StreamChatMessageImplCopyWithImpl<$Res>;
+  factory _$$StreamChatMessageImplCopyWith(
+    _$StreamChatMessageImpl value,
+    $Res Function(_$StreamChatMessageImpl) then,
+  ) = __$$StreamChatMessageImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call(
-      {int id,
-      String senderName,
-      String content,
-      String messageType,
-      String? emoji,
-      DateTime createdAt,
-      bool isSystem,
-      bool isOwn});
+  $Res call({
+    int id,
+    String senderName,
+    String content,
+    String messageType,
+    String? emoji,
+    DateTime createdAt,
+    bool isSystem,
+    bool isOwn,
+  });
 }
 
 /// @nodoc
 class __$$StreamChatMessageImplCopyWithImpl<$Res>
     extends _$StreamChatMessageCopyWithImpl<$Res, _$StreamChatMessageImpl>
     implements _$$StreamChatMessageImplCopyWith<$Res> {
-  __$$StreamChatMessageImplCopyWithImpl(_$StreamChatMessageImpl _value,
-      $Res Function(_$StreamChatMessageImpl) _then)
-      : super(_value, _then);
+  __$$StreamChatMessageImplCopyWithImpl(
+    _$StreamChatMessageImpl _value,
+    $Res Function(_$StreamChatMessageImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of StreamChatMessage
   /// with the given fields replaced by the non-null parameter values.
@@ -576,55 +596,58 @@ class __$$StreamChatMessageImplCopyWithImpl<$Res>
     Object? isSystem = null,
     Object? isOwn = null,
   }) {
-    return _then(_$StreamChatMessageImpl(
-      id: null == id
-          ? _value.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as int,
-      senderName: null == senderName
-          ? _value.senderName
-          : senderName // ignore: cast_nullable_to_non_nullable
-              as String,
-      content: null == content
-          ? _value.content
-          : content // ignore: cast_nullable_to_non_nullable
-              as String,
-      messageType: null == messageType
-          ? _value.messageType
-          : messageType // ignore: cast_nullable_to_non_nullable
-              as String,
-      emoji: freezed == emoji
-          ? _value.emoji
-          : emoji // ignore: cast_nullable_to_non_nullable
-              as String?,
-      createdAt: null == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      isSystem: null == isSystem
-          ? _value.isSystem
-          : isSystem // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isOwn: null == isOwn
-          ? _value.isOwn
-          : isOwn // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$StreamChatMessageImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as int,
+        senderName: null == senderName
+            ? _value.senderName
+            : senderName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        content: null == content
+            ? _value.content
+            : content // ignore: cast_nullable_to_non_nullable
+                  as String,
+        messageType: null == messageType
+            ? _value.messageType
+            : messageType // ignore: cast_nullable_to_non_nullable
+                  as String,
+        emoji: freezed == emoji
+            ? _value.emoji
+            : emoji // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        isSystem: null == isSystem
+            ? _value.isSystem
+            : isSystem // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isOwn: null == isOwn
+            ? _value.isOwn
+            : isOwn // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$StreamChatMessageImpl implements _StreamChatMessage {
-  const _$StreamChatMessageImpl(
-      {required this.id,
-      required this.senderName,
-      required this.content,
-      required this.messageType,
-      this.emoji,
-      required this.createdAt,
-      this.isSystem = false,
-      this.isOwn = false});
+  const _$StreamChatMessageImpl({
+    required this.id,
+    required this.senderName,
+    required this.content,
+    required this.messageType,
+    this.emoji,
+    required this.createdAt,
+    this.isSystem = false,
+    this.isOwn = false,
+  });
 
   factory _$StreamChatMessageImpl.fromJson(Map<String, dynamic> json) =>
       _$$StreamChatMessageImplFromJson(json);
@@ -674,8 +697,17 @@ class _$StreamChatMessageImpl implements _StreamChatMessage {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, senderName, content,
-      messageType, emoji, createdAt, isSystem, isOwn);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    senderName,
+    content,
+    messageType,
+    emoji,
+    createdAt,
+    isSystem,
+    isOwn,
+  );
 
   /// Create a copy of StreamChatMessage
   /// with the given fields replaced by the non-null parameter values.
@@ -684,26 +716,27 @@ class _$StreamChatMessageImpl implements _StreamChatMessage {
   @pragma('vm:prefer-inline')
   _$$StreamChatMessageImplCopyWith<_$StreamChatMessageImpl> get copyWith =>
       __$$StreamChatMessageImplCopyWithImpl<_$StreamChatMessageImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$StreamChatMessageImplToJson(
-      this,
-    );
+    return _$$StreamChatMessageImplToJson(this);
   }
 }
 
 abstract class _StreamChatMessage implements StreamChatMessage {
-  const factory _StreamChatMessage(
-      {required final int id,
-      required final String senderName,
-      required final String content,
-      required final String messageType,
-      final String? emoji,
-      required final DateTime createdAt,
-      final bool isSystem,
-      final bool isOwn}) = _$StreamChatMessageImpl;
+  const factory _StreamChatMessage({
+    required final int id,
+    required final String senderName,
+    required final String content,
+    required final String messageType,
+    final String? emoji,
+    required final DateTime createdAt,
+    final bool isSystem,
+    final bool isOwn,
+  }) = _$StreamChatMessageImpl;
 
   factory _StreamChatMessage.fromJson(Map<String, dynamic> json) =
       _$StreamChatMessageImpl.fromJson;
@@ -755,8 +788,9 @@ mixin _$StreamViewerCount {
 /// @nodoc
 abstract class $StreamViewerCountCopyWith<$Res> {
   factory $StreamViewerCountCopyWith(
-          StreamViewerCount value, $Res Function(StreamViewerCount) then) =
-      _$StreamViewerCountCopyWithImpl<$Res, StreamViewerCount>;
+    StreamViewerCount value,
+    $Res Function(StreamViewerCount) then,
+  ) = _$StreamViewerCountCopyWithImpl<$Res, StreamViewerCount>;
   @useResult
   $Res call({int count, DateTime timestamp});
 }
@@ -775,29 +809,30 @@ class _$StreamViewerCountCopyWithImpl<$Res, $Val extends StreamViewerCount>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? count = null,
-    Object? timestamp = null,
-  }) {
-    return _then(_value.copyWith(
-      count: null == count
-          ? _value.count
-          : count // ignore: cast_nullable_to_non_nullable
-              as int,
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ) as $Val);
+  $Res call({Object? count = null, Object? timestamp = null}) {
+    return _then(
+      _value.copyWith(
+            count: null == count
+                ? _value.count
+                : count // ignore: cast_nullable_to_non_nullable
+                      as int,
+            timestamp: null == timestamp
+                ? _value.timestamp
+                : timestamp // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$StreamViewerCountImplCopyWith<$Res>
     implements $StreamViewerCountCopyWith<$Res> {
-  factory _$$StreamViewerCountImplCopyWith(_$StreamViewerCountImpl value,
-          $Res Function(_$StreamViewerCountImpl) then) =
-      __$$StreamViewerCountImplCopyWithImpl<$Res>;
+  factory _$$StreamViewerCountImplCopyWith(
+    _$StreamViewerCountImpl value,
+    $Res Function(_$StreamViewerCountImpl) then,
+  ) = __$$StreamViewerCountImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({int count, DateTime timestamp});
@@ -807,28 +842,28 @@ abstract class _$$StreamViewerCountImplCopyWith<$Res>
 class __$$StreamViewerCountImplCopyWithImpl<$Res>
     extends _$StreamViewerCountCopyWithImpl<$Res, _$StreamViewerCountImpl>
     implements _$$StreamViewerCountImplCopyWith<$Res> {
-  __$$StreamViewerCountImplCopyWithImpl(_$StreamViewerCountImpl _value,
-      $Res Function(_$StreamViewerCountImpl) _then)
-      : super(_value, _then);
+  __$$StreamViewerCountImplCopyWithImpl(
+    _$StreamViewerCountImpl _value,
+    $Res Function(_$StreamViewerCountImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of StreamViewerCount
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? count = null,
-    Object? timestamp = null,
-  }) {
-    return _then(_$StreamViewerCountImpl(
-      count: null == count
-          ? _value.count
-          : count // ignore: cast_nullable_to_non_nullable
-              as int,
-      timestamp: null == timestamp
-          ? _value.timestamp
-          : timestamp // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-    ));
+  $Res call({Object? count = null, Object? timestamp = null}) {
+    return _then(
+      _$StreamViewerCountImpl(
+        count: null == count
+            ? _value.count
+            : count // ignore: cast_nullable_to_non_nullable
+                  as int,
+        timestamp: null == timestamp
+            ? _value.timestamp
+            : timestamp // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+      ),
+    );
   }
 }
 
@@ -871,20 +906,21 @@ class _$StreamViewerCountImpl implements _StreamViewerCount {
   @pragma('vm:prefer-inline')
   _$$StreamViewerCountImplCopyWith<_$StreamViewerCountImpl> get copyWith =>
       __$$StreamViewerCountImplCopyWithImpl<_$StreamViewerCountImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$StreamViewerCountImplToJson(
-      this,
-    );
+    return _$$StreamViewerCountImplToJson(this);
   }
 }
 
 abstract class _StreamViewerCount implements StreamViewerCount {
-  const factory _StreamViewerCount(
-      {required final int count,
-      required final DateTime timestamp}) = _$StreamViewerCountImpl;
+  const factory _StreamViewerCount({
+    required final int count,
+    required final DateTime timestamp,
+  }) = _$StreamViewerCountImpl;
 
   factory _StreamViewerCount.fromJson(Map<String, dynamic> json) =
       _$StreamViewerCountImpl.fromJson;

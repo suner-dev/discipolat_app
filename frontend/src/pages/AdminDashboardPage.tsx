@@ -3,9 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import {
   Palette, Boxes, Menu as MenuIcon, Shield, UserCog, Activity, FileText,
-  ArrowRight, MessageSquareText, BookOpen, LayoutTemplate, Building2,
-  Users, Bell, Workflow, Database, Zap, Globe, Sliders, Server,
-  Gauge, Clock, CheckCircle2, Cpu, BarChart3, UserPlus, Smartphone,
+  ArrowRight, MessageSquareText, BookOpen, LayoutTemplate, Building2, Users, Bell, Workflow, Database, Zap, Globe, Sliders, Server, Gauge, Clock, CheckCircle2, Cpu, BarChart3, UserPlus, Smartphone, Sparkles, Settings, RefreshCw, AlertTriangle, HardDrive, Search, TrendingUp, FileDown, Eye, FileJson, DatabaseZap,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -46,10 +44,12 @@ const CONFIG_SECTIONS = [
   },
   {
     title: 'Données & référentiels',
-    description: 'Champs personnalisés, dictionnaires et traductions',
+    description: 'Champs personnalisés, dictionnaires, import/export et migration legacy',
     items: [
       { href: '/admin/custom-fields', icon: FileText, title: 'Champs personnalisés', desc: 'Ajouter des champs aux entités', gradient: 'from-sky-500 to-blue-600' },
       { href: '/admin/dictionaries', icon: BookOpen, title: 'Dictionnaires', desc: 'Types, statuts, catégories — référentiels configurables', gradient: 'from-fuchsia-500 to-pink-600' },
+      { href: '/admin/space-import-export', icon: FileJson, title: 'Import / Export', desc: 'Espaces, configuration et église (format canonique)', gradient: 'from-indigo-500 to-blue-600' },
+      { href: '/admin/legacy-migration', icon: DatabaseZap, title: 'Migration legacy', desc: 'Basculer les données d’origine vers les moteurs (dry-run, rollback)', gradient: 'from-rose-500 to-orange-600' },
     ],
   },
   {

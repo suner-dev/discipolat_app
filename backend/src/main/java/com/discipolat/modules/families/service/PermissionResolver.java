@@ -3,6 +3,7 @@ package com.discipolat.modules.families.service;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.core.domain.PermissionVersion;
 import com.discipolat.modules.core.repository.PermissionVersionRepository;
+import com.discipolat.modules.core.service.OutboxPublisher;
 import com.discipolat.modules.families.domain.PastorateAppointment;
 import com.discipolat.modules.families.repository.PastorateAppointmentRepository;
 import com.discipolat.modules.people.domain.RoleAssignment;
@@ -33,6 +34,7 @@ public class PermissionResolver {
     private final TenantMembershipRepository tenantMembershipRepository;
     private final RoleRepository roleRepository;
     private final PermissionVersionRepository permissionVersionRepository;
+    private final OutboxPublisher outboxPublisher;
 
     /**
      * Calcule l'ensemble complet des permissions pour un utilisateur.
@@ -67,8 +69,19 @@ public class PermissionResolver {
             }
         }
 
-        // 4. Pastorate appointments (rôles pastoraux)
-        // TODO: add pastorate appointments when needed
+        // 4. Pastorate appointments (rôles pastoraux) — G4.4 : mandats ACTIVE en cours
+        //    (le role_code de nomination mappe une clé Role du tenant ; absente → no-op).
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<PastorateAppointment> appointments = pastorateAppointmentRepository
+                .findByTenantIdAndPastorIdAndDeletedAtIsNull(tenantId, userId);
+        for (PastorateAppointment appt : appointments) {
+            boolean active = "ACTIVE".equals(appt.getStatus())
+                    && appt.getStartDate() != null && !appt.getStartDate().isAfter(today)
+                    && (appt.getEndDate() == null || !appt.getEndDate().isBefore(today));
+            if (active && appt.getRoleCode() != null) {
+                addRolePermissions(permissions, appt.getRoleCode(), tenantId);
+            }
+        }
 
         return permissions;
     }
@@ -100,6 +113,18 @@ public class PermissionResolver {
     }
 
     /**
+     * G4.4 — « rôles vivantes » : recalcule + bump la version du cache ET publie
+     * PermissionsChanged (outbox → relay STOMP) pour rafraîchir les clients en <5 s.
+     * Appelé après toute nomination/fin de mandat pastoral.
+     */
+    @Transactional
+    public void bumpPermissions(UUID tenantId, UUID userId, String changeType) {
+        refreshPermissionCache(tenantId, userId);
+        outboxPublisher.publish(tenantId, "PERMISSION", userId, "PermissionsChanged",
+                Map.of("userId", userId.toString(), "changeType", changeType));
+    }
+
+    /**
      * Récupère la version actuelle des permissions (pour poll côté client).
      */
     @Transactional(readOnly = true)
@@ -120,7 +145,12 @@ public class PermissionResolver {
     }
 
     private void addRolePermissions(Set<String> permissions, String roleKey, UUID tenantId) {
+        // §G6.4 — le rôle résolu peut être GLOBAL (catalogue système, tenant_id
+        // NULL — ex. pont UserRole V173) ou propre au tenant ; le tenant prime.
         Optional<Role> roleOpt = roleRepository.findByTenantIdAndKey(tenantId, roleKey);
+        if (roleOpt.isEmpty()) {
+            roleOpt = roleRepository.findByTenantIdIsNullAndKey(roleKey);
+        }
         if (roleOpt.isPresent()) {
             Role role = roleOpt.get();
             if (role.getPermissions() != null) {

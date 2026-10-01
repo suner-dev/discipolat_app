@@ -68,6 +68,10 @@ public class TenantMembership {
         this.joinedAt = Instant.now();
         if (this.status == null) this.status = MembershipStatus.ACTIVE;
         if (this.scopeType == null) this.scopeType = MembershipScopeType.TENANT;
+        // §G6.4 — la colonne legacy « role » est NOT NULL : elle reflète toujours
+        // la clé du rôle moderne quand l'appelant ne la fournit pas (sinon
+        // l'acceptation d'invitation et le seed de memberships échouaient en silence).
+        if (this.roleLegacy == null && this.role != null) this.roleLegacy = this.role.getKey();
     }
 
     @PreUpdate

@@ -12,7 +12,8 @@ part of 'typing_indicator.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
+  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
+);
 
 TypingIndicator _$TypingIndicatorFromJson(Map<String, dynamic> json) {
   return _TypingIndicator.fromJson(json);
@@ -38,8 +39,9 @@ mixin _$TypingIndicator {
 /// @nodoc
 abstract class $TypingIndicatorCopyWith<$Res> {
   factory $TypingIndicatorCopyWith(
-          TypingIndicator value, $Res Function(TypingIndicator) then) =
-      _$TypingIndicatorCopyWithImpl<$Res, TypingIndicator>;
+    TypingIndicator value,
+    $Res Function(TypingIndicator) then,
+  ) = _$TypingIndicatorCopyWithImpl<$Res, TypingIndicator>;
   @useResult
   $Res call({int conversationId, int userId, String userName, bool isTyping});
 }
@@ -64,33 +66,37 @@ class _$TypingIndicatorCopyWithImpl<$Res, $Val extends TypingIndicator>
     Object? userName = null,
     Object? isTyping = null,
   }) {
-    return _then(_value.copyWith(
-      conversationId: null == conversationId
-          ? _value.conversationId
-          : conversationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userName: null == userName
-          ? _value.userName
-          : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      isTyping: null == isTyping
-          ? _value.isTyping
-          : isTyping // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ) as $Val);
+    return _then(
+      _value.copyWith(
+            conversationId: null == conversationId
+                ? _value.conversationId
+                : conversationId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            userId: null == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
+                      as int,
+            userName: null == userName
+                ? _value.userName
+                : userName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            isTyping: null == isTyping
+                ? _value.isTyping
+                : isTyping // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
   }
 }
 
 /// @nodoc
 abstract class _$$TypingIndicatorImplCopyWith<$Res>
     implements $TypingIndicatorCopyWith<$Res> {
-  factory _$$TypingIndicatorImplCopyWith(_$TypingIndicatorImpl value,
-          $Res Function(_$TypingIndicatorImpl) then) =
-      __$$TypingIndicatorImplCopyWithImpl<$Res>;
+  factory _$$TypingIndicatorImplCopyWith(
+    _$TypingIndicatorImpl value,
+    $Res Function(_$TypingIndicatorImpl) then,
+  ) = __$$TypingIndicatorImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({int conversationId, int userId, String userName, bool isTyping});
@@ -101,8 +107,9 @@ class __$$TypingIndicatorImplCopyWithImpl<$Res>
     extends _$TypingIndicatorCopyWithImpl<$Res, _$TypingIndicatorImpl>
     implements _$$TypingIndicatorImplCopyWith<$Res> {
   __$$TypingIndicatorImplCopyWithImpl(
-      _$TypingIndicatorImpl _value, $Res Function(_$TypingIndicatorImpl) _then)
-      : super(_value, _then);
+    _$TypingIndicatorImpl _value,
+    $Res Function(_$TypingIndicatorImpl) _then,
+  ) : super(_value, _then);
 
   /// Create a copy of TypingIndicator
   /// with the given fields replaced by the non-null parameter values.
@@ -114,35 +121,38 @@ class __$$TypingIndicatorImplCopyWithImpl<$Res>
     Object? userName = null,
     Object? isTyping = null,
   }) {
-    return _then(_$TypingIndicatorImpl(
-      conversationId: null == conversationId
-          ? _value.conversationId
-          : conversationId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
-      userName: null == userName
-          ? _value.userName
-          : userName // ignore: cast_nullable_to_non_nullable
-              as String,
-      isTyping: null == isTyping
-          ? _value.isTyping
-          : isTyping // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
+    return _then(
+      _$TypingIndicatorImpl(
+        conversationId: null == conversationId
+            ? _value.conversationId
+            : conversationId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        userId: null == userId
+            ? _value.userId
+            : userId // ignore: cast_nullable_to_non_nullable
+                  as int,
+        userName: null == userName
+            ? _value.userName
+            : userName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        isTyping: null == isTyping
+            ? _value.isTyping
+            : isTyping // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$TypingIndicatorImpl implements _TypingIndicator {
-  const _$TypingIndicatorImpl(
-      {required this.conversationId,
-      required this.userId,
-      required this.userName,
-      required this.isTyping});
+  const _$TypingIndicatorImpl({
+    required this.conversationId,
+    required this.userId,
+    required this.userName,
+    required this.isTyping,
+  });
 
   factory _$TypingIndicatorImpl.fromJson(Map<String, dynamic> json) =>
       _$$TypingIndicatorImplFromJson(json);
@@ -187,22 +197,23 @@ class _$TypingIndicatorImpl implements _TypingIndicator {
   @pragma('vm:prefer-inline')
   _$$TypingIndicatorImplCopyWith<_$TypingIndicatorImpl> get copyWith =>
       __$$TypingIndicatorImplCopyWithImpl<_$TypingIndicatorImpl>(
-          this, _$identity);
+        this,
+        _$identity,
+      );
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$TypingIndicatorImplToJson(
-      this,
-    );
+    return _$$TypingIndicatorImplToJson(this);
   }
 }
 
 abstract class _TypingIndicator implements TypingIndicator {
-  const factory _TypingIndicator(
-      {required final int conversationId,
-      required final int userId,
-      required final String userName,
-      required final bool isTyping}) = _$TypingIndicatorImpl;
+  const factory _TypingIndicator({
+    required final int conversationId,
+    required final int userId,
+    required final String userName,
+    required final bool isTyping,
+  }) = _$TypingIndicatorImpl;
 
   factory _TypingIndicator.fromJson(Map<String, dynamic> json) =
       _$TypingIndicatorImpl.fromJson;

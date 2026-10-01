@@ -115,6 +115,21 @@ public class AuthController {
                         clientIp,
                         httpRequest.getHeader("User-Agent"));
 
+        // PORT Develop1 (§G3.1) — « s'inscrire AU NOM D'UNE église » : le lien web
+        // /register?tenant=<slug> et le mobile (tenantId) créent directement un
+        // compte MEMBRE rattaché au tenant demandé, avec email d'activation.
+        // Sans rattachement, on reste sur le flux de main : demande d'organisation
+        // approuvée par un Super Admin (aucune église créée automatiquement).
+        if (request.tenantSlug() != null && !request.tenantSlug().isBlank()
+                || request.tenantId() != null) {
+            authService.registerInChurch(request.email(), request.password(), request.firstName(),
+                    request.lastName(), request.phone(), request.tenantSlug(), request.tenantId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", "Account created. Check your email to activate it.",
+                    "role", "MEMBRE"
+            ));
+        }
+
         authService.register(request.email(), request.password(), request.firstName(), request.lastName(),
                 request.phone(), inviteCode, request.plan(), consent);
 

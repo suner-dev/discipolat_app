@@ -43,6 +43,10 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/departments/:id/stats': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id/tools': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/departments/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/organization': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  // §G4.3 — pastorat : lecture bergers/administration, écritures PASTOR_PRINCIPAL/ADMIN.
+  '/pastoral': ['ADMIN', 'PASTEUR', 'PASTOR_PRINCIPAL'],
+  '/spaces/:id': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/departments': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/users': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/skills-matrix': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
@@ -65,6 +69,15 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   // Espaces métiers
   '/crm/faiseur': ['ADMIN', 'PASTEUR', 'FAISEUR'],
   '/cercle-faiseurs': ['ADMIN', 'PASTEUR', 'FAISEUR'],
+
+  // Administration — console tenant admin (G5.5 §58, parité garde ProtectedRoute scope="tenant")
+  '/admin/dashboard': ['ADMIN', 'PASTEUR'],
+  '/admin/members': ['ADMIN', 'PASTEUR'],
+  '/admin/roles': ['ADMIN', 'PASTEUR'],
+  '/admin/invitations': ['ADMIN', 'PASTEUR'],
+  '/admin/spaces': ['ADMIN', 'PASTEUR'],
+  '/tenant/settings': ['ADMIN', 'PASTEUR'],
+  '/tenant/modules': ['ADMIN', 'PASTEUR'],
 
   // Administration
   '/admin/payments': ['ADMIN', 'PASTEUR'],
@@ -144,9 +157,11 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/import': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/admin/import': ['ADMIN', 'PASTEUR'],
   '/admin/space-import-export': ['ADMIN', 'PASTEUR'],
+  '/admin/legacy-migration': ['ADMIN', 'PASTEUR'],
 
   // Nouveaux modules issus de l'audit des endpoints orphelins
   '/admin-requests': ['ADMIN', 'PASTEUR'],
+  '/admin/sync-conflicts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/emergency-aid': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/aid-exchange': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/2fa-status': ['ADMIN', 'PASTEUR'],

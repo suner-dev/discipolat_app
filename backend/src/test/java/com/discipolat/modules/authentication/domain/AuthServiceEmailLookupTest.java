@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -181,6 +182,12 @@ class AuthServiceEmailLookupTest {
         return new AuthService(userRepository, jwtTokenProvider, passwordEncoder, securityUtils,
                 activationTokenRepository, passwordResetTokenRepository, emailService,
                 tenantRegistrationService, tokenRevocationService, refreshTokenSessionService,
-                tenantStatusGuard, "https://app.example.com");
+                tenantStatusGuard,
+                // PORT Develop1 : persistance du tenant actif, enregistrement des
+                // personnes et lecture du tenant -> trois dependances de plus.
+                mock(com.discipolat.modules.tenants.domain.ActiveTenantService.class),
+                mock(com.discipolat.modules.people.service.PeopleService.class),
+                mock(com.discipolat.modules.tenants.domain.TenantRepository.class),
+                "https://app.example.com");
     }
 }

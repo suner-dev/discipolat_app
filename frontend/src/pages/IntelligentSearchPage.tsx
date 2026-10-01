@@ -12,7 +12,7 @@ import {
   CheckCircle2, Star,
   Home, Building2, UserCheck, ArrowLeft, ExternalLink,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { tText } from '@/i18n';
 // ======================== Types ========================
@@ -198,6 +198,18 @@ export default function IntelligentSearchPage() {
   const [selectedSoulId, setSelectedSoulId] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
+
+  // Préremplissage depuis la palette de commandes (G5.1) : /search?q=…
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && q.trim().length >= 2) {
+      setQuery(q);
+      setSearchQuery(q);
+    }
+    // Uniquement au montage : ne pas écraser une saisie utilisateur ultérieure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Focus search on mount
   useEffect(() => {
