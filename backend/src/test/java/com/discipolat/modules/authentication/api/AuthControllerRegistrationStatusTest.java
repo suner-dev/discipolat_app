@@ -49,13 +49,15 @@ class AuthControllerRegistrationStatusTest {
     @Mock private PerIpRateLimiter rateLimiter;
     @Mock private com.discipolat.modules.tenants.domain.AuthorizationService authorizationService;
     @Mock private TenantRegistrationService tenantRegistrationService;
+    @Mock private AuthResponseFactory authResponseFactory;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         AuthController controller = new AuthController(
-                authService, rateLimiter, authorizationService, tenantRegistrationService);
+                authService, rateLimiter, authorizationService, authResponseFactory,
+                tenantRegistrationService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

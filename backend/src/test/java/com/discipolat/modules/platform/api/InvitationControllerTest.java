@@ -55,6 +55,8 @@ class InvitationControllerTest {
     @Mock AuditService auditService;
     @Mock EmailService emailService;
     @Mock PerIpRateLimiter rateLimiter;
+    @Mock com.discipolat.modules.authentication.domain.SocialInvitationAcceptanceService socialInvitationAcceptanceService;
+    @Mock com.discipolat.modules.authentication.api.AuthResponseFactory authResponseFactory;
 
     @BeforeEach
     void authenticate() {
@@ -164,6 +166,8 @@ class InvitationControllerTest {
                 auditService,
                 emailService,
                 rateLimiter,
+                socialInvitationAcceptanceService,
+                authResponseFactory,
                 "https://app.example.com"
         );
     }

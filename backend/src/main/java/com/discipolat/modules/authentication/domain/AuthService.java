@@ -142,8 +142,34 @@ public class AuthService {
         }
 
         // B1 : un tenant SUSPENDED / CANCELLED ne doit pas pouvoir se connecter.
-        // Controle APRES les verifications de compte (statut, mot de passe) afin de
-        // ne rien divulguer sur un compte en attente d'activation ou bloque.
+        // Le controle est fait dans issueSession(), donc APRES les verifications
+        // de compte (statut, mot de passe) — on ne divulgue rien sur un compte en
+        // attente d'activation ou bloque. Il ne doit pas etre appele ici en plus :
+        // la connexion sociale passe elle aussi par issueSession(), et deux
+        // appels pour une seule tentative rendraient le double comptage illisible.
+        //
+        // Emission de la session : logique factorisee dans issueSession(), partagee
+        // avec la connexion par identite externe (Google/Microsoft) pour qu'aucun
+        // chemin d'authentification ne puisse deriver du login par mot de passe.
+        return issueSession(user);
+    }
+
+    /**
+     * Emet une sessioncomplete pour un compte deja authentifie (mot de passe
+     * verifie, ou identite externe verifiee par {@code SocialIdentityVerifier}).
+     *
+     * <p>Centralise ce qui doit etre <b>identique</b> quel que soit le moyen
+     * d'authentification : remise a zero des tentatives echouees,
+     * synchronisation de l'ensemble des roles, role actif par priorite,
+     * <b>garde de statut du tenant</b>, puis access token + refresh token enregstre
+     * en session serveur.
+     *
+     * <p>La garde `tenantStatusGuard` est Appeliée ici et non seulement dans
+     * {@code login()} : une eglise suspendue doit interdire la connexion
+     * PAR TOUS LES CHEMINS, y compris « Se connecter avec Google ». C'etait un
+     * trou : la connexion sociale ne verifiait pas le statut du tenant.
+     */
+    public AuthResult issueSession(User user) {
         tenantStatusGuard.assertAccessible(user.getTenantId());
 
         // Reset failed attempts on successful login

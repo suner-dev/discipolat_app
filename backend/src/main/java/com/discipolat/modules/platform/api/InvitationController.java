@@ -5,13 +5,19 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.authentication.domain.EmailService;
+import com.discipolat.modules.authentication.domain.SocialInvitationAcceptanceService;
+import com.discipolat.modules.authentication.domain.SocialProvider;
+import com.discipolat.modules.authentication.api.AuthResponseFactory;
+import com.discipolat.modules.authentication.domain.SocialIdentityVerifier;
 import com.discipolat.common.infrastructure.config.PerIpRateLimiter;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +60,8 @@ public class InvitationController {
     private final AuditService auditService;
     private final com.discipolat.modules.authentication.domain.EmailService emailService;
     private final com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter;
+    private final SocialInvitationAcceptanceService socialInvitationAcceptanceService;
+    private final AuthResponseFactory authResponseFactory;
     private final String frontendUrl;
 
     public InvitationController(InvitationRepository invitationRepository,
@@ -67,6 +75,8 @@ public class InvitationController {
                                  AuditService auditService,
                                  com.discipolat.modules.authentication.domain.EmailService emailService,
                                  com.discipolat.common.infrastructure.config.PerIpRateLimiter rateLimiter,
+                                 SocialInvitationAcceptanceService socialInvitationAcceptanceService,
+                                 AuthResponseFactory authResponseFactory,
                                 @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.invitationRepository = invitationRepository;
         this.invitationService = invitationService;
@@ -79,6 +89,8 @@ public class InvitationController {
         this.auditService = auditService;
         this.emailService = emailService;
         this.rateLimiter = rateLimiter;
+        this.socialInvitationAcceptanceService = socialInvitationAcceptanceService;
+        this.authResponseFactory = authResponseFactory;
         this.frontendUrl = frontendUrl;
     }
 
@@ -394,6 +406,116 @@ public class InvitationController {
                                 + "utilisez le sélecteur d'organisation."
                                 : "Invitation acceptée avec succès"
                 ));
+    }
+
+    // ==================== PUBLIC: ACCEPT INVITATION WITH EXTERNAL IDENTITY ====================
+
+    /**
+     * Accepte une invitation en s'identifiant avec Google ou Microsoft.
+     *
+     * <p>Cas d'usage reel : une eglise invite {@code paul@exemple.com}, Paul
+     * n'a pas de mot de passe et ne souhaite pas en creer un. Il clique sur son
+     * lien, choisit « Continuer avec Google », et l'API :
+     * <ol>
+     *   <li>verifie le credential contre les cles publiques du fournisseur ;</li>
+     *   <li>exige que l'email <b>verifie</b> soit celui de l'invitation — c'est la
+     *       regle anti-detournement : sans elle, n'importe qui pourrait accepter
+     *       une invitation adressee a un tiers avec SON propre compte ;</li>
+     *   <li>reutilise le chemin d'acceptation existant (compte, adhesion,
+     *       repertoire, audit, email de bienvenue) ;</li>
+     *   <li>rattache l'identite au compte cree ;</li>
+     *   <li>ouvre la session.</li>
+     * </ol>
+     *
+     * <p>Le role et l'eglise proviennent <b>uniquement</b> de l'invitation.
+     *
+     * <p>Public comme {@code /accept/{token}} : l'invite n'a pas encore de
+     * compte, donc pas de jeton. Securise par le secret du token, son expiration,
+     * le controle d'email ci-dessus, et le rate-limit par IP.
+     */
+    @PostMapping("/accept-identity/{token}")
+    public ResponseEntity<Map<String, Object>> acceptInvitationWithIdentity(
+            @PathVariable String token,
+            @RequestBody(required = false) Map<String, String> request,
+            HttpServletRequest httpRequest) {
+
+        var ip = httpRequest != null ? httpRequest.getRemoteAddr() : "unknown";
+        var rl = rateLimiter.tryConsumeInvitationAccept(ip);
+        if (!rl.allowed()) {
+            return ResponseEntity.status(429)
+                    .cacheControl(CacheControl.noStore())
+                    .headers(h -> {
+                        h.set("Retry-After", String.valueOf(rl.retryAfterSeconds()));
+                        h.set("X-RateLimit-Remaining", "0");
+                    })
+                    .body(Map.of("error", "Trop de tentatives, réessayez plus tard"));
+        }
+
+        String providerName = request != null ? request.get("provider") : null;
+        String credential = request != null ? request.get("credential") : null;
+        String firstName = request != null ? request.get("firstName") : null;
+        String lastName = request != null ? request.get("lastName") : null;
+
+        SocialProvider provider;
+        try {
+            provider = SocialProvider.fromWireName(providerName);
+        } catch (IllegalArgumentException unsupported) {
+            throw SocialIdentityVerifier.SocialCredentialException.invalid(
+                    "Fournisseur d'identite non pris en charge");
+        }
+
+        var outcome = socialInvitationAcceptanceService.acceptWithIdentity(
+                token, provider, credential, firstName, lastName);
+
+        var acceptance = outcome.acceptance();
+        boolean welcomeEmailSent = sendWelcomeEmail(acceptance);
+        var authResponse = authResponseFactory.from(outcome.session());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("provider", provider.wireName());
+        body.put("identityCreated", outcome.identityCreated());
+        body.put("userId", authResponse.userId().toString());
+        body.put("email", authResponse.email());
+        body.put("tenantId", acceptance.tenantId().toString());
+        body.put("alreadyMember", acceptance.alreadyMember());
+        body.put("crossTenantIdentity", acceptance.crossTenantIdentity());
+        body.put("welcomeEmailSent", welcomeEmailSent);
+        body.put("accessToken", authResponse.accessToken());
+        body.put("refreshToken", authResponse.refreshToken());
+        body.put("tokenType", authResponse.tokenType());
+        body.put("role", authResponse.role());
+        body.put("roles", authResponse.roles());
+        body.put("activeRole", authResponse.activeRole());
+        body.put("firstName", authResponse.firstName());
+        body.put("lastName", authResponse.lastName());
+        body.put("twoFactorEnabled", authResponse.twoFactorEnabled());
+        body.put("platformRoles", authResponse.platformRoles());
+        body.put("platformSuperAdmin", authResponse.platformSuperAdmin());
+        body.put("message", acceptance.crossTenantIdentity()
+                ? "Invitation acceptée. Votre compte existe déjà dans une autre église : "
+                        + "utilisez le sélecteur d'organisation."
+                : "Invitation acceptée avec succès");
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(body);
+    }
+
+    /**
+     * Erreur de credential externe traduite en reponse HTTP explicite, pour que le
+     * client sache s'il doit recommencer la connexion ou proposer l'invitation.
+     */
+    @ExceptionHandler(SocialIdentityVerifier.SocialCredentialException.class)
+    public ProblemDetail handleSocialCredentialException(
+            SocialIdentityVerifier.SocialCredentialException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                org.springframework.http.HttpStatus.resolve(exception.httpStatus()),
+                exception.getMessage());
+        problem.setTitle(exception.code());
+        problem.setType(java.net.URI.create("https://api.discipolat.com/errors/" + exception.code()));
+        problem.setProperty("provider", "social");
+        return problem;
     }
 
     /**

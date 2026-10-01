@@ -104,6 +104,29 @@ services:
         value: https://discipolat.onrender.com
       - key: FRONTEND_URL_BASE
         value: https://discipolat.onrender.com
+      # ---- Connexion par identite externe (Google / Microsoft) -------------
+      # Gratuits et sans plafond : verification locale du jeton contre les cles
+      # publiques (JWKS). Desactives tant que les identifiants ne sont pas
+      # renseignes — l'API repond alors 503 et l'interface n'affiche aucun
+      # bouton. Voir docs/AUTH_SOCIAL.md.
+      - key: SOCIAL_GOOGLE_ENABLED
+        value: "false"
+      - key: SOCIAL_GOOGLE_WEB_CLIENT_ID
+        sync: false
+      - key: SOCIAL_GOOGLE_ANDROID_CLIENT_ID
+        sync: false
+      - key: SOCIAL_GOOGLE_IOS_CLIENT_ID
+        sync: false
+      - key: SOCIAL_MICROSOFT_ENABLED
+        value: "false"
+      - key: SOCIAL_MICROSOFT_CLIENT_ID
+        sync: false
+      - key: SOCIAL_MICROSOFT_TENANT_ID
+        value: common
+      - key: SOCIAL_ALLOW_ACCOUNT_LINKING
+        value: "true"
+      - key: SOCIAL_REQUIRE_VERIFIED_EMAIL
+        value: "true"
     # Build is handled by GitHub Actions (docker build & push to GHCR)
     image:
       registry: ghcr.io
@@ -136,6 +159,14 @@ services:
         value: "true"
       - key: VITE_API_URL
         value: https://discipolat-api.onrender.com
+      # Client-id public Google (non secret) : sert a afficher le bouton et a
+      # initialiser Google Identity Services. Serveur reste l'autorite.
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: VITE_MICROSOFT_CLIENT_ID
+        sync: false
+      - key: VITE_MICROSOFT_TENANT_ID
+        value: common
     # En-têtes de sécurité (équivalents à frontend/nginx.conf)
     headers:
       - path: /*
@@ -155,7 +186,7 @@ services:
         value: "max-age=31536000; includeSubDomains; preload"
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none';"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com https://accounts.google.com https://login.microsoftonline.com; frame-src 'self' https://accounts.google.com; frame-ancestors 'none';"
     # Fallback SPA — le routage client (react-router) passe par /index.html
     routes:
       - type: rewrite
@@ -224,6 +255,23 @@ services:
         value: https://discipolat-beta.onrender.com
       - key: FRONTEND_URL_BASE
         value: https://discipolat-beta.onrender.com
+      # Memes variables que la prod (voir docs/AUTH_SOCIAL.md). L'environnement
+      # beta possede sa propre base : les identites rattachees en beta
+      # n'apparaissent donc pas en production.
+      - key: SOCIAL_GOOGLE_ENABLED
+        value: "false"
+      - key: SOCIAL_GOOGLE_WEB_CLIENT_ID
+        sync: false
+      - key: SOCIAL_GOOGLE_ANDROID_CLIENT_ID
+        sync: false
+      - key: SOCIAL_GOOGLE_IOS_CLIENT_ID
+        sync: false
+      - key: SOCIAL_MICROSOFT_ENABLED
+        value: "false"
+      - key: SOCIAL_MICROSOFT_CLIENT_ID
+        sync: false
+      - key: SOCIAL_MICROSOFT_TENANT_ID
+        value: common
     image:
       registry: ghcr.io
       repository: suner-dev/discipolat_app/backend
@@ -249,6 +297,12 @@ services:
         value: "true"
       - key: VITE_API_URL
         value: https://discipolat-beta-api.onrender.com
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: VITE_MICROSOFT_CLIENT_ID
+        sync: false
+      - key: VITE_MICROSOFT_TENANT_ID
+        value: common
     headers:
       - path: /*
         name: X-Frame-Options
@@ -267,7 +321,7 @@ services:
         value: "max-age=31536000; includeSubDomains; preload"
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com; frame-ancestors 'none';"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com https://accounts.google.com https://login.microsoftonline.com; frame-src 'self' https://accounts.google.com; frame-ancestors 'none';"
     routes:
       - type: rewrite
         source: /*

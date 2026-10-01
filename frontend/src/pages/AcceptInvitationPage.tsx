@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { requestGoogleCredential } from "@/features/auth/social/google";
+import { requestMicrosoftCredential } from "@/features/auth/social/microsoft";
+import {
+  buildTimeClientIds,
+  fetchSocialProviders,
+  toSocialAuthError,
+} from "@/features/auth/social/providers";
+import type { SocialProviderId, SocialProvidersState } from "@/features/auth/social/types";
 
 interface InvitationData {
   email: string;
@@ -15,6 +24,7 @@ interface InvitationData {
 export default function AcceptInvitationPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { loginWithSocialToken } = useAuth();
   const token = searchParams.get("token");
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +37,10 @@ export default function AcceptInvitationPage() {
     password: "",
     confirmPassword: "",
   });
+  // Connexion par identité externe : évite d'imposer un mot de passe à quelqu'un
+  // qui n'en veut pas. Le rôle et l'église viennent TOUJOURS de l'invitation.
+  const [socialState, setSocialState] = useState<SocialProvidersState | null>(null);
+  const [socialPending, setSocialPending] = useState<SocialProviderId | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -36,6 +50,86 @@ export default function AcceptInvitationPage() {
     }
     loadInvitation();
   }, [token]);
+
+  useEffect(() => {
+    let active = true;
+    fetchSocialProviders()
+      .then((providers) => {
+        if (active) setSocialState(providers);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /**
+   * Accepte l'invitation avec une identité externe vérifiée (Google/Microsoft).
+   *
+   * <p>Le backend refuse si l'email vérifié par le fournisseur n'est pas celui de
+   * l'invitation : l'interface n'a donc rien à vérifier elle-même, et affiche le
+   * message du serveur tel quel.
+   */
+  const handleAcceptWithIdentity = async (provider: SocialProviderId) => {
+    if (!token) return;
+    const clientIds = buildTimeClientIds();
+    const clientId = provider === "google" ? clientIds.google : clientIds.microsoft;
+    if (!clientId) {
+      setError("Ce mode de connexion n'est pas configuré sur ce serveur.");
+      return;
+    }
+
+    setSocialPending(provider);
+    setError(null);
+    try {
+      const credential =
+        provider === "google"
+          ? await requestGoogleCredential(clientId)
+          : await requestMicrosoftCredential(
+              clientId,
+              import.meta.env.VITE_MICROSOFT_TENANT_ID || "common"
+            );
+
+      const res = await api.post(
+        `/admin/invitations/accept-identity/${encodeURIComponent(token)}`,
+        {
+          provider,
+          credential,
+          // Saisie prioritaire ; sinon le backend déduit du nom du fournisseur.
+          firstName: formData.firstName || undefined,
+          lastName: formData.lastName || undefined,
+        }
+      );
+
+      const data = res.data;
+      // Session ouverte immédiatement : l'invité n'a pas à ressaisir ses identifiants.
+      loginWithSocialToken(
+        data.accessToken,
+        {
+          id: data.userId,
+          email: data.email,
+          firstName: data.firstName ?? undefined,
+          lastName: data.lastName ?? undefined,
+          role: data.role,
+        },
+        data.refreshToken
+      );
+      setSuccess(true);
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+    } catch (err) {
+      const failure = toSocialAuthError(err);
+      if (failure.code === "SOCIAL_LOGIN_CANCELLED") return;
+      if (failure.code === "SOCIAL_EMAIL_MISMATCH") {
+        setError(
+          "L'adresse de votre compte externe ne correspond pas à l'adresse invitée."
+        );
+        return;
+      }
+      setError(failure.message);
+    } finally {
+      setSocialPending(null);
+    }
+  };
 
   const loadInvitation = async () => {
     if (!token) return;
@@ -138,7 +232,11 @@ export default function AcceptInvitationPage() {
               {invitation?.accountExists ? "Invitation acceptée avec succès !" : "Compte créé avec succès !"}
             </h1>
             <p className="mt-2 text-gray-600">Vous êtes maintenant membre de <strong>{invitation?.tenantName}</strong>.</p>
-            <p className="mt-2 text-sm text-gray-500">Redirection vers la connexion dans 3 secondes...</p>
+            <p className="mt-2 text-sm text-gray-500">
+              {socialPending !== null || localStorage.getItem('accessToken')
+                ? 'Redirection vers votre espace…'
+                : 'Redirection vers la connexion dans 3 secondes...'}
+            </p>
           </div>
         </div>
       </div>
@@ -254,6 +352,44 @@ export default function AcceptInvitationPage() {
               </button>
             </div>
           </form>
+
+          {/* Connexion par identité externe — pour un nouveau membre qui ne veut
+              pas créer de mot de passe. Le rôle affiché ci-dessus (MEMBRE,
+              PASTEUR…) vient de l'invitation : le fournisseur ne donne aucun
+              droit, il prouve seulement l'identité. */}
+          {!invitation?.accountExists && socialState && socialState.providers.length > 0 && (
+            <div className="mt-6">
+              <div className="relative flex items-center">
+                <div className="flex-1 border-t border-gray-200" />
+                <span className="px-3 text-xs text-gray-400">ou</span>
+                <div className="flex-1 border-t border-gray-200" />
+              </div>
+              <div className="mt-4 space-y-3">
+                {socialState.providers.map(({ provider, label }) => (
+                  <button
+                    key={provider}
+                    type="button"
+                    onClick={() => handleAcceptWithIdentity(provider)}
+                    disabled={accepting || socialPending !== null}
+                    aria-busy={socialPending === provider}
+                    className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white
+                               text-gray-700 font-medium text-sm hover:bg-gray-50
+                               transition-colors flex items-center justify-center gap-3
+                               disabled:opacity-60 disabled:cursor-not-allowed
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {socialPending === provider
+                      ? "Connexion…"
+                      : `Accepter l'invitation avec ${label}`}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-gray-500 text-center">
+                L'adresse vérifiée par {socialState.providers.map((entry) => entry.label).join(' ou ')} doit
+                correspondre à <strong>{invitation?.email}</strong>.
+              </p>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Déjà un compte ?{" "}
