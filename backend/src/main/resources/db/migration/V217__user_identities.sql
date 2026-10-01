@@ -1,4 +1,4 @@
--- V206 : identités externes (Google / Microsoft) rattachées à un compte.
+-- V217 (renuméroté depuis V206 — collision avec le port Develop1 V206..V216 sur main) : identités externes (Google / Microsoft) rattachées à un compte.
 --
 -- ADDITIF STRICT : aucun DROP, aucune modification de migration existante.
 --

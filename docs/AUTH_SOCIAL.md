@@ -74,7 +74,8 @@ la forme est un email et que le fournisseur n'a pas dit « non vérifié ».
 
 ## 4. Modèle de données
 
-Migration **`V206__user_identities.sql`** (additive stricte).
+Migration **`V217__user_identities.sql`** (additive stricte ; renumérotée depuis
+V206 — collision avec le port Develop1 qui occupe V206..V216 sur main).
 
 ```
 user_identities(id, user_id → users, provider, subject, email_at_link,

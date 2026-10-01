@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Identité de connexion externe rattachée à un compte Discipolat
- * (migration {@code V206__user_identities.sql}).
+ * (migration {@code V217__user_identities.sql} — renumérotée depuis V206, collision avec le port Develop1).
  *
  * <p><b>Ce n'est PAS une entité tenant.</b> Elle ne porte ni {@code tenant_id}
  * ni filtre Hibernate {@code tenantFilter}, à dessein : l'identité appartient
