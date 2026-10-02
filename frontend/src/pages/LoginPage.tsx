@@ -113,9 +113,9 @@ export default function LoginPage() {
   // Already authenticated (and not in the middle of choosing a role) → go to dashboard
   useEffect(() => {
     if (isAuthenticated && !showRoleSelector && !navigationHandledRef.current) {
-      navigate('/dashboard', { replace: true });
+      navigate(user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard', { replace: true });
     }
-  }, [isAuthenticated, showRoleSelector, navigate]);
+  }, [isAuthenticated, showRoleSelector, navigate, user]);
 
   const {
     register,
@@ -142,7 +142,10 @@ export default function LoginPage() {
       if (result?.twoFactorEnabled) {
         navigate('/verify-2fa');
       } else {
-        navigate('/dashboard');
+        // Le super admin plateforme atterrit sur SON dashboard (gestion des tenants),
+        // cohérent avec la HomeGate (/). Le tenant dashboard reste atteignable par
+        // ailleurs (impersonation / navigation), comme pour tout admin.
+        navigate(result?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard');
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -154,7 +157,7 @@ export default function LoginPage() {
     setRoleLoading(true);
     try {
       await switchRole(role);
-      navigate('/dashboard');
+      navigate(user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard');
     } catch {
       setError('Échec de la sélection du rôle');
       setRoleLoading(false);

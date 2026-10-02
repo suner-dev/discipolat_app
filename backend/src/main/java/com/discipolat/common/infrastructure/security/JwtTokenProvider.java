@@ -125,9 +125,13 @@ public class JwtTokenProvider {
             claims.put("familyId", familyId.toString());
         }
 
+        // Rotation-safe : un nonce jti aleatoire garantit que chaque refresh token
+        // est unique meme si login et refresh tombent dans la meme seconde (iat a la
+        // seconde + familyId reuse -> sinon jeton identique -> token_hash duplique).
         return Jwts.builder()
                 .claims(claims)
                 .subject(userId.toString())
+                .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(Instant.now().plus(Duration.ofDays(REFRESH_TOKEN_VALIDITY_DAYS))))
                 .signWith(privateKey, Jwts.SIG.RS256)

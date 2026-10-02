@@ -49,7 +49,15 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Les endpoints d'authentification (login, register, magic-link, mot de passe…)
+    // renvoient un 401 légitime (identifiants invalides, compte inactif…). Ce n'est
+    // PAS un access token expiré : ne surtout pas tenter un refresh ici, sous peine
+    // de masquer la vraie erreur derrière « No refresh token ». /auth/me reste un
+    // appel protégé -> il bénéficie bien du refresh.
+    const reqUrl = originalRequest?.url ?? '';
+    const isAuthEndpoint = reqUrl.startsWith('/auth/') && !reqUrl.startsWith('/auth/me');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
