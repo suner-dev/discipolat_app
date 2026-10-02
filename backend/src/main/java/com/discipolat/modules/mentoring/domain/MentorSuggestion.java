@@ -44,7 +44,15 @@ public class MentorSuggestion {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String titre;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    /**
+     * Colonne volontairement entre guillemets : ANALYSE est un mot RÉSERVÉ
+     * PostgreSQL (synonyme legacy de ANALYZE). Sans citation, tout SQL généré
+     * par Hibernate (`select … analyse …`) tombe en « syntax error at or near
+     * "analyse" » sur la base de prod — le piège classique masqué par H2 en
+     * mode PostgreSQL. La migration V114 crée d'ailleurs « "analyse" » cité.
+     * Audit complet des identifiants réservés : unique occurrence du schéma.
+     */
+    @Column(name = "\"analyse\"", nullable = false, columnDefinition = "TEXT")
     private String analyse;
 
     @Column(columnDefinition = "TEXT")

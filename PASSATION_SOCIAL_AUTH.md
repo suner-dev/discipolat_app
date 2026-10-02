@@ -327,3 +327,23 @@ Settings), le pipeline devient entièrement vert. **Ne pas masquer ce rouge
 en `continue-on-error`** : un déploiement qui n'a pas lieu doit rester
 visible.
 
+### 6.7 Chantier suivant SOLDÉ 2026-10-02 — mot réservé PostgreSQL `analyse`
+
+La piste ouverte au §6.5 (`fix/analyse-mot-reserve-pg`) est corrigée.
+
+- **Racine** : `MentorSuggestion.analyse` était mappé sans nom cité, alors que
+  V114 crée bien `"analyse"` cité. ANALYSE étant un mot **réservé** PostgreSQL,
+  Hibernate émettait `select … analyse …` nu → « syntax error at or near
+  "analyse" » sur la base réelle : tout `GET /mentoring` /
+  `POST /mentoring/generate` tombait en erreur SQL sur Render. Invisible sous
+  H2 (mode PostgreSQL, `create-drop`), qui masque le mot réservé.
+- **Correctif** : `@Column(name = "\"analyse\"")` (unique occurrence du schéma,
+  vérifiée par audit des identifiants). Les autres griefs du §6.5 (relations
+  `create-drop` absentes, binding `Instant`) relèvent d'un chantier à part, non
+  déclenchés par ce correctif.
+- **Verrou** : nouveau cas dans `FlywayMigrationChainPostgreSqlTest` — sur le
+  PostgreSQL 16 réel de la chaîne migrée, exige (1) que le mapping reste cité,
+  (2) que `SELECT analyse …` nu soit refusé et `SELECT "analyse" …` passe.
+- **Gate rejoué** (`mvn clean test`, JDK 21, PostgreSQL 16.15 réel) : chaîne
+  **V1..V218** appliquée + `validate` propre ; **9/9 verts**, 0 échec.
+

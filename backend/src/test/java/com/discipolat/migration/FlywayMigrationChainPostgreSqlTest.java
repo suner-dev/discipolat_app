@@ -12,6 +12,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.discipolat.modules.mentoring.domain.MentorSuggestion;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -336,6 +338,44 @@ class FlywayMigrationChainPostgreSqlTest {
         assertThat(missing)
                 .as("tables d'entités absentes du schéma réellement migré (dérive de famille H)")
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("Mot réserve PG « analyse » : mapping cité et verrouillé (mentoring, mine de prod Render)")
+    void analyseReservedWordIsQuotedInMappingAndSchema() throws Exception {
+        // Racine PRODUCTION réelle : ANALYSE est un mot RÉSERVÉ PostgreSQL. Sans
+        // citation dans le mapping, Hibernate émet `select … analyse …` et tout
+        // `GET /mentoring` / `POST /mentoring/generate` tombe en « syntax error at
+        // or near "analyse" » sur la base réelle. H2 (mode PostgreSQL, profil de
+        // test create-drop) MASQUE ce défaut — d'où l'obligation de le vérifier
+        // sur le conteneur PG de ce gate, pas sous H2.
+
+        // (1) Garde anti-dérive du mapping : la colonne doit rester explicitement
+        // citée. Le retirer en silence réintroduirait le bug de production.
+        Column colonne = MentorSuggestion.class
+                .getDeclaredField("analyse")
+                .getAnnotation(Column.class);
+        assertThat(colonne)
+                .as("le champ analyse doit porter un @Column explicite")
+                .isNotNull();
+        assertThat(colonne.name())
+                .as("le mapping doit citer la colonne -> \"analyse\"")
+                .isEqualTo("\"analyse\"");
+
+        // (2) Preuve sur PostgreSQL réel, schéma migré : le mot nu est refusé par
+        // le parseur (réservé), la forme citée passe — exactement l'écart que le
+        // mapping corrige.
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement()) {
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    java.sql.SQLException.class,
+                    () -> statement.executeQuery("SELECT analyse FROM mentor_suggestions").close(),
+                    "« analyse » nu doit rester refusé par PostgreSQL — sinon la citation du mapping n'a plus de raison d'être");
+            try (ResultSet rs = statement.executeQuery("SELECT \"analyse\" FROM mentor_suggestions")) {
+                rs.next(); // la forme citée doit s'exécuter sans erreur de syntaxe
+            }
+        }
     }
 
     private static Flyway newFlyway() {
