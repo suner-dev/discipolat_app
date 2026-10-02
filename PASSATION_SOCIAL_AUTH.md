@@ -222,3 +222,80 @@ test mobile, widget mobile `social_login_buttons.dart`.
 > « bientôt disponible » ont été **remplacés** par Microsoft (fonctionnel) — seul
 > écart à « ne rien supprimer », assumé : un bouton mort est une promesse
 > d'interface non tenue.
+
+---
+
+## 6. Reprise 2026-10-02 — le chantier social-auth est SOLDE (poussé, vérifié)
+
+Cette section remplace l'état « RESTE À FAIRE » ci-dessus. Preuves rejouées sur
+l'**arbre fusionné** `main` (= `c2c9a5cb` + `c55bb991`), pas sur la branche
+originale.
+
+### 6.1 §2.1 Merge + push — **FAIT**
+
+- Le merge n'était plus un fast-forward (main avait reçu depuis le port
+  Develop1 et la fusion Facebook) : il a été fait par commits de merge
+  `4b23c0bd` puis `c2c9a5cb` (renumérotation V206→V217 déjà tranchée,
+  unions additives, garde-fou 0 fichier main perdu).
+- **Poussée** : `origin/main` `1c480c51..c55bb991` en fast-forward, sans
+  force ; `feat/social-auth-google-microsoft` publiée pour la traçabilité.
+
+### 6.2 Gates rejoués sur l'arbre fusionné — **VERTS**
+
+| Couche | Résultat sur l'arbre fusionné |
+|---|---|
+| Backend | `mvn test` : 1 884 tests, **1 882 verts** + 2 gates conteneurisés d'abord en échec (**cause racine §6.4**) → rejoués après `mvn clean` : **16/16 verts** (`EventTableContractTest` 8/8 + `FlywayMigrationChainPostgreSqlTest` 8/8, chaîne **V1..V218** rejouée sur PostgreSQL 16 réel) |
+| Frontend | `tsc --noEmit` 0 erreur ; `vitest run` **543/543** (73 fichiers) ; `npm run build` ✓ |
+| Mobile | `flutter analyze` 0 erreur, **619 items = baseline**, plus aucune remarque dans `features/auth/social/` (les 2 seules neuves étaient dans `social_auth_service_test.dart` — corrigées + cas de propagation d'échec de source native ajouté, commit `c55bb991`) ; `flutter test` **555/555** |
+
+### 6.3 §2.2 Build APK — **VALIDÉ** (double preuve, le risque ne s'est pas matérialisé)
+
+- **CI** (workflow `ci.yml`, job *Mobile - Flutter* sur le push `c55bb991`) :
+  `flutter analyze` ✓, `flutter test` ✓, **`flutter build apk --debug` ✓**
+  (JDK 21, même commande que §2.2).
+- **Local** : la partie qui dépendait du risque (les plugins natifs) est
+  compilée sans toucher à `build.gradle.kts` — `google_sign_in_android`
+  (sorties javac) et `flutter_web_auth_2` (sorties kotlin-classes) compilent
+  avec `jvmTarget = JVM_11` sur JDK 21. Le **passage VERSION_17 de
+  `build.gradle.kts` n'est donc PAS nécessaire** — ne pas l'infliger
+  « au cas où ».
+- Réserve honnête : le `flutter build apk` local complet n'a pas abouti ici,
+  bloqué par le téléchargement des jars moteur (`arm64_v8a_debug` etc.,
+  ~85 Mo/jar à ~10 Ko/s sur la ligne partagée). C'est un plafond réseau
+  ambiant, pas un défaut du chantier ; la CI, sur runner sain, a fini le
+  travail.
+
+### 6.4 Cause racine trouvée en route (à retenir pour toute machine)
+
+Les 2 échecs initiaux des gates conteneurisés n'étaient **pas** le faux
+négatif de charge annoncé au §1 : `target/classes/db/migration` gardait une
+copie **périmée** `V207__user_identities_facebook.sql` (noms antérieurs à la
+renumérotation V218 du merge). Maven ne supprime jamais une copie renommée
+dans `target/classes` → Flyway voyait **deux V207** et hurlait sur `validate`
+dès que le conteneur démarrait. La **source est saine** (aucun doublon de
+version, vérifié) ; `mvn clean` rétablit la vérité et les 2 gates passent.
+Réflexe : sur un arbre fraîchement mergé, **toujours `mvn clean` avant de
+conclure d'un échec de migration**.
+
+### 6.5 CI backend — échec PRÉEXISTANT, sans rapport avec ce lot
+
+Le job *Backend - Build & Test* de `ci.yml` est rouge sur `main` depuis ≥ 10
+poussées (dont des poussées **documentaires seules** — `f2769ab0`, `8854ac51`,
+`ab1b7a14`). Signature (83 occurrences, artifact surefire du run
+`36986676427`) : `BadSqlGrammarException … SET REFERENTIAL_INTEGRITY FALSE`
+— syntaxe **H2** jouée contre le **service PostgreSQL** du job. 18 classes
+d'intégration écrites pour H2 ; **`user_identities` n'apparaît dans aucune**
+: rien de social-auth n'y participe. Corriger cette dérive (tester le type
+de base avant ces commandes, ou aligner le job sur le profil réel + gate
+Testcontainers dédié) est un **chantier à part**, hors périmètre ici.
+`Security` (workflow security.yml) : même diagnostic — rouge préexistant
+(étape Audit), gitleaks ✓.
+
+### 6.6 Ce qui reste — actions humaines (inchangées, §2.3–2.5)
+
+Créer les identifiants Google/Microsoft (§2.3, `docs/AUTH_SOCIAL.md` §6),
+poser les variables d'environnement Render (§2.4 — piège du tiret des
+propriétés, §2.4), validation terrain du flux Microsoft sur appareil réel
+(§2.5) avant d'activer le bouton mobile. Le code est fail-closed : sans
+cela, rien ne s'affiche et c'est voulu.
+
