@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -98,16 +99,11 @@ class PropagationConsistencyTest {
     void setUp() {
         // Base propre entre chaque test : les compteurs et listes doivent
         // refléter UNIQUEMENT les données du scénario courant.
-        // H2 : une table par TRUNCATE et pas de CASCADE → on coupe l'intégrité
-        // référentielle le temps du nettoyage (UUID : pas de séquence à réinitialiser).
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of(
+        // Vidage portable (H2 comme PostgreSQL) : la sémantique est dans DatabaseReset.
+        DatabaseReset.truncate(jdbcTemplate,
                 "notifications", "soul_history", "soul_departments",
                 "member_departments", "family_chief_history", "transfer_requests",
-                "souls", "families", "departments", "users", "user_roles")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                "souls", "families", "departments", "users", "user_roles");
         TenantContext.setTenantId(DEFAULT_TENANT_ID);
         pasteurId = saveUser("pasteur@test", UserRole.PASTEUR, "Pierre", "Pasteur").getId();
         login(pasteurId, "PASTEUR");

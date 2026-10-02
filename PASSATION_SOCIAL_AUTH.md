@@ -291,6 +291,23 @@ Testcontainers dédié) est un **chantier à part**, hors périmètre ici.
 `Security` (workflow security.yml) : même diagnostic — rouge préexistant
 (étape Audit), gitleaks ✓.
 
+**SOLDEE le 2026-10-02** (lot `fix/ci-backend-tests-portables`) : la cause
+exacte était `SPRING_DATASOURCE_URL` injecté par le job, écrasant le profil
+H2 des tests. Le job est scindé en *Backend - Tests (H2, profil test)* +
+*Backend - Gates PostgreSQL (Testcontainers)* ; les 9 classes avec
+H2-ismes (`SET REFERENTIAL_INTEGRITY`, 18 énoncés) passent par le helper
+dialecte-indépendant `com.discipolat.support.DatabaseReset` ;
+`LegacyMigrationEngineIntegrationTest` était dependency-invisible (elle
+comptait sur l'état résiduel d'autres classes pour son quota SaaS) —
+devenue autoportante. **Nouvelle piste ouverte, chantier suivant** :
+la génération `create-drop` des entités est incompatible PostgreSQL
+(relation `outbox_event`/`payment_intents`/`tenant_subscriptions` absentes,
+binding `Instant`, et mot réservé **`analyse`** — mine PRODUCTION réelle :
+`MentorSuggestion.analyse` n'est pas cité dans `@Column`, alors que
+Flyway V114 crée bien `"analyse"` cité ; tout `GET /mentoring` ou
+`POST /mentoring/generate` sur Render tombe en erreur SQL). Correctif
+candidat : `@Column(name = "\"analyse\"")` + rejeu des gates.
+
 ### 6.6 Ce qui reste — actions humaines (inchangées, §2.3–2.5)
 
 Créer les identifiants Google/Microsoft (§2.3, `docs/AUTH_SOCIAL.md` §6),

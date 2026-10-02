@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -93,14 +94,10 @@ class PeopleCriticalPathIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of(
+        DatabaseReset.truncate(jdbcTemplate,
                 "soul_history", "soul_departments", "soul_notes", "soul_tags",
                 "souls", "families", "users", "user_roles", "membership", "space_membership",
-                "tenant_memberships", "invitations", "person")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                "tenant_memberships", "invitations", "person");
 
         ensureActiveTenant(DEFAULT_TENANT_ID);
         ensurePlanAndSubscription();
