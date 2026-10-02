@@ -72,3 +72,6 @@ docs/PRMPT.txt
 
 # Racine de stockage fichiers pour launches jetables de recette (DISCIPOLAT_FILE_STORAGE_ROOT)
 backend/storage-e2e/
+
+# Worktrees jetables de recette E2E (base « main-base » détachée, revues comparatives)
+.e2e-tmp/
