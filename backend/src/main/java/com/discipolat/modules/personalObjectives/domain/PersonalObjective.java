@@ -29,7 +29,7 @@ public class PersonalObjective {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "categorie", nullable = false)
     private Catégorie catégorie = Catégorie.AUTRE;
 
     @Enumerated(EnumType.STRING)

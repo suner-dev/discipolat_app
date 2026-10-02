@@ -44,13 +44,14 @@ public class KpiNarrative {
     private TypeKPI typeKPI;
 
     /** Période concernée (ex: "2026-08") */
-    @Column(nullable = false)
+    @Column(name = "periode", nullable = false)
     private String période;
 
     /** Valeur actuelle du KPI */
     private double valeurActuelle;
 
     /** Valeur précédente (pour calcul tendance) */
+    @Column(name = "valeur_precedente")
     private double valeurPrécédente;
 
     @Enumerated(EnumType.STRING)
@@ -73,9 +74,10 @@ public class KpiNarrative {
     private String recommandations;
 
     /** Département concerné (nullable =全局) */
+    @Column(name = "departement_id")
     private UUID départementId;
 
-    @Column(nullable = false)
+    @Column(name = "genere_le", nullable = false)
     private LocalDateTime généréLe = LocalDateTime.now();
 
     // Getters and setters

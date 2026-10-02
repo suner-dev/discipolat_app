@@ -29,10 +29,10 @@ public class AutomationExecution {
     @Column(nullable = false)
     private Statut statut = Statut.EN_ATTENTE;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "resultat", columnDefinition = "TEXT")
     private String résultat;
 
-    @Column(nullable = false)
+    @Column(name = "execute_le", nullable = false)
     private LocalDateTime exécutéLe = LocalDateTime.now();
 
     // Getters and setters

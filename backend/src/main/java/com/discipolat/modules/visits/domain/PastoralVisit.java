@@ -33,14 +33,16 @@ public class PastoralVisit {
     @Column(nullable = false)
     private Statut statut = Statut.PLANIFIEE;
 
-    @Column(nullable = false)
+    @Column(name = "prevu_le", nullable = false)
     private LocalDateTime prévuLe;
 
+    @Column(name = "realise_le")
     private LocalDateTime réaliséLe;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "auto_genere")
     private boolean autoGénéré = false;
 
     @Column(nullable = false)

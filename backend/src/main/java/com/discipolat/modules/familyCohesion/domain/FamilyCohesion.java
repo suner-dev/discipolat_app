@@ -20,14 +20,22 @@ public class FamilyCohesion {
     private UUID familleId;
 
     private double tauxParticipation = 0;
+
+    // NB « diversite_âmes » : la colonne vitique conserve le « â » (V114) —
+    // la seule exception du schéma à ne pas être translittérée en ASCII.
+    @Column(name = "diversite_âmes")
     private int diversitéÂmes = 0;
+
+    @Column(name = "equilibre_charges")
     private int équilibreCharges = 0;
+
+    @Column(name = "score_cohesion")
     private double scoreCohésion = 0;
 
     @Column(columnDefinition = "TEXT")
     private String recommandations;
 
-    @Column(nullable = false)
+    @Column(name = "calcule_le", nullable = false)
     private LocalDateTime calculéLe = LocalDateTime.now();
 
     // Getters and setters

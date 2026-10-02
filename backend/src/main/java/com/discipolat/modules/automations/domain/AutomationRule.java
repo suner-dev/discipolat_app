@@ -73,11 +73,16 @@ public class AutomationRule {
     @Column(nullable = false)
     private Statut statut = Statut.ACTIVE;
 
+    @Column(name = "total_executions")
     private int totalExécutions = 0;
+
+    @Column(name = "derniere_execution")
     private LocalDateTime dernièreExécution;
+
+    @Column(name = "max_executions")
     private int maxExécutions; // 0 = illimité
 
-    @Column(nullable = false)
+    @Column(name = "cree_par", nullable = false)
     private UUID crééPar;
 
     @Column(nullable = false)

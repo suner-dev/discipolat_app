@@ -21,13 +21,14 @@ public class SkillEvaluation {
     @Column(nullable = false)
     private UUID membreId;
 
-    @Column(nullable = false)
+    @Column(name = "competence", nullable = false)
     private String compétence;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Niveau niveau = Niveau.DÉBUTANT;
 
+    @Column(name = "evalue_par")
     private UUID évaluéPar;
 
     @Column(columnDefinition = "TEXT")

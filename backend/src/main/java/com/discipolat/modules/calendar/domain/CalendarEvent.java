@@ -25,7 +25,7 @@ public class CalendarEvent {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "debut", nullable = false)
     private LocalDateTime début;
 
     @Column(nullable = false)
@@ -33,6 +33,7 @@ public class CalendarEvent {
 
     private String lieu;
 
+    @Column(name = "evenement_id")
     private UUID événementId;
 
     @Enumerated(EnumType.STRING)
@@ -45,6 +46,7 @@ public class CalendarEvent {
 
     private String externalId;
 
+    @Column(name = "rappel_active")
     private boolean rappelActivé = true;
 
     private int rappelMinutesAvant = 60;

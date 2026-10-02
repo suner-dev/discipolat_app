@@ -22,7 +22,7 @@ public class SuccessionPlan {
     @Column(nullable = false)
     private UUID candidatId;
 
-    @Column(nullable = false)
+    @Column(name = "role_cible", nullable = false)
     private String rôleCible;
 
     private UUID mentorId;

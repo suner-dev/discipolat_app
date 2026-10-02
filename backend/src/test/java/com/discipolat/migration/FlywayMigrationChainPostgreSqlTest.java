@@ -2,6 +2,10 @@ package com.discipolat.migration;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,8 +24,10 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,6 +86,9 @@ class FlywayMigrationChainPostgreSqlTest {
 
     /** Chaîne appliquée une seule fois pour la classe ; les tests partagent cet état. */
     private static MigrateResult firstPass;
+
+    /** Modèle de mapping des entités, construit une seule fois (voir entityMetadata()). */
+    private static Metadata entityMetadataCache;
 
     @BeforeAll
     static void applyFullChainOnce() {
@@ -376,6 +385,153 @@ class FlywayMigrationChainPostgreSqlTest {
                 rs.next(); // la forme citée doit s'exécuter sans erreur de syntaxe
             }
         }
+    }
+
+    /**
+     * Garde de non-régression au niveau <b>COLONNE</b> (complète
+     * {@link #everyEntityTableExistsInMigratedSchema}, qui ne regardait que les
+     * tables).
+     *
+     * <p>La dérive constatée le 2026-10-02 : 45 colonnes mappées par les entités
+     * n'existaient pas dans le schéma réellement migré. Toutes portaient un
+     * accent dans le nom de champ Java ({@code priorité}, {@code catégorie},
+     * {@code actionRecommandée}…) que la stratégie de nommage physique
+     * Spring/Hibernate recopie tel quel dans l'identifiant SQL, alors que les
+     * migrations écrivent la translittération ASCII ({@code priorite},
+     * {@code categorie}…). La production tourne en {@code ddl-auto: none} +
+     * Flyway : l'application démarre, puis chaque lecture/écriture de ces colonnes
+     * explose en {@code column "priorité" does not exist}. Sous H2
+     * ({@code create-drop}) le schéma est REGÉNÉRÉ depuis les entités : la dérive
+     * est structurellement invisible — d'où l'obligation de vérifier sur le
+     * conteneur PG de ce gate.
+     *
+     * <p>Les identifiants sont lus depuis le modèle de mapping de Hibernate
+     * ({@link Metadata}) avec la stratégie de nommage physique réellement
+     * configurée par Spring Boot, et non recalculés : une reimplémentation de la
+     * règle de nommage dans le test reproduirait exactement le défaut qu'il est
+     * censé attraper.
+     */
+    @Test
+    @DisplayName("Aucune dérive entité→schéma au niveau colonne (accents : 45 colonnesCassées en prod)")
+    void everyMappedColumnExistsInMigratedSchema() throws Exception {
+        Map<String, Set<String>> schemaColumns = new LinkedHashMap<>();
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(
+                     "SELECT table_name, column_name FROM information_schema.columns "
+                             + "WHERE table_schema = 'public'")) {
+            while (rs.next()) {
+                schemaColumns
+                        .computeIfAbsent(rs.getString(1).toLowerCase(Locale.ROOT), k -> new HashSet<>())
+                        .add(rs.getString(2));
+            }
+        }
+
+        List<String> missing = new ArrayList<>();
+        int tables = 0;
+        int columns = 0;
+        for (var binding : entityMetadata().getEntityBindings()) {
+            var table = binding.getTable();
+            tables++;
+            Set<String> present = schemaColumns.getOrDefault(
+                    table.getName().toLowerCase(Locale.ROOT), Set.of());
+            for (var column : table.getColumns()) {
+                columns++;
+                // Un identifiant cité (« "analyse" ») correspond au nom NU dans
+                // information_schema : la citation est neutre pour la résolution.
+                if (!present.contains(column.getName())) {
+                    missing.add(table.getName() + "." + column.getName()
+                            + (column.isQuoted() ? " (citée)" : ""));
+                }
+            }
+        }
+
+        assertThat(tables)
+                .as("garde-fou anti-régression : toutes les entités JPA doivent être introspectées")
+                .isGreaterThan(250);
+        assertThat(columns).as("volume de colonnes couvert par la garde").isGreaterThan(3000);
+        assertThat(missing)
+                .as("colonnes mappées par les entités mais ABSENTES du PostgreSQL réellement "
+                        + "migré — chaque ligne est un 500 en production (colonne inexistante)")
+                .isEmpty();
+    }
+
+    /**
+     * Garde des <b>mots réservés</b> PostgreSQL, version-proof : la liste est lue
+     * sur le serveur ({@code pg_get_keywords()}) au lieu d'être recopiée dans le
+     * test, donc elle suit les évolutions de PostgreSQL.
+     *
+     * <p>Contrat : un identifiant dont le nom nu est réservé doit être <b>cité</b>
+     * dans le mapping. C'est exactement le piège de {@code MentorSuggestion
+     * .analyse} (cf. {@link #analyseReservedWordIsQuotedInMappingAndSchema}) : le
+     * mot nu est refusé aussi bien en DDL qu'en {@code SELECT}, ce qui casse le
+     * endpoint sans que la génération du schéma ne le remarque.
+     */
+    @Test
+    @DisplayName("Aucun identifiant d'entité n'est un mot réservé PostgreSQL non cité")
+    void noEntityIdentifierIsAnUnquotedReservedWord() throws Exception {
+        Set<String> reserved = new HashSet<>();
+        try (Connection connection = java.sql.DriverManager.getConnection(
+                     POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(
+                     "SELECT word FROM pg_get_keywords() WHERE catdesc = 'reserved'")) {
+            while (rs.next()) {
+                reserved.add(rs.getString(1).toLowerCase(Locale.ROOT));
+            }
+        }
+        assertThat(reserved)
+                .as("la liste des mots réservés doit être lisible depuis le serveur (garde du gate)")
+                .isNotEmpty();
+
+        List<String> unguarded = new ArrayList<>();
+        for (var binding : entityMetadata().getEntityBindings()) {
+            var table = binding.getTable();
+            if (!table.isQuoted() && reserved.contains(table.getName().toLowerCase(Locale.ROOT))) {
+                unguarded.add("table " + table.getName());
+            }
+            for (var column : table.getColumns()) {
+                if (!column.isQuoted() && reserved.contains(column.getName().toLowerCase(Locale.ROOT))) {
+                    unguarded.add(table.getName() + "." + column.getName());
+                }
+            }
+        }
+
+        assertThat(unguarded)
+                .as("identifiants reservés NON cités : PostgreSQL rejette le mot nu en DDL ET en "
+                        + "SELECT. Citer dans @Column(name = \"\\\"mot\\\"\") — cf. analyse")
+                .isEmpty();
+    }
+
+    /**
+     * Modèle de mapping Hibernate construit SANS base de données, avec le dialecte
+     * et la stratégie de nommage physique réellement utilisés par l'application
+     * (Spring Boot fixe {@code CamelCaseToUnderscoresNamingStrategy}). Les
+     * identifiants lus sont donc ceux que Hibernate émettrait en SQL, citation
+     * comprise.
+     *
+     * <p>Construit une seule fois et mis en cache : le registre de services reste
+     * ouvert le temps que le {@code Metadata} soit exploité (il ne doit pas être
+     * détruit avant, ses composants restant résolubles paresseusement).
+     */
+    private static Metadata entityMetadata() throws Exception {
+        if (entityMetadataCache == null) {
+            StandardServiceRegistry registry = new StandardServiceRegistryBuilder()
+                    .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
+                    .applySetting("hibernate.physical_naming_strategy",
+                            "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy")
+                    .build();
+            MetadataSources sources = new MetadataSources(registry);
+            ClassPathScanningCandidateComponentProvider scanner =
+                    new ClassPathScanningCandidateComponentProvider(false);
+            scanner.addIncludeFilter(new AnnotationTypeFilter(jakarta.persistence.Entity.class));
+            for (BeanDefinition candidate : scanner.findCandidateComponents("com.discipolat")) {
+                sources.addAnnotatedClass(Class.forName(candidate.getBeanClassName()));
+            }
+            entityMetadataCache = sources.buildMetadata();
+        }
+        return entityMetadataCache;
     }
 
     private static Flyway newFlyway() {

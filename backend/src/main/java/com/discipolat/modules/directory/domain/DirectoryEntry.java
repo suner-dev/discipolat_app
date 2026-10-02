@@ -26,10 +26,14 @@ public class DirectoryEntry {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "telephone")
     private String téléphone;
     private String email;
 
+    @Column(name = "departement")
     private String département;
+
+    @Column(name = "role")
     private String rôle;
 
     @Column(nullable = false)

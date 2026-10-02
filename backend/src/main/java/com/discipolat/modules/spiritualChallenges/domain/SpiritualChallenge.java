@@ -36,10 +36,12 @@ public class SpiritualChallenge {
     @Column(nullable = false)
     private UUID createdBy;
 
+    @Column(name = "assignea")
     private UUID assignéÀ;
 
     private int objectifJours = 7;
 
+    @Column(name = "jours_completes")
     private int joursComplétés = 0;
 
     @Column(nullable = false)

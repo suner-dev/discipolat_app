@@ -33,11 +33,13 @@ public class FamilyResource {
 
     private String url;
 
+    @Column(name = "uploade_par")
     private UUID uploadéPar;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "telechargements")
     private int téléchargements = 0;
 
     // Getters and setters

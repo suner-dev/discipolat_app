@@ -38,13 +38,18 @@ public class BroadcastMessage {
     @Column(nullable = false)
     private Statut statut = Statut.BROUILLON;
 
-    @Column(nullable = false)
+    @Column(name = "envoye_par", nullable = false)
     private UUID envoyéPar;
 
+    @Column(name = "programme_at")
     private LocalDateTime programméAt;
+
+    @Column(name = "envoye_at")
     private LocalDateTime envoyéAt;
+
     private LocalDateTime expiresAt;
 
+    @Column(name = "total_envoye")
     private int totalEnvoyé = 0;
     private int totalLu = 0;
 

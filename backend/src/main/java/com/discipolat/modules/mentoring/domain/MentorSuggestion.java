@@ -34,11 +34,11 @@ public class MentorSuggestion {
     private UUID faiseurId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "priorite", nullable = false)
     private Priorité priorité = Priorité.MOYENNE;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "categorie", nullable = false)
     private Catégorie catégorie = Catégorie.ACCOMPAGNEMENT;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -55,7 +55,7 @@ public class MentorSuggestion {
     @Column(name = "\"analyse\"", nullable = false, columnDefinition = "TEXT")
     private String analyse;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "action_recommandee", columnDefinition = "TEXT")
     private String actionRecommandée;
 
     @Column(columnDefinition = "TEXT")

@@ -347,3 +347,56 @@ La piste ouverte au §6.5 (`fix/analyse-mot-reserve-pg`) est corrigée.
 - **Gate rejoué** (`mvn clean test`, JDK 21, PostgreSQL 16.15 réel) : chaîne
   **V1..V218** appliquée + `validate` propre ; **9/9 verts**, 0 échec.
 
+### 6.8 Dérive entité→schéma, niveau COLONNE — 45 colonnes cassées en prod (2026-10-02)
+
+Reprise du chantier interrompu au §6.7. En cherchant à vérifier la piste
+ouverte (« la génération `create-drop` des entités est incompatible
+PostgreSQL ») on a trouvé **plus grave que le mot réservé** : les griefs
+énoncés au §6.5 étaient imprécis. Il n'y a **aucune** dérive de *tables*
+(0 table d'entité absente du schéma migré) — la dérive est au niveau **colonnes**.
+
+- **Racine** : 45 colonnes mappées par les entités n'existaient pas dans le
+  schéma réellement migré. Toutes portaient un **accent** dans le nom de champ
+  Java (`priorité`, `catégorie`, `actionRecommandée`, `rôle`, `équipeId`,
+  `compétence`…) que la stratégie de nommage physique Spring/Hibernate recopie
+  **tel quel** dans l'identifiant SQL, alors que les migrations écrivent la
+  translittération ASCII (`priorite`, `categorie`, `action_recommandee`,
+  `role`, `equipe_id`, `competence`…). La production tourne en
+  `ddl-auto: none` + Flyway : **l'application démarre**, puis chaque
+  lecture/écriture de ces colonnes part en
+  `column "priorité" does not exist`. Sous H2 (`create-drop`) le schéma est
+  **régénéré depuis les entités** : la dérive y est structurellement invisible.
+  16 entités / 16 tables concernées.
+- **Piège de l'audit** : une translittération automatique des diacritiques
+  aurait été **fausse** — `family_cohesion.diversite_âmes` conserve le `â` dans
+  le schéma réel (seule exception). D'où le choix de `@Column(name=…)`
+  **explicite** sur les 45 champs, chacun vérifié colonne par colonne contre le
+  `information_schema` du PostgreSQL migré, plutôt qu'une stratégie globale.
+- **Correctif** : `@Column(name = "…")` explicite sur les 45 champs. **Aucun
+  champ Java renommé** → le contrat d'API (noms Jackson) est inchangé.
+- **Verrous ajoutés** dans `FlywayMigrationChainPostgreSqlTest`, qui ne
+  vérifiait que les *tables* :
+  1. `everyMappedColumnExistsInMigratedSchema` — chaque colonne mappée doit
+     exister dans le PG migré (3 282 colonnes couvertes). Les identifiants sont
+     lus depuis le **modèle de mapping Hibernate** avec la stratégie de nommage
+     physique réellement configurée par Spring Boot, **pas recalculés** : une
+     réimplémentation de la règle de nommage dans le test reproduirait
+     exactement le défaut qu'il doit attraper.
+  2. `noEntityIdentifierIsAnUnquotedReservedWord` — liste des mots réservés
+     lue **sur le serveur** (`pg_get_keywords()`), donc version-proof ; tout
+     identifiant réservé doit être cité.
+- **Preuve rouge/vert** : le verrou `everyMappedColumnExists…` a été rejoué sur
+  l'arbre **sans** le correctif → il **échoue** et nomme exactement les 45
+  colonnes ; puis **vert** avec. Ce n'est pas un test qui passe par construction.
+- **Gate rejoué** (`mvn clean test`, JDK 21, PostgreSQL 16.15 réel, arbre final
+  `e40284d9` + ce lot) : **1 901 tests, 0 échec, 0 erreur**, 13 skips (Redis,
+  baseline). Gates conteneurisés réellement **exécutés, pas skippés** :
+  `FlywayMigrationChainPostgreSqlTest` **11/11** (dont les 2 nouveaux) et
+  `EventTableContractTest` **8/8**.
+- **Hors périmètre, non traité** (à réouvrir) : `ddl-auto: update` du profil
+  `docker` et `validate` du profil `dev` (§ application.yml) continueraient de
+  créer/valider des colonnes accentuées à partir des entités — le présent
+  correctif ne change que le mapping, pas ces profils. Seule la cohérence
+  Flyway↔entités est désormais verrouillée. Le grief « binding `Instant` » du
+  §6.5 n'a pas été instruit (hors de la dérive identifiants).
+

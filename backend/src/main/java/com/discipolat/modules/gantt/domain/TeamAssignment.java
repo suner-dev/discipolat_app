@@ -18,17 +18,18 @@ public class TeamAssignment {
     @Column(nullable = false)
     private UUID tenantId;
 
-    @Column(nullable = false)
+    @Column(name = "equipe_id", nullable = false)
     private UUID équipeId;
 
+    @Column(name = "evenement_id")
     private UUID événementId;
 
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private String rôle;
 
     private UUID membreId;
 
-    @Column(nullable = false)
+    @Column(name = "debut", nullable = false)
     private LocalDateTime début;
 
     @Column(nullable = false)

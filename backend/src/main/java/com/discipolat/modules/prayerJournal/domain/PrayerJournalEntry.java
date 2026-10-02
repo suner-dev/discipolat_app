@@ -30,10 +30,10 @@ public class PrayerJournalEntry {
     private Statut statut = Statut.EN_COURS;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "visibilite", nullable = false)
     private Visibilité visibilité = Visibilité.PRIVÉE;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "reponse", columnDefinition = "TEXT")
     private String réponse;
 
     private String category;
@@ -42,6 +42,7 @@ public class PrayerJournalEntry {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime updatedAt;
+    @Column(name = "exaucee_at")
     private LocalDateTime exaucéeAt;
 
     // Getters and setters
