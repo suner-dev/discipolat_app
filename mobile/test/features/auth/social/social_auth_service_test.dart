@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeSource implements SocialCredentialSource {
   _FakeSource(this.provider, {this.idToken = 'fake-id-token', this.error});
 
+  @override
   final SocialProvider provider;
   final String idToken;
   final Object? error;
@@ -86,6 +87,22 @@ void main() {
         'provider': 'google',
         'credential': 'google-token',
       });
+    });
+
+    test('propage l’échec de la source native sans l’avaliser', () async {
+      // Une panne du SDK natif (réseau, Play Services absent) doit remonter
+      // telle quelle : la masquer produirait un bouton qui ne fait rien.
+      final Object panne = StateError('sdk indisponible');
+      final SocialAuthService service = SocialAuthService(
+        sources: {
+          SocialProvider.google: _FakeSource(SocialProvider.google, error: panne),
+        },
+      );
+
+      await expectLater(
+        service.signIn(SocialProvider.google),
+        throwsA(same(panne)),
+      );
     });
 
     test('échoue explicitement si le fournisseur n’est pas configuré', () async {
