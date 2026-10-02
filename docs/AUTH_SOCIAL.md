@@ -117,6 +117,35 @@ Implémentation : **redirection de page entière** avec relais par `sessionStora
 > redirection est donc utilisé sur mobile, via `flutter_web_auth_2` (officiel,
 > maintenu), sans dépendance Meta.
 
+> ⚠️ **Le flux implicite est-il sûr ici ?** L'OAuth 2.0 Implicit est déprécié
+> par l'OIDC pour les applications qui ont besoin d'un refresh token. Ce n'est
+> pas le cas de Discipolat : notre backend émet sa **propre** session, donc le
+> jeton Facebook n'est utilisé qu'une fois, le temps d'ouvrir la session, et
+> jamais rejoué. Un jeton volé donne au pire un compte déjà accessible par
+> mot de passe — il ne donne aucun droit supplémentaire. Si un jour le backend
+> devait appeler l'API Facebook au nom de l'utilisateur (récupérer une
+> photo, poster), il faudrait migrer vers Authorization Code + PKCE.
+
+### 3 bis. Pièges de déploiement vérifiés (ne pas les réintroduire)
+
+Ces points ont été corrigés après une revue ; ils sont tous **silencieux** — rien
+ne signale l'erreur à l'utilisateur, le flux s'arrête juste sans explication.
+Chacun est verrouillé par un test.
+
+| Piège | Symptôme | Correctif |
+|---|---|---|
+| **Résolution du `clientId` par ternaire** | le bouton **Facebook** ouvre silencieusement le dialogue **Microsoft** | un ternaire par fournisseur, testé |
+| **CSP sans `https://www.facebook.com`** | le dialogue Meta est bloqué en production (rien à l'écran) | `render.yaml` (prod + beta) et `frontend/nginx.conf` |
+| **`CallbackActivity` absente du manifeste** | le navigateur ouvre l'URL, l'app ne reçoit **jamais** le jeton, écran vide | intent-filter sur `com.linusu.flutter_web_auth_2.CallbackActivity` |
+| **`CFBundleURLSchemes` sans `com.discipolat.app`** | idem sur iOS | entrée ajoutée dans `Info.plist` |
+| **Jeton laissé dans l'URL en cas de refus** | l'`id_token` reste lisible dans l'historique du navigateur | fragment nettoyé **avant** toute décision |
+| **`VITE_FACEBOOK_APP_ID` absent de `.env.example`** | impossible de découvrir la variable à configurer | variables `VITE_*` documentées |
+
+> Le scheme `com.discipolat.app` doit rester **identique** aux trois endroits :
+> le `redirectUri` des sources de credential, l'`intent-filter` Android, et
+> `CFBundleURLSchemes` iOS. Une divergence donne un flux qui s'ouvre et ne
+> revient jamais — sans erreur.
+
 ### 3 ter. Ce qu'il faut obtenir de Meta (⚠️ le point bloquant réel)
 
 Facebook est gratuit, mais **ce n'est pas le même genre de gratuité que Google
@@ -235,6 +264,11 @@ SOCIAL_MICROSOFT_CLIENT_ID=<uuid>
 SOCIAL_MICROSOFT_TENANT_ID=common          # ou l'ID de votre tenant
 SOCIAL_MICROSOFT_ALLOWED_TENANT_IDS=       # optionnel : partenaires
 
+# Facebook
+SOCIAL_FACEBOOK_ENABLED=true
+SOCIAL_FACEBOOK_APP_ID=<app-id-meta>        # public, pas un secret
+SOCIAL_FACEBOOK_API_VERSION=v21.0           # doit correspondre à VITE_FACEBOOK_API_VERSION
+
 SOCIAL_ALLOW_ACCOUNT_LINKING=true
 SOCIAL_REQUIRE_VERIFIED_EMAIL=true
 ```
@@ -251,6 +285,8 @@ SOCIAL_REQUIRE_VERIFIED_EMAIL=true
 VITE_GOOGLE_CLIENT_ID=…            # client WEB (aussi utilisé comme serverClientId mobile)
 VITE_MICROSOFT_CLIENT_ID=<uuid>
 VITE_MICROSOFT_TENANT_ID=common
+VITE_FACEBOOK_APP_ID=<app-id-meta>
+VITE_FACEBOOK_API_VERSION=v21.0
 ```
 
 ### Build mobile
@@ -259,6 +295,7 @@ VITE_MICROSOFT_TENANT_ID=common
 --dart-define=GOOGLE_WEB_CLIENT_ID=…
 --dart-define=MICROSOFT_CLIENT_ID=…
 --dart-define=MICROSOFT_TENANT_ID=common
+--dart-define=FACEBOOK_APP_ID=<app-id-meta>
 ```
 
 ### Console Google Cloud
@@ -290,19 +327,40 @@ VITE_MICROSOFT_TENANT_ID=common
    `common`, l'audit de démarrage émet un avertissement explicite : une
    organisation tierce peut alors connecter ses utilisateurs.
 
+### Portail Meta (Facebook)
+
+1. **Meta for Developers** → créer une application de type **Consumer**.
+2. **Facebook Login → Settings** :
+   - **Valid OAuth Redirect URIs** : `https://discipolat.onrender.com/auth/social/callback`
+     (et l'équivalent beta). Le chemin `/auth/social/callback` est imposé par
+     `facebookRedirectUri()` : c'est là que le relais `sessionStorage` est relu.
+   - **Mobile** : `com.discipolat.app://auth/facebook` — doit être **exactement**
+     égal au `redirectUri` de `FacebookCredentialSource`, à l'`intent-filter`
+     Android et à `CFBundleURLSchemes` iOS.
+3. **Permissions et access** : cocher `email` et `public_profile`. En
+   **Standard Access**, seuls les comptes ayant un rôle sur l'application
+   peuvent se connecter → il faut un **Advanced Access** (Business Verification
+   + App Review) pour de vrais membres. Voir § 3 ter.
+4. **Facebook Login → Settings → Advanced** : cocher *Enforce HTTPS* (déjà le
+   cas) et laisser le *Client OAuth* embedded.
+5. **Rien à créer côté secrets** : application publique, aucun `client_secret`
+   n'est utilisé ni stocké. L'App ID est public par nature.
+
 ### CSP
 
-La CSP interdit par défaut `accounts.google.com`. Autorisée dans
-`render.yaml` **et** `frontend/nginx.conf` :
+La CSP interdit par défaut `accounts.google.com` **et** `www.facebook.com`.
+Autorisée dans `render.yaml` (prod **et** beta) **et** `frontend/nginx.conf` :
 
 ```
-script-src 'self' 'unsafe-inline' https://accounts.google.com;
+script-src 'self' 'unsafe-inline' https://accounts.google.com
+           https://www.facebook.com;
 connect-src 'self' https://*.onrender.com https://accounts.google.com
-           https://login.microsoftonline.com;
-frame-src  'self' https://accounts.google.com;
+           https://login.microsoftonline.com https://www.facebook.com;
+frame-src  'self' https://accounts.google.com https://www.facebook.com;
 ```
 
-**Sans cette modification, la connexion Google échoue silencieusement en prod.**
+**Sans ces modifications, Google échoue silencieusement en prod, et Facebook
+aussi** — la redirection vers le dialogue Meta est bloquée sans message.
 
 ---
 

@@ -65,6 +65,20 @@
 				<string>discipolat</string>
 			</array>
 		</dict>
+		<!-- Connexion Facebook / Microsoft (PKCE par redirection) : iOS ne
+		     route une URL vers l'app que si le scheme est declare ici. Sans cette
+		     entree, le navigateur affiche l'URL et l'app ne recoit jamais le
+		     id_token. Le scheme doit correspondre au `redirectUri` des sources de
+		     credential (lib/features/auth/social/*_credential_source.dart) et au
+		     scheme enregistre chez Meta / Microsoft. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.discipolat.app.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.discipolat.app</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

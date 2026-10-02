@@ -8,7 +8,7 @@ import '../../features/auth/social/microsoft_credential_source.dart';
 import '../../features/auth/social/social_auth_service.dart';
 import '../../features/auth/social/social_credential.dart';
 
-/// Boutons « Se connecter avec Google / Microsoft ».
+/// Boutons « Se connecter avec Google / Microsoft / Facebook ».
 ///
 /// Principes tenus ici :
 ///

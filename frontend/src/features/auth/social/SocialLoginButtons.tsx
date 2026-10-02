@@ -18,7 +18,7 @@ import {
 } from './types';
 
 /**
- * Boutons « Se connecter avec Google / Microsoft ».
+ * Boutons « Se connecter avec Google / Microsoft / Facebook ».
  *
  * <p>Trois principes tenus ici :
  * <ol>

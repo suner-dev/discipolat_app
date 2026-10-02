@@ -4,7 +4,11 @@ import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { clearFacebookHandoff, readFacebookCredential } from '@/features/auth/social/facebook';
+import {
+  clearFacebookHandoff,
+  readFacebookCredential,
+  takeFacebookInvitation,
+} from '@/features/auth/social/facebook';
 
 /**
  * Page de retour de la redirection Facebook.
@@ -55,7 +59,25 @@ export default function SocialCallbackPage() {
       }
 
       try {
-        const response = await api.post('/auth/social/facebook', { credential });
+        // L'invitation est relue AVANT la connexion simple : c'est elle qui
+        // décide entre « créer le compte » et « ouvrir une session ». Le relais
+        // est consommé dans tous les cas (voir `takeFacebookInvitation`), donc
+        // un jeton d'invitation ne reste jamais rejouable.
+        const invitation = takeFacebookInvitation();
+
+        const response = invitation
+          ? await api.post(
+              `/admin/invitations/accept-identity/${encodeURIComponent(invitation.token)}`,
+              {
+                provider: 'facebook',
+                credential,
+                // Saisie prioritaire ; sinon le backend déduit du nom du
+                // fournisseur (Facebook ne fournit pas toujours le nom).
+                firstName: invitation.firstName,
+                lastName: invitation.lastName,
+              }
+            )
+          : await api.post('/auth/social/facebook', { credential });
         const data = response.data;
 
         loginWithSocialToken(

@@ -412,12 +412,11 @@ export default function LoginPage() {
           <div className="flex-1 border-t border-gray-200 dark:border-white/5" />
         </div>
 
-        {/* Connexion par identité externe — Google et Microsoft, tous deux
-            gratuits et sans plafond. Le composant n'affiche un bouton que si le
-            SERVEUR déclare ce fournisseur actif : pas de bouton qui échoue en 503.
-            Apple et Facebook restent désactivés (Apple exige un compte développeur
-            payant ; Facebook n'est pas retenu) — aucune promesse d'interface non
-            tenue. */}
+        {/* Connexion par identité externe — Google, Microsoft et Facebook, tous
+            gratuits et sans plafond côté serveur. Le composant n'affiche un bouton
+            que si le SERVEUR déclare ce fournisseur actif : pas de bouton qui échoue
+            en 503. Apple reste désactivé (compte développeur payant à 99 $/an) —
+            aucune promesse d'interface non tenue. */}
         <SocialLoginButtons
           disabled={isSubmitting}
           error={socialError}

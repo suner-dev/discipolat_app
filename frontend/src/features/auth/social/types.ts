@@ -1,10 +1,10 @@
 /**
  * Connexion par identité externe — types partagés (web).
  *
- * <p>Les deux fournisseurs exposés ici sont **gratuits et sans plafond** :
+ * <p>Les fournisseurs exposés ici sont **gratuits et sans plafond** :
  * le backend vérifie les `id_token` localement contre les clés publiques
  * (JWKS), donc aucun appel à un service de vérification payant et aucun quota.
- * Apple (99 $/an) et le SMS (facturé par message) sont volontairement hors
+ * Apple (99 $/an) et le SMS (facturé) sont volontairement hors
  * périmètre — voir `docs/AUTH_SOCIAL.md`.
  */
 

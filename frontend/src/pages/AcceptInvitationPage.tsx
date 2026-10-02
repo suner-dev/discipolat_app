@@ -5,6 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { requestGoogleCredential } from "@/features/auth/social/google";
 import { requestMicrosoftCredential } from "@/features/auth/social/microsoft";
 import {
+  facebookRedirectUri,
+  stageFacebookInvitation,
+  startFacebookLogin,
+} from "@/features/auth/social/facebook";
+import {
   buildTimeClientIds,
   fetchSocialProviders,
   toSocialAuthError,
@@ -64,7 +69,8 @@ export default function AcceptInvitationPage() {
   }, []);
 
   /**
-   * Accepte l'invitation avec une identité externe vérifiée (Google/Microsoft).
+   * Accepte l'invitation avec une identité externe vérifiée
+   * (Google / Microsoft / Facebook).
    *
    * <p>Le backend refuse si l'email vérifié par le fournisseur n'est pas celui de
    * l'invitation : l'interface n'a donc rien à vérifier elle-même, et affiche le
@@ -73,9 +79,37 @@ export default function AcceptInvitationPage() {
   const handleAcceptWithIdentity = async (provider: SocialProviderId) => {
     if (!token) return;
     const clientIds = buildTimeClientIds();
-    const clientId = provider === "google" ? clientIds.google : clientIds.microsoft;
+    const clientId =
+      provider === "google"
+        ? clientIds.google
+        : provider === "microsoft"
+          ? clientIds.microsoft
+          : clientIds.facebook;
     if (!clientId) {
       setError("Ce mode de connexion n'est pas configuré sur ce serveur.");
+      return;
+    }
+
+    if (provider === "facebook") {
+      // Facebook impose une REDIRECTION de page entière : la popup Google et le
+      // dialogue Microsoft en PKCE ne s'appliquent pas. L'invitation est donc
+      // confiée au relais sessionStorage, et la page d'accueil du dialogue la
+      // reprend au retour sur /auth/social/callback. Sans cela, le jeton
+      // d'invitation — qui porte le rôle et l'église — serait perdu.
+      stageFacebookInvitation({
+        token,
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+      });
+      try {
+        startFacebookLogin({
+          appId: clientId,
+          apiVersion: import.meta.env.VITE_FACEBOOK_API_VERSION || "v21.0",
+          redirectUri: facebookRedirectUri(),
+        });
+      } catch (err) {
+        setError(toSocialAuthError(err).message);
+      }
       return;
     }
 

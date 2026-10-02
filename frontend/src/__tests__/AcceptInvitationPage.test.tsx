@@ -23,6 +23,14 @@ vi.mock("@/features/auth/social/google", () => ({
 vi.mock("@/features/auth/social/microsoft", () => ({
   requestMicrosoftCredential: vi.fn(),
 }));
+// Facebook passe par une REDIRECTION de page entière : la page est déchargée,
+// donc rien ne peut être observé après le clic. On observe donc le point de
+// départ du flux et le relais d'invitation.
+vi.mock("@/features/auth/social/facebook", () => ({
+  startFacebookLogin: vi.fn(),
+  stageFacebookInvitation: vi.fn(),
+  facebookRedirectUri: () => "https://discipolat.test/auth/social/callback",
+}));
 vi.mock("@/features/auth/social/providers", async () => {
   const actual = await vi.importActual<
     typeof import("@/features/auth/social/providers")
@@ -34,6 +42,8 @@ vi.mock("@/features/auth/social/providers", async () => {
 });
 
 import { requestGoogleCredential } from "@/features/auth/social/google";
+import { requestMicrosoftCredential } from "@/features/auth/social/microsoft";
+import { startFacebookLogin, stageFacebookInvitation } from "@/features/auth/social/facebook";
 import { fetchSocialProviders } from "@/features/auth/social/providers";
 
 const mockGet = vi.mocked(api.get);
@@ -307,6 +317,134 @@ describe("AcceptInvitationPage", () => {
 
       await waitFor(() => expect(requestGoogleCredential).toHaveBeenCalled());
       expect(mockPost).not.toHaveBeenCalled();
+    });
+
+    // =======================================================================
+    // Facebook : le fournisseur qui a révélé le bug le plus grave.
+    //
+    // Facebook impose une REDIRECTION de page entière (et non une popup), donc
+    // `handleAcceptWithIdentity` ne peut pas suivre le même chemin que
+    // Google/Microsoft. Le test verrouille trois choses :
+    //   1. le bouton Facebook n'ouvre PAS le dialogue Microsoft (le clientId
+    //      était résolu vers `clientIds.microsoft` pour tout fournisseur autre
+    //      que Google : un clic sur « Facebook » lançait silencieusement
+    //      Microsoft) ;
+    //   2. l'invitation est confiée au relais, sinon le jeton — qui porte le
+    //      rôle et l'église — est perdu lors du changement de page ;
+    //   3. le relais n'est écrit qu'avec un App ID réellement configuré.
+    // =======================================================================
+    describe("acceptation par Facebook (redirection)", () => {
+      const invitationResponse = {
+        data: {
+          email: "invitee@example.com",
+          role: "MEMBRE",
+          tenantName: "Église Bethel",
+          scopeType: "TENANT",
+          accountExists: false,
+          expiresAt: "2030-01-01T00:00:00Z",
+        },
+      };
+
+      const renderInvitation = () =>
+        render(
+          <AuthProvider>
+            <MemoryRouter initialEntries={["/accept-invitation?token=abc123"]}>
+              <AcceptInvitationPage />
+            </MemoryRouter>
+          </AuthProvider>,
+        );
+
+      beforeEach(() => {
+        mockGet.mockResolvedValue(invitationResponse);
+        sessionStorage.clear();
+        vi.mocked(fetchSocialProviders).mockResolvedValue({
+          providers: [{ provider: "facebook", label: "Facebook" }],
+          accountLinkingEnabled: true,
+        });
+        vi.stubEnv("VITE_FACEBOOK_APP_ID", "1234567890123456");
+        vi.stubEnv("VITE_MICROSOFT_CLIENT_ID", "microsoft-client-id");
+      });
+
+      afterEach(() => {
+        vi.unstubAllEnvs();
+        sessionStorage.clear();
+      });
+
+      it("n'ouvre JAMAIS le dialogue Microsoft quand on clique sur Facebook", async () => {
+        renderInvitation();
+
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: /Accepter l'invitation avec Facebook/,
+          }),
+        );
+
+        // Le point du correctif : ni popup, ni requête d'acceptation.
+        await waitFor(() => expect(startFacebookLogin).toHaveBeenCalled());
+        expect(requestMicrosoftCredential).not.toHaveBeenCalled();
+        expect(requestGoogleCredential).not.toHaveBeenCalled();
+        expect(mockPost).not.toHaveBeenCalled();
+      });
+
+      it("utilise l'App ID Facebook, et non un autre identifiant", async () => {
+        renderInvitation();
+
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: /Accepter l'invitation avec Facebook/,
+          }),
+        );
+
+        await waitFor(() =>
+          expect(startFacebookLogin).toHaveBeenCalledWith(
+            expect.objectContaining({ appId: "1234567890123456" }),
+          ),
+        );
+      });
+
+      it("confie le jeton d'invitation au relais avant de rediriger", async () => {
+        renderInvitation();
+
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: /Accepter l'invitation avec Facebook/,
+          }),
+        );
+
+        // Sans ce relais, le retour sur /auth/social/callback perdrait le
+        // jeton d'invitation et l'utilisateur retomberait sur une simple
+        // connexion au lieu d'accepter son invitation.
+        await waitFor(() =>
+          expect(stageFacebookInvitation).toHaveBeenCalledWith(
+            expect.objectContaining({ token: "abc123" }),
+          ),
+        );
+        // Le relais doit être posé AVANT la redirection : l'ordre n'est pas
+        // décoratif, c'est lui qui rend le flux récupérable.
+        const stageOrder = vi
+          .mocked(stageFacebookInvitation)
+          .mock.invocationCallOrder[0];
+        expect(stageOrder).toBeLessThan(vi.mocked(startFacebookLogin).mock.invocationCallOrder[0]);
+      });
+
+      it("refuse de démarrer si l'App ID Facebook est absent de la build", async () => {
+        vi.stubEnv("VITE_FACEBOOK_APP_ID", "");
+        renderInvitation();
+
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: /Accepter l'invitation avec Facebook/,
+          }),
+        );
+
+        // Fail-closed : aucun dialogue ouvert, aucun relais écrit, un message
+        // explicite plutôt qu'un échec opaque plus tard.
+        await waitFor(() =>
+          expect(screen.getByText(/n'est pas configuré sur ce serveur/)).toBeTruthy(),
+        );
+        expect(startFacebookLogin).not.toHaveBeenCalled();
+        expect(stageFacebookInvitation).not.toHaveBeenCalled();
+      });
     });
   });
 });

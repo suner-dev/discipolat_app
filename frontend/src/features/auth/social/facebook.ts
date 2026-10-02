@@ -38,6 +38,17 @@ import { SocialAuthError, SocialErrorCode } from './types';
 
 const STORAGE_KEY = 'discipolat:social-handoff';
 
+/**
+ * Contexte d'invitation à reprendre après la redirection.
+ *
+ * <p>Facebook impose une **redirection de page entière** : la page
+ * d'acceptation d'invitation est déchargée, puis rechargée sur
+ * `/auth/social/callback`. Sans relais, le jeton d'invitation — qui porte le rôle
+ * et l'église — serait perdu, et l'utilisateur retomberait sur une connexion
+ * simple au lieu d'accepter son invitation.
+ */
+const INVITATION_KEY = 'discipolat:social-invitation';
+
 /** Durée de validité du relais : au-delà, le jeton est considéré périmé. */
 const HANDOFF_TTL_MS = 5 * 60 * 1000;
 
@@ -48,6 +59,49 @@ export interface FacebookStartOptions {
   apiVersion?: string;
   /** URL de retour enregistrée dans l'application Meta. */
   redirectUri: string;
+}
+
+/** Invitation en attente d'acceptation par identité Facebook. */
+export interface PendingSocialInvitation {
+  token: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+/**
+ * Mémorise l'invitation à reprendre au retour de la redirection.
+ *
+ * <p>Le jeton est un secret d'acceptation : il est donc effacé dès qu'il est
+ * consommé, et jamais renvoyé au serveur autrement qu'en chemin d'URL de la
+ * route d'acceptation.
+ */
+export function stageFacebookInvitation(invitation: PendingSocialInvitation): void {
+  sessionStorage.setItem(INVITATION_KEY, JSON.stringify(invitation));
+}
+
+/**
+ * Relit et SUPPRIME l'invitation en attente.
+ *
+ * <p>La suppression est immédiate et fait partie du contrat : une invitation
+ * ne doit jamais être rejouable depuis l'historique du navigateur.
+ */
+export function takeFacebookInvitation(): PendingSocialInvitation | null {
+  const raw = sessionStorage.getItem(INVITATION_KEY);
+  sessionStorage.removeItem(INVITATION_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<PendingSocialInvitation>;
+    if (typeof parsed.token !== 'string' || parsed.token.length === 0) {
+      return null;
+    }
+    return {
+      token: parsed.token,
+      firstName: parsed.firstName || undefined,
+      lastName: parsed.lastName || undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -99,7 +153,7 @@ export function readFacebookCredential(): string {
     throw new SocialAuthError('SOCIAL_HANDOFF_MISSING', 'Session de connexion Facebook invalide.');
   }
 
-  // Une older de quelques minutes est la limite : au-delà, on ne veut pas
+  // Un délai de quelques minutes est la limite : au-delà, on ne veut pas
   // réaccepter un jeton rejoué plus tard depuis l'historique du navigateur.
   if (
     typeof handoff.issuedAt !== 'number' ||
@@ -111,7 +165,13 @@ export function readFacebookCredential(): string {
     );
   }
 
+  // Le fragment est nettoyé AVANT toute décision : même un `id_token` refusé
+  // (state non conforme, jeton illisible) ne doit pas rester dans l'historique
+  // du navigateur. Nettoyer seulement en cas de succès laissait fuiter le jeton
+  // precisely dans le cas qui ne doit jamais arriver.
   const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+
   const error = fragment.get('error');
   if (error) {
     throw new SocialAuthError(
@@ -140,9 +200,6 @@ export function readFacebookCredential(): string {
       'Connexion Facebook non sécurisée. Recommencez.'
     );
   }
-
-  // Nettoyage de l'URL : le jeton ne doit pas rester dans l'historique.
-  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 
   return credential;
 }

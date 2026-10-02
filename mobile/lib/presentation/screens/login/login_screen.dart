@@ -89,8 +89,8 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  /// Session ouverte par Google / Microsoft : meme traitement qu'un login
-  /// par mot de passe, donc aucun chemin de session sp\u00e9cial.
+  /// Session ouverte par Google / Microsoft / Facebook : meme traitement qu'un
+  /// login par mot de passe, donc aucun chemin de session spécial.
   Future<void> _onSocialAuthenticated(Map<String, dynamic> data) async {
     await _apiService.saveTokens(data);
     if (!mounted) return;
@@ -305,10 +305,10 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     const SizedBox(height: 16),
 
-                    // Connexion par identite externe (Google / Microsoft) : les
-                    // deux sont gratuits et sans plafond cote serveur. Aucun
-                    // mot de passe a creer, et le bouton n'apparait que si le
-                    // serveur sert reellement le fournisseur.
+                    // Connexion par identite externe (Google / Microsoft /
+                    // Facebook) : les trois sont gratuits et sans plafond cote
+                    // serveur. Aucun mot de passe a creer, et le bouton
+                    // n'apparait que si le serveur sert reellement le fournisseur.
                     SocialLoginButtons(
                       apiService: _apiService,
                       googleServerClientId:

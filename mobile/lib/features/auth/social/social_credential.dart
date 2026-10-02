@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 
 /// Fournisseur d'identité externe supporté par l'application mobile.
 ///
-/// Volontairement restreint à deux fournisseurs, tous deux **gratuits et sans
-/// plafond** côté serveur : les `id_token` sont validés localement contre les
-/// clés publiques du fournisseur (JWKS), donc aucun appel à un service de
+/// Volontairement restreint à des fournisseurs **gratuits et sans plafond**
+/// côté serveur : les `id_token` sont validés localement contre les clés
+/// publiques du fournisseur (JWKS), donc aucun appel à un service de
 /// vérification payant et aucun quota.
 ///
 /// Apple (99 $/an) et le SMS (facturé par message) sont hors périmètre pour

@@ -3,7 +3,9 @@ import {
   clearFacebookHandoff,
   facebookRedirectUri,
   readFacebookCredential,
+  stageFacebookInvitation,
   startFacebookLogin,
+  takeFacebookInvitation,
 } from '@/features/auth/social/facebook';
 
 /**
@@ -157,6 +159,26 @@ describe('flux Facebook (OIDC par redirection)', () => {
       expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
       expect(() => readFacebookCredential()).toThrow();
     });
+
+    /**
+     * Le jeton ne doit jamais rester dans l'historique, y compris quand il est
+     * REJETÉ. Nettoyer l'URL uniquement en cas de succès laissait le `id_token`
+     * dans la barre d'adresse précisément dans le cas qui ne doit jamais
+     * arriver — et le laisser accessible en cas de state non conforme revenait
+     * à afficher le jeton d'un attaquant à l'écran.
+     */
+    it.each([
+      ['state non conforme', '#id_token=jeton&state=bbbbbbbb', 'a'.repeat(64)],
+      ['id_token absent', '#state=abc', 'a'.repeat(64)],
+      ['retour sans state', '#id_token=jeton', 'a'.repeat(64)],
+    ])('nettoie le fragment même en cas de refus : %s', (_label, fragment, handoffState) => {
+      seedHandoff(handoffState);
+      setFragment(fragment);
+
+      const replaceState = vi.spyOn(window.history, 'replaceState');
+      expect(() => readFacebookCredential()).toThrow();
+      expect(replaceState).toHaveBeenCalled();
+    });
   });
 
   describe('clearFacebookHandoff', () => {
@@ -170,6 +192,63 @@ describe('flux Facebook (OIDC par redirection)', () => {
   describe('facebookRedirectUri', () => {
     it('vise la route de retour sur la même origine', () => {
       expect(facebookRedirectUri()).toBe(`${window.location.origin}/auth/social/callback`);
+    });
+  });
+
+  /**
+   * Relais d'invitation.
+   *
+   * <p>Facebook impose une redirection de page entière : la page d'acceptation
+   * d'invitation est déchargée. Sans relais, le jeton d'invitation — qui porte le
+   * rôle et l'église — est perdu, et l'utilisateur retombe sur une connexion
+   * simple au lieu d'accepter son invitation. Ces tests verrouillent les deux
+   * propriétés qui comptent : il restitue ce qu'on lui a confié, et il ne se
+   * rejoue pas.
+   */
+  describe('relais d’invitation', () => {
+    const INVITATION_KEY = 'discipolat:social-invitation';
+
+    it('restitue le jeton et les noms saisis', () => {
+      stageFacebookInvitation({ token: 'abc123', firstName: 'Paul', lastName: 'Koffi' });
+
+      expect(takeFacebookInvitation()).toEqual({
+        token: 'abc123',
+        firstName: 'Paul',
+        lastName: 'Koffi',
+      });
+    });
+
+    it('NE SE REJOUE PAS : la lecture consomme le relais', () => {
+      stageFacebookInvitation({ token: 'abc123' });
+
+      takeFacebookInvitation();
+
+      // Un jeton d'invitation est un secret d'acceptation : le laisser relisible
+      // le rendrait rejouable depuis l'historique du navigateur.
+      expect(sessionStorage.getItem(INVITATION_KEY)).toBeNull();
+      expect(takeFacebookInvitation()).toBeNull();
+    });
+
+    it('renvoie null si aucun relais n’est en attente', () => {
+      expect(takeFacebookInvitation()).toBeNull();
+    });
+
+    it('ignore un relais corrompu ou sans jeton', () => {
+      sessionStorage.setItem(INVITATION_KEY, 'pas-du-json');
+      expect(takeFacebookInvitation()).toBeNull();
+
+      stageFacebookInvitation({ token: '' } as { token: string });
+      expect(takeFacebookInvitation()).toBeNull();
+    });
+
+    it('normalise les champs vides en undefined', () => {
+      stageFacebookInvitation({ token: 'abc123', firstName: '', lastName: '' });
+
+      expect(takeFacebookInvitation()).toEqual({
+        token: 'abc123',
+        firstName: undefined,
+        lastName: undefined,
+      });
     });
   });
 });
