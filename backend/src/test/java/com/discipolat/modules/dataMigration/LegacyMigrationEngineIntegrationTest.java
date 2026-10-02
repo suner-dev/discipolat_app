@@ -18,11 +18,15 @@ import com.discipolat.modules.people.repository.PersonRepository;
 import com.discipolat.modules.spaces.domain.SpaceRepository;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.tenants.domain.SaasPlan;
+import com.discipolat.modules.tenants.domain.SaasPlanRepository;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.discipolat.modules.tenants.domain.TenantSettings;
 import com.discipolat.modules.tenants.domain.TenantSettingsRepository;
 import com.discipolat.modules.tenants.domain.TenantStatus;
+import com.discipolat.modules.tenants.domain.TenantSubscription;
+import com.discipolat.modules.tenants.domain.TenantSubscriptionRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -32,10 +36,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -62,6 +68,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class LegacyMigrationEngineIntegrationTest {
 
+    /** Fixture quota identique à celle des classes sœurs (People/Space). */
+    private static final String LIMITS_JSON = "{\"members\":2000,\"max_users\":2000,"
+            + "\"max_churches\":100,\"max_departments\":100,\"max_campuses\":50,\"max_groups\":50,"
+            + "\"spaces\":100,\"storage_mb\":100000,\"max_storage_mb\":100000,\"events\":1000,"
+            + "\"ai_credits\":5000,\"max_ai_requests_month\":5000,\"max_courses\":1000,"
+            + "\"max_messages_month\":1000000}";
+    private static final String FEATURES_JSON = "{\"people\":true,\"events\":true,\"ai\":true}";
+
     @Autowired private LegacyMigrationService service;
     @Autowired private MigrationJobRepository jobs;
     @Autowired private MigrationAuditRepository audits;
@@ -72,6 +86,8 @@ class LegacyMigrationEngineIntegrationTest {
     @Autowired private DepartmentRepository departmentRepository;
     @Autowired private TenantRepository tenantRepository;
     @Autowired private TenantSettingsRepository tenantSettingsRepository;
+    @Autowired private SaasPlanRepository planRepository;
+    @Autowired private TenantSubscriptionRepository subscriptionRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
 
@@ -81,17 +97,22 @@ class LegacyMigrationEngineIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
         for (String table : List.of("migration_snapshot", "migration_audit", "migration_job",
                 "space_membership", "membership", "spaces", "person", "souls", "departments",
                 "organization_nodes")) {
             if (tableExists(table)) {
-                jdbcTemplate.execute("TRUNCATE TABLE " + table);
+                DatabaseReset.truncate(jdbcTemplate, table);
             }
         }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
 
         tenantId = activeTenantId();
+        TenantContext.setTenantId(tenantId);
+        // La migration cree des eglises (organization_nodes) et passe donc par
+        // le quota SaaS : sans abonnement valide, lockPlan rejette en « Quota
+        // configuration is unavailable or invalid ». La fixture etait portee
+        // par l'etat residuel d'autres classes dans la suite complete ; elle
+        // est ici autoportante (jouable seule, et contre PostgreSQL neuf).
+        ensurePlanAndSubscription(tenantId);
         otherTenantId = UUID.randomUUID();
         actorId = userRepository.save(User.builder()
                 .tenantId(tenantId)
@@ -286,6 +307,44 @@ class LegacyMigrationEngineIntegrationTest {
                 .status(TenantStatus.ACTIVE)
                 .build()));
         return tenant.getId();
+    }
+
+    private void ensurePlanAndSubscription(UUID tenant) {
+        if (planRepository.findById("NETWORK").isEmpty()) {
+            planRepository.save(SaasPlan.builder()
+                    .key("NETWORK")
+                    .name("Network")
+                    .description("Plan reseau (fixture de test)")
+                    .currency("EUR")
+                    .isActive(true)
+                    .isPublic(true)
+                    .status("ACTIVE")
+                    .sortOrder(1)
+                    .seatsLimit(2000)
+                    .storageLimitMb(100000)
+                    .aiCreditsLimit(5000)
+                    .limitsJson(LIMITS_JSON)
+                    .featuresJson(FEATURES_JSON)
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build());
+        }
+        if (subscriptionRepository.findCurrentByTenantId(tenant).isEmpty()) {
+            Instant now = Instant.now();
+            subscriptionRepository.save(TenantSubscription.builder()
+                    .tenantId(tenant)
+                    .planKey("NETWORK")
+                    .status(com.discipolat.modules.tenants.enums.SubscriptionStatus.ACTIVE)
+                    .billingCycle("monthly")
+                    .currentPeriodStart(now)
+                    .currentPeriodEnd(now.plusSeconds(30L * 24 * 3600))
+                    .cancelAtPeriodEnd(false)
+                    .quotasJson(LIMITS_JSON)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build());
+        }
+        jdbcTemplate.update("UPDATE tenants SET plan = 'NETWORK' WHERE id = ?", tenant);
     }
 
     private void setLegacyMigrationEnabled(boolean enabled) {

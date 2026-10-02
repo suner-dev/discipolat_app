@@ -9,6 +9,7 @@ import com.discipolat.modules.users.domain.UserStatus;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -49,11 +50,7 @@ class AutomationEngineIntegrationTest {
         tenantB = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
         // Clean automation tables
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of("automation_executions", "automation_rules")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        DatabaseReset.truncate(jdbcTemplate, "automation_executions", "automation_rules");
 
         userIdA = saveUser("admin-a@test.com", tenantA, UserRole.ADMIN);
         userIdB = saveUser("admin-b@test.com", tenantB, UserRole.ADMIN);

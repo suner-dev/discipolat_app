@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -49,11 +50,8 @@ class TenantAutoFillIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of("soul_history", "soul_departments", "soul_notes", "soul_tags", "souls")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        DatabaseReset.truncate(jdbcTemplate,
+                "soul_history", "soul_departments", "soul_notes", "soul_tags", "souls");
         TenantContext.clear();
     }
 

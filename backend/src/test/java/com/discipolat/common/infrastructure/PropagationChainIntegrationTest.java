@@ -32,6 +32,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -90,13 +91,9 @@ class PropagationChainIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of(
+        DatabaseReset.truncate(jdbcTemplate,
                 "audit_logs", "notifications", "soul_history",
-                "souls", "families", "departments", "users", "user_roles")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                "souls", "families", "departments", "users", "user_roles");
         TenantContext.setTenantId(DEFAULT_TENANT_ID);
         pasteurId = saveUser("pasteur@test", UserRole.PASTEUR, "Pierre", "Pasteur").getId();
         login(pasteurId, "PASTEUR");

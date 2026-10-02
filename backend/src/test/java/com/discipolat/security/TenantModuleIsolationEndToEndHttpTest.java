@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.discipolat.support.DatabaseReset;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -105,14 +106,10 @@ class TenantModuleIsolationEndToEndHttpTest {
 
     @BeforeEach
     void seedTwoChurches() {
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        for (String table : List.of(
+        DatabaseReset.truncate(jdbcTemplate,
                 "soul_history", "soul_departments", "soul_notes", "soul_tags",
                 "souls", "families", "departments", "event", "maker_reports",
-                "payment_intents", "users", "user_roles", "tenant_settings")) {
-            jdbcTemplate.execute("TRUNCATE TABLE " + table);
-        }
-        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                "payment_intents", "users", "user_roles", "tenant_settings");
 
         ensureActiveTenant(TENANT_A);
         ensureActiveTenant(TENANT_B);
