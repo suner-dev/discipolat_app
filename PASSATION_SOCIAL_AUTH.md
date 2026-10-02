@@ -316,3 +316,14 @@ propriétés, §2.4), validation terrain du flux Microsoft sur appareil réel
 (§2.5) avant d'activer le bouton mobile. Le code est fail-closed : sans
 cela, rien ne s'affiche et c'est voulu.
 
+**Ajout 2026-10-02 (révélé par la sortie de dette §6.5)** : le job
+*Deploy to Render* de `ci.yml` s'exécute pour la première fois depuis des
+lunes (il était « skipped » quand le backend était rouge) et échoue sur
+`Secrets RENDER_API_KEY et RENDER_API_SERVICE_ID manquants` — réglage
+humain jamais posé, même famille que §2.3/§2.4. Une fois ces deux secrets
+ajoutés (GitHub → Settings → Secrets and variables → Actions ; clé API : Render
+→ Account Settings → API Keys ; ID service : Render → discipolat-api →
+Settings), le pipeline devient entièrement vert. **Ne pas masquer ce rouge
+en `continue-on-error`** : un déploiement qui n'a pas lieu doit rester
+visible.
+
