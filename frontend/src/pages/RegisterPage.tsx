@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n, tText } from '@/i18n';
-import { Loader2, UserPlus, MailCheck, ShieldCheck, ArrowRight, CheckCircle2, Church, KeyRound } from 'lucide-react';
+import { Loader2, UserPlus, MailCheck, ShieldCheck, ArrowRight, CheckCircle2, Church, KeyRound, Copy, MessageCircle } from 'lucide-react';
 
 const registerSchema = z.object({
   firstName: z.string().min(1, 'Requis'),
@@ -62,7 +62,37 @@ export default function RegisterPage() {
   const joinChurchName = searchParams.get('church')?.trim() || undefined;
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [churchResult, setChurchResult] = useState<{ name: string; joinCode: string } | null>(null);
+  const [churchResult, setChurchResult] = useState<{ name: string; slug: string; joinCode: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  /** SPEC_ONBOARDING_FLOWS §4.1 — URL d'invitation canonique (vanity link). */
+  const inviteUrl = (slug: string) => `${window.location.origin}/j/${slug}`;
+
+  /** Copie le LIEN en priorité ; à défaut (pas de slug), le code. */
+  const copyInvite = async (slug: string, code: string) => {
+    const text = slug ? inviteUrl(slug) : code;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard refusé (contexte non sécurisé / permission) : on reste
+      // silencieux, le texte reste sélectionnable à l'écran.
+    }
+  };
+
+  /** Message WhatsApp prêt à envoyer : lien + code en secours. */
+  const waShareLink = (churchName: string, code: string) => {
+    const link = churchResult?.slug ? inviteUrl(churchResult.slug) : '';
+    const lines = [
+      `Rejoignez ${churchName} sur Discipolat`,
+      link,
+      code ? `Code d'entrée : ${code}` : '',
+      '',
+      'Cliquez sur le lien, créez votre compte : vous rejoignez directement.',
+    ];
+    return `https://wa.me/?text=${encodeURIComponent(lines.filter(Boolean).join('\n'))}`;
+  };
   const [approvalInfo, setApprovalInfo] = useState<string | null>(null);
   const { versionOf, legalVersion } = useLegalVersions();
 
@@ -113,6 +143,9 @@ export default function RegisterPage() {
         localStorage.removeItem('user'); // régénéré via /auth/me au rechargement
         setChurchResult({
           name: payload.church?.name ?? data.churchName ?? '',
+          // SPEC_ONBOARDING_FLOWS §4.1 : le lien d'invitation est un
+          // CONTRAT — sans lui, le fondateur n'a que le code à dicter.
+          slug: payload.church?.slug ?? '',
           joinCode: payload.church?.joinCode ?? '',
         });
         return;
@@ -147,6 +180,44 @@ export default function RegisterPage() {
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               {tText('Partagez-le avec vos futurs membres — ils le saisiront une seule fois à la rejointure.')}
             </p>
+          </div>
+        )}
+{/* SPEC_ONBOARDING_FLOWS §4.1 — le LIEN d'invitation : la porte la
+            plus fluide (clic, zéro saisie). Le code reste affiché : certains
+            membres l'ont en dictée ou n'ont pas de smartphone. */}
+        {churchResult.slug && (
+          <div className="mx-auto max-w-sm rounded-xl border border-primary-500/20 bg-primary-500/5 p-4">
+            <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">
+              {tText("Lien d'invitation")}
+            </p>
+            <a
+              href={`/j/${churchResult.slug}`}
+              className="block truncate text-sm font-mono font-semibold text-primary-600 dark:text-primary-400 hover:underline"
+            >
+              {`${window.location.origin}/j/${churchResult.slug}`}
+            </a>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              {tText("Partagez ce lien : vos membres cliquent, rejoignent, et n'ont plus rien à saisir ensuite.")}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => copyInvite(churchResult.slug, churchResult.joinCode)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? tText('Copié !') : tText('Copier le lien')}
+              </button>
+              <a
+                href={waShareLink(churchResult.name, churchResult.joinCode)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                {tText('Partager')}
+              </a>
+            </div>
           </div>
         )}
         <button
