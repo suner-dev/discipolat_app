@@ -57,6 +57,7 @@ import {
   Eye,
   Webhook as WebhookIcon,
   Plug,
+  Network,
   LifeBuoy,
   Route,
   Flame,
@@ -366,6 +367,10 @@ const FULL_NAV: WorkspaceSection[] = [
       // SPEC_ONBOARDING_FLOWS (FE-2/FE-3) — rejointure par code & annonces publiques.
       { name: 'Codes d\'entrée & rejointure', href: '/tenant/join-management', icon: KeyRound, subtitle: 'Codes église & sous-églises, demandes' },
       { name: 'Annonces publiques', href: '/tenant/announcements', icon: Megaphone, subtitle: 'Événements visibles sur le landing' },
+      // SPEC_ORGANISATION_DENOMINATION_V2 §7.2 — propriété, réseau, transfert.
+      { name: 'Propriété & délégation', href: '/tenant/ownership', icon: Crown, subtitle: 'Déléguer, céder, remplacer' },
+      { name: 'Mon réseau d\'églises', href: '/tenant/organization', icon: Network, subtitle: 'Dénomination & églises filles' },
+      { name: 'Changer d\'église', href: '/transfer', icon: ArrowLeftRight, subtitle: 'Transfert sans réinscription' },
       { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
@@ -738,8 +743,30 @@ const ADMIN_ONLY_HREFS: string[] = [
   // (routes corrigées dans App.tsx pour autoriser PASTEUR)
 ];
 
-/** Retourne les menus de l'espace métier correspondant au rôle actif. */
-export function navForRole(activeRole: string | null | undefined): WorkspaceSection[] {
+/**
+ * Retourne les menus de l'espace métier correspondant au rôle actif.
+ *
+ * SPEC_ORGANISATION_DENOMINATION_V2 §7.2 / T-W1 (faille F1) : la signature
+ * prend désormais l'objet utilisateur et non le seul rôle, afin que la garde
+ * « un Super Admin plateforme n'obtient JAMAIS les menus d'église » soit
+ * **structurelle** et non *par composant*. Avec l'ancienne signature
+ * `navForRole(activeRole)`, le cas `default` retournait `FULL_NAV` : tout
+ * nouveau composant appelant cette fonction réintroduisait la fuite, et c'est
+ * exactement ce qui s'est produit (`Sidebar` et `CommandPalette` avaient dû
+ * être corrigés séparément).
+ *
+ * Le rôle actif reste prioritaire pour le choix de l'espace, mais la garde
+ * plateforme passe **avant** le switch : `PLATFORM_SUPER_ADMIN` n'a pas
+ * d'espace d'église à choisir.
+ */
+export function navForRole(
+  user: { platformSuperAdmin?: boolean; role?: string | null; activeRole?: string | null } | null | undefined,
+  activeRoleOverride?: string | null,
+): WorkspaceSection[] {
+  if (user?.platformSuperAdmin === true) {
+    return PLATFORM_NAV;
+  }
+  const activeRole = activeRoleOverride ?? user?.activeRole ?? user?.role;
   switch (activeRole) {
     case 'RESPONSABLE':
       return RESPONSABLE_NAV;

@@ -1,13 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { isTenantAdmin, navForRole } from '@/workspaces';
+import { isTenantAdmin, navForRole, PLATFORM_NAV } from '@/workspaces';
 
 /* ============================================================================
  * Espaces métiers — chaque rôle ne voit que les menus dont les routes lui
  * sont réellement accessibles (croisement avec les gardes de App.tsx).
+ *
+ * T-W1 (SPEC_ORGANISATION_DENOMINATION_V2 §7.2, faille F1) : `navForRole`
+ * reçoit désormais l'UTILISATEUR et non le seul rôle, pour que la garde
+ * « un Super Admin plateforme n'obtient jamais les menus d'église » soit
+ * structurelle. Les appels ci-dessous sont donc `{ role }`, et un cas
+ * dedicated couvre le flag plateforme.
  * ========================================================================== */
 
 const allHrefs = (role: string) =>
-  navForRole(role).flatMap((s) => s.items.map((i) => i.href));
+  navForRole({ role }).flatMap((s) => s.items.map((i) => i.href));
 
 describe('isTenantAdmin — contrat du rôle actif', () => {
   it('accepte uniquement les rôles tenant autorisés par le backend', () => {
@@ -20,6 +26,37 @@ describe('isTenantAdmin — contrat du rôle actif', () => {
 });
 
 describe('navForRole — cohérence menus / gardes de routes', () => {
+  // T-W1 (F1) : la garantie doit être STRUCTURELLE, pas dépendre du composant
+  // appelant. Ces cas le prouvent en appelant directement navForRole, sans
+  // passer par Sidebar — c'était précisément la faille : la correction
+  // initiale vivait dans les composants.
+  it('T-W1 (F1) : un Super Admin plateforme obtient PLATFORM_NAV, même avec le rôle ADMIN', () => {
+    const nav = navForRole({ platformSuperAdmin: true, role: 'ADMIN', activeRole: 'ADMIN' });
+    expect(nav).toBe(PLATFORM_NAV);
+    const hrefs = nav.flatMap((s) => s.items.map((i) => i.href));
+    expect(hrefs).toContain('/platform/dashboard');
+    expect(hrefs).toContain('/platform/governance');
+    // Aucun écran d'église, quel que soit le rôle legacy porté.
+    for (const churchHref of ['/souls', '/families', '/departments', '/permissions', '/dashboard']) {
+      expect(hrefs, `menu d'église inattendu : ${churchHref}`).not.toContain(churchHref);
+    }
+  });
+
+  it('T-W1 (F1) : la garde plateforme prime sur activeRole=PASTEUR comme sur FAISEUR', () => {
+    for (const role of ['PASTEUR', 'FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'MEMBRE']) {
+      const hrefs = navForRole({ platformSuperAdmin: true, role, activeRole: role })
+        .flatMap((s) => s.items.map((i) => i.href));
+      expect(hrefs, `fuite pour activeRole=${role}`).not.toContain('/souls');
+      expect(hrefs, `fuite pour activeRole=${role}`).toContain('/platform/dashboard');
+    }
+  });
+
+  it('T-W1 (F1) : sans le flag, un ADMIN d\'église conserve sa vue complète', () => {
+    const hrefs = navForRole({ role: 'ADMIN', activeRole: 'ADMIN' }).flatMap((s) => s.items.map((i) => i.href));
+    expect(hrefs).toContain('/souls');
+    expect(hrefs).toContain('/dashboard');
+  });
+
   it('PASTEUR voit tous les écrans admin accessibles (configuration plateforme)', () => {
     const hrefs = allHrefs('PASTEUR');
     expect(hrefs).toContain('/permissions');

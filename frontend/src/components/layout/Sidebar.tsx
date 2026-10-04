@@ -125,6 +125,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   // FE-1 (SPEC_ONBOARDING_FLOWS) — le Super Admin plateforme ne voit JAMAIS
   // les menus d'église : espace isolé, dédié à la configuration des tenants.
   const platformAdmin = user?.platformSuperAdmin === true;
+  // T-W1 (F1) : la garde plateforme est désormais portée par navForRole(user)
+  // lui-même. On conserve le court-circuit pour ignorer les menus pilotés par
+  // la configuration backend (une entrée d'église injectée côté serveur ne
+  // doit pas apparaître chez un platform admin), mais la garantie ne dépend
+  // plus de ce composant.
   const workspaceSections: NavSectionData[] = platformAdmin
     ? (PLATFORM_NAV as NavSectionData[])
     : configMenus.length > 0
@@ -136,9 +141,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         const nonEmpty = sections.filter((s) => s.items.length > 0);
         // Si la configuration ne laisse aucun menu accessible pour ce rôle,
         // repli sur la navigation statique du rôle (jamais vide).
-        return nonEmpty.length > 0 ? nonEmpty : navForRole(activeRole) as NavSectionData[];
+        return nonEmpty.length > 0 ? nonEmpty : navForRole(user, activeRole) as NavSectionData[];
       })()
-    : navForRole(activeRole).map((s) => ({
+    : navForRole(user, activeRole).map((s) => ({
         title: s.title,
         items: filterNavByRole(s.items, activeRole),
       })).filter((s) => s.items.length > 0) as NavSectionData[];

@@ -70,7 +70,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FlywayMigrationChainPostgreSqlTest {
 
     /** Version minimale attendue en bout de chaîne (incrémenter à chaque vague). */
-    private static final int EXPECTED_MIN_VERSION = 205;
+    // SPEC_ORGANISATION_DENOMINATION_V2 §5 — V222 (modèle d'organisation) et
+    // V223 (traçabilité du transfert) étendent `tenants` et
+    // `tenant_memberships`. Ce gate est le SEUL qui les exécute sur un
+    // PostgreSQL réel (le profil `test` tourne sur H2 avec
+    // `ddl-auto: create-drop` et `flyway.enabled: false`) : sans cette
+    // remontée, une erreur SQL dans V222/V223 n'apparaît qu'en production.
+    private static final int EXPECTED_MIN_VERSION = 223;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans

@@ -699,6 +699,14 @@ class _AppDrawerState extends State<AppDrawer> {
       'route': '/dashboard/membre'
     },
     {'icon': Icons.person_rounded, 'title': 'Mon profil', 'route': '/profile'},
+    // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 — le membre qui change d'église
+    // doit trouver la porte : sans cette entrée, le transfert n'était
+    // atteignable que par un lien externe.
+    {
+      'icon': Icons.swap_horiz_rounded,
+      'title': 'Changer d’église',
+      'route': '/transfer'
+    },
     {
       'icon': Icons.check_circle_rounded,
       'title': 'Mes présences',
@@ -885,6 +893,12 @@ class _AppDrawerState extends State<AppDrawer> {
         return 'Dashboard tenant';
       case '/tenant-selection':
         return 'Changer d’organisation';
+      // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 — transfert vers une autre
+      // église du même réseau, sans réinscription.
+      case '/transfer':
+        return 'Changer d’église';
+      case '/join':
+        return 'Rejoindre une église';
       case '/tenant/settings':
         return l10n.navChurchSettings;
       case '/tenant/onboarding':

@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -34,12 +36,20 @@ class JoinCodeServiceTest {
     private TenantJoinCodeRepository joinCodeRepository;
     @Mock
     private TenantRepository tenantRepository;
+    @Mock
+    private OrganizationNodeRepository organizationNodeRepository;
 
     private JoinCodeService service;
 
     @BeforeEach
     void setUp() {
-        service = new JoinCodeService(joinCodeRepository, tenantRepository);
+        service = new JoinCodeService(joinCodeRepository, tenantRepository, organizationNodeRepository);
+    }
+
+    /** Par défaut : aucun code principal préexistant (invariant D9 tenu). */
+    private void noExistingPrimaryCode() {
+        when(joinCodeRepository.findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrueOrderByCreatedAtDesc(any()))
+                .thenReturn(List.of());
     }
 
     private Tenant tenant(UUID id, String slug, TenantStatus status) {
@@ -76,6 +86,7 @@ class JoinCodeServiceTest {
         when(joinCodeRepository.existsByCodeAndIsActiveTrue(anyString())).thenReturn(false);
         when(joinCodeRepository.save(any(TenantJoinCode.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
+        noExistingPrimaryCode();
 
         TenantJoinCode saved = service.generate(tenantId, null, null, null, UUID.randomUUID());
 
@@ -104,11 +115,120 @@ class JoinCodeServiceTest {
                 .thenReturn(true, false);
         when(joinCodeRepository.save(any(TenantJoinCode.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
+        noExistingPrimaryCode();
 
         service.generate(tenantId, null, null, JoinMode.APPROVAL, UUID.randomUUID());
 
         verify(joinCodeRepository, times(2)).existsByCodeAndIsActiveTrue(anyString());
         verify(joinCodeRepository, times(1)).save(any(TenantJoinCode.class));
+    }
+
+    // ── unicité du code principal (SPF ORGANISATION §7.1 / T-B4, F16) ──
+
+    /**
+     * Régression F16 : un second code racine doit neutraliser le précédent.
+     * Sans cela, deux lignes ACTIVES coexistent et
+     * {@code findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrue} (Optional) levait
+     * {@code IncorrectResultSizeDataAccessException} → 500 sur /join?slug=.
+     */
+    @Test
+    void generateRetiresExistingPrimaryCodeBeforeInsertingANewOne() {
+        UUID tenantId = UUID.randomUUID();
+        UUID creator = UUID.randomUUID();
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.of(tenant(tenantId, "bethel", TenantStatus.ACTIVE)));
+        when(joinCodeRepository.existsByCodeAndIsActiveTrue(anyString())).thenReturn(false);
+        when(joinCodeRepository.save(any(TenantJoinCode.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        TenantJoinCode previous = TenantJoinCode.builder()
+                .id(UUID.randomUUID())
+                .tenantId(tenantId)
+                .code("BETHE-1111")
+                .joinMode(JoinMode.OPEN)
+                .isActive(true)
+                .createdAt(Instant.now().minusSeconds(3600))
+                .build();
+        when(joinCodeRepository.findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrueOrderByCreatedAtDesc(tenantId))
+                .thenReturn(List.of(previous));
+
+        service.generate(tenantId, null, "Église principale", JoinMode.OPEN, creator);
+
+        assertFalse(previous.isActive(),
+                "le code principal précédent doit être désactivé (invariant D9, un code actif par cible)");
+    }
+
+    /**
+     * Le cas le plus défavorable : plusieurs codes racines actifs hérités d'une
+     * base antérieure. generate() doit tous les neutraliser, pas seulement le
+     * premier.
+     */
+    @Test
+    void generateRetiresEveryExistingPrimaryCode() {
+        UUID tenantId = UUID.randomUUID();
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.of(tenant(tenantId, "bethel", TenantStatus.ACTIVE)));
+        when(joinCodeRepository.existsByCodeAndIsActiveTrue(anyString())).thenReturn(false);
+        when(joinCodeRepository.save(any(TenantJoinCode.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        List<TenantJoinCode> legacy = List.of(
+                TenantJoinCode.builder().id(UUID.randomUUID()).tenantId(tenantId).code("BETHE-1111")
+                        .joinMode(JoinMode.OPEN).isActive(true).createdAt(Instant.now()).build(),
+                TenantJoinCode.builder().id(UUID.randomUUID()).tenantId(tenantId).code("BETHE-2222")
+                        .joinMode(JoinMode.OPEN).isActive(true).createdAt(Instant.now()).build());
+        when(joinCodeRepository.findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrueOrderByCreatedAtDesc(tenantId))
+                .thenReturn(legacy);
+
+        service.generate(tenantId, null, null, JoinMode.OPEN, UUID.randomUUID());
+
+        for (TenantJoinCode stale : legacy) {
+            assertFalse(stale.isActive(), "tous les codes principaux hérités doivent être neutralisés");
+        }
+    }
+
+    /** Un code de sous-église ne doit PAS neutraliser le code racine. */
+    @Test
+    void generateForSubChurchLeavesThePrimaryCodeUntouched() {
+        UUID tenantId = UUID.randomUUID();
+        UUID nodeId = UUID.randomUUID();
+        when(tenantRepository.findById(tenantId))
+                .thenReturn(Optional.of(tenant(tenantId, "bethel", TenantStatus.ACTIVE)));
+        when(joinCodeRepository.existsByCodeAndIsActiveTrue(anyString())).thenReturn(false);
+        when(joinCodeRepository.save(any(TenantJoinCode.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        TenantJoinCode primary = TenantJoinCode.builder()
+                .id(UUID.randomUUID()).tenantId(tenantId).code("BETHE-1111")
+                .joinMode(JoinMode.OPEN).isActive(true).createdAt(Instant.now()).build();
+
+        service.generate(tenantId, nodeId, "Campus Nord", JoinMode.OPEN, UUID.randomUUID());
+
+        assertTrue(primary.isActive(),
+                "le code racine doit survivre : un code de sous-église est une cible distincte (D3)");
+        verify(joinCodeRepository, never())
+                .findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrueOrderByCreatedAtDesc(tenantId);
+    }
+
+    /** findPrimaryActiveCode doit être TOTAL, même sur des données incohérentes. */
+    @Test
+    void findPrimaryActiveCodeReturnsTheMostRecentWithoutThrowing() {
+        UUID tenantId = UUID.randomUUID();
+        TenantJoinCode older = TenantJoinCode.builder().id(UUID.randomUUID()).tenantId(tenantId)
+                .code("BETHE-1111").joinMode(JoinMode.OPEN).isActive(true).build();
+        TenantJoinCode newer = TenantJoinCode.builder().id(UUID.randomUUID()).tenantId(tenantId)
+                .code("BETHE-2222").joinMode(JoinMode.APPROVAL).isActive(true).build();
+        when(joinCodeRepository.findByTenantIdAndOrgNodeIdIsNullAndIsActiveTrueOrderByCreatedAtDesc(tenantId))
+                .thenReturn(List.of(newer, older));
+
+        assertTrue(service.findPrimaryActiveCode(tenantId).isPresent(),
+                "la résolution doit aboutir même avec plusieurs codes actifs hérités");
+        assertEquals("BETHE-2222", service.findPrimaryActiveCode(tenantId).orElseThrow().getCode());
+    }
+
+    @Test
+    void findPrimaryActiveCodeIsEmptyWhenNoneActive() {
+        assertTrue(service.findPrimaryActiveCode(UUID.randomUUID()).isEmpty());
     }
 
     @Test

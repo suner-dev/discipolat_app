@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app.dart';
 import '../../../data/services/api_service.dart';
@@ -97,12 +98,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final session = data['session'] as Map<String, dynamic>?;
       if (session != null && session['accessToken'] != null) {
         // Fondateur : session établie immédiatement — auto-login puis onboarding.
+        //
+        // T-B0bis (mobile) : on ADOPTE la paire de jetons renvoyée par le
+        // backend. Sans cela, l'identité affichée pouvait annoncer une
+        // organisation alors que le claim `tenantId` du access token courant
+        // désignait encore l'ancienne — toutes les requêtes suivantes
+        // partiraient ailleurs. `saveTokens` est le point d'écriture unique du
+        // stockage mobile.
         await _apiService.saveTokens(session);
         if (!mounted) return;
         AuthState().setAuthenticated(true, userData: session);
+        final church = data['church'] as Map<String, dynamic>?;
         setState(() => _churchResult = {
-          'name': (data['church']?['name'] ?? _churchNameController.text.trim()),
-          'joinCode': (data['church']?['joinCode'] ?? ''),
+          'name': (church?['name'] ?? _churchNameController.text.trim()),
+          'slug': (church?['slug'] ?? ''),
+          'joinCode': (church?['joinCode'] ?? ''),
         });
         return;
       }
@@ -213,6 +223,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               Text('Partagez-le avec vos futurs membres — ils ne le saisiront qu\'une seule fois.',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                              // SPEC_ORGANISATION_DENOMINATION_V2 §4.1 / F21 — le
+                              // LIEN est la porte la plus fluide (clic, zéro
+                              // saisie) ; le code reste affiché pour ceux qui
+                              // l'ont en dictée. Les deux sont copiables.
+                              if ((_churchResult!['slug'] ?? '').toString().isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Text('Lien d\'invitation',
+                                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                                const SizedBox(height: 6),
+                                Text(
+                                  '${Uri.base.origin}/j/${_churchResult!['slug']}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFF4ADE80), fontSize: 13,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () async {
+                                      final link =
+                                          '${Uri.base.origin}/j/${_churchResult!['slug']}';
+                                      await Clipboard.setData(ClipboardData(text: link));
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Lien copié')),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.copy_rounded, size: 16),
+                                    label: const Text('Copier le lien'),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    await Clipboard.setData(ClipboardData(
+                                        text: _churchResult!['joinCode'].toString()));
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Code copié')),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.copy_rounded, size: 16),
+                                  label: const Text('Copier le code'),
+                                ),
+                              ),
                             ],
                           ),
                         ),

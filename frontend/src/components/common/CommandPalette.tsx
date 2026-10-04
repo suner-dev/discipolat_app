@@ -65,10 +65,12 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const platformAdmin = user?.platformSuperAdmin === true;
 
   // Commandes de navigation : aplaties depuis l'espace métier du rôle, filtrées par droit.
+  // T-W1 (F1) : navForRole reçoit désormais l'utilisateur — la garde plateforme
+  // est structurelle, plus une condition locale à ne pas oublier.
   const navCommands = useMemo<CommandItem[]>(() => {
     const seen = new Set<string>();
     const items: CommandItem[] = [];
-    for (const section of platformAdmin ? PLATFORM_NAV : navForRole(activeRole)) {
+    for (const section of navForRole(user, activeRole)) {
       for (const item of section.items as WorkspaceNavItem[]) {
         if (seen.has(item.href)) continue;
         if (!platformAdmin && !canRoleAccessPath(item.href, activeRole)) continue;
@@ -84,10 +86,15 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       }
     }
     return items;
-  }, [activeRole, platformAdmin, t]);
+  }, [activeRole, platformAdmin, t, user]);
 
   // Actions rapides (routes réelles, filtrées par droit) — jamais de bouton mort.
+  // T-W1 (F12) : ces entrées pointent vers des écrans d'ÉGLISE (« nouvelle âme »,
+  // recherche de personnes). Elles ne doivent PAS être proposées à un Super
+  // Admin plateforme : il n'a pas d'espace d'église (§1.1, D6). Le filtre ne se
+  // contentait pas du rôle actif, qui vaut ADMIN pour un platform admin.
   const quickActions = useMemo<CommandItem[]>(() => {
+    if (platformAdmin) return [];
     const defs: Array<{ key: string; href: string; icon: LucideIcon }> = [
       { key: 'commandPalette.actionNewSoul', href: '/souls/new', icon: UserPlus },
       { key: 'commandPalette.actionOpenSearch', href: '/search', icon: SearchIcon },
@@ -101,7 +108,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
         icon: d.icon,
         href: d.href,
       }));
-  }, [activeRole, t]);
+  }, [activeRole, platformAdmin, t]);
 
   // Recherche de personnes (vraie API), activée dès 2 caractères.
   const debounced = useDebounce(query.trim(), 200);

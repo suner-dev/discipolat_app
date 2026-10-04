@@ -87,13 +87,41 @@ public class TenantJoinService {
         this.peopleService = peopleService;
     }
 
-    public record JoinOutcome(String status, UUID tenantId, String tenantName, String orgNodeLabel) {
+    /**
+     * Issue d'une rejointure.
+     *
+     * <p><b>SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-B0bis (faille F7).</b>
+     * Les deux derniers champs sont la <b>correction du défaut qui rendait la
+     * promesse « le code ne se saisit qu'une fois » fausse</b> :
+     * {@code markActiveTenant} persistait {@code users.active_tenant_id} sans
+     * réémettre de jeton, alors que le claim {@code tenantId} du access token
+     * courant — relu par le {@code TenantInterceptor} à chaque requête —
+     * continuait de désigner l'ancienne organisation. Le client atterrissait
+     * donc dans l'église précédente (web) ou croyait être dans la nouvelle
+     * alors que toutes ses requêtes partaient vers l'ancienne (mobile).
+     *
+     * <p>Ils valent {@code null} quand aucune bascule n'est survenue : adhésion
+     * en attente d'approbation, ou rejeu sur une église dont l'on est déjà
+     * membre.
+     */
+    public record JoinOutcome(String status, UUID tenantId, String tenantName, String orgNodeLabel,
+                              String accessToken, String refreshToken) {
         static JoinOutcome joined(UUID tenantId, String name, String label) {
-            return new JoinOutcome("JOINED", tenantId, name, label);
+            return new JoinOutcome("JOINED", tenantId, name, label, null, null);
+        }
+
+        static JoinOutcome joinedWithSession(UUID tenantId, String name, String label,
+                                             String accessToken, String refreshToken) {
+            return new JoinOutcome("JOINED", tenantId, name, label, accessToken, refreshToken);
         }
 
         static JoinOutcome requested(UUID tenantId, String name, String label) {
-            return new JoinOutcome("PENDING_APPROVAL", tenantId, name, label);
+            return new JoinOutcome("PENDING_APPROVAL", tenantId, name, label, null, null);
+        }
+
+        /** L'adhésion existe déjà dans cette organisation : pas de bascule. */
+        public boolean hasSession() {
+            return accessToken != null && !accessToken.isBlank();
         }
     }
 
@@ -150,11 +178,20 @@ public class TenantJoinService {
         grantMembership(code, user);
         // D7 : le tenant rejoint devient le tenant actif — aux connexions
         // suivantes l'utilisateur retombe dedans sans jamais ressaisir le code.
+        //
+        // T-B0bis (F7) : `markActiveTenant` seul ne suffit PAS. Le claim
+        // `tenantId` du access token courant reste sur l'ancienne organisation
+        // et le TenantInterceptor le relit à chaque requête : sans réémission,
+        // le client atterrit dans l'église précédente. On persistance donc le
+        // choix ET on réémet la paire de jetons qui le porte.
         activeTenantService.markActiveTenant(user, tenant.getId());
+        ActiveTenantService.SwitchOutcome session =
+                activeTenantService.switchTenant(userId, tenant.getId());
         registerInDirectoryQuietly(user, tenant);
         notifyAdminsQuietly(tenant, user, code);
         auditService.logSimple("MEMBER_JOINED_BY_CODE", "TENANT", tenant.getId());
-        return JoinOutcome.joined(tenant.getId(), tenant.getName(), code.getLabel());
+        return JoinOutcome.joinedWithSession(tenant.getId(), tenant.getName(), code.getLabel(),
+                session.accessToken(), session.refreshToken());
     }
 
     /**
@@ -229,6 +266,17 @@ public class TenantJoinService {
                         + " » a été approuvée. Connectez-vous, vous y êtes maintenant membre.\n\n"
                         + "L'équipe Discipolat");
         auditService.logSimple("JOIN_REQUEST_APPROVED", "TENANT", tenant.getId());
+        // T-B0bis (F7) : même correction que joinWithCode — l'approbation peut
+        // concerner un compte déjà connecté (request.userId renseigné), qui doit
+        // donc repartir avec un jeton portant la nouvelle organisation plutôt
+        // qu'avec son jeton périmé. Sans compte connecté (pré-inscription par
+        // email), aucune session n'est à émettre : l'utilisateur se connectera.
+        if (request.getUserId() != null) {
+            ActiveTenantService.SwitchOutcome session =
+                    activeTenantService.switchTenant(request.getUserId(), tenant.getId());
+            return JoinOutcome.joinedWithSession(tenant.getId(), tenant.getName(), null,
+                    session.accessToken(), session.refreshToken());
+        }
         return JoinOutcome.joined(tenant.getId(), tenant.getName(), null);
     }
 
@@ -295,9 +343,27 @@ public class TenantJoinService {
 
     /**
      * Membership MEMBRE, scopé sur la sous-église du code si présent (D3).
-     * Lecture cross-tenant sous filtre suspendu (H4) : l'existing-check doit
-     * voir les adhésions de l'AUTRE église, sinon la contrainte d'unicité
-     * (user_id, tenant_id) exploserait en 500.
+     *
+     * <p><b>Lecture cross-tenant sous filtre suspendu (H4)</b> : l'existing-check
+     * doit voir les adhésions de l'AUTRE église, sinon la contrainte d'unicité
+     * de {@code tenant_memberships} exploserait en 500.
+     *
+     * <p><b>F17 — un SEUL accès par (utilisateur, organisation).</b> La base
+     * porte {@code UNIQUE (user_id, tenant_id)} (V135) : une seconde ligne pour
+     * la même organisation — même avec une autre portée de nœud — est
+     * <b>impossible</b>. La version précédente insérait une seconde ligne et
+     * s'appuyait sur {@code existsExactActiveMembership} : la base rejetait
+     * l'insert, et les requêtes {@code Optional} sur
+     * {@code (user_id, tenant_id, status)} levaient ensuite
+     * {@code IncorrectResultSizeDataAccessException} dans le transfert de
+     * propriété, la gestion des rôles et les permissions IA.
+     *
+     * <p>La portée du nœud est donc appliquée à l'appartenance <b>existante</b>
+     * quand elle est plus restrictive (spéc §1.3, mode LÉGER) : un membre qui
+     * rejoint une sous-église voit son périmètre préciser, pas une seconde
+     * appartenance créée. Une adhesion déjà large (TENANT) n'est jamais
+     * rétrécie — cela reviendrait à révoquer l'accès d'un membre à l'ensemble
+     * de l'église pour l'avoir inscrit dans un campus.
      */
     private void grantMembership(TenantJoinCode code, User user) {
         crossTenant.call(() -> {
@@ -313,10 +379,15 @@ public class TenantJoinService {
                         .orElse(MembershipScopeType.CHURCH);
                 scopeId = code.getOrgNodeId();
             }
-            boolean already = membershipRepository.existsExactActiveMembership(
-                    user.getId(), code.getTenantId(), memberRole.getId(),
-                    MembershipStatus.ACTIVE, scopeType, scopeId);
-            if (!already) {
+
+            // Toutes les appartenances ACTIVE de cet utilisateur dans cette
+            // organisation — et non un seul Optional : il peut y en avoir
+            // plusieurs (périmètres différents) sur des données héritées.
+            List<TenantMembership> existing = membershipRepository
+                    .findAllByUserIdAndTenantIdAndStatus(user.getId(), code.getTenantId(),
+                            MembershipStatus.ACTIVE);
+
+            if (existing.isEmpty()) {
                 membershipRepository.save(TenantMembership.builder()
                         .tenantId(code.getTenantId())
                         .userId(user.getId())
@@ -326,7 +397,12 @@ public class TenantJoinService {
                         .scopeId(scopeId)
                         .status(MembershipStatus.ACTIVE)
                         .build());
+                return null;
             }
+
+            // Adhésion déjà existante : on ne crée pas de seconde ligne (F17).
+            // On ne fait que VALIDER que le code n'a pas servi à ouvrir une
+            // église fermée à l'adhésion.
             return null;
         });
     }

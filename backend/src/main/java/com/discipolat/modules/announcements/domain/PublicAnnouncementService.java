@@ -58,6 +58,8 @@ public class PublicAnnouncementService {
     public PublicAnnouncement create(UUID tenantId, UUID actorId, AnnouncementInput input) {
         require(input.title() != null && !input.title().isBlank(), "TITLE_REQUIRED",
                 "Le titre de l'annonce est requis");
+        requireValidPublicUrl(input.linkUrl(), "LINK_URL_INVALID");
+        requireValidPublicUrl(input.imageUrl(), "IMAGE_URL_INVALID");
         PublicAnnouncement announcement = PublicAnnouncement.builder()
                 .tenantId(tenantId)
                 .title(input.title().trim())
@@ -84,6 +86,10 @@ public class PublicAnnouncementService {
             throw new DomainException("Dépublier avant modification",
                     HttpStatus.CONFLICT, "ANNOUNCEMENT_LOCKED");
         }
+        // F8 : validation aussi en modification, pas seulement à la création —
+        // sinon un `PUT` contourne la règle posée sur le `POST`.
+        requireValidPublicUrl(input.linkUrl(), "LINK_URL_INVALID");
+        requireValidPublicUrl(input.imageUrl(), "IMAGE_URL_INVALID");
         if (input.title() != null && !input.title().isBlank()) announcement.setTitle(input.title().trim());
         announcement.setDescription(trimToNull(input.description()));
         announcement.setImageUrl(trimToNull(input.imageUrl()));
@@ -173,7 +179,25 @@ public class PublicAnnouncementService {
 
     // ======================== PUBLIC (landing) ========================
 
-    /** Vitrine : annonce PUBLISHED + nom d'église résolu en bloc, zéro PII, zéro tenant_id. */
+    /**
+     * Vitrine publique du carrousel du landing.
+     *
+     * <p><b>SPF ORGANISATION DENOMINATION V2 §3 / D8 et §7.1 / T-B6 (faille F19).</b>
+     * Le code de rejointure n'est <b>jamais</b> publié. La version initiale
+     * renvoyait {@code accessRef} tel quel : une église qui collait son code
+     * dans une annonce s'ouvrait à quiconque lisait la page d'accueil, sans
+     * contrôle, et le code y restait même après rotation ou désactivation.
+     *
+     * <p>La carte renvoie à la place le <b>lien d'invitation</b> {@code /j/<slug>} :
+     * c'est la même porte, sans exposer le secret. Le lien mène à la page de
+     * rejointure où le mode {@code OPEN}/{@code APPROVAL} du code continue de
+     * régner — l'exigence de validation n'est pas contournée, elle est
+     * déplacée là où elle a lieu.
+     *
+     * <p>La réponse ne contient par ailleurs <b>ni tenant_id, ni email, ni nom de
+     * membre</b> : uniquement de quoi identifier l'organisatrice et
+     * l'événement.
+     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> publicFeed() {
         List<PublicAnnouncement> visible = crossTenant.call(() -> announcementRepository.findVisible(
@@ -181,24 +205,27 @@ public class PublicAnnouncementService {
         if (visible.isEmpty()) {
             return List.of();
         }
-        Map<UUID, String> names = tenantRepository.findAllById(visible.stream()
+        Map<UUID, Tenant> churches = tenantRepository.findAllById(visible.stream()
                         .map(PublicAnnouncement::getTenantId).distinct().toList())
                 .stream()
                 .filter(t -> t.getStatus() == com.discipolat.modules.tenants.domain.TenantStatus.ACTIVE)
-                .collect(Collectors.toMap(Tenant::getId, Tenant::getName, (a, b) -> a));
+                .collect(Collectors.toMap(Tenant::getId, t -> t, (a, b) -> a));
         return visible.stream()
-                .filter(a -> names.containsKey(a.getTenantId()))
+                .filter(a -> churches.containsKey(a.getTenantId()))
                 .map(a -> {
+                    Tenant church = churches.get(a.getTenantId());
                     Map<String, Object> view = new LinkedHashMap<>();
                     view.put("title", a.getTitle());
                     view.put("description", a.getDescription());
-                    view.put("churchName", names.get(a.getTenantId()));
+                    view.put("churchName", church.getName());
                     view.put("city", a.getCity());
                     view.put("country", a.getCountry());
                     view.put("eventAt", a.getEventAt());
                     view.put("imageUrl", a.getImageUrl());
                     view.put("linkUrl", a.getLinkUrl());
-                    view.put("accessRef", a.getAccessRef());
+                    // D8 (F19) : on publie le LIEN d'invitation, jamais le code.
+                    // `accessRef` n'est volontairement pas repris ici.
+                    view.put("invitePath", church.getSlug() == null ? null : "/j/" + church.getSlug());
                     return view;
                 })
                 .toList();
@@ -262,6 +289,47 @@ public class PublicAnnouncementService {
     private void require(boolean condition, String code, String message) {
         if (!condition) {
             throw new DomainException(message, HttpStatus.BAD_REQUEST, code);
+        }
+    }
+
+    /**
+     * N'autorise que {@code http}/{@code https} pour les URL fournies par une
+     * église et rendues sur la page d'accueil publique.
+     *
+     * <p><b>SPF ORGANISATION DENOMINATION V2 §7.1 / T-B6 (faille F8).</b> Ces
+     * deux champs sont saisis par un administrateur d'église puis rendus sur
+     * le <b>domaine public</b> : {@code SectionAnnouncements.tsx:86-90} les pose
+     * en {@code href}/{@code src}. Sans contrainte de schéma, une valeur
+     * {@code javascript:…} s'exécute dans l'origine du site dès qu'un visiteur
+     * clique — et la CSP de {@code render.yaml:199} autorise
+     * {@code 'unsafe-inline'}, qui ne bloque pas ce cas.
+     *
+     * <p>La validation est faite <b>ici</b>, côté serveur : c'est le seul point
+     * où l'on est sûr que la règle s'applique à tous les chemins (create, update,
+     * imports futurs). Une validation purement front-end serait contournable.
+     *
+     * <p>{@code null} / vide = champ non fourni, ce qui est légitime.
+     */
+    private void requireValidPublicUrl(String rawUrl, String errorCode) {
+        if (rawUrl == null || rawUrl.isBlank()) {
+            return;
+        }
+        String url = rawUrl.trim();
+        String lower = url.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+            throw new DomainException(
+                    "Lien non autorisé : seules les adresses http:// ou https:// sont acceptées",
+                    HttpStatus.BAD_REQUEST, errorCode);
+        }
+        try {
+            java.net.URI parsed = new java.net.URI(url);
+            if (parsed.getHost() == null || parsed.getHost().isBlank()) {
+                throw new DomainException("Lien non autorisé : hôte introuvable",
+                        HttpStatus.BAD_REQUEST, errorCode);
+            }
+        } catch (java.net.URISyntaxException malformed) {
+            throw new DomainException("Lien non autorisé : adresse invalide",
+                    HttpStatus.BAD_REQUEST, errorCode);
         }
     }
 

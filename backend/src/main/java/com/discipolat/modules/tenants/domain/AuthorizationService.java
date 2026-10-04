@@ -31,6 +31,14 @@ public class AuthorizationService {
     );
 
     /**
+     * Clé du rôle propriétaire. Volontairement <b>absente</b> de
+     * {@link #TENANT_ADMIN_ROLE_KEYS} côté « propriétaire » : elle y figure pour
+     * l'héritage des droits d'administration, mais les opérations de propriété
+     * (transfert, délégation) exigent <b>exactement</b> cette clé.
+     */
+    private static final String TENANT_OWNER_ROLE_KEY = "TENANT_OWNER";
+
+    /**
      * Check if current user has a specific permission within a scope.
      * This is the main entry point for authorization checks.
      */
@@ -144,6 +152,39 @@ public class AuthorizationService {
                             ? membership.getRole().getKey() : membership.getRoleLegacy();
                     return roleKey != null
                             && TENANT_ADMIN_ROLE_KEYS.contains(roleKey.trim().toUpperCase(Locale.ROOT));
+                });
+    }
+
+    /**
+     * True when the user owns the current tenant ({@code TENANT_OWNER}).
+     *
+     * <p>SPF ONBOARDING FLOWS §7.0 / T-B0 (F10) : distingue le propriétaire
+     * (« le roi ») d'un administrateur simplement délégué. Réservé aux
+     * opérations de propriété : {@code transfer}, {@code promote-admin},
+     * {@code demote-admin}.
+     *
+     * <p>La lecture passe par {@code findAllByUserIdAndTenantIdAndStatus} et non
+     * une requête {@code Optional} sur {@code (userId, tenantId, status)} : un
+     * membre ayant adhéré à la racine puis à une sous-glise possède deux
+     * lignes ACTIVE, et un {@code Optional} lèverait alors
+     * {@code IncorrectResultSizeDataAccessException} (faille F17).
+     */
+    public boolean isTenantOwner() {
+        UUID userId = SecurityUtils.getCurrentUserId();
+        UUID tenantId = TenantContext.requireTenantId();
+        return isTenantOwner(userId, tenantId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isTenantOwner(UUID userId, UUID tenantId) {
+        return membershipRepository.findAllByUserIdAndTenantIdAndStatus(
+                        userId, tenantId, MembershipStatus.ACTIVE).stream()
+                .filter(membership -> membership.getScopeType() == MembershipScopeType.TENANT)
+                .anyMatch(membership -> {
+                    String roleKey = membership.getRole() != null
+                            ? membership.getRole().getKey() : membership.getRoleLegacy();
+                    return roleKey != null
+                            && TENANT_OWNER_ROLE_KEY.equals(roleKey.trim().toUpperCase(Locale.ROOT));
                 });
     }
 

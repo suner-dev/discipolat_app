@@ -39,8 +39,26 @@ public class TenantOwnershipController {
         return ResponseEntity.ok(ownershipService.overview(tenantId));
     }
 
+    /**
+     * Membres promouvables administrateur — alimente le sélecteur de
+     * délégation de l'écran « Propriété & délégation » (T-W7).
+     *
+     * <p><b>Garde alignée sur {@code isTenantAdmin()}, pas
+     * {@code isTenantOwner()}.</b> La garde de <i>métier</i> reste sur
+     * {@code promote-admin}/{@code transfer} : un administrateur délégué peut
+     * consulter la liste, mais seul le propriétaire peut en faire usage. La
+     * lecture est déjà scopée au tenant courant, donc l'alignement de cette
+     * route sur celle de l'overview évite de faire diverger les deux écrans.
+     */
+    @GetMapping("/promotable")
+    @PreAuthorize("@authz.isTenantAdmin()")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> promotable() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(ownershipService.promotableMembers(tenantId));
+    }
+
     @PostMapping("/transfer")
-    @PreAuthorize("hasRole('TENANT_OWNER')")
+    @PreAuthorize("@authz.isTenantOwner()")
     public ResponseEntity<TenantOwnershipService.OwnershipView> transfer(
             @Valid @RequestBody TransferRequest request) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -53,7 +71,7 @@ public class TenantOwnershipController {
      * admins délégués ; l'arbitrage final appartient à la plateforme.
      */
     @PostMapping("/request-replacement")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<Map<String, Object>> requestReplacement(
             @RequestBody(required = false) ReplacementRequest request) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -63,7 +81,7 @@ public class TenantOwnershipController {
     }
 
     @PostMapping("/members/{userId}/promote-admin")
-    @PreAuthorize("hasRole('TENANT_OWNER')")
+    @PreAuthorize("@authz.isTenantOwner()")
     public ResponseEntity<Void> promoteAdmin(@PathVariable UUID userId) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actor = TenantContext.getCurrentUserId();
@@ -72,7 +90,7 @@ public class TenantOwnershipController {
     }
 
     @PostMapping("/members/{userId}/demote-admin")
-    @PreAuthorize("hasRole('TENANT_OWNER')")
+    @PreAuthorize("@authz.isTenantOwner()")
     public ResponseEntity<Void> demoteAdmin(@PathVariable UUID userId) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actor = TenantContext.getCurrentUserId();

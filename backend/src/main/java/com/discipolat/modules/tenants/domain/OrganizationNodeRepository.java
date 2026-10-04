@@ -19,6 +19,12 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
 
     List<OrganizationNode> findByTenantIdAndType(UUID tenantId, OrganizationNodeType type);
 
+    /**
+     * Nœuds d'un tenant, triés par nom — alimente le sélecteur de
+     * sous-église de la console des codes d'entrée (F14).
+     */
+    List<OrganizationNode> findByTenantIdOrderByNameAsc(UUID tenantId);
+
     List<OrganizationNode> findByParentId(UUID parentId);
 
     List<OrganizationNode> findByTenantIdAndParentId(UUID tenantId, UUID parentId);

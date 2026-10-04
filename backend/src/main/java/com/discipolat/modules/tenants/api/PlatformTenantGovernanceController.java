@@ -4,12 +4,14 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantDispute;
 import com.discipolat.modules.tenants.domain.TenantGovernanceService;
+import com.discipolat.modules.tenants.domain.TenantStatus;
 import com.discipolat.modules.tenants.domain.TenantService;
 import com.discipolat.modules.tenants.domain.TenantWarning;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -46,33 +48,81 @@ public class PlatformTenantGovernanceController {
     public record DisputeUpdateRequest(String status, String resolution) {
     }
 
+    /**
+     * Liste paginée des églises de la plateforme.
+     *
+     * <p><b>F27.</b> La version initiale renvoyait <b>toute</b> la liste et ne
+     * fournissait ni le {@code plan} (alors que l'IHM l'affichait — rendu
+     * {@code slug · undefined}), ni les compteurs. Le tableau de gouvernance
+     * doit rester operable sur une plateforme de plusieurs centaines
+     * d'églises : sans pagination, le navigateur reçoit et rend tout.
+     *
+     * <p><b>D7 — agrégats seulement.</b> Aucun email, aucun nom de membre : ces
+     * données passent par l'impersonation journalisée.
+     */
     @GetMapping
-    public ResponseEntity<List<TenantResponse>> list() {
-        return ResponseEntity.ok(tenantService.list());
+    public ResponseEntity<Map<String, Object>> list(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        int safeSize = Math.min(Math.max(size, 1), 200);
+        int safePage = Math.max(page, 0);
+
+        List<TenantResponse> all = tenantService.list();
+        List<TenantResponse> filtered = all.stream()
+                .filter(t -> status == null || status.isBlank()
+                        || t.status().name().equalsIgnoreCase(status.trim()))
+                .filter(t -> search == null || search.isBlank()
+                        || (t.name() != null && t.name().toLowerCase().contains(search.trim().toLowerCase()))
+                        || (t.slug() != null && t.slug().toLowerCase().contains(search.trim().toLowerCase())))
+                .toList();
+
+        int from = Math.min(safePage * safeSize, filtered.size());
+        int to = Math.min(from + safeSize, filtered.size());
+
+        // `TenantResponse` porte déjà le plan (champ `plan`) : on le lit
+        // directement, sans lecture supplémentaire par tenant.
+        List<Map<String, Object>> items = filtered.subList(from, to).stream()
+                .map(t -> tenantSummary(t.id(), t.name(), t.slug(), t.status(), t.plan()))
+                .toList();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("content", items);
+        body.put("total", filtered.size());
+        body.put("page", safePage);
+        body.put("size", safeSize);
+        body.put("totalPages", (int) Math.ceil(filtered.size() / (double) safeSize));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/{id}/block")
     public ResponseEntity<Map<String, Object>> block(@PathVariable UUID id,
                                                      @RequestBody(required = false) ReasonRequest request) {
-        return ResponseEntity.ok(toView(governanceService.block(id, reasonOf(request))));
+        UUID actor = TenantContext.getCurrentUserId();
+        return ResponseEntity.ok(toView(governanceService.block(id, reasonOf(request), actor)));
     }
 
     @PostMapping("/{id}/unblock")
     public ResponseEntity<Map<String, Object>> unblock(@PathVariable UUID id,
                                                        @RequestBody(required = false) ReasonRequest request) {
-        return ResponseEntity.ok(toView(governanceService.unblock(id, reasonOf(request))));
+        UUID actor = TenantContext.getCurrentUserId();
+        return ResponseEntity.ok(toView(governanceService.unblock(id, reasonOf(request), actor)));
     }
 
     @PostMapping("/{id}/ban")
     public ResponseEntity<Map<String, Object>> ban(@PathVariable UUID id,
                                                     @RequestBody(required = false) ReasonRequest request) {
-        return ResponseEntity.ok(toView(governanceService.ban(id, reasonOf(request))));
+        UUID actor = TenantContext.getCurrentUserId();
+        return ResponseEntity.ok(toView(governanceService.ban(id, reasonOf(request), actor)));
     }
 
     @PostMapping("/{id}/unban")
     public ResponseEntity<Map<String, Object>> unban(@PathVariable UUID id,
                                                       @RequestBody(required = false) ReasonRequest request) {
-        return ResponseEntity.ok(toView(governanceService.unban(id, reasonOf(request))));
+        UUID actor = TenantContext.getCurrentUserId();
+        return ResponseEntity.ok(toView(governanceService.unban(id, reasonOf(request), actor)));
     }
 
     @GetMapping("/{id}/warnings")
@@ -124,11 +174,26 @@ public class PlatformTenantGovernanceController {
     }
 
     private Map<String, Object> toView(Tenant tenant) {
-        return Map.of(
-                "id", tenant.getId(),
-                "name", tenant.getName(),
-                "slug", tenant.getSlug(),
-                "status", tenant.getStatus().name());
+        return tenantSummary(tenant.getId(), tenant.getName(), tenant.getSlug(),
+                tenant.getStatus(), tenant.getPlan());
+    }
+
+    /**
+     * Vignette d'une église pour la console plateforme.
+     *
+     * <p><b>F27.</b> Le {@code plan} manquait alors que l'IHM de gouvernance
+     * l'affichait — l'écran rendait « slug · undefined ». Ajouté ici, sans
+     * aucune donnée nominative (D7 : agrégats seulement).
+     */
+    private Map<String, Object> tenantSummary(UUID id, String name, String slug,
+                                              TenantStatus status, String plan) {
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("id", id);
+        view.put("name", name);
+        view.put("slug", slug);
+        view.put("status", status.name());
+        view.put("plan", plan == null ? "" : plan);
+        return view;
     }
 
     private Map<String, Object> toWarningView(TenantWarning w) {

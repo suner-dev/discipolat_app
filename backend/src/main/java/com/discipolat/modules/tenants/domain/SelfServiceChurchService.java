@@ -1,6 +1,7 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
 import com.discipolat.common.multitenancy.TenantContext;
@@ -158,7 +159,8 @@ public class SelfServiceChurchService {
         });
 
         auditService.log(founder.getId(), tenantId, "TENANT_SELF_SERVICE_CREATED", "TENANT", tenantId,
-                "SUCCESS", Map.of("slug", slug, "founderId", founder.getId().toString()), null, null, null);
+                "SUCCESS", Payloads.of("slug", slug, "founderId", founder.getId().toString()),
+                null, null, null);
         return new ChurchCreation(tenant, founder, joinCodeRef.get(), rootChurch);
     }
 

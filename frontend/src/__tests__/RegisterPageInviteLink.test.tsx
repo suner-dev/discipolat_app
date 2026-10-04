@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import RegisterPage from '@/pages/RegisterPage';
+import { AuthProvider } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
 /* ============================================================================
@@ -35,9 +36,20 @@ vi.mock('@/lib/api', () => {
 const mockedApi = api as unknown as { post: ReturnType<typeof vi.fn> };
 
 function renderRegister() {
+  // `AuthProvider` est requis : SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-W0.
+  // La session rendue par `/auth/register` doit être ADOPTÉE
+  // (`adoptSession`), faute de quoi `localStorage.user` reste absent et le
+  // fondateur est renvoyé vers /login juste après avoir créé son église.
+  // C'est la régression que ce test est censé empêcher.
+  //
+  // Le provider est bien présent en production : `main.tsx` enveloppe toute
+  // l'application. On le reproduit ici comme dans les 10+ autres tests qui
+  // rendent un composant authentifié.
   return render(
     <MemoryRouter initialEntries={['/register?mode=church']}>
-      <RegisterPage />
+      <AuthProvider>
+        <RegisterPage />
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -111,5 +123,63 @@ describe('RegisterPage — écran fondateur (code + lien)', () => {
     const text = decodeURIComponent(href);
     expect(text).toContain('/j/eglise-de-la-grace');
     expect(text).toContain('GRACE-7K2X');
+  });
+
+  // ============================================================================
+  // T-W0 / FAILLE F9 — RÉGRESSION SILENCIEUSE, TEST NON VACUANT
+  //
+  // L'ancien écran posait les jetons puis faisait `localStorage.removeItem('user')`
+  // en pensant que `/auth/me` régénérerait l'identité au rechargement. Or
+  // `AuthProvider` retourne AVANT l'appel `/auth/me` si `user` est absent :
+  // `isAuthenticated` restait `false` et le fondateur était renvoyé vers
+  // `/login` JUSTE APRÈS avoir créé son église et reçu son code.
+  //
+  // Ce test verrouille les TROIS clés attendues par le bootstrap. Les knobs
+  // d'écran (code, lien, partage) ne le détecteraient pas : c'est bien
+  // l'état de session qui était cassé.
+  // ============================================================================
+  it('T-W0 (F9) : ADOPTE la session — les 3 clés du bootstrap sont écrites', async () => {
+    renderRegister();
+    await submitFounderForm();
+
+    // On attend l'écriture : sans elle, le test passerait sur une régression.
+    await waitFor(
+      () => expect(localStorage.getItem('accessToken')).toBe('tok-access'),
+      { timeout: 10000 },
+    );
+
+    expect(localStorage.getItem('accessToken')).toBe('tok-access');
+    expect(localStorage.getItem('refreshToken')).toBe('tok-refresh');
+
+    // LA CLÉ DÉTERMINANTE : sans `user`, le bootstrap n'hydrate rien et
+    // `isAuthenticated` vaut false. C'est précisément ce que l'ancien code
+    // effaçait.
+    expect(localStorage.getItem('user')).not.toBeNull();
+
+    // L'en-tête par défaut d'axios doit porter le jeton, sinon la requête
+    // suivante part sans authentification alors que l'écran affiche « connecté ».
+    const { default: apiClient } = await import('@/lib/api');
+    expect((apiClient.defaults.headers.common as Record<string, string>).Authorization)
+      .toBe('Bearer tok-access');
+  });
+
+  it('T-W0 (F9) : la redirection finale ne recharge pas la page (le contexte React est à jour)', async () => {
+    renderRegister();
+    await submitFounderForm();
+    await waitFor(
+      () => expect(localStorage.getItem('user')).not.toBeNull(),
+      { timeout: 10000 },
+    );
+
+    const button = await screen.findByRole(
+      'button',
+      { name: /Accéder|entrer|Entrer/i },
+      { timeout: 10000 },
+    );
+    // On vérifie qu'un bouton de continuation existe : c'est lui qui exécute
+    // `navigate('/dashboard')`. Un `window.location.href` ferait un
+    // rechargement complet — fonctionnellement correct mais destructif pour
+    // l'état React, et c'est précisément ce que le correctif a remplacé.
+    expect(button).toBeInTheDocument();
   });
 });

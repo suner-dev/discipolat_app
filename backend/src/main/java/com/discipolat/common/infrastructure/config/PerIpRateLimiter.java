@@ -308,10 +308,42 @@ public class PerIpRateLimiter {
                 counterJoinLookupTotal, counterJoinLookupDenied);
     }
 
+    /**
+     * Adresse IP cliente <b>de confiance</b>, pour le rate-limiting.
+     *
+     * <p><b>SPEC ORGANISATION DENOMINATION V2 §7.0 / T-B0ter (faille F18).</b>
+     * L'implémentation précédente prenait {@code X-Forwarded-For.split(",")[0]},
+     * c'est-à-dire la valeur la plus à gauche — <b>choisie par le client</b>. Or
+     * un reverse-proxy (Render, nginx) <b>ajoute</b> la chaîne : il n'écrase
+     * pas ce que l'appelant a envoyé. Un en-tête forgé donnait donc un seau
+     * neuf à chaque requête, rendant le rate-limit de {@code join_lookup}
+     * (12/min/IP) sans effet et l'oracle d'énumération des codes exploitable.
+     *
+     * <p>On lit désormais la valeur la plus à <b>droite</b> : c'est celle
+     * qu'a ajoutée le dernier proxy de confiance, donc celle qui n'est pas
+     * sous le contrôle du client.
+     *
+     * <p><b>Précondition à vérifier en infrastructure</b> : ce correctif n'est
+     * sûr que si le proxy de confiance est le dernier à écrire l'en-tête. Si
+     * l'application est exposée <b>sans</b> proxy (accès direct au port),
+     * {@code X-Forwarded-For} reste forgeable : dans ce cas seul
+     * {@link HttpServletRequest#getRemoteAddr()} est fiable. La
+     * configuration de déploiement est donc partie du correctif, pas une
+     * détail — voir {@code infra/nginx/nginx.conf} et les en-têtes Render
+     * (cf. T-B0ter, case « Config nginx vérifiée et documentée »).
+     */
     public static String extractClientIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank() && !"unknown".equalsIgnoreCase(xff)) {
-            return xff.split(",")[0].trim();
+            // On prend la DROITE de la chaîne : c'est l'entrée ajoutée par le
+            // proxy de confiance, pas celle fournie par l'appelant.
+            String[] hops = xff.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String candidate = hops[i].trim();
+                if (!candidate.isEmpty() && !"unknown".equalsIgnoreCase(candidate)) {
+                    return candidate;
+                }
+            }
         }
         String realIp = request.getHeader("X-Real-IP");
         if (realIp != null && !realIp.isBlank() && !"unknown".equalsIgnoreCase(realIp)) {

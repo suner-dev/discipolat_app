@@ -55,7 +55,11 @@ public class AiModuleService {
         UUID userId = TenantContext.getCurrentUserId();
         UUID tenantId = TenantContext.requireTenantId();
         if (userId == null) throw new SecurityException("Authentification requise");
-        boolean hasPerm = membershipRepo.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE).isPresent();
+        // F17 : lecture par liste — un membre peut avoir plusieurs périmètres ACTIVE
+        // dans la même organisation ; un Optional lèverait alors
+        // IncorrectResultSizeDataAccessException (500) au lieu d'accorder l'accès.
+        boolean hasPerm = !membershipRepo
+                .findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE).isEmpty();
         if (!hasPerm) throw new SecurityException("Accès IA refusé");
     }
 

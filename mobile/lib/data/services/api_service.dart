@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_config.dart';
+import '../models/transfer_models.dart';
 import '../../tenant_config.dart';
 
 class ApiService {
@@ -136,6 +137,58 @@ class ApiService {
           {Map<String, dynamic>? params,
           Map<String, dynamic>? queryParameters}) =>
       _dio.delete(path, queryParameters: params ?? queryParameters);
+
+  // ==========================================================================
+  // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 (T-M1) — transfert de membre.
+  //
+  // « Un membre qui change d'église ne se réinscrit pas » : il suffit du code
+  // de la nouvelle église. Ces helpers encapsulent le contrat pour que les
+  // écrans n'aient pas à connaître la forme exacte de la réponse.
+  // ==========================================================================
+
+  /// Analyse la situation AVANT confirmation : même réseau ou non
+  /// (l'historique pastoral est-il préservé ?), déjà membre ou non.
+  Future<TransferPreview> previewTransfer(String code) async {
+    final res = await get('/tenant/transfer/preview',
+        params: {'code': code.trim()});
+    final body = (res.data as Map<String, dynamic>?) ?? const <String, dynamic>{};
+    return TransferPreview(
+      sameNetwork: body['sameNetwork'] == true,
+      alreadyMember: body['alreadyMember'] == true,
+      activeInOther: body['activeInOther'] == true,
+      fromChurch: body['fromChurch'] as String? ?? '',
+      toChurch: body['toChurch'] as String? ?? '',
+      toKind: body['toKind'] as String? ?? '',
+      willTransfer: body['willTransfer'] == true,
+    );
+  }
+
+  /// Effectue le transfert — ou l'adhésion si les réseaux diffèrent (§4.4).
+  /// Idempotent : rejouer le même code répond ALREADY_MEMBER.
+  Future<TransferOutcome> transfer(String code, {String? reason}) async {
+    final res = await post('/tenant/transfer', data: {
+      'code': code.trim(),
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+    final body = (res.data as Map<String, dynamic>?) ?? const <String, dynamic>{};
+    final outcome = TransferOutcome(
+      status: body['status'] as String? ?? 'ALREADY_MEMBER',
+      toChurch: body['toChurch'] as String? ?? '',
+      accessToken: body['accessToken'] as String?,
+      refreshToken: body['refreshToken'] as String?,
+    );
+    // T-B0bis : le backend réémet les jetons sur l'organisation d'accueil. On
+    // les persiste ICI, sinon le claim tenantId du jeton courant continuerait de
+    // désigner l'ancienne église — le membre y resterait malgré le message
+    // « vous avez été transféré ».
+    if (outcome.accessToken != null && outcome.accessToken!.isNotEmpty) {
+      await saveTokens({
+        'accessToken': outcome.accessToken,
+        'refreshToken': outcome.refreshToken ?? '',
+      });
+    }
+    return outcome;
+  }
 
   /// §G5.7 — vrai défaut réseau/serveur injoignable (pas une erreur métier).
   /// Utilisé par les écrans de terrain (QR checkin, inventaire) pour décider

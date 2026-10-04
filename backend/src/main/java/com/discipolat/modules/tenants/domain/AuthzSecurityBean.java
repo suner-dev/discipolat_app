@@ -62,4 +62,23 @@ public class AuthzSecurityBean {
             return false;
         }
     }
+
+    /**
+     * Propriétaire de l'église ({@code TENANT_OWNER}) pour le tenant courant.
+     *
+     * <p>SPF ONBOARDING FLOWS §7.0 / T-B0 (faille F10) : les opérations de
+     * propriété — {@code transfer}, {@code promote-admin}, {@code demote-admin} —
+     * exigent le **propriétaire**, pas « n'importe quel administrateur ». Un
+     * {@code TENANT_ADMIN} délégué ne doit pas pouvoir céder l'église.
+     *
+     * <p>Comme {@link #isTenantAdmin()}, ne lève jamais : un contexte absent
+     * vaut refus.
+     */
+    public boolean isTenantOwner() {
+        try {
+            return authzService.isTenantOwner();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

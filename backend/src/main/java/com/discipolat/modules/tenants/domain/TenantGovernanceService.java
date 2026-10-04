@@ -1,6 +1,7 @@
 package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.audit.domain.AuditService;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +29,33 @@ import com.discipolat.common.exception.DomainException;
 @Transactional
 public class TenantGovernanceService {
 
+    /**
+     * Longueur maximale du message persisté — colonne
+     * {@code tenant_warnings.message VARCHAR(1000)} ({@code TenantWarning:32}).
+     */
+    static final int MAX_MESSAGE_LENGTH = 1000;
+
+    /**
+     * Marge réservée pour le préfixe d'action qu'on concatène au motif
+     * (« Église bannie : … », « Église réintégrée : … »).
+     *
+     * <p>Ce n'est pas une précaution théorique : la première version limitait
+     * le <i>motif</i> à 1000 puis préfixait le message, si bien qu'un motif
+     * de 999 caractères produisait une ligne plus longue que la colonne et
+     * que l'action de gouvernance entière était annulée par une violation de
+     * longueur — un bannissement impossible à effectuer, avec une erreur 500
+     * au lieu d'un refus explicite. La marge est dimensionnée au plus long
+     * libellé utilisé ({@code "Église réintégrée : "} = 20 caractères) arrondi
+     * à 32, pour qu'ajouter une traduction ne casse rien.
+     */
+    static final int LABEL_HEADROOM = 32;
+
+    /** Longueur maximale du MOTIF seul (donc toujours insérable). */
+    static final int MAX_REASON_LENGTH = MAX_MESSAGE_LENGTH - LABEL_HEADROOM;
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(TenantGovernanceService.class);
+
     private final TenantRepository tenantRepository;
     private final TenantWarningRepository warningRepository;
     private final TenantDisputeRepository disputeRepository;
@@ -51,8 +79,18 @@ public class TenantGovernanceService {
 
     // ======================== BLOCAGE / BANNISSEMENT ========================
 
-    /** Blocage temporaire : le tenant devient SUSPENDED (garde de requêtes active). */
-    public Tenant block(UUID tenantId, String reason) {
+    /**
+     * Blocage temporaire : le tenant devient SUSPENDED (garde de requêtes active).
+     *
+     * <p><b>F11 — le motif est OBLIGATOIRE et PERSISTÉ.</b> L'IHM de gouvernance
+     * annonce « chaque action est auditée » et propose un champ « motif » ; or
+     * l'ancien service l'acceptait vide et ne l'écrivait nulle part : un
+     * bannissement restait inexpliquable après coup. Le motif est désormais
+     * rejeté s'il est vide (400) et conservé dans {@code tenant_warnings}
+     * (gravité {@code FORMAL} pour un blocage, {@code FINAL} pour un
+     * bannissement) ainsi que dans le journal d'audit chaîné.
+     */
+    public Tenant block(UUID tenantId, String reason, UUID actorId) {
         Tenant tenant = requireTenant(tenantId);
         if (tenant.getStatus() == TenantStatus.SUSPENDED) {
             throw new DomainException("Tenant déjà bloqué", HttpStatus.CONFLICT, "TENANT_ALREADY_BLOCKED");
@@ -61,36 +99,57 @@ public class TenantGovernanceService {
             throw new DomainException("Tenant banni — utiliser la réintégration",
                     HttpStatus.CONFLICT, "TENANT_BANNED");
         }
-        return changeStatus(tenant, TenantStatus.SUSPENDED, "TENANT_BLOCKED", reason);
+        String motive = requireReason(reason);
+        Tenant changed = changeStatus(tenant, TenantStatus.SUSPENDED, "TENANT_BLOCKED", motive, actorId);
+        recordGovernanceReason(tenantId, actorId, TenantWarning.Severity.FORMAL,
+                "Église bloquée : " + motive);
+        return changed;
     }
 
     /** Déblocage : SUSPENDED → ACTIVE. */
-    public Tenant unblock(UUID tenantId, String reason) {
+    public Tenant unblock(UUID tenantId, String reason, UUID actorId) {
         Tenant tenant = requireTenant(tenantId);
         if (tenant.getStatus() != TenantStatus.SUSPENDED) {
             throw new DomainException("Seul un tenant bloqué se débloque",
                     HttpStatus.CONFLICT, "TENANT_NOT_BLOCKED");
         }
-        return changeStatus(tenant, TenantStatus.ACTIVE, "TENANT_UNBLOCKED", reason);
+        String motive = requireReason(reason);
+        Tenant changed = changeStatus(tenant, TenantStatus.ACTIVE, "TENANT_UNBLOCKED", motive, actorId);
+        recordGovernanceReason(tenantId, actorId, TenantWarning.Severity.INFO,
+                "Église réactivée : " + motive);
+        return changed;
     }
 
-    /** Bannissement : statut CANCELLED (suppression logique, données conservées). */
-    public Tenant ban(UUID tenantId, String reason) {
+    /**
+     * Bannissement : statut CANCELLED (suppression logique, données conservées).
+     *
+     * <p>Action quasi <b>irréversible</b> pour l'église : le motif est donc
+     * exigé (F11) et tracé à gravité {@code FINAL}.
+     */
+    public Tenant ban(UUID tenantId, String reason, UUID actorId) {
         Tenant tenant = requireTenant(tenantId);
         if (tenant.getStatus() == TenantStatus.CANCELLED) {
             throw new DomainException("Tenant déjà banni", HttpStatus.CONFLICT, "TENANT_ALREADY_BANNED");
         }
-        return changeStatus(tenant, TenantStatus.CANCELLED, "TENANT_BANNED", reason);
+        String motive = requireReason(reason);
+        Tenant changed = changeStatus(tenant, TenantStatus.CANCELLED, "TENANT_BANNED", motive, actorId);
+        recordGovernanceReason(tenantId, actorId, TenantWarning.Severity.FINAL,
+                "Église bannie : " + motive);
+        return changed;
     }
 
     /** Réintégration après bannissement : CANCELLED → ACTIVE. */
-    public Tenant unban(UUID tenantId, String reason) {
+    public Tenant unban(UUID tenantId, String reason, UUID actorId) {
         Tenant tenant = requireTenant(tenantId);
         if (tenant.getStatus() != TenantStatus.CANCELLED) {
             throw new DomainException("Seul un tenant banni se réintègre",
                     HttpStatus.CONFLICT, "TENANT_NOT_BANNED");
         }
-        return changeStatus(tenant, TenantStatus.ACTIVE, "TENANT_UNBANNED", reason);
+        String motive = requireReason(reason);
+        Tenant changed = changeStatus(tenant, TenantStatus.ACTIVE, "TENANT_UNBANNED", motive, actorId);
+        recordGovernanceReason(tenantId, actorId, TenantWarning.Severity.INFO,
+                "Église réintégrée : " + motive);
+        return changed;
     }
 
     // ======================== AVERTISSEMENTS ========================
@@ -173,7 +232,16 @@ public class TenantGovernanceService {
 
     // ======================== INTERNAL ========================
 
-    private Tenant changeStatus(Tenant tenant, TenantStatus newStatus, String action, String reason) {
+    /**
+     * Applique un changement de statut, l'audite ET conserve le motif (F11).
+     *
+     * <p>L'audit reçoit désormais le motif dans ses métadonnées : l'ancien
+     * appel {@code logSimple(action, "TENANT", id)} n'enregistrait que le nom
+     * de l'action, ce qui rendait la décision inexplicable à la relecture.
+     * Le journal chaîné par hash conserve ces métadonnées.
+     */
+    private Tenant changeStatus(Tenant tenant, TenantStatus newStatus, String action,
+                                String reason, UUID actorId) {
         TenantStatus previous = tenant.getStatus();
         tenant.setStatus(newStatus);
         Tenant saved = tenantRepository.save(tenant);
@@ -183,8 +251,74 @@ public class TenantGovernanceService {
         propagationPublisher.publishStatusChanged("TENANT", saved.getId(),
                 previous.name(), newStatus.name(),
                 action + ": " + saved.getName() + (reason == null || reason.isBlank() ? "" : " — " + reason.trim()));
-        auditService.logSimple(action, "TENANT", saved.getId());
+        auditService.log(actorId, saved.getId(), action, "TENANT", saved.getId(),
+                "SUCCESS",
+                Payloads.of("tenantName", saved.getName(),
+                        "previousStatus", previous.name(),
+                        "newStatus", newStatus.name(),
+                        "reason", reason),
+                null, null, null);
         return saved;
+    }
+
+    /**
+     * Motif obligatoire (F11, D18) : une action de gouvernance sans motif
+     * n'est pas traçable, donc refusée.
+     */
+    private String requireReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new DomainException("Un motif est obligatoire pour cette action",
+                    HttpStatus.BAD_REQUEST, "GOVERNANCE_REASON_REQUIRED");
+        }
+        String trimmed = reason.trim();
+        if (trimmed.length() > MAX_REASON_LENGTH) {
+            throw new DomainException("Motif trop long (" + MAX_REASON_LENGTH + " caractères maximum)",
+                    HttpStatus.BAD_REQUEST, "GOVERNANCE_REASON_TOO_LONG");
+        }
+        return trimmed;
+    }
+
+    /**
+     * Trace le motif de gouvernance dans {@code tenant_warnings} (F11).
+     *
+     * <p><b>Atomicité plutôt que best-effort.</b> Une première version
+     * absorbait l'échec — mais alors un bannissement pouvait être appliqué sans
+     * motif conservé, exactement l'état inexpliquable que la spec veut
+     * supprimer. Ici l'exception est journalisée puis <b>relancée</b> : les
+     * deux écritures sont dans la même transaction, donc l'action de
+     * gouvernance est annulée avec elle. On préfère une décision non
+     * appliquée à une décision appliquée sans justification.
+     *
+     * <p>Le {@code log.warn} sert au diagnostic : il conserve la cause racine
+     * même quand la transaction est annulée et que la stack trace remonte au
+     * client sous forme d'erreur 500.
+     */
+    private void recordGovernanceReason(UUID tenantId, UUID actorId,
+                                        TenantWarning.Severity severity, String message) {
+        // Garde-fou STRUCTUREL : `MAX_REASON_LENGTH` réserve déjà la marge du
+        // préfixe, mais cette assertion protège du futur refactor — quelqu'un
+        // qui rallonge un libellé, ou qui passe un message composé à la main,
+        // obtiendra ici une erreur explicite en développement plutôt qu'une
+        // violation de colonne en production (500 sur un bannissement).
+        if (message != null && message.length() > MAX_MESSAGE_LENGTH) {
+            throw new IllegalStateException(
+                    "Message de gouvernance trop long pour tenant_warnings.message ("
+                            + message.length() + " > " + MAX_MESSAGE_LENGTH
+                            + "). Motif limité à " + MAX_REASON_LENGTH
+                            + " caractères : allonger un libellé ? Augmenter "
+                            + "LABEL_HEADROOM ou migrer la colonne.");
+        }
+        try {
+            warningRepository.save(TenantWarning.builder()
+                    .tenantId(tenantId)
+                    .message(message)
+                    .severity(severity)
+                    .createdBy(actorId)
+                    .build());
+        } catch (RuntimeException traceFailure) {
+            log.warn("Trace de gouvernance non écrite pour le tenant {} : {}", tenantId, traceFailure.getMessage());
+            throw traceFailure;
+        }
     }
 
     private Tenant requireTenant(UUID tenantId) {

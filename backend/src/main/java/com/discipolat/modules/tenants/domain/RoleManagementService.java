@@ -295,8 +295,17 @@ public class RoleManagementService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new EntityNotFoundException("Role", roleId));
 
-        // Check user exists in tenant
-        Optional<TenantMembership> existing = membershipRepository.findByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        // Check user exists in tenant.
+        // F17 : lecture par liste — plusieurs périmètres ACTIVE sont possibles
+        // dans la même organisation (spéc §1.3) ; un Optional lèverait
+        // IncorrectResultSizeDataAccessException. On applique le rôle à la
+        // ligne de portée TENANT (celle qui porte les droits d'organisation).
+        List<TenantMembership> existingMemberships = membershipRepository
+                .findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
+        Optional<TenantMembership> existing = existingMemberships.stream()
+                .min(Comparator.comparing(
+                                (TenantMembership m) -> m.getScopeType() == MembershipScopeType.TENANT ? 0 : 1)
+                        .thenComparing(m -> m.getJoinedAt() == null ? java.time.Instant.EPOCH : m.getJoinedAt()));
         if (existing.isPresent()) {
             // Update existing membership
             TenantMembership membership = existing.get();

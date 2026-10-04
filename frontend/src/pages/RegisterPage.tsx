@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n, tText } from '@/i18n';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, UserPlus, MailCheck, ShieldCheck, ArrowRight, CheckCircle2, Church, KeyRound, Copy, MessageCircle } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -49,6 +50,8 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
+  // SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-W0 : adoption de session.
+  const { adoptSession } = useAuth();
   const requestedPlan = searchParams.get('plan')?.trim().toUpperCase() || 'DISCOVERY';
   // §G3.1 (Develop1) — lien d'inscription d'une église : /register?tenant=<slug>
   // rattache le compte (puis la fiche répertoire) à cette église. Le champ est
@@ -136,11 +139,16 @@ export default function RegisterPage() {
         churchName?: string;
       };
       if (payload.session?.accessToken) {
-        // Fondateur : session immédiatement établie (D1) — mêmes clés que login().
-        const d = payload.session;
-        localStorage.setItem('accessToken', d.accessToken);
-        if (d.refreshToken) localStorage.setItem('refreshToken', d.refreshToken);
-        localStorage.removeItem('user'); // régénéré via /auth/me au rechargement
+        // Fondateur : session immédiatement établie (D1).
+        // SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-W0 (F9) — on passe par
+        // adoptSession() : c'est le SEUL chemin qui écrit les trois clés
+        // attendues par le bootstrap d'AuthContext (accessToken, refreshToken,
+        // user). L'ancienne version posait les jetons puis supprimait `user` en
+        // pensant que `/auth/me` le régénérerait : or AuthProvider retourne
+        // AVANT l'appel `/auth/me` si `user` est absent, donc `isAuthenticated`
+        // restait `false` et le fondateur était renvoyé vers `/login` juste
+        // après avoir créé son église.
+        adoptSession(payload.session);
         setChurchResult({
           name: payload.church?.name ?? data.churchName ?? '',
           // SPEC_ONBOARDING_FLOWS §4.1 : le lien d'invitation est un
@@ -221,7 +229,7 @@ export default function RegisterPage() {
           </div>
         )}
         <button
-          onClick={() => { window.location.href = '/dashboard'; }}
+          onClick={() => { navigate('/dashboard'); }}
           className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm flex items-center justify-center gap-2"
         >
           <ArrowRight className="w-4 h-4" /> {tText('Accéder à mon église')}

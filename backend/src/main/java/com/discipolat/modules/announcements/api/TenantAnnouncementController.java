@@ -14,10 +14,15 @@ import java.util.UUID;
 
 /**
  * SPEC_ONBOARDING_FLOWS — annonces d'une église (admin tenant).
+ *
+ * <p><b>Garde d'autorisation (F10, SPEC §7.0 / T-B0).</b> {@code hasAnyRole(
+ * 'TENANT_OWNER','TENANT_ADMIN')} est inatteignable : le JWT ne porte que le
+ * claim {@code role} legacy. Remplacé par {@code @authz.isTenantAdmin()}, qui
+ * lit {@code tenant_memberships} pour le tenant courant.
  */
 @RestController
 @RequestMapping("/api/v1/tenant/announcements")
-@PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.isTenantAdmin()")
 public class TenantAnnouncementController {
 
     private final PublicAnnouncementService announcementService;

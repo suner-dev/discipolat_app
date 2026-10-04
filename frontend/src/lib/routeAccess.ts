@@ -80,6 +80,12 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tenant/modules': ['ADMIN', 'PASTEUR'],
   '/tenant/join-management': ['ADMIN', 'PASTEUR'],
   '/tenant/announcements': ['ADMIN', 'PASTEUR'],
+  // T-W7 : écran Propriété & délégation (F13). La garde de ROUTE est ici
+  // alignée sur ADMIN/PASTEUR ; la garde de MÉTIER (qui peut céder la
+  // propriété) reste côté serveur : `@authz.isTenantOwner()`.
+  '/tenant/ownership': ['ADMIN', 'PASTEUR'],
+  // T-W5 : réseau d'une dénomination (§1.3) — organigramme racine + enfants.
+  '/tenant/organization': ['ADMIN', 'PASTEUR'],
 
   // Administration
   '/admin/payments': ['ADMIN', 'PASTEUR'],
@@ -112,6 +118,10 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/prayers/spaces': ['ADMIN', 'PASTEUR'],
   '/audit': ['ADMIN', 'PASTEUR'],
   '/permissions': ['ADMIN', 'PASTEUR'],
+  // T-W6 (F6) : le membre passe d'une église à une autre SANS se réinscrire.
+  // Accessible à tout membre connecté : la décision transfert/adhésion est
+  // prise côté backend selon la racine (`root_tenant_id`), pas ici.
+  '/transfer': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/api-docs': ['ADMIN', 'PASTEUR'],
   '/kingdom-map': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 

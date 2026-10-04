@@ -25,6 +25,10 @@ const PlatformGovernancePage = lazy(() => import('@/pages/PlatformGovernancePage
 const PlatformAnnouncementsModerationPage = lazy(() => import('@/pages/PlatformAnnouncementsModerationPage'));
 const TenantAnnouncementsAdminPage = lazy(() => import('@/pages/TenantAnnouncementsAdminPage'));
 const TenantJoinManagementPage = lazy(() => import('@/pages/TenantJoinManagementPage'));
+// SPEC_ORGANISATION_DENOMINATION_V2 §7.2 / T-W5, T-W6, T-W7
+const TenantOrganizationPage = lazy(() => import('@/pages/TenantOrganizationPage'));
+const TenantOwnershipPage = lazy(() => import('@/pages/TenantOwnershipPage'));
+const TransferPage = lazy(() => import('@/pages/TransferPage'));
 const RegistrationStatusPage = lazy(() => import('@/pages/RegistrationStatusPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
@@ -300,6 +304,19 @@ function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode;
   // Check against activeRole; fallback to user.role for backward compatibility
   const currentRole = activeRole || user?.role;
 
+  // T-W2 (F2) : un Super Admin plateforme n'a AUCUNE interface d'église
+  // (§1.1, D6). Son rôle legacy vaut ADMIN — donc `isTenantAdmin` le/laissait
+  // passer, et toutes les routes tenant restaient atteignables en tapant
+  // l'URL : exactement le reproche initial du client (« un dashboard de chef
+  // de famille pour le Super Admin »).
+  //
+  // Placé AVANT la logique `roles` et la garde `scope="tenant"`. Pas de boucle
+  // : les routes `/platform/**` portent `scope="platform"`, donc ce trigger ne
+  // s'applique jamais à elles (condition `scope !== 'platform'`).
+  if (user?.platformSuperAdmin === true && scope !== 'platform') {
+    return <Navigate to="/platform/dashboard" replace />;
+  }
+
   // Scope multi-tenant : les rôles PLATFORM/TENANT sont hiérarchiques.
   // ADMIN = super-administrateur, AUTORISE implicitement tout.
   if (scope === 'platform' && user?.platformSuperAdmin === true) {
@@ -330,6 +347,13 @@ function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode;
 function DashboardGate() {
   const { activeRole, user } = useAuth();
   const currentRole = (activeRole || user?.role || 'FAISEUR') as UserRole;
+  // T-W1 (F12) : un Super Admin plateforme n'a AUCUNE interface d'église
+  // (§1.1, D6). Son rôle legacy vaut ADMIN, donc `isSuperUser` le/laissonait
+  // tomber sur le dashboard d'église — le reproche initial du client. La
+  // branche plateforme passe AVANT le test de super-utilisateur.
+  if (user?.platformSuperAdmin === true) {
+    return <Navigate to="/platform/dashboard" replace />;
+  }
   // Super-utilisateurs (Admin / Pasteur) : dashboard général.
   // Rôles opérationnels : redirection vers leur espace métier dédié.
   if (!isSuperUser(currentRole)) {
@@ -1226,6 +1250,17 @@ export default function App() {
           <Route path="/tenant/announcements" element={
             <ProtectedRoute scope="tenant"><TenantAnnouncementsAdminPage /></ProtectedRoute>
           } />
+          {/* SPEC_ORGANISATION_DENOMINATION_V2 §7.2 — réseau d'une dénomination,
+              propriété & délégation, transfert de membre. */}
+          <Route path="/tenant/organization" element={
+            <ProtectedRoute scope="tenant"><TenantOrganizationPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant/ownership" element={
+            <ProtectedRoute scope="tenant"><TenantOwnershipPage /></ProtectedRoute>
+          } />
+          <Route path="/transfer" element={
+            <ProtectedRoute><TransferPage /></ProtectedRoute>
+          } />
           <Route path="/admin/dress-codes" element={
             <ProtectedRoute scope="tenant"><DressCodePage /></ProtectedRoute>
           } />
@@ -1238,6 +1273,10 @@ export default function App() {
         {/* SPEC_ONBOARDING_FLOWS (FE-2) — rejointure publique : code saisi ou lien vanity /j/<slug> */}
         <Route path="/join" element={<JoinChurchPage />} />
         <Route path="/j/:slug" element={<JoinChurchPage />} />
+        {/* SPEC_ORGANISATION_DENOMINATION_V2 §4.1 — lien de sous-église :
+            /j/<slug>/<code>. La page se comporte comme /j/<slug> mais le code
+            est pré-rempli : le membre clique, il n'a rien à saisir. */}
+        <Route path="/j/:slug/:code" element={<JoinChurchPage />} />
         <Route path="/verify/passport/:code" element={<PassportVerifyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -9,6 +9,7 @@ import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/login/join_church_screen.dart';
+import 'presentation/screens/transfer/transfer_screen.dart';
 import 'presentation/screens/invitations/accept_invitation_screen.dart';
 import 'presentation/screens/invitations/invitation_management_screen.dart';
 import 'core/invitation_token.dart';
@@ -1350,6 +1351,12 @@ const _publicRoutes = {
   '/register',
   '/accept-invitation',
   '/join',
+  // NOTE : `/transfer` n'est PAS public, contrairement à `/join`.
+  // `/join` a une valeur de découverte avant inscription (voir quelle église
+  // correspond à ce code). `/transfer` est une action purement authentifiée :
+  // l'afficher à un visiteur déconnecté ne ferait qu'afficher un formulaire
+  // dont le premier clic répond 401. On le redirige donc vers /login, et la
+  // session existante est conservée.
 };
 
 final appRouter = GoRouter(
@@ -1393,6 +1400,16 @@ final appRouter = GoRouter(
         (isLoginRoute || state.matchedLocation == onboardingRoute)) {
       return roleHome(auth.activeRole,
           isPlatformSuperAdmin: auth.isPlatformSuperAdmin);
+    }
+
+    // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 / T-M4 (miroir de T-W2) :
+    // un Super Admin plateforme n'a AUCUNE interface d'église (D6). Son rôle
+    // legacy vaut ADMIN — sans cette branche, il retombait sur les écrans
+    // d'église (dashboard de chef de famille…), c'est-à-dire le reproche
+    // initial du client. Placé AVANT la garde par rôle actif.
+    if (auth.isPlatformSuperAdmin &&
+        !state.matchedLocation.startsWith('/platform/')) {
+      return roleHome(auth.activeRole, isPlatformSuperAdmin: true);
     }
 
     if (auth.isPlatformSuperAdmin &&
@@ -1483,6 +1500,14 @@ final appRouter = GoRouter(
       builder: (context, state) => JoinChurchScreen(
         initialCode: state.uri.queryParameters['code'],
       ),
+    ),
+    // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 / T-M2 — transfert de membre.
+    // Route PUBLIQUE comme /join : c'est la page de saisie du code, la
+    // validation d'authentification reste faite par l'écran.
+    GoRoute(
+      path: '/transfer',
+      name: 'transfer',
+      builder: (context, state) => const TransferScreen(),
     ),
     GoRoute(
       path: '/accept-invitation',

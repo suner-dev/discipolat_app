@@ -9,6 +9,14 @@ import { tText } from '@/i18n';
  * aucune PII (contrat /public/announcements). Le lien « join » utilise le
  * champ accessRef (= code ou slug) pour la rejointure directe.
  */
+/**
+ * Carte d'annonce publique.
+ *
+ * T-B6 / D8 (faille F19) : le backend ne renvoie plus `accessRef` — publier
+ * le code de rejointure sur la page d'accueil ouvrait l'église à quiconque
+ * lisait la page. On reçoit `invitePath` (`/j/<slug>`), qui mène à la page de
+ * rejointure où le mode OPEN/APPROVAL du code continue de régner.
+ */
 type AnnouncementItem = {
   title: string;
   description?: string;
@@ -18,7 +26,8 @@ type AnnouncementItem = {
   eventAt?: string;
   imageUrl?: string;
   linkUrl?: string;
-  accessRef?: string;
+  /** Chemin interne du lien d'invitation : `/j/<slug>`. */
+  invitePath?: string | null;
 };
 
 export default function SectionAnnouncements() {
@@ -32,7 +41,11 @@ export default function SectionAnnouncements() {
     return () => { active = false; };
   }, []);
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    // La section est une vitrine optionnelle : sans annonce publiée, elle
+    // disparaît plutôt que d'afficher un cadre vide sur la page d'accueil.
+    return null;
+  }
 
   return (
     <section id="announcements" className="relative py-20 sm:py-24">
@@ -82,10 +95,10 @@ export default function SectionAnnouncements() {
                       {[a.city, a.country].filter(Boolean).join(', ')}
                     </span>
                   )}
-                  {a.accessRef && (
+                  {(a.invitePath || a.linkUrl) && (
                     <a
-                      href={a.linkUrl || `/join?code=${encodeURIComponent(a.accessRef)}`}
-                      target={a.linkUrl ? '_blank' : undefined}
+                      href={a.invitePath || a.linkUrl}
+                      target={a.linkUrl && !a.invitePath ? '_blank' : undefined}
                       rel="noreferrer"
                       className="ml-auto font-medium text-primary-600 dark:text-primary-400 hover:underline"
                     >

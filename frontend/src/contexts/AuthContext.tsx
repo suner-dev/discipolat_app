@@ -9,6 +9,19 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<AuthResponse>;
+  /**
+   * Adopte une session DÉJÀ émise par le backend — sans repasser par /login.
+   *
+   * SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-W0 (faille F9) : les parcours
+   * qui rendent un jeton sans passer par `POST /auth/login` (création d'église
+   * en libre-service, rejointure par code, connexion sociale) NE doivent PAS
+   * écrire `localStorage` à la main. En effet `AuthProvider` ne reconstruit
+   * son identité — et n'appelle `/auth/me` — que si `localStorage.user`
+   * existe ; un chemin qui pose les jetons puis supprime `user` laisse
+   * `isAuthenticated === false` et l'utilisateur est renvoyé vers `/login`
+   * juste après avoir créé son église.
+   */
+  adoptSession: (auth: AuthResponse | Record<string, any>) => User;
   /** Session établie par un flux sans mot de passe (magic link, OAuth) : {token, user}. */
   loginWithSocialToken: (token: string, socialUser: {
     id: string; email: string; firstName?: string; lastName?: string; role: string;
@@ -178,6 +191,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userData;
   }, []);
 
+  /**
+   * Adopte une session déjà émise par le backend (cf. interface T-W0).
+   *
+   * Point d'entrée UNIQUE pour tout flux qui reçoit une paire de jetons sans
+   * avoir traversé `login()`. Écrit les trois clés attendues par le bootstrap
+   * (`accessToken`, `refreshToken`, `user`) puis synchronise l'état React et
+   * l'en-tête `Authorization` par défaut d'axios — sans quoi la requête
+   * suivante part sans jeton.
+   */
+  const adoptSession = useCallback((auth: AuthResponse | Record<string, any>): User => {
+    const d = (auth ?? {}) as Record<string, any>;
+    if (!d.accessToken) {
+      throw new Error('adoptSession : réponse sans accessToken');
+    }
+    const userData = buildUserFromAuthResponse(d);
+    localStorage.setItem('accessToken', d.accessToken);
+    localStorage.setItem('refreshToken', d.refreshToken ?? '');
+    localStorage.setItem('user', JSON.stringify(userData));
+    api.defaults.headers.common['Authorization'] = `Bearer ${d.accessToken}`;
+    setUser(userData);
+    return userData;
+  }, []);
+
   const logout = useCallback(() => {
     // Révocation serveur du refresh token (best-effort, non bloquant)
     const refreshToken = localStorage.getItem('refreshToken');
@@ -294,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        adoptSession,
         loginWithSocialToken,
         logout,
         updateUser,

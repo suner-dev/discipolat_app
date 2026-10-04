@@ -41,6 +41,32 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     long count();
 
+    // ============================================================
+    // Hiérarchie organisationnelle — SPEC_ORGANISATION_DENOMINATION_V2 §5 / V222
+    // ============================================================
+
+    /** Toute la descendance d'une racine (la racine exclue). */
+    List<Tenant> findByRootTenantId(UUID rootTenantId);
+
+    /** Les enfants directs d'une organisation — un niveau de l'arborescence. */
+    List<Tenant> findByParentTenantIdOrderByNameAsc(UUID parentTenantId);
+
+    /** Nombre d'organisations rattachées à une racine. */
+    long countByRootTenantId(UUID rootTenantId);
+
+    /** Un enfant direct portant déjà ce slug (unicité par parent). */
+    boolean existsByParentTenantIdAndSlug(UUID parentTenantId, String slug);
+
+    /** Un enfant direct portant déjà ce nom (unicité par parent). */
+    boolean existsByParentTenantIdAndNameIgnoreCase(UUID parentTenantId, String name);
+
+    /** Racine d'un réseau, par identifiant. */
+    @Query("SELECT t FROM Tenant t WHERE t.id = :id")
+    Optional<Tenant> findRootById(@Param("id") UUID id);
+
+    /** Les organisations racines (sans parent) — vue « réseau » de la console. */
+    List<Tenant> findByParentTenantIdIsNullOrderByNameAsc();
+
     @Query(value = """
         SELECT
             COUNT(*) as total,

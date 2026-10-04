@@ -20,16 +20,34 @@ type LookupResult = {
   slug?: string;
   joinMode?: string;
   requiresApproval?: boolean;
+  /** `RATE_LIMITED` — le serveur répond en 429, donc axios lève avant ce chemin. */
   reason?: string;
 };
 
+/** Réponse de `POST /tenant/join` — les jetons sont réémis par le backend (T-B0bis). */
+type JoinResponse = {
+  status: string;
+  tenantName?: string;
+  orgNodeLabel?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  /** Eventuelles données utilisateur renvoyées avec la session. */
+  session?: Record<string, unknown>;
+};
+
 export default function JoinChurchPage() {
-  const { slug } = useParams<{ slug?: string }>();
+  const { slug, code: pathCode } = useParams<{ slug?: string; code?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, adoptSession } = useAuth();
 
-  const [code, setCode] = useState(searchParams.get('code')?.trim() ?? '');
+  // SPEC_ORGANISATION_DENOMINATION_V2 §4.1 — `/j/<slug>/<code>` est le lien
+  // de SOUS-église : le code est dans le chemin, pas dans la query. Sans
+  // cette lecture, le lien d'un campus affichait « Aucune église ne
+  // correspond » alors que le code était valide.
+  const initialCode = pathCode?.trim() || searchParams.get('code')?.trim() || '';
+
+  const [code, setCode] = useState(initialCode);
   const [lookup, setLookup] = useState<LookupResult | null>(null);
   const [looking, setLooking] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -58,6 +76,14 @@ export default function JoinChurchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // Lien de sous-église : le code est déjà connu, on vérifie immédiatement
+  // plutôt que d'attendre un clic — le membre a suivi un lien, il ne doit pas
+  // avoir à appuyer sur « Vérifier ».
+  useEffect(() => {
+    if (pathCode) void lookupCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathCode]);
+
   const lookupCode = async () => {
     const value = code.trim();
     if (!value) return;
@@ -67,13 +93,26 @@ export default function JoinChurchPage() {
     try {
       const { data } = await api.post<LookupResult>('/public/join/lookup', { code: value });
       setLookup(data);
-      if (!data.found && data.reason === 'RATE_LIMITED') {
-        setError(tText('Trop de tentatives. Réessayez dans une minute.'));
-      } else if (!data.found) {
-        setError(tText('Aucune église ne correspond à ce code.'));
+      if (!data.found) {
+        // Le rate-limit répond en HTTP 429 : axios le traite comme une erreur et
+        // lève, donc on ne peut pas lire `reason` ici — le message utile vient
+        // du corps d'erreur. `RATE_LIMITED` reste traité pour le cas d'un
+        // proxy qui renverrait 200.
+        if (data.reason === 'RATE_LIMITED') {
+          setError(tText('Trop de tentatives. Réessayez dans une minute.'));
+        } else {
+          setError(tText('Aucune église ne correspond à ce code.'));
+        }
       }
     } catch (err) {
-      setError(getErrorMessage(err));
+      // 429 : message dédié, sinon on afficherait « aucune église ne correspond »
+      // alors que le code est peut-être valide — Trompeur et frustrant.
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      setError(
+        status === 429
+          ? tText('Trop de tentatives. Réessayez dans une minute.')
+          : getErrorMessage(err),
+      );
     } finally {
       setLooking(false);
     }
@@ -85,13 +124,24 @@ export default function JoinChurchPage() {
     try {
       // Code saisi prioritaire ; sinon, lien vanity → le backend résout par slug.
       const body = code.trim() ? { code: code.trim() } : { slug: lookup?.slug ?? slug };
-      const { data } = await api.post<{ status: string }>('/tenant/join', body);
+      const { data } = await api.post<JoinResponse>('/tenant/join', body);
       if (data.status === 'PENDING_APPROVAL') {
         setDone('PENDING_APPROVAL');
       } else {
-        setDone('JOINED');
-        // Session réémise sur l'église rejointe — plus jamais de resaisie (D7).
-        window.setTimeout(() => { window.location.href = '/dashboard'; }, 900);
+        // T-B0bis (F7) : le backend réémet les jetons sur l'église rejointe.
+        // S'ils sont absents, on NE peut pas considered avoir basculé : le claim
+        // tenantId du jeton courant porte encore l'ancienne organisation et
+        // l'atterrissage sur /dashboard se ferait dans la mauvaise église.
+        if (data.accessToken) {
+          adoptSession({ accessToken: data.accessToken, refreshToken: data.refreshToken ?? '', ...data.session });
+          setDone('JOINED');
+          navigate('/dashboard', { replace: true });
+        } else {
+          // Rejointure sans bascule (déjà membre, ou le serveur n'a rien
+          // réémis) : on ne bascule pas de force, on le dit explicitement.
+          setError(tText("Vous êtes déjà rattaché à cette église."));
+          setDone('JOINED');
+        }
       }
     } catch (err) {
       setError(getErrorMessage(err));

@@ -75,25 +75,52 @@ class _JoinChurchScreenState extends State<JoinChurchScreen> {
     }
   }
 
+    /// SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-B0bis (faille F7).
+  ///
+  /// La version précédente faisait suivre le join d'un `GET /auth/me` en
+  /// croyant recharger la session sur la nouvelle église. Or :
+  /// `AuthService.getCurrentUser()` renvoie `AuthResult(null, null, user)` —
+  /// il ne résout PAS `active_tenant_id` et ne rend AUCUN jeton. Le claim
+  /// `tenantId` du access token courant continuait donc de désigner
+  /// l'ancienne organisation : l'interface annonçait « vous avez rejoint »
+  /// pendant que TOUTES les requêtes suivantes partaient vers l'église
+  /// précédente. Split-brain silencieux.
+  ///
+  /// Le backend réémet désormais la paire de jetons sur l'organisation
+  /// rejointe : on l'adopte avant de naviguer.
   Future<void> _joinAuthenticated() async {
     setState(() { _joining = true; _error = null; });
     try {
       final res = await _apiService.post('/tenant/join',
           data: {'code': _codeController.text.trim()});
-      final status = (res.data as Map<String, dynamic>?)?['status'] as String?;
+      final body = (res.data as Map<String, dynamic>?) ?? const <String, dynamic>{};
+      final status = body['status'] as String?;
       if (!mounted) return;
       if (status == 'PENDING_APPROVAL') {
         setState(() { _pendingApproval = _lookup?['churchName']?.toString(); _done = true; });
-      } else {
-        // Entrée directe : rechargement de session sur la nouvelle église (D7).
-        final me = await _apiService.get('/auth/me');
-        if (!mounted) return;
-        AuthState().setAuthenticated(true,
-            userData: me.data as Map<String, dynamic>?);
-        setState(() => _done = true);
-        context.go(roleHome(AuthState().activeRole,
-            isPlatformSuperAdmin: AuthState().isPlatformSuperAdmin));
+        return;
       }
+
+      final accessToken = body['accessToken'] as String?;
+      if (accessToken == null || accessToken.isEmpty) {
+        // Aucune bascule (déjà membre) : on ne force rien, on le dit.
+        setState(() => _error = 'Vous êtes déjà rattaché à cette église.');
+        setState(() => _done = true);
+        return;
+      }
+
+      await _apiService.saveTokens({
+        'accessToken': accessToken,
+        'refreshToken': body['refreshToken'] as String? ?? '',
+      });
+      // `/auth/me` sert uniquement à rafraîchir l'identité affichée ; les
+      // jetons, eux, viennent de la réponse du join.
+      final me = await _apiService.get('/auth/me');
+      if (!mounted) return;
+      AuthState().setAuthenticated(true, userData: me.data as Map<String, dynamic>?);
+      setState(() => _done = true);
+      context.go(roleHome(AuthState().activeRole,
+          isPlatformSuperAdmin: AuthState().isPlatformSuperAdmin));
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.response?.data?['detail'] as String?
