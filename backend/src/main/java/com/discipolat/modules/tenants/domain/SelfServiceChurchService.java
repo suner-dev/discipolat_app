@@ -146,7 +146,7 @@ public class SelfServiceChurchService {
                 ensureOwnerMembership(tenantId, founder.getId());
                 TenantJoinCode code = joinCodeService.generate(tenantId, null, name, JoinMode.OPEN, founder.getId());
                 joinCodeRef.set(code.getCode());
-                sendWelcomeEmail(founder, name, code.getCode());
+                sendWelcomeEmail(founder, name, code.getCode(), tenant.slug());
                 return church;
             } finally {
                 if (previousTenantId != null) {
@@ -185,7 +185,7 @@ public class SelfServiceChurchService {
     }
 
     /** Email de bienvenue : jamais bloquant (décision D10, pattern InvitationService). */
-    private void sendWelcomeEmail(User founder, String churchName, String joinCode) {
+    private void sendWelcomeEmail(User founder, String churchName, String joinCode, String slug) {
         try {
             emailService.send(
                     founder.getEmail(),
@@ -194,7 +194,7 @@ public class SelfServiceChurchService {
                             + "Votre église « " + churchName + " » vient d'être créée. "
                             + "Vous en êtes l'administrateur propriétaire.\n\n"
                             + "Code de rejointure à partager avec vos membres : " + joinCode + "\n"
-                            + "Lien d'invitation : " + joinCode + "\n\n"
+                            + "Lien d'invitation : " + frontendUrl + "/j/" + slug + "\n\n"
                             + "Cordialement,\nL'équipe Discipolat"
             );
         } catch (RuntimeException failure) {
