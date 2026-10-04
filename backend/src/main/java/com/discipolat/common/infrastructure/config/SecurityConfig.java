@@ -93,6 +93,10 @@ public class SecurityConfig {
                     // Demande de démonstration depuis la landing (public, rate-limitée
                     // par IP : 3 req / 10 min — cf. PerIpRateLimiter.tryConsumeDemoRequest)
                     .requestMatchers(HttpMethod.POST, "/api/v1/public/demo-requests").permitAll()
+                    // SPEC_ONBOARDING_FLOWS — lookup public d'un code/slug de rejointure
+                    // (page /join) : public, rate-limité par IP (12/min, anti-énumération
+                    // — PerIpRateLimiter.tryConsumeJoinLookup) et sans réponse en cache.
+                    .requestMatchers(HttpMethod.POST, "/api/v1/public/join/lookup").permitAll()
                     // Callback USSD Africa's Talking : public, sécurisé par secret webhook (X-Ussd-Secret)
                     .requestMatchers(HttpMethod.POST, "/api/v1/ussd/callback").permitAll()
                     // Webhooks opérateurs + Stripe : publics, sécurisés par signature

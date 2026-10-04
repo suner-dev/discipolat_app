@@ -85,6 +85,7 @@ import {
   Wallet,
   Download,
   Upload,
+  KeyRound,
 } from 'lucide-react';
 import type { UserRole } from '@/types';
 
@@ -173,6 +174,51 @@ export function isPlatformAdmin(role: string | null | undefined): boolean {
 export function isTenantAdmin(role: string | null | undefined): boolean {
   return TENANT_ADMIN_ROLES.includes(role || '');
 }
+
+/* ============================================================================
+ * ESPECE SUPER ADMIN PLATEFORME — SPEC_ONBOARDING_FLOWS (FE-1).
+ * Espace EXCLUSIVEMENT dédié à la configuration des tenants : jamais les
+ * menus d'église (Tableau de bord chef de famille, âmes, etc.). La navbar
+ * et la palette basculent sur cette navigation dès que le flag backend
+ * platformSuperAdmin est vrai, quel que soit le rôle tenant actif.
+ * ========================================================================== */
+export const PLATFORM_HOME = '/platform/dashboard';
+
+export const PLATFORM_NAV: WorkspaceSection[] = [
+  {
+    title: 'Plateforme',
+    items: [
+      { name: 'Tableau de bord plateforme', href: '/platform/dashboard', icon: LayoutDashboard, subtitle: 'Santé du SaaS' },
+      { name: 'Églises (tenants)', href: '/platform/tenants', icon: Building2, subtitle: 'Création → suppression' },
+      { name: 'Gouvernance', href: '/platform/governance', icon: Scale, subtitle: 'Litiges, avertissements, blocages' },
+      { name: 'Demandes d\'inscription', href: '/platform/registration-requests', icon: FileText, subtitle: 'Approbation self-service' },
+      { name: 'Onboarding tenant', href: '/platform/onboarding', icon: Rocket, subtitle: 'Provisionnement guidé' },
+    ],
+  },
+  {
+    title: 'Modération & sécurité',
+    items: [
+      { name: 'Annonces publiques', href: '/platform/announcements', icon: Megaphone, subtitle: 'File de modération' },
+      { name: 'Audit plateforme', href: '/platform/audit', icon: Activity, subtitle: 'Journal de bord' },
+      { name: 'Impersonation', href: '/platform/impersonation', icon: Eye, subtitle: 'Support sous mandat' },
+    ],
+  },
+  {
+    title: 'Configuration',
+    items: [
+      { name: 'Plans SaaS', href: '/platform/saas/plans', icon: Wallet, subtitle: 'Offres & quotas' },
+      { name: 'Identité & marque', href: '/platform/branding', icon: Palette, subtitle: 'Nom, logo & couleurs' },
+    ],
+  },
+];
+
+/** Métadonnées visuelles de l'espace plateforme (bandeau latéral). */
+export const PLATFORM_META = {
+  label: 'Super Admin',
+  tagline: 'Console plateforme',
+  gradient: 'from-indigo-500 to-violet-600',
+};
+
 
 /* ----------------------------------------------------------------------------
  * Navigation des super-utilisateurs (Admin / Pasteur) — vue complète.
@@ -317,6 +363,9 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Espaces de travail', href: '/admin/spaces', icon: Boxes, subtitle: 'Créer & configurer' },
       { name: 'Paramètres de l\'église', href: '/tenant/settings', icon: SlidersHorizontal, subtitle: 'Langue, fuseau, coordonnées' },
       { name: 'Modules de l\'église', href: '/tenant/modules', icon: Boxes, subtitle: 'Activer / désactiver (plan)' },
+      // SPEC_ONBOARDING_FLOWS (FE-2/FE-3) — rejointure par code & annonces publiques.
+      { name: 'Codes d\'entrée & rejointure', href: '/tenant/join-management', icon: KeyRound, subtitle: 'Codes église & sous-églises, demandes' },
+      { name: 'Annonces publiques', href: '/tenant/announcements', icon: Megaphone, subtitle: 'Événements visibles sur le landing' },
       { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },

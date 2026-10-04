@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { navForRole, ROLE_META } from '@/workspaces';
+import { navForRole, ROLE_META, PLATFORM_NAV, PLATFORM_META } from '@/workspaces';
 import { filterNavByRole } from '@/lib/routeAccess';
 import { useSettings } from '@/contexts/SettingsContext';
 import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
@@ -122,7 +122,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   // sans ce filtre, un compte dont le rôle actif est FAISEUR voyait des menus
   // Responsable/Admin qui rebondissaient vers son propre espace (boutons morts).
   const activeRole = user?.activeRole || user?.role || 'FAISEUR';
-  const workspaceSections: NavSectionData[] = configMenus.length > 0
+  // FE-1 (SPEC_ONBOARDING_FLOWS) — le Super Admin plateforme ne voit JAMAIS
+  // les menus d'église : espace isolé, dédié à la configuration des tenants.
+  const platformAdmin = user?.platformSuperAdmin === true;
+  const workspaceSections: NavSectionData[] = platformAdmin
+    ? (PLATFORM_NAV as NavSectionData[])
+    : configMenus.length > 0
     ? (() => {
         const sections = menusToSections(configMenus).map((s) => ({
           title: s.title,
@@ -137,7 +142,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         title: s.title,
         items: filterNavByRole(s.items, activeRole),
       })).filter((s) => s.items.length > 0) as NavSectionData[];
-  const meta = ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
+  const meta = platformAdmin
+    ? PLATFORM_META
+    : ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
 
   return (
     <>
@@ -191,8 +198,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               </div>
               {!collapsed && (
                 <div className="min-w-0 animate-fade-in">
-                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">{t(`role.${activeRole}.label`) || meta.label}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t(`role.${activeRole}.tagline`) || meta.tagline}</p>
+                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate leading-tight">{platformAdmin ? meta.label : t(`role.${activeRole}.label`) || meta.label}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{platformAdmin ? meta.tagline : t(`role.${activeRole}.tagline`) || meta.tagline}</p>
                 </div>
               )}
             </div>

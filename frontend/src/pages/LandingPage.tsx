@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import Hero from '@/components/landing/Hero';
+import SectionAnnouncements from '@/components/landing/SectionAnnouncements';
 import DemoModal from '@/components/landing/DemoModal';
 import SectionProblem from '@/components/landing/SectionProblem';
 import SectionSolution from '@/components/landing/SectionSolution';
@@ -38,6 +39,7 @@ export default function LandingPage() {
       <LandingNavbar onNavigate={scrollTo} onDemo={openDemo} />
       <main id="main-content" className="relative z-10">
         <Hero onNavigate={scrollTo} onDemo={openDemo} />
+        <SectionAnnouncements />
         <SectionProblem />
         <SectionSolution />
         <Features />

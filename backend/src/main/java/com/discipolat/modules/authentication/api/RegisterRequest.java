@@ -54,6 +54,18 @@ public record RegisterRequest(
         String tenantSlug,
 
         /** Variante mobile : identifiant technique du tenant sélectionné. */
-        java.util.UUID tenantId
+        java.util.UUID tenantId,
+
+        /**
+         * SPEC_ONBOARDING_FLOWS — code court de l'église (format BETHEL-7K2X,
+         * ou code d'une sous-église). Exclusif avec {@code createChurch}.
+         */
+        String joinCode,
+
+        /** SPEC_ONBOARDING_FLOWS (D1) — « Créer mon église » en self-service. */
+        Boolean createChurch,
+
+        /** Nom de l'église à créer (obligatoire quand {@code createChurch}). */
+        String churchName
 ) {
 }

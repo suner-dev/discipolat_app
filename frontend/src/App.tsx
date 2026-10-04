@@ -19,6 +19,12 @@ const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const PublicChurchesPage = lazy(() => import('@/pages/PublicChurchesPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
+// SPEC_ONBOARDING_FLOWS (FE-1..FE-3) — rejointure, gouvernance & annonces.
+const JoinChurchPage = lazy(() => import('@/pages/JoinChurchPage'));
+const PlatformGovernancePage = lazy(() => import('@/pages/PlatformGovernancePage'));
+const PlatformAnnouncementsModerationPage = lazy(() => import('@/pages/PlatformAnnouncementsModerationPage'));
+const TenantAnnouncementsAdminPage = lazy(() => import('@/pages/TenantAnnouncementsAdminPage'));
+const TenantJoinManagementPage = lazy(() => import('@/pages/TenantJoinManagementPage'));
 const RegistrationStatusPage = lazy(() => import('@/pages/RegistrationStatusPage'));
 const TwoFactorChallengePage = lazy(() => import('@/pages/TwoFactorChallengePage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
@@ -1170,6 +1176,13 @@ export default function App() {
           <Route path="/platform/branding" element={
             <ProtectedRoute scope="platform"><TenantAdminBrandingPage /></ProtectedRoute>
           } />
+          {/* SPEC_ONBOARDING_FLOWS — espace Super Admin isolé */}
+          <Route path="/platform/governance" element={
+            <ProtectedRoute scope="platform"><PlatformGovernancePage /></ProtectedRoute>
+          } />
+          <Route path="/platform/announcements" element={
+            <ProtectedRoute scope="platform"><PlatformAnnouncementsModerationPage /></ProtectedRoute>
+          } />
           <Route path="/tenant-switcher" element={
             <ProtectedRoute><TenantSwitcherPage /></ProtectedRoute>
           } />
@@ -1206,6 +1219,13 @@ export default function App() {
           <Route path="/admin/subscription" element={
             <ProtectedRoute scope="tenant"><TenantAdminSubscriptionPage /></ProtectedRoute>
           } />
+          {/* SPEC_ONBOARDING_FLOWS — rejointure par code & annonces publiques (admin tenant) */}
+          <Route path="/tenant/join-management" element={
+            <ProtectedRoute scope="tenant"><TenantJoinManagementPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant/announcements" element={
+            <ProtectedRoute scope="tenant"><TenantAnnouncementsAdminPage /></ProtectedRoute>
+          } />
           <Route path="/admin/dress-codes" element={
             <ProtectedRoute scope="tenant"><DressCodePage /></ProtectedRoute>
           } />
@@ -1215,6 +1235,9 @@ export default function App() {
         <Route path="/" element={<HomeGate />} />
         {/* G6.9 — Annuaire public « Églises sur Discipolat » (opt-in, sans auth) */}
         <Route path="/churches" element={<PublicChurchesPage />} />
+        {/* SPEC_ONBOARDING_FLOWS (FE-2) — rejointure publique : code saisi ou lien vanity /j/<slug> */}
+        <Route path="/join" element={<JoinChurchPage />} />
+        <Route path="/j/:slug" element={<JoinChurchPage />} />
         <Route path="/verify/passport/:code" element={<PassportVerifyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

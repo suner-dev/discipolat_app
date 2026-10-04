@@ -134,6 +134,15 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.social-link-period-minutes:5}")
     private int socialLinkPeriodMinutes;
 
+    // SPEC_ONBOARDING_FLOWS — lookup public d'un code/slug de rejointure :
+    // anti-énumération des codes (12 req / min / IP), le code est court.
+    @Value("${app.rate-limiting.join-lookup-capacity:12}")
+    private int joinLookupCapacity;
+    @Value("${app.rate-limiting.join-lookup-refill:12}")
+    private int joinLookupRefill;
+    @Value("${app.rate-limiting.join-lookup-period-minutes:1}")
+    private int joinLookupPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -148,6 +157,7 @@ public class PerIpRateLimiter {
     private Counter counterRegistrationStatusTotal;
     private Counter counterSocialLoginTotal;
     private Counter counterSocialLinkTotal;
+    private Counter counterJoinLookupTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
@@ -157,6 +167,7 @@ public class PerIpRateLimiter {
     private Counter counterRegistrationStatusDenied;
     private Counter counterSocialLoginDenied;
     private Counter counterSocialLinkDenied;
+    private Counter counterJoinLookupDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -187,6 +198,7 @@ public class PerIpRateLimiter {
         counterRegistrationStatusTotal = buildCounter("registration_status", "total");
         counterSocialLoginTotal = buildCounter("social_login", "total");
         counterSocialLinkTotal = buildCounter("social_link", "total");
+        counterJoinLookupTotal = buildCounter("join_lookup", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -201,6 +213,7 @@ public class PerIpRateLimiter {
         counterRegistrationStatusDenied = buildCounter("registration_status", "denied");
         counterSocialLoginDenied = buildCounter("social_login", "denied");
         counterSocialLinkDenied = buildCounter("social_link", "denied");
+        counterJoinLookupDenied = buildCounter("join_lookup", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -286,6 +299,13 @@ public class PerIpRateLimiter {
         return consume("registration_status",
                 registrationStatusCapacity, registrationStatusRefill, registrationStatusPeriodMinutes, ip,
                 counterRegistrationStatusTotal, counterRegistrationStatusDenied);
+    }
+
+    /** SPEC_ONBOARDING_FLOWS — lookup public code/slug : 12 req / min / IP. */
+    public RateLimitResult tryConsumeJoinLookup(String ip) {
+        return consume("join_lookup",
+                joinLookupCapacity, joinLookupRefill, joinLookupPeriodMinutes, ip,
+                counterJoinLookupTotal, counterJoinLookupDenied);
     }
 
     public static String extractClientIp(HttpServletRequest request) {

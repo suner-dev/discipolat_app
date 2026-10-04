@@ -1,15 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../app.dart';
 import '../../../data/services/api_service.dart';
 import '../../../tenant_config.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/secure_screen.dart';
 
-/// Création de compte membre — tout compte démarre avec le rôle MEMBRE.
-/// Un administrateur ou pasteur attribue ensuite les autres rôles.
+/// Création de compte — trois gestes d'entrée (SPEC_ONBOARDING_FLOWS MO-1) :
+///  • [createChurch] = « Créer mon église » (fondateur self-service, D1) ;
+///  • [joinCode] non vide = « Rejoindre avec un code » (depuis /join) ;
+///  • sinon = demande d'inscription classique approuvée par un Super Admin.
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({
+    super.key,
+    this.createChurch = false,
+    this.joinCode,
+    this.joinChurchName,
+  });
+
+  final bool createChurch;
+  final String? joinCode;
+  final String? joinChurchName;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -23,11 +35,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _churchNameController = TextEditingController();
   final _apiService = ApiService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _success = false;
   String? _error;
+  // Fondateur : session immédiatement établie (D1) → on affiche le code de l'église.
+  Map<String, dynamic>? _churchResult;
   // RGPD art. 7/9 : consentements explicites, non pré-cochés, obligatoires.
   bool _consentCgu = false;
   bool _consentPrivacy = false;
@@ -41,6 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _churchNameController.dispose();
     super.dispose();
   }
 
@@ -61,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   .hasMatch(orgId)
           ? orgId
           : null;
-      await _apiService.post('/auth/register', data: {
+      final response = await _apiService.post('/auth/register', data: {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
         'firstName': _firstNameController.text.trim(),
@@ -70,8 +86,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'consentCgu': _consentCgu,
         'consentPrivacy': _consentPrivacy,
         'consentArt9': _consentArt9,
-        if (tenantUuid != null) 'tenantId': tenantUuid,
+        if (tenantUuid != null && !widget.createChurch && widget.joinCode == null) 'tenantId': tenantUuid,
+        // SPEC_ONBOARDING_FLOWS (MO-1) — deux gestes self-service.
+        if (widget.createChurch) 'createChurch': true,
+        if (widget.createChurch) 'churchName': _churchNameController.text.trim(),
+        if (widget.joinCode != null && widget.joinCode!.isNotEmpty) 'joinCode': widget.joinCode!.trim(),
       });
+
+      final data = response.data as Map<String, dynamic>? ?? const <String, dynamic>{};
+      final session = data['session'] as Map<String, dynamic>?;
+      if (session != null && session['accessToken'] != null) {
+        // Fondateur : session établie immédiatement — auto-login puis onboarding.
+        await _apiService.saveTokens(session);
+        if (!mounted) return;
+        AuthState().setAuthenticated(true, userData: session);
+        setState(() => _churchResult = {
+          'name': (data['church']?['name'] ?? _churchNameController.text.trim()),
+          'joinCode': (data['church']?['joinCode'] ?? ''),
+        });
+        return;
+      }
+      // Rejointure sur validation (APPROVAL) ou inscription classique.
       if (mounted) setState(() => _success = true);
     } on DioException catch (e) {
       final message = e.response?.data?['detail'] as String?
@@ -125,7 +160,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                       'Demander la création d\'une église',
+                      widget.createChurch
+                          ? 'Créer mon église'
+                          : (widget.joinCode != null && widget.joinCode!.isNotEmpty)
+                              ? 'Rejoindre ${widget.joinChurchName ?? "mon église"}'
+                              : 'Demander la création d\'une église',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -133,23 +172,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                       'Soumettez une demande. Un Super Admin approuvera l\'organisation avant la création du compte.',
+                      widget.createChurch
+                          ? 'Votre église est créée instantanément : vous en devenez le fondateur et recevez un code d\'entrée pour vos membres.'
+                          : (widget.joinCode != null && widget.joinCode!.isNotEmpty)
+                              ? 'Créez votre compte : vous serez rattaché à cette église et n\'aurez plus jamais à saisir le code.'
+                              : 'Soumettez une demande. Un Super Admin approuvera l\'organisation avant la création du compte.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
                     ),
                     const SizedBox(height: 32),
 
-                    if (_success) ...[
+                    if (_churchResult != null) ...[
                       const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
                       const SizedBox(height: 12),
                       Text(
-                         'Demande reçue. Elle sera examinée par un Super Admin.',
+                        'Votre église est prête !',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _churchResult!['name']?.toString() ?? '',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                      ),
+                      if ((_churchResult!['joinCode'] ?? '').toString().isNotEmpty) ...[
+                        const SizedBox(height: 18),
+                        GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text("Code d'entrée de l'église",
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                              const SizedBox(height: 6),
+                              Text(
+                                _churchResult!['joinCode'].toString(),
+                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2, fontFamily: 'monospace'),
+                              ),
+                              const SizedBox(height: 8),
+                              Text('Partagez-le avec vos futurs membres — ils ne le saisiront qu\'une seule fois.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: FilledButton.icon(
+                          onPressed: () => context.go(roleHome(AuthState().activeRole,
+                              isPlatformSuperAdmin: AuthState().isPlatformSuperAdmin)),
+                          icon: const Icon(Icons.arrow_forward, size: 18),
+                          label: const Text('Accéder à mon église', style: TextStyle(fontSize: 15)),
+                        ),
+                      ),
+                    ] else if (_success) ...[
+                      const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+                      const SizedBox(height: 12),
+                      Text(
+                         (widget.joinCode != null && widget.joinCode!.isNotEmpty)
+                            ? 'Demande de rejointure transmise'
+                            : 'Demande reçue. Elle sera examinée par un Super Admin.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                         'Aucun compte ne sera créé avant approbation.',
+                         (widget.joinCode != null && widget.joinCode!.isNotEmpty)
+                            ? 'Un responsable de l\'église validera votre entrée puis vous contactera.'
+                            : 'Aucun compte ne sera créé avant approbation.',
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                       ),
                       const SizedBox(height: 24),
@@ -182,6 +275,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         key: _formKey,
                         child: Column(
                           children: [
+                            if (widget.createChurch) ...[
+                              TextFormField(
+                                controller: _churchNameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Nom de l\'église',
+                                  prefixIcon: Icon(Icons.church_outlined),
+                                ),
+                                style: const TextStyle(color: Colors.white),
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? 'Le nom de l\'église est requis'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                             // Prénom / Nom
                             Row(
                               children: [

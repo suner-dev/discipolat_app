@@ -8,6 +8,7 @@ import 'presentation/screens/ai_assistant/ai_assistant_screen.dart';
 import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
+import 'presentation/screens/login/join_church_screen.dart';
 import 'presentation/screens/invitations/accept_invitation_screen.dart';
 import 'presentation/screens/invitations/invitation_management_screen.dart';
 import 'core/invitation_token.dart';
@@ -1348,6 +1349,7 @@ const _publicRoutes = {
   '/login',
   '/register',
   '/accept-invitation',
+  '/join',
 };
 
 final appRouter = GoRouter(
@@ -1372,6 +1374,7 @@ final appRouter = GoRouter(
         onboardingRoute,
         '/onboarding-ar',
         '/accept-invitation',
+        '/join',
       };
       if (!onboardingComplete &&
           !firstRunExemptRoutes.contains(state.matchedLocation)) {
@@ -1468,7 +1471,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/register',
       name: 'register',
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) => RegisterScreen(
+        createChurch: state.uri.queryParameters['mode'] == 'church',
+        joinCode: state.uri.queryParameters['joinCode'],
+        joinChurchName: state.uri.queryParameters['church'],
+      ),
+    ),
+    GoRoute(
+      path: '/join',
+      name: 'join',
+      builder: (context, state) => JoinChurchScreen(
+        initialCode: state.uri.queryParameters['code'],
+      ),
     ),
     GoRoute(
       path: '/accept-invitation',

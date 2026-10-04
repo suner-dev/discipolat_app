@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Sparkles, Play, Users, Bell, ChevronDown, LayoutDashboard,
   Crown, Heart, HandHeart, BellRing, BarChart3, TrendingUp, Building2,
+  Church, KeyRound,
 } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { useReducedMotion } from '@/components/ui/UXComponents';
@@ -17,6 +19,7 @@ const STATS_MINI = [
 
 export default function Hero({ onNavigate, onDemo }: HeroProps) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const reduced = useReducedMotion();
   const frame = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
@@ -66,11 +69,20 @@ export default function Hero({ onNavigate, onDemo }: HeroProps) {
                 <span className="text-gray-900 dark:text-white font-medium">{t('landing.hero.subtitleEmphasis')}</span>
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-3.5">
-                <button onClick={() => onNavigate('ecosystem')} className="btn-primary btn-lg group">
-                  {t('landing.hero.ctaDiscover')}
+                {/* SPEC_ONBOARDING_FLOWS (FE-2) — les deux gestes d'entrée : */}
+                <button onClick={() => navigate('/register?mode=church')} className="btn-primary btn-lg group">
+                  <Church className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  {tText('Créer une église')}
+                </button>
+                <button onClick={() => navigate('/join')} className="btn-secondary btn-lg group">
+                  <KeyRound className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" />
+                  {tText('Rejoindre une église')}
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
-                <button onClick={onDemo} className="btn-secondary btn-lg group">
+                <button onClick={() => onNavigate('ecosystem')} className="btn-ghost text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors">
+                  {t('landing.hero.ctaDiscover')}
+                </button>
+                <button onClick={onDemo} className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors">
                   <Play className="w-4 h-4 transition-transform duration-300 group-hover:scale-110" /> {t('landing.hero.ctaDemo')}
                 </button>
               </div>

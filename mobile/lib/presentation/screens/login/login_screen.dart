@@ -355,6 +355,30 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
+                    // SPEC_ONBOARDING_FLOWS (MO-1) — deux gestes d'entrée directs.
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.go('/register?mode=church'),
+                            icon: const Icon(Icons.church_rounded, size: 18),
+                            label: const Text('Créer une église',
+                                textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => context.go('/join'),
+                            icon: const Icon(Icons.vpn_key_rounded, size: 18),
+                            label: const Text('Rejoindre',
+                                textAlign: TextAlign.center, style: TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                      ],
+                    ),
+
                     const SizedBox(height: 24),
                     GlassDivider(),
                     const SizedBox(height: 16),

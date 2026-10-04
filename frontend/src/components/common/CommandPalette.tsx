@@ -5,7 +5,7 @@ import { CornerDownLeft, Search as SearchIcon, User as UserIcon, UserPlus, Arrow
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { navForRole, type WorkspaceNavItem } from '@/workspaces';
+import { navForRole, PLATFORM_NAV, type WorkspaceNavItem } from '@/workspaces';
 import { canRoleAccessPath } from '@/lib/routeAccess';
 import { useI18n } from '@/i18n';
 import { navKeyMap } from '@/i18n/navKeys';
@@ -60,14 +60,18 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
   const activeRole = user?.activeRole || user?.role || 'MEMBRE';
 
+  // FE-1 (SPEC_ONBOARDING_FLOWS) — palette isolée : le Super Admin plateforme
+  // ne cherche que dans la console plateforme, jamais les menus d'église.
+  const platformAdmin = user?.platformSuperAdmin === true;
+
   // Commandes de navigation : aplaties depuis l'espace métier du rôle, filtrées par droit.
   const navCommands = useMemo<CommandItem[]>(() => {
     const seen = new Set<string>();
     const items: CommandItem[] = [];
-    for (const section of navForRole(activeRole)) {
+    for (const section of platformAdmin ? PLATFORM_NAV : navForRole(activeRole)) {
       for (const item of section.items as WorkspaceNavItem[]) {
         if (seen.has(item.href)) continue;
-        if (!canRoleAccessPath(item.href, activeRole)) continue;
+        if (!platformAdmin && !canRoleAccessPath(item.href, activeRole)) continue;
         seen.add(item.href);
         items.push({
           id: `nav-${item.href}`,
@@ -80,7 +84,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       }
     }
     return items;
-  }, [activeRole, t]);
+  }, [activeRole, platformAdmin, t]);
 
   // Actions rapides (routes réelles, filtrées par droit) — jamais de bouton mort.
   const quickActions = useMemo<CommandItem[]>(() => {

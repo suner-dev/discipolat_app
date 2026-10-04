@@ -50,6 +50,8 @@ class AuthControllerRegistrationStatusTest {
     @Mock private com.discipolat.modules.tenants.domain.AuthorizationService authorizationService;
     @Mock private TenantRegistrationService tenantRegistrationService;
     @Mock private AuthResponseFactory authResponseFactory;
+    @Mock private com.discipolat.modules.tenants.domain.SelfServiceChurchService selfServiceChurchService;
+    @Mock private com.discipolat.modules.tenants.domain.TenantJoinService tenantJoinService;
 
     private MockMvc mockMvc;
 
@@ -57,7 +59,7 @@ class AuthControllerRegistrationStatusTest {
     void setUp() {
         AuthController controller = new AuthController(
                 authService, rateLimiter, authorizationService, authResponseFactory,
-                tenantRegistrationService);
+                tenantRegistrationService, selfServiceChurchService, tenantJoinService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 

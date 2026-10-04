@@ -29,19 +29,25 @@ public class AuthController {
     private final AuthorizationService authorizationService;
     private final AuthResponseFactory authResponseFactory;
     private final com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService;
+    private final com.discipolat.modules.tenants.domain.SelfServiceChurchService selfServiceChurchService;
+    private final com.discipolat.modules.tenants.domain.TenantJoinService tenantJoinService;
 
     public AuthController(
             AuthService authService,
             PerIpRateLimiter rateLimiter,
             AuthorizationService authorizationService,
             AuthResponseFactory authResponseFactory,
-            com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService
+            com.discipolat.modules.platform.domain.TenantRegistrationService tenantRegistrationService,
+            com.discipolat.modules.tenants.domain.SelfServiceChurchService selfServiceChurchService,
+            com.discipolat.modules.tenants.domain.TenantJoinService tenantJoinService
     ) {
         this.authService = authService;
         this.rateLimiter = rateLimiter;
         this.authorizationService = authorizationService;
         this.authResponseFactory = authResponseFactory;
         this.tenantRegistrationService = tenantRegistrationService;
+        this.selfServiceChurchService = selfServiceChurchService;
+        this.tenantJoinService = tenantJoinService;
     }
 
     /**
@@ -117,6 +123,52 @@ public class AuthController {
                         request.legalVersion(),
                         clientIp,
                         httpRequest.getHeader("User-Agent"));
+
+        // SPEC_ONBOARDING_FLOWS — deux nouveaux gestes d'entrée, exclusifs entre
+        // eux et avec les rattachements legacy (tenantSlug/tenantId) :
+        //  1) « Créer mon église » (D1) : tenant + TENANT_OWNER + code de
+        //     rejointure immédiats, session réémise (le fondateur est connecté).
+        //  2) « Rejoindre avec un code » : registerInChurch par code OPEN (avec
+        //     email d'activation, flux §G3.1 inchangé) ou demande APPROVAL.
+        boolean wantsCreateChurch = Boolean.TRUE.equals(request.createChurch());
+        boolean hasJoinCode = request.joinCode() != null && !request.joinCode().isBlank();
+        boolean hasLegacyAttachment = (request.tenantSlug() != null && !request.tenantSlug().isBlank())
+                || request.tenantId() != null;
+        if (wantsCreateChurch && (hasJoinCode || hasLegacyAttachment)) {
+            throw new IllegalArgumentException(
+                    "createChurch est exclusif de joinCode/tenantSlug/tenantId");
+        }
+        if (wantsCreateChurch) {
+            com.discipolat.modules.tenants.domain.SelfServiceChurchService.ChurchCreation creation =
+                    selfServiceChurchService.createChurch(request.email(), request.password(),
+                            request.firstName(), request.lastName(), request.phone(),
+                            request.churchName(), request.plan(), null);
+            AuthResponse session = toAuthResponse(authService.issueSession(creation.founder()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "session", session,
+                    "church", Map.of(
+                            "name", creation.tenant().name(),
+                            "slug", creation.tenant().slug(),
+                            "joinCode", creation.joinCode() == null ? "" : creation.joinCode())
+            ));
+        }
+        if (hasJoinCode) {
+            com.discipolat.modules.tenants.domain.TenantJoinService.RegisterOutcome outcome =
+                    tenantJoinService.registerWithCode(request.email(), request.password(),
+                            request.firstName(), request.lastName(), request.phone(), request.joinCode());
+            if ("PENDING_APPROVAL".equals(outcome.status())) {
+                return ResponseEntity.accepted().body(Map.of(
+                        "status", "PENDING_APPROVAL",
+                        "churchName", outcome.churchName() == null ? "" : outcome.churchName(),
+                        "message", "Demande enregistrée. Un responsable de l'église vous contactera."
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", "Account created. Check your email to activate it.",
+                    "role", "MEMBRE",
+                    "churchName", outcome.churchName() == null ? "" : outcome.churchName()
+            ));
+        }
 
         // PORT Develop1 (§G3.1) — « s'inscrire AU NOM D'UNE église » : le lien web
         // /register?tenant=<slug> et le mobile (tenantId) créent directement un

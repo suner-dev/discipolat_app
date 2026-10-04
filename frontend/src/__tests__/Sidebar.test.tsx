@@ -228,4 +228,35 @@ describe('Sidebar - Multi-Role Navigation', () => {
     const membre = navForRole('MEMBRE').flatMap((s) => s.items.map((i) => i.href));
     expect(membre.filter((h) => h === '/dashboard/membre').length).toBeLessThanOrEqual(1);
   });
+
+  it('SUPER ADMIN plateforme : espace isolé, jamais les menus d\'église (FE-1)', () => {
+    // Reproduit le pain point n°2 : un compte portant le flag backend
+    // platformSuperAdmin ne doit JAMAIS retomber sur la nav d'église, même
+    // si son rôle tenant actif est ADMIN (qui ouvre d'ordinaire FULL_NAV).
+    (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
+      isAuthenticated: true,
+      user: {
+        id: '9',
+        email: 'root@discipolat.com',
+        role: 'ADMIN',
+        roles: ['ADMIN'],
+        activeRole: 'ADMIN',
+        platformSuperAdmin: true,
+        firstName: 'Su',
+        lastName: 'Per',
+        estChefDeFamille: false,
+      },
+      isLoading: false,
+    });
+
+    renderSidebar();
+
+    // Menus plateforme présents.
+    expectTextPresent('Gouvernance');
+    expectTextPresent('Annonces publiques');
+    // Menus d'église absents (fuite corrigée par la bascule platformAdmin).
+    expectTextAbsent('Âmes');
+    expectTextAbsent('Départements');
+    expectTextAbsent('Permissions');
+  });
 });

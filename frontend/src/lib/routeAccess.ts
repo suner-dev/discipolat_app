@@ -78,6 +78,8 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/admin/spaces': ['ADMIN', 'PASTEUR'],
   '/tenant/settings': ['ADMIN', 'PASTEUR'],
   '/tenant/modules': ['ADMIN', 'PASTEUR'],
+  '/tenant/join-management': ['ADMIN', 'PASTEUR'],
+  '/tenant/announcements': ['ADMIN', 'PASTEUR'],
 
   // Administration
   '/admin/payments': ['ADMIN', 'PASTEUR'],
