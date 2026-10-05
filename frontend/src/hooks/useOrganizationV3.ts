@@ -50,6 +50,10 @@ export interface TreeNode {
   levelName?: string | null;
   responsibleId?: string | null;
   responsibleName?: string | null;
+  // §5.4 — compteurs inline (dernier snapshot par nœud), sans PII nominatif.
+  memberCount?: number;
+  churchCount?: number;
+  leaderCount?: number;
 }
 
 export interface NodeAggregate {
@@ -111,6 +115,16 @@ export interface MemberAssignment {
   status: 'ACTIVE' | 'SUSPENDED' | 'ENDED';
   roleLabel?: string;
   nodeName?: string;
+}
+
+/** §6.2 / §7.1 — membre d'une équipe de nœud (porteurs actifs sur CE nœud). */
+export interface NodeTeamMember {
+  assignmentId: string;
+  userId: string;
+  roleId: string;
+  roleLabel?: string | null;
+  memberName?: string | null;
+  status: 'ACTIVE' | 'SUSPENDED' | 'ENDED';
 }
 
 // ---------- A : niveaux configurables ----------
@@ -206,6 +220,17 @@ export function useNodeChildren(nodeId: string | null) {
   return useQuery<ChildWithAggregate[]>({
     queryKey: ['t', tenantKey, 'org', 'children', nodeId],
     queryFn: async () => (await api.get(`/tenant/organization/nodes/${nodeId}/children`)).data,
+    enabled: !!nodeId,
+  });
+}
+
+/** §6.2 « Responsable & équipe » — porteurs actifs d'un rôle sur CE nœud. */
+export function useNodeTeam(nodeId: string | null) {
+  const { currentTenant } = useTenant();
+  const tenantKey = currentTenant?.id ?? 'no-tenant';
+  return useQuery<NodeTeamMember[]>({
+    queryKey: ['t', tenantKey, 'org', 'team', nodeId],
+    queryFn: async () => (await api.get(`/tenant/organization/nodes/${nodeId}/team`)).data,
     enabled: !!nodeId,
   });
 }

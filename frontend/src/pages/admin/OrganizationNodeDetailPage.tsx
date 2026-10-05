@@ -1,34 +1,37 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Network, Users, Church, UserCog, RefreshCw, Loader2, ToggleLeft, ToggleRight,
-  ChevronRight, Palette,
+  ChevronRight, Palette, IdCard, ShieldCheck, Ticket,
 } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import {
   useNodeAggregate, useNodeChildren, useNodeFeatures, useSetNodeFeatures, useNodeTheme,
-  usePatchNodeTheme, type ChildWithAggregate,
+  usePatchNodeTheme, useNodeTeam, useOrgTreeV3, type ChildWithAggregate,
 } from '@/hooks/useOrganizationV3';
+import ProgressionSparkline from '@/components/organization/ProgressionSparkline';
 
 /**
- * SPEC_ORGANISATION_MODULABLE_V3 §6.2 — Fiche nœud : Agrégats/progression (E,
- * T-W11) · Modules (D, T-W14) · Thème (D, T-W14).
+ * SPEC_ORGANISATION_MODULABLE_V3 §6.2 — Fiche nœud.
+ * Onglets : Identité · Responsable & équipe (assignments, T-W13) · Modules (D,
+ * T-W14) · Thème (D, T-W14) · Agrégats/progression (E, T-W11) · Codes de
+ * rejointure (lien, V2).
  *
  * <p>Le drill-down affiche des NOMBRES uniquement (recalcul serveur) : aucun
- * PII nominatif n'est exposé (D7). Les modules sont INDÉPENDANTS par défaut :
- * cocher ici n'impacte pas les enfants (V3-D).
+ * PII nominatif de membre n'est exposé (D7). L'équipe d'un nœud montre les
+ * porteurs de rôle déclarés sur CE nœud (admin tenant uniquement). Les modules
+ * sont INDÉPENDANTS par défaut : cocher ici n'impacte pas les enfants (V3-D).
  */
 
-type Tab = 'aggregate' | 'modules' | 'theme';
+type Tab = 'identity' | 'team' | 'modules' | 'theme' | 'aggregate' | 'codes';
+
+const TABS: Tab[] = ['identity', 'team', 'modules', 'theme', 'aggregate', 'codes'];
 
 export default function OrganizationNodeDetailPage() {
   const { nodeId } = useParams<{ nodeId: string }>();
   const { t } = useI18n();
-  const [tab, setTab] = useState<Tab>('aggregate');
-
-  const agg = useNodeAggregate(nodeId ?? null);
-  const children = useNodeChildren(nodeId ?? null);
+  const [tab, setTab] = useState<Tab>('identity');
 
   return (
     <div className="page-container">
@@ -43,8 +46,8 @@ export default function OrganizationNodeDetailPage() {
         <p className="page-subtitle font-mono text-xs">{nodeId}</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        {(['aggregate', 'modules', 'theme'] as Tab[]).map((tb) => (
+      <div className="flex flex-wrap gap-2 mb-6">
+        {TABS.map((tb) => (
           <button
             key={tb}
             type="button"
@@ -58,19 +61,82 @@ export default function OrganizationNodeDetailPage() {
         ))}
       </div>
 
-      {tab === 'aggregate' && <AggregateTab agg={agg} children={children} />}
+      {tab === 'identity' && <IdentityTab nodeId={nodeId ?? null} />}
+      {tab === 'team' && <TeamTab nodeId={nodeId ?? null} />}
       {tab === 'modules' && <ModulesTab nodeId={nodeId ?? null} />}
       {tab === 'theme' && <ThemeTab nodeId={nodeId ?? null} />}
+      {tab === 'aggregate' && <AggregateTab nodeId={nodeId ?? null} />}
+      {tab === 'codes' && <CodesTab nodeId={nodeId ?? null} />}
     </div>
   );
 }
 
-function AggregateTab({ agg, children }: {
-  agg: ReturnType<typeof useNodeAggregate>;
-  children: ReturnType<typeof useNodeChildren>;
-}) {
+function IdentityTab({ nodeId }: { nodeId: string | null }) {
   const { t } = useI18n();
-  if (agg.isLoading) return <div className="flex justify-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  const tree = useOrgTreeV3();
+  const node = (tree.data ?? []).find((n) => n.id === nodeId);
+  if (tree.isLoading) return <Loader />;
+  if (!node) return <p className="text-sm text-gray-400">{t('orgV3.node.notFound')}</p>;
+  const rows: Array<[string, string]> = [
+    [t('orgV3.identity.name'), node.name],
+    [t('orgV3.identity.level'), node.levelName ?? '—'],
+    [t('orgV3.identity.type'), node.type],
+    [t('orgV3.identity.responsible'), node.responsibleName ?? '—'],
+  ];
+  return (
+    <div className="glass-card p-4 space-y-2">
+      <div className="flex items-center gap-2 text-primary-500 mb-1">
+        <IdCard className="w-5 h-5" />
+        <span className="text-sm font-medium">{t('orgV3.identity.title')}</span>
+      </div>
+      <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-baseline gap-2">
+            <dt className="text-xs uppercase tracking-wide text-gray-400 w-40 shrink-0">{k}</dt>
+            <dd className="text-sm text-gray-800 dark:text-gray-100">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function TeamTab({ nodeId }: { nodeId: string | null }) {
+  const { t } = useI18n();
+  const team = useNodeTeam(nodeId);
+  if (team.isLoading) return <Loader />;
+  const members = team.data ?? [];
+  return (
+    <div className="glass-card p-4 space-y-2">
+      <div className="flex items-center gap-2 text-primary-500 mb-1">
+        <ShieldCheck className="w-5 h-5" />
+        <span className="text-sm font-medium">{t('orgV3.team.title')}</span>
+      </div>
+      <p className="text-xs text-gray-400">{t('orgV3.team.hint')}</p>
+      {members.length === 0 ? (
+        <p className="text-sm text-gray-400">{t('orgV3.team.empty')}</p>
+      ) : (
+        <ul className="space-y-1">
+          {members.map((m) => (
+            <li key={m.assignmentId} className="flex items-center gap-3 text-sm py-1">
+              <span className="flex-1 truncate text-gray-800 dark:text-gray-100">{m.memberName ?? m.userId}</span>
+              <span className="text-xs text-primary-600">{m.roleLabel ?? '—'}</span>
+              <span className={`text-[11px] ${m.status === 'ACTIVE' ? 'text-green-500' : 'text-gray-400'}`}>
+                {t(`orgV3.team.status.${m.status}`)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function AggregateTab({ nodeId }: { nodeId: string | null }) {
+  const { t } = useI18n();
+  const agg = useNodeAggregate(nodeId);
+  const children = useNodeChildren(nodeId);
+  if (agg.isLoading) return <Loader />;
   const a = agg.data;
   return (
     <div className="space-y-6">
@@ -83,7 +149,7 @@ function AggregateTab({ agg, children }: {
 
       <div className="glass-card p-4">
         <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">{t('orgV3.agg.progression')}</p>
-        <ProgressionSparkline series={a?.progression ?? []} />
+        <ProgressionSparkline series={a?.progression ?? []} label={t('orgV3.agg.progression')} />
       </div>
 
       <div className="glass-card p-4">
@@ -95,12 +161,31 @@ function AggregateTab({ agg, children }: {
           {(children.data ?? []).map((c: ChildWithAggregate) => (
             <li key={c.nodeId} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
               <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span className="flex-1 truncate">{c.name}</span>
+              <Link to={`/tenant/organization/nodes/${c.nodeId}`} className="flex-1 truncate hover:text-primary-600">
+                {c.name}
+              </Link>
               <span className="text-xs text-gray-400">{t('orgV3.agg.members')}: {c.memberCount ?? 0}</span>
             </li>
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function CodesTab({ nodeId }: { nodeId: string | null }) {
+  const { t } = useI18n();
+  if (!nodeId) return null;
+  return (
+    <div className="glass-card p-4 space-y-2">
+      <div className="flex items-center gap-2 text-primary-500 mb-1">
+        <Ticket className="w-5 h-5" />
+        <span className="text-sm font-medium">{t('orgV3.codes.title')}</span>
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{t('orgV3.codes.hint')}</p>
+      <Link to="/tenant/join-management" className="btn btn-secondary btn-sm inline-flex items-center gap-1">
+        {t('orgV3.codes.open')}
+      </Link>
     </div>
   );
 }
@@ -115,18 +200,8 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
   );
 }
 
-/** Mini-courbe SVG de progression (nombre de fidèles dans le temps). */
-function ProgressionSparkline({ series }: { series: Array<{ snapshotAt: string; memberCount: number }> }) {
-  if (series.length < 2) return <p className="text-sm text-gray-400">—</p>;
-  const vals = series.map((s) => s.memberCount);
-  const max = Math.max(...vals, 1);
-  const w = 300, h = 60;
-  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - (v / max) * h}`).join(' ');
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-16" role="img" aria-label="progression">
-      <polyline fill="none" stroke="currentColor" strokeWidth={2} points={pts} className="text-primary-500" />
-    </svg>
-  );
+function Loader() {
+  return <div className="flex justify-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 }
 
 function ModulesTab({ nodeId }: { nodeId: string | null }) {
@@ -149,7 +224,7 @@ function ModulesTab({ nodeId }: { nodeId: string | null }) {
     }
   };
 
-  if (features.isLoading) return <div className="flex justify-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  if (features.isLoading) return <Loader />;
 
   return (
     <div className="glass-card p-4">

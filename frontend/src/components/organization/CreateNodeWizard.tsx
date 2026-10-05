@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { Loader2, X, ChevronLeft, ChevronRight, Plus, Check } from 'lucide-react';
+import { Loader2, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import api from '@/lib/api';
 import { useI18n } from '@/i18n';
-import {
-  useOrgLevels, useOrgTreeV3, useCreateOrgNodeV3,
-  type TreeNode,
-} from '@/hooks/useOrganizationV3';
+import { useOrgTreeV3, useCreateOrgNodeV3, type TreeNode } from '@/hooks/useOrganizationV3';
+import LevelPicker from '@/components/organization/LevelPicker';
+import ModuleMultiSelect from '@/components/organization/ModuleMultiSelect';
 
 /**
  * SPEC_ORGANISATION_MODULABLE_V3 §6.3 — Assistant de création d'un nœud
@@ -15,18 +14,9 @@ import {
  * <p>Le backend accepte `levelId` + `moduleCodes` à la création (T-B10/T-B13) ;
  * le thème s'applique dans un second temps via PATCH (le nœud doit exister).
  * Les modules sont INDÉPENDANTS par défaut : ne rien cocher = nœud vierge,
- * on n'hérite jamais automatiquement (V3-D).
+ * on n'hérite jamais automatiquement (V3-D). Réutilise `<LevelPicker>` et
+ * `<ModuleMultiSelect>` (§6.3).
  */
-
-// Catalogue de modules proposé à la création — miroir de la liste terrain
-// mobile ; les libellés restent techniques (code) pour éviter toute clé i18n
-// manquante (garde-fou : jamais de label figé en dur pour un module d'admin).
-const KNOWN_MODULES = [
-  'people', 'events', 'notifications', 'dashboard', 'org', 'families', 'groups',
-  'discipleship', 'academy', 'finance', 'media', 'pastoral', 'prayer', 'sermons',
-  'assets', 'workflow', 'reports', 'analytics', 'messaging', 'documents',
-  'calendar', 'forms', 'ai', 'chat', 'payments',
-];
 
 const NODE_TYPES = ['REGION', 'DISTRICT', 'ROOT_CHURCH', 'SUB_CHURCH', 'CAMPUS', 'DEPARTMENT', 'GROUP'];
 
@@ -42,7 +32,6 @@ export default function CreateNodeWizard({
   presetParentId?: string | null;
 }) {
   const { t } = useI18n();
-  const levels = useOrgLevels();
   const tree = useOrgTreeV3();
   const createNode = useCreateOrgNodeV3();
 
@@ -148,18 +137,7 @@ export default function CreateNodeWizard({
         {step === 1 && (
           <div className="space-y-2">
             <p className="text-sm text-gray-500">{t('orgV3.wizard.levelHint')}</p>
-            <button type="button" onClick={() => setLevelId(null)}
-              className={`w-full text-left rounded-lg px-3 py-2 text-sm ${!levelId ? 'ring-1 ring-primary-500 bg-primary-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
-              {t('orgV3.wizard.levelAuto')} <span className="text-gray-400">— {t('orgV3.wizard.levelAutoHint')}</span>
-            </button>
-            {(levels.data ?? []).map((lv) => (
-              <button key={lv.id} type="button" onClick={() => setLevelId(lv.id)}
-                className={`w-full text-left rounded-lg px-3 py-2 text-sm flex items-center gap-2 ${levelId === lv.id ? 'ring-1 ring-primary-500 bg-primary-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
-                <span className="flex-1">{lv.name}</span>
-                <span className="text-[10px] uppercase text-gray-400">{lv.semanticType}</span>
-                {levelId === lv.id && <Check className="w-4 h-4 text-primary-500" />}
-              </button>
-            ))}
+            <LevelPicker value={levelId} onChange={setLevelId} />
           </div>
         )}
 
@@ -167,22 +145,10 @@ export default function CreateNodeWizard({
           <div className="space-y-3">
             <div>
               <p className="text-sm text-gray-500 mb-2">{t('orgV3.wizard.modulesHint')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {KNOWN_MODULES.map((code) => {
-                  const on = modules.has(code);
-                  return (
-                    <button key={code} type="button"
-                      onClick={() => setModules((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(code)) next.delete(code); else next.add(code);
-                        return next;
-                      })}
-                      className={`px-2 py-1 rounded-full text-xs font-mono ${on ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                      {code}
-                    </button>
-                  );
-                })}
-              </div>
+              <ModuleMultiSelect
+                value={[...modules]}
+                onChange={(next) => setModules(new Set(next))}
+              />
             </div>
             <label className="block text-sm">
               <span className="text-gray-500">{t('orgV3.wizard.theme')}</span>

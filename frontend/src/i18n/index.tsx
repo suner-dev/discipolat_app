@@ -5,6 +5,7 @@ import pt from './pt';
 import es from './es';
 import sw from './sw';
 import ar from './ar';
+import { resolveLabel } from '@/config/uiCustomization';
 
 export type Locale = 'fr' | 'en' | 'pt' | 'es' | 'sw' | 'ar';
 
@@ -65,12 +66,22 @@ for (const [key, value] of Object.entries(frDict)) {
  */
 export function tText(text: string): string {
   if (!text) return text;
+  // LOT 2 §LB — même surcharge d'église, appliquée au libellé SOURCE. Les
+  // centaines de chaînes écrites en dur dans les pages passent par tText :
+  // sans ce point, la moitié de l'application resterait non paramétrable.
+  const override = resolveLabel(text, activeLocale);
+  if (override !== undefined) return override;
   const dict = dictionaries[activeLocale] as Record<string, string>;
   const exact = REVERSE_FR.get(text);
-  if (exact !== undefined) return dict[exact] ?? text;
+  if (exact !== undefined) {
+    const overridden = resolveLabel(exact, activeLocale);
+    return overridden ?? dict[exact] ?? text;
+  }
   const lower = text.toLowerCase();
   for (const [frValue, key] of REVERSE_FR) {
-    if (frValue.toLowerCase() === lower) return dict[key] ?? text;
+    if (frValue.toLowerCase() === lower) {
+      return resolveLabel(key, activeLocale) ?? dict[key] ?? text;
+    }
   }
   return text;
 }
@@ -106,7 +117,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: string, params?: Record<string, string>): string => {
-    let value = dictionaries[locale]?.[key] ?? dictionaries.fr[key] ?? key;
+    // LOT 2 §LB — la surcharge de l'église gagne TOUJOURS, avant le dictionnaire.
+    // C'est ce point unique qui rend « chaque nom paramétrable » sans qu'une
+    // seule page ait à être modifiée. Sans surcharge, le comportement est
+    // exactement celui d'avant (dictionnaire → fr → clé).
+    let value = resolveLabel(key, locale) ?? dictionaries[locale]?.[key] ?? dictionaries.fr[key] ?? key;
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
         value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), v);

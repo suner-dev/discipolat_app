@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -183,6 +184,21 @@ class OrganizationV3ServiceTest {
             verify(assignmentRepository).save(active);
             verify(assignmentRepository, never()).delete(any());
         }
+
+        @Test
+        @DisplayName("§6.2/§7.1 — équipe d'un nœud = assignations ACTIVES posées sur CE nœud")
+        void listActiveForNodeIsNodeScopedAndActiveOnly() {
+            MemberRoleAssignment elder = MemberRoleAssignment.builder()
+                    .tenantId(TENANT).userId(USER).roleId(ROLE).nodeId(NODE_CAMPUS)
+                    .status(MemberRoleAssignment.AssignmentStatus.ACTIVE).build();
+            when(assignmentRepository.findByTenantIdAndNodeIdAndStatus(TENANT, NODE_CAMPUS,
+                    MemberRoleAssignment.AssignmentStatus.ACTIVE)).thenReturn(List.of(elder));
+
+            List<MemberRoleAssignment> team = svc().listActiveForNode(TENANT, NODE_CAMPUS);
+            assertThat(team).containsExactly(elder);
+            verify(assignmentRepository).findByTenantIdAndNodeIdAndStatus(TENANT, NODE_CAMPUS,
+                    MemberRoleAssignment.AssignmentStatus.ACTIVE);
+        }
     }
 
     // ================= V3-D : modules indépendants par nœud =================
@@ -351,6 +367,32 @@ class OrganizationV3ServiceTest {
             assertThat(view).containsKeys("memberCount", "churchCount", "leaderCount", "levelName");
             // Aucun champ nominatif de membre (les comptes ne sont que des nombres).
             assertThat(view).doesNotContainKeys("emails", "phones", "members", "userIds");
+        }
+
+        @Test
+        @DisplayName("§5.4 — latestForTenant renvoie le snapshot le plus récent par nœud (compteurs inline)")
+        void latestForTenantKeepsMostRecentPerNode() {
+            NodeAggregateService svc = new NodeAggregateService(nodeRepository, membershipRepository,
+                    assignmentRepository, snapshotRepository);
+            NodeAggregateSnapshot older = NodeAggregateSnapshot.builder()
+                    .tenantId(TENANT).nodeId(NODE_REGION)
+                    .snapshotAt(Instant.parse("2026-01-01T00:00:00Z")).memberCount(10L).build();
+            NodeAggregateSnapshot newer = NodeAggregateSnapshot.builder()
+                    .tenantId(TENANT).nodeId(NODE_REGION)
+                    .snapshotAt(Instant.parse("2026-06-01T00:00:00Z")).memberCount(42L).build();
+            NodeAggregateSnapshot otherNode = NodeAggregateSnapshot.builder()
+                    .tenantId(TENANT).nodeId(NODE_CAMPUS)
+                    .snapshotAt(Instant.parse("2026-05-01T00:00:00Z")).memberCount(7L).build();
+            // Ordre ascendant (le plus récent par nœud arrive en dernier).
+            when(snapshotRepository.findByTenantIdOrderBySnapshotAtAsc(TENANT))
+                    .thenReturn(List.of(older, otherNode, newer));
+
+            var map = svc.latestForTenant(TENANT);
+            assertThat(map).hasSize(2);
+            assertThat(map.get(NODE_REGION).getMemberCount()).isEqualTo(42L); // le plus récent gagne
+            assertThat(map.get(NODE_CAMPUS).getMemberCount()).isEqualTo(7L);
+            // Lecture seule : aucun snapshot recréé.
+            verify(snapshotRepository, never()).save(any());
         }
     }
 }

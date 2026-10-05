@@ -18,6 +18,7 @@ import OnboardingBanner from '@/components/onboarding/OnboardingBanner';
 import { NavigationProvider } from '@/navigation/NavigationContext';
 import BackButton from '@/components/navigation/BackButton';
 import Breadcrumbs from '@/components/navigation/Breadcrumbs';
+import { useUiCustomizationLoader } from '@/config/useUiCustomization';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
 
@@ -33,6 +34,10 @@ export default function MainLayout() {
   const openPalette = useMemo(() => () => setPaletteOpen(true), []);
   // §G5.1 — Ctrl/Cmd+K ouvre la palette de commandes (même depuis les champs de saisie)
   useCommandPalette(openPalette);
+  // LOT 2 §LB — charge les surcharges de libellés/fonctionnalités de l'église
+  // (noms, boutons) une fois pour toute la session. Le super-admin plateforme
+  // n'a pas d'église : rien à charger pour lui.
+  useUiCustomizationLoader(user?.platformSuperAdmin !== true);
   const [testerBannerVisible, setTesterBannerVisible] = useState(
     () => localStorage.getItem(TESTER_BANNER_KEY) !== '1'
   );
