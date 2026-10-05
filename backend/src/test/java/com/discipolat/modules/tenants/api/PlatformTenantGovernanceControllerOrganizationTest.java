@@ -1,5 +1,6 @@
 package com.discipolat.modules.tenants.api;
 
+import com.discipolat.modules.tenants.domain.OrganizationLevelRepository;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantDisputeRepository;
 import com.discipolat.modules.tenants.domain.TenantGovernanceService;
@@ -51,6 +52,11 @@ class PlatformTenantGovernanceControllerOrganizationTest {
     @Mock private TenantWarningRepository warningRepository;
     @Mock private TenantDisputeRepository disputeRepository;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    // Dépendance ajoutée au constructeur de PlatformTenantGovernanceController
+    // (résolution des niveaux de hiérarchie pour la vue réseau). Elle n'est pas
+    // sollicitée par les tests de lecture réseau : un mock d'interface suffit et
+    // s'exécute sous tous les JDK (contrainte Byte Buddy, cf. la note ci-dessus).
+    @Mock private OrganizationLevelRepository levelRepository;
 
     /**
      * `TenantService` est une classe concrète : même contrainte que pour le
@@ -82,7 +88,7 @@ class PlatformTenantGovernanceControllerOrganizationTest {
                         // `null` plutôt qu'un mock de classe concrète (contrainte
                         // Byte Buddy/JDK, cf. la note de conception du projet).
                         null, null, eventPublisher),
-                tenantService, tenantRepository, membershipRepository);
+                tenantService, tenantRepository, membershipRepository, levelRepository);
     }
 
     /**
