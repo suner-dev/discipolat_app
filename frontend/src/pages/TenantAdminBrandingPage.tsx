@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import api from "@/lib/api";
+import { useI18n } from "@/i18n";
+import { useOrgTreeV3, useNodeTheme, usePatchNodeTheme } from "@/hooks/useOrganizationV3";
 
 const DEFAULT_BRANDING = {
   businessName: "", slogan: "",
@@ -144,6 +146,8 @@ export default function TenantAdminBrandingPage() {
             {msg.text}
           </div>
         )}
+
+        <NodeThemePanel />
 
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-8">
@@ -335,6 +339,103 @@ export default function TenantAdminBrandingPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * SPEC_ORGANISATION_MODULABLE_V3 §6.2 (D) / T-W14 — thème PAR NŒUD (override).
+ * Le thème de la racine se gère via le formulaire ci-dessus (`/admin/settings`).
+ * Ici on surcharge le thème d'un campus/église (`organization_nodes.theme_json`).
+ * Indépendant par défaut (V3-D) : sans override, le nœud reste vierge ; on ne
+ * force jamais l'héritage. Aperçu live des couleurs avant application.
+ */
+function NodeThemePanel() {
+  const { t } = useI18n();
+  const tree = useOrgTreeV3();
+  const [nodeId, setNodeId] = useState<string>("");
+  const theme = useNodeTheme(nodeId || null);
+  const patch = usePatchNodeTheme(nodeId || null);
+  const [colors, setColors] = useState({ primary: "#6366F1", secondary: "#8B5CF6", accent: "#EC4899" });
+  const [saved, setSaved] = useState<string | null>(null);
+
+  // Synchronise depuis le thème résolu du nœud sélectionné.
+  useEffect(() => {
+    const c: any = (theme.data?.theme as any)?.colors ?? {};
+    setColors({
+      primary: c.primary || "#6366F1",
+      secondary: c.secondary || "#8B5CF6",
+      accent: c.accent || "#EC4899",
+    });
+    setSaved(null);
+  }, [nodeId, theme.data]);
+
+  const save = async () => {
+    try {
+      await patch.mutateAsync({ colors });
+      setSaved(t("orgV3.theme.saved"));
+    } catch {
+      setSaved(t("orgV3.theme.saveErr"));
+    }
+  };
+
+  const nodes = [...(tree.data ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <div className="bg-white rounded-xl border shadow-sm p-6 mb-6">
+      <div className="flex items-center gap-3 mb-2">
+        <h2 className="text-base font-semibold text-gray-900">{t("orgV3.branding.nodeTitle")}</h2>
+        {nodeId && (
+          <span className="ml-auto text-[11px] uppercase tracking-wide text-gray-400">
+            {theme.data?.source ?? "—"}
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-gray-500 mb-4">{t("orgV3.branding.nodeHint")}</p>
+
+      <select
+        value={nodeId}
+        onChange={(e) => setNodeId(e.target.value)}
+        aria-label={t("orgV3.modulesScope.pickNode")}
+        className="px-3 py-2 rounded-lg border text-sm bg-white mb-4 w-full max-w-md"
+      >
+        <option value="">{tree.isLoading ? "…" : t("orgV3.modulesScope.pickNode")}</option>
+        {nodes.map((n) => (
+          <option key={n.id} value={n.id}>{n.levelName ? `${n.name} — ${n.levelName}` : n.name}</option>
+        ))}
+      </select>
+
+      {nodeId && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <ColorInput label={t("orgV3.theme.primary")} value={colors.primary} onChange={(v) => setColors((p) => ({ ...p, primary: v }))} />
+            <ColorInput label={t("orgV3.branding.secondary")} value={colors.secondary} onChange={(v) => setColors((p) => ({ ...p, secondary: v }))} />
+            <ColorInput label={t("orgV3.branding.accent")} value={colors.accent} onChange={(v) => setColors((p) => ({ ...p, accent: v }))} />
+            <button
+              type="button"
+              onClick={save}
+              disabled={patch.isPending}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {t("orgV3.theme.apply")}
+            </button>
+            {saved && <span className="text-sm text-gray-500 ml-3">{saved}</span>}
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">{t("orgV3.branding.preview")}</p>
+            <div className="rounded-lg border overflow-hidden">
+              <div className="p-4 text-white" style={{ background: colors.primary }}>
+                <div className="font-bold text-sm">{t("orgV3.theme.title")}</div>
+              </div>
+              <div className="p-4 space-y-2">
+                <button className="px-3 py-1.5 rounded text-xs font-medium text-white" style={{ background: colors.primary }}>Action</button>{" "}
+                <button className="px-3 py-1.5 rounded text-xs font-medium text-white" style={{ background: colors.secondary }}>Secondaire</button>{" "}
+                <button className="px-3 py-1.5 rounded text-xs font-medium text-white" style={{ background: colors.accent }}>Accent</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

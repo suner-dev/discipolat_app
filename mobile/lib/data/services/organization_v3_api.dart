@@ -10,6 +10,7 @@
 ///
 /// Le modèle V3 n'est donc JAMAIS écrit dans un seul moteur : source unique =
 /// le serveur.
+library;
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'api_service.dart';
@@ -65,6 +66,13 @@ class OrganizationV3Api {
   Future<List<Map<String, dynamic>>> nodeChildren(String nodeId) async {
     final res = await _api.get('/tenant/organization/nodes/$nodeId/children');
     return _list(res);
+  }
+
+  /// GET /tenant/organization/nodes/{id}/team (C, §7.1 fiche campus).
+  /// Équipe d'un nœud : porteurs actifs d'un rôle-capacité (pasteurs/anciens).
+  Future<List<NodeTeamMember>> nodeTeam(String nodeId) async {
+    final res = await _api.get('/tenant/organization/nodes/$nodeId/team');
+    return _list(res).map(NodeTeamMember.fromJson).toList();
   }
 
   /// GET /tenant/roles/{id}/titles (B).

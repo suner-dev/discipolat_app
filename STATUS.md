@@ -3,6 +3,55 @@
 Ce document est un constat, pas une promesse. Chaque ligne est vérifiable dans
 le dépôt ou par les commandes citées.
 
+## Cycle — Organisation modulable V3 (fullstack, `feat/org-modulable-v3-lot1`)
+
+> `docs/SPEC_ORGANISATION_MODULABLE_V3.md` — dimensions **A→E** (niveaux configurables,
+> capacité≠intitulé, affiliation multi-nœuds, modules & branding **indépendants** par nœud,
+> agrégats & drill-down **sans PII**). La propulsion P1–P10 est **phase 2** (hors périmètre).
+> Rapport détaillé et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
+
+**RAG : 🟢 DONE** — A→E livrés et vérifiés, gaps du cycle précédent **soldés** (section équipe
+mobile §7.1, découpage modèles §7.2, tests web dédiés T-Q2, `flutter test` 556 verts, gate PG
+revalidé jusqu'à **V230**). Ne reste qu'à confirmer `mvn verify` **complet** en CI (machine de dev
+partagée/saturée, voir « Vigilance shared-tree »).
+
+- **Backend** : migrations montantes `V224`–`V228` (V≤223 intouchées) ; services/entities
+  `OrganizationLevel`, `RoleTitle`, `MemberRoleAssignment`, `OrganizationNodeFeature`,
+  `NodeAggregateSnapshot` ; contrôleurs `OrganizationLevel`, `OrganizationNodeV3`, `OrganizationRbac` ;
+  `createNode` accepte `levelId` + `moduleCodes` inline ; `AuthorizationService` résout la permission
+  par ancêtre (`path`), additive **après** durcissement multi-memberships (F17), **jamais** `hasAnyRole`.
+- **Web** : `OrganizationLevelsPage`, `OrganizationNodeDetailPage`, `MemberRolesPage`, `CreateNodeWizard`,
+  `RoleTitleMatrix`, `<OrgTreeNav>`, hook `useOrganizationV3` ; drill-down agrégé + scope modules/thème
+  **par nœud** ; console plateforme « niveaux personnalisés » **lecture seule** ; routes scope tenant ; i18n 6 langues.
+- **Mobile** : `organization_v3_api`/`models` (barrel + **4 fichiers** §7.2), écrans `node_detail`
+  (compteurs, sparkline, **« Responsable & équipe »** §7.1, modules), `roles` (+ sheet intitulés),
+  `modules` (portée nœud), `organizations` (arbre V3 + repli admin).
+
+**Vérifications (rejouées, arbre V3 + navigation LOT 2 coexistants)** :
+- `mvn -o clean test-compile` → **EXIT 0**
+- `mvn -o test -Dtest=OrganizationV3ServiceTest,TenantAdminAuthorizationTest` → **13 verts**
+- `mvn -o test -Dtest=TenantSwitcherMultiMembershipTest` (F17) → **1 vert**
+- `mvn -o test -Dtest=NoNullUnsafeMapLiteralTest` → **4 verts** (plafond d'audit jamais relevé)
+- `mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest` (Docker) → **11/11**, schéma **230**,
+  **193** migrations validées, **parité entités↔colonnes OK** (gate T-Q3, bloquant avant merge)
+- `npx tsc --noEmit` → **EXIT 0** ; `npx vitest run` (suite complète) → **499/499, 0 échec**
+  (T-Q2 : `OrgTreeNav` 5, `RoleTitleMatrix` 3, `routeAccessV3` 12, `OrganizationBrowserPage` 7)
+- `flutter analyze` (mobile) → **EXIT 0**, 0 nouvelle erreur ; `flutter test` → **556 passés**
+
+**Gaps restants (factuel)** : seule la suite backend `mvn verify` **complète** n'est pas stable sur
+cette machine partagée (collisions de build, § shared-tree) → validée en CI sur temurin 21. Le
+rapport complet et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
+
+**Vigilance shared-tree** : un autre agent écrit/committe « navigation groups » (LOT 2 §GR, `V229`)
+ dans le **même** working tree ; ne jamais lancer deux Maven dans le même `backend/` (`target/` partagé).
+ **Précision (constatée 05/10)** : l'interdiction est réelle, pas théorique. Un `mvn -o test-compile`
+ lancé pendant un `mvn -B -o verify` concurrent a laissé `target/test-classes` **incomplet**
+ (297 `.class`) → ~256 `NoClassDefFoundError: SecurityTestHelper` sur des tests sans rapport
+ (`FaceHasherTest`, `EventServiceTest`…), la classe étant pourtant présente sur disque à la fin.
+ *Signature du symptôme* : erreurs `NoClassDefFoundError` sur une classe **présente** dans
+ `target/test-classes` = collision de builds, **pas** une régression de code. Avant de
+ `mvn clean`, vérifier `pgrep -f maven` et `pgrep -f surefirebooter` (0 processus attendu).
+
 ## Périmètre livré dans ce cycle (RGPD — correction des limites réelles)
 
 ### Purge de rétention : exécution réelle (au lieu d'un simple comptage)

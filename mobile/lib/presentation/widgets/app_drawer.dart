@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app.dart';
+import '../../data/models/navigation_group.dart';
 import '../../data/services/api_service.dart';
+import '../../data/services/navigation_api.dart';
 import '../../l10n/app_localizations.dart';
 import 'beta_badge.dart';
 import 'feedback_sheet.dart';
@@ -19,6 +21,37 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   bool _showRoleMenu = false;
+
+  // LOT 2 §GR — groupes d'onglets defined par l'église (parité web).
+  // Tant que l'API n'a pas répondu, [NavigationShape.empty] fait que le drawer
+  // garde exactement son affichage d'avant : jamais de menu vide, jamais
+  // d'écran cassé si le réseau tombe.
+  NavigationShape _shape = NavigationShape.empty;
+  final Set<String> _expandedGroupIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShape();
+  }
+
+  Future<void> _loadShape() async {
+    final shape = await NavigationApi(ApiService()).shape();
+    if (!mounted || shape.isEmpty) return;
+    setState(() => _shape = shape);
+  }
+
+  /// Groupe d'une route, ou `null` si elle n'est regroupée par personne.
+  NavigationGroup? _groupOf(String route) => _shape.groupOf(route);
+
+  /// Un groupe contenant la page courante reste déplié : sans cela, l'utilisateur
+  /// perd son repère « je suis ici » dès qu'il ouvre un détail.
+  bool _isGroupExpanded(NavigationGroup group) {
+    if (_expandedGroupIds.contains(group.id)) return true;
+    final location = _currentLocation(context);
+    if (location == null) return false;
+    return _groupOf(location)?.id == group.id;
+  }
 
   // ── Navigation Admin/Pasteur : items opérationnels ──
   static const List<Map<String, Object>> _mainNav = [
@@ -1342,11 +1375,18 @@ class _AppDrawerState extends State<AppDrawer> {
 
     final widgets = <Widget>[];
 
-    // Main nav items
-    for (final item in mainItems) {
-      final l10n = AppLocalizations.of(context);
-      widgets.add(_navItem(context, item['icon'] as IconData,
-          navTitle(item['route'] as String, l10n), item['route'] as String));
+    // Main nav items — regroupés par l'église quand elle a défini des groupes,
+    // sinon listés à plat comme avant (LOT 2 §GR, dégradé sans régression).
+    final mainGroups = _groupsOf(mainItems);
+    for (final group in mainGroups.keys) {
+      final groupItems = mainGroups[group]!;
+      if (group == null) {
+        for (final item in groupItems) {
+          widgets.add(_navItemFor(context, item));
+        }
+        continue;
+      }
+      widgets.add(_groupBlock(context, group, groupItems));
     }
 
     // Admin section header (only if admin items exist and role is ADMIN)
@@ -1368,14 +1408,136 @@ class _AppDrawerState extends State<AppDrawer> {
           ],
         ),
       ));
-      for (final item in adminItems) {
-        final l10n = AppLocalizations.of(context);
-        widgets.add(_navItem(context, item['icon'] as IconData,
-            navTitle(item['route'] as String, l10n), item['route'] as String));
+      final adminGroups = _groupsOf(adminItems);
+      for (final group in adminGroups.keys) {
+        final groupItems = adminGroups[group]!;
+        if (group == null) {
+          for (final item in groupItems) {
+            widgets.add(_navItemFor(context, item));
+          }
+          continue;
+        }
+        widgets.add(_groupBlock(context, group, groupItems));
       }
     }
 
     return widgets;
+  }
+
+  /// Regroupe les entrées par groupe défini côté serveur.
+  ///
+  /// <b>Rien ne disparaît</b> : une entrée sans groupe affecté est rendue dans
+  /// le segment `null` (liste plate), exactement comme avant le paramétrage.
+  Map<NavigationGroup?, List<Map<String, Object>>> _groupsOf(
+      List<Map<String, Object>> items) {
+    final grouped = <NavigationGroup?, List<Map<String, Object>>>{};
+    for (final item in items) {
+      final route = item['route'] as String?;
+      final group = route == null ? null : _groupOf(route);
+      grouped.putIfAbsent(group, () => <Map<String, Object>>[]).add(item);
+    }
+    // Les groupes repliés d'abord : c'est le modèle « grands groupes » demandé,
+    // pas une liste à rallonge ordonnée alphabétiquement.
+    final keys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == null) return 1; // non regroupé en dernier
+        if (b == null) return -1;
+        return a.displayOrder.compareTo(b.displayOrder);
+      });
+    return {for (final key in keys) key: grouped[key]!};
+  }
+
+  /// Groupe repliable : en-tête + sous-onglets animés.
+  ///
+  /// Un seul widget par groupe (et non un en-tête plus N éléments détachés) :
+  /// c'est ce qui permet à [AnimatedSize] d'animer la hauteur réelle, donc un
+  /// déploiement fluide au lieu d'une apparition sèche.
+  Widget _groupBlock(BuildContext context, NavigationGroup group,
+      List<Map<String, Object>> items) {
+    final expanded = _isGroupExpanded(group);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _groupHeader(context, group, expanded),
+        // Le contenu reste monté : le repli est une animation de hauteur, pas
+        // une destruction — un état interne d'un onglet n'est jamais perdu.
+        AnimatedSize(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              maxHeight: expanded ? double.infinity : 0,
+              child: Opacity(
+                opacity: expanded ? 1 : 0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final item in items) _navItemFor(context, item),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// En-tête d'un groupe : au clic, ses sous-onglets se déploient.
+  Widget _groupHeader(
+      BuildContext context, NavigationGroup group, bool expanded) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 16, 4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          setState(() {
+            if (!expanded) {
+              _expandedGroupIds.add(group.id);
+            } else {
+              _expandedGroupIds.remove(group.id);
+            }
+          });
+        },
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                group.label.toUpperCase(),
+                style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2),
+              ),
+            ),
+            if (group.showCount && group.hrefCount > 0)
+              Text('${group.hrefCount}',
+                  style: const TextStyle(color: Colors.white24, fontSize: 11)),
+            const SizedBox(width: 4),
+            // Rotation animée : le seul indicateur dont l'utilisateur a besoin.
+            AnimatedRotation(
+              turns: expanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              child: const Icon(Icons.expand_more_rounded,
+                  size: 16, color: Colors.white38),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _navItemFor(BuildContext context, Map<String, Object> item) {
+    final l10n = AppLocalizations.of(context);
+    return _navItem(
+        context,
+        item['icon'] as IconData,
+        navTitle(item['route'] as String, l10n),
+        item['route'] as String);
   }
 
   String? _currentLocation(BuildContext context) {

@@ -33,4 +33,12 @@ describe('routeAccess — écrans V3 scopés tenant (T-W15)', () => {
     expect(canRoleAccessPath(path, 'ADMIN')).toBe(true);
     expect(canRoleAccessPath(path, 'PASTEUR')).toBe(true);
   });
+
+  // T-Q2 — « navForRole sans fuite » : un rôle plateforme (SUPER_ADMIN) ne
+  // figure JAMAIS dans les rôles tenant d'un écran V3. La console plateforme
+  // n'administre que la flotte (agrégats), jamais le contenu d'une église.
+  it.each(V3_PATHS)('un SUPER_ADMIN plateforme est refusé sur %s', (path) => {
+    expect(canRoleAccessPath(path, 'SUPER_ADMIN')).toBe(false);
+    expect(rolesForPath(path)).not.toContain('SUPER_ADMIN');
+  });
 });

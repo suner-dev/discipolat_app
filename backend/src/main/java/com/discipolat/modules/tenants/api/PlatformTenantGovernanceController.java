@@ -2,6 +2,7 @@ package com.discipolat.modules.tenants.api;
 
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.tenants.domain.MembershipStatus;
+import com.discipolat.modules.tenants.domain.OrganizationLevelRepository;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantDispute;
 import com.discipolat.modules.tenants.domain.TenantGovernanceService;
@@ -35,15 +36,18 @@ public class PlatformTenantGovernanceController {
     private final TenantService tenantService;
     private final TenantRepository tenantRepository;
     private final TenantMembershipRepository membershipRepository;
+    private final OrganizationLevelRepository levelRepository;
 
     public PlatformTenantGovernanceController(TenantGovernanceService governanceService,
                                               TenantService tenantService,
                                               TenantRepository tenantRepository,
-                                              TenantMembershipRepository membershipRepository) {
+                                              TenantMembershipRepository membershipRepository,
+                                              OrganizationLevelRepository levelRepository) {
         this.governanceService = governanceService;
         this.tenantService = tenantService;
         this.tenantRepository = tenantRepository;
         this.membershipRepository = membershipRepository;
+        this.levelRepository = levelRepository;
     }
 
     public record ReasonRequest(String reason) {
@@ -263,7 +267,24 @@ public class PlatformTenantGovernanceController {
         view.put("isNetworkRoot", t.id() != null && t.id().equals(t.rootTenantId()));
         view.put("childCount", childCountOf(t));
         view.put("memberCount", memberCountOf(t.id()));
+        // §6.2 V3 — « niveaux personnalisés » : COUNT structurel des niveaux de la
+        // racine (dénomination). Un nombre uniquement — jamais de libellé de
+        // niveau ni de PII (D7).
+        view.put("customLevelCount", customLevelCountOf(t));
         return view;
+    }
+
+    /**
+     * Nombre de niveaux configurés portés par la racine de {@code t} (V3-A).
+     * Un simple {@code COUNT} scopé par racine : la console plateforme ne voit
+     * jamais les libellés de niveaux, uniquement leur nombre (D7).
+     */
+    private long customLevelCountOf(TenantResponse t) {
+        UUID root = t.rootTenantId() != null ? t.rootTenantId() : t.id();
+        if (root == null) {
+            return 0L;
+        }
+        return levelRepository.countByRootTenantId(root);
     }
 
     /**

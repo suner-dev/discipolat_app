@@ -3435,6 +3435,8 @@ const ar: Record<string, string> = {
   'orgV3.codes.open': "فتح إدارة الرموز",
   'orgV3.browser.structural': "البنية",
   'orgV3.browser.aggregated': "عرض مجمّع",
+  'orgV3.platform.levels': "مستويات مخصصة",
+  'orgV3.platform.levelsReadOnly': "مستويات مخصصة (للقراءة فقط)",
   'orgV3.modulesScope.tenant': "المستأجر (الجذر)",
   'orgV3.modulesScope.node': "العقدة (الحرم)",
   'orgV3.modulesScope.pickNode': "اختر عقدة",

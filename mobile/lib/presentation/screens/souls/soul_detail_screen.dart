@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/models/soul.dart';
 import '../../widgets/glass_theme.dart';
+import '../../widgets/detail_back_button.dart';
 
 class SoulDetailScreen extends StatefulWidget {
   final String soulId;
@@ -101,7 +102,8 @@ class _SoulDetailScreenState extends State<SoulDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_soul?.nomComplet ?? 'Détail'),
+            leading: const DetailBackButton(parentRoute: '/souls'),
+          title: Text(_soul?.nomComplet ?? 'Détail'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],

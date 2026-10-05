@@ -4,6 +4,7 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/open_url.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../widgets/detail_back_button.dart';
 
 const _objectiveBadgeColors = <String, Color>{
   'A_FAIRE': Colors.white70,
@@ -84,7 +85,8 @@ class _DepartmentMemberDossierScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dossier · $nomComplet'),
+            leading: const DetailBackButton(parentRoute: '/departments'),
+          title: Text('Dossier · $nomComplet'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _reload),
         ],

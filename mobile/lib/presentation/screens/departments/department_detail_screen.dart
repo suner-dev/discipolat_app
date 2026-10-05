@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../widgets/detail_back_button.dart';
 
 const _cibleLabels = <String, String>{
   'TOUS': 'Tout le département',
@@ -105,7 +106,8 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
     final dept = _detail ?? {};
     return Scaffold(
       appBar: AppBar(
-        title: Text(dept['nom'] ?? 'Département'),
+            leading: const DetailBackButton(parentRoute: '/departments'),
+          title: Text(dept['nom'] ?? 'Département'),
         actions: [
           IconButton(icon: const Icon(Icons.bar_chart), tooltip: 'Statistiques',
               onPressed: () => context.go('/departments/$_deptId/stats')),

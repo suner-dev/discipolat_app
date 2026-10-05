@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
@@ -42,6 +41,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
   List<Map<String, dynamic>> _progression = const [];
   List<Map<String, dynamic>> _children = const [];
   List<Map<String, dynamic>> _features = const [];
+  List<NodeTeamMember> _team = const [];
   bool _loading = true;
   String? _error;
 
@@ -62,6 +62,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
         _api.get('/tenant/organization/nodes/${widget.nodeId}/aggregate'),
         _api.get('/tenant/organization/nodes/${widget.nodeId}/children'),
         _api.get('/tenant/organization/nodes/${widget.nodeId}/features'),
+        _api.get('/tenant/organization/nodes/${widget.nodeId}/team'),
       ]);
       // aggregate : Map avec progression ; children/features : List.
       final agg = results[0].data is Map
@@ -89,11 +90,23 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
               .map((e) => Map<String, dynamic>.from(e))
               .toList()
           : const <Map<String, dynamic>>[];
+      // team : affectations actives du nœud (pasteurs/anciens) → modèle typé.
+      final team = asList(results[3])
+          .map((e) {
+            try {
+              return NodeTeamMember.fromJson(e);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<NodeTeamMember>()
+          .toList();
       setState(() {
         _aggregate = parsed;
         _progression = progression;
         _children = asList(results[1]);
         _features = asList(results[2]);
+        _team = team;
         _loading = false;
       });
     } catch (e) {
@@ -179,6 +192,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
                         const SizedBox(height: 8),
                         _sparkline(),
                       ],
+                      _teamSection(),
                       const SizedBox(height: 24),
                       const Text('Unités rattachées',
                           style: TextStyle(fontWeight: FontWeight.w600)),
@@ -198,6 +212,51 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
                     ],
                   ),
                 ),
+    );
+  }
+
+  /// Équipe du nœud (§7.1 fiche campus berger) : pasteurs/anciens, i.e.
+  /// porteurs actifs d'un rôle-capacité sur CE nœud (assignments, C). Lecture
+  /// seule ; les noms sont du PII — jamais exposés à la plateforme (D7).
+  Widget _teamSection() {
+    const statusColor = {
+      'ACTIVE': Colors.teal,
+      'SUSPENDED': Colors.orange,
+      'ENDED': Colors.grey,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text('Responsable & équipe',
+            style: TextStyle(fontWeight: FontWeight.w600)),
+        if (_team.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('Aucun porteur de rôle sur ce nœud.',
+                style: TextStyle(color: Colors.grey)),
+          )
+        else
+          ..._team.map((m) {
+            final label = m.roleLabel ?? 'Rôle';
+            final color = statusColor[m.status] ?? Colors.grey;
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: color.withOpacity(0.15),
+                  child: Icon(Icons.person, color: color),
+                ),
+                title: Text(m.memberName ?? 'Membre'),
+                subtitle: Text(label),
+                trailing: Text(
+                  m.status,
+                  style: TextStyle(fontSize: 11, color: color),
+                ),
+              ),
+            );
+          }),
+      ],
     );
   }
 

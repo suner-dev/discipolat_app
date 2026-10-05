@@ -3290,6 +3290,8 @@ const pt: Record<string, string> = {
   'orgV3.codes.open': "Abrir gestão de códigos",
   'orgV3.browser.structural': "Estrutura",
   'orgV3.browser.aggregated': "Visão agregada",
+  'orgV3.platform.levels': "níveis personalizados",
+  'orgV3.platform.levelsReadOnly': "níveis personalizados (somente leitura)",
   'orgV3.modulesScope.tenant': "Tenant (raiz)",
   'orgV3.modulesScope.node': "Nó (campus)",
   'orgV3.modulesScope.pickNode': "Selecionar um nó",

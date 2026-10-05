@@ -93,14 +93,16 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
     if (nodeId == null) return;
     HapticFeedback.lightImpact();
     setState(() => _saving = true);
-    final payload = [for (final f in _nodeFeatures) {
-      'code': f['moduleCode'],
-      'enabled': f['moduleCode'] == moduleCode
-          ? enabled
-          : f['enabled'] == true,
-      if (f['configurationJson'] != null)
-        'configurationJson': f['configurationJson'],
-    ]];
+    final payload = <Map<String, dynamic>>[];
+    for (final f in _nodeFeatures) {
+      payload.add({
+        'code': f['moduleCode'],
+        'enabled':
+            f['moduleCode'] == moduleCode ? enabled : f['enabled'] == true,
+        if (f['configurationJson'] != null)
+          'configurationJson': f['configurationJson'],
+      });
+    }
     if (!_nodeFeatures.any((f) => f['moduleCode'] == moduleCode)) {
       payload.add({'code': moduleCode, 'enabled': enabled});
     }

@@ -3521,6 +3521,8 @@ const es: Record<string, string> = {
   'orgV3.codes.open': "Abrir gestión de códigos",
   'orgV3.browser.structural': "Estructura",
   'orgV3.browser.aggregated': "Vista agregada",
+  'orgV3.platform.levels': "niveles personalizados",
+  'orgV3.platform.levelsReadOnly': "niveles personalizados (solo lectura)",
   'orgV3.modulesScope.tenant': "Tenant (raíz)",
   'orgV3.modulesScope.node': "Nodo (campus)",
   'orgV3.modulesScope.pickNode': "Seleccionar un nodo",

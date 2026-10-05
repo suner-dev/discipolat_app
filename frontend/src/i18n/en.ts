@@ -3344,6 +3344,8 @@ const en: Record<string, string> = {
   'orgV3.codes.open': "Open code management",
   'orgV3.browser.structural': "Structure",
   'orgV3.browser.aggregated': "Aggregated view",
+  'orgV3.platform.levels': "custom levels",
+  'orgV3.platform.levelsReadOnly': "custom levels (read-only)",
   'orgV3.modulesScope.tenant': "Tenant (root)",
   'orgV3.modulesScope.node': "Node (campus)",
   'orgV3.modulesScope.pickNode': "Select a node",

@@ -23,4 +23,7 @@ public interface OrganizationLevelRepository extends JpaRepository<OrganizationL
     List<OrganizationLevel> findByRootTenantIdAndParentLevelId(UUID rootTenantId, UUID parentLevelId);
 
     long countByRootTenantIdAndParentLevelId(UUID rootTenantId, UUID parentLevelId);
+
+    /** §6.2 console plateforme — simple COUNT des niveaux d'une racine (D7 : un nombre, jamais du nominatif). */
+    long countByRootTenantId(UUID rootTenantId);
 }

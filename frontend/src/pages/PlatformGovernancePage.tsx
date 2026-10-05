@@ -18,12 +18,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  AlertTriangle, Ban, CheckCircle2, Gavel, Loader2, Megaphone, RefreshCw, ShieldOff, X,
+  AlertTriangle, Ban, CheckCircle2, Gavel, Loader2, Megaphone, Network, RefreshCw, ShieldOff, X,
 } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
 
-type TenantRow = { id: string; name: string; slug: string; status: string; plan: string };
+type TenantRow = { id: string; name: string; slug: string; status: string; plan: string; customLevelCount?: number };
 type TenantPage = { content: TenantRow[]; total: number; page: number; size: number; totalPages: number };
 type Warning = { id: string; message: string; severity: string; createdAt: string };
 type Dispute = {
@@ -244,6 +244,10 @@ export default function PlatformGovernancePage() {
                 <div className="min-w-0">
                   <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{t.name}</p>
                   <p className="text-xs font-mono text-gray-400">{t.slug} · {t.plan}</p>
+                  {/* §6.2 V3 — agrégat en lecture seule (D7 : un nombre, jamais du nominatif). */}
+                  <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                    <Network className="w-3 h-3" /> {t.customLevelCount ?? 0} {tText('niveaux personnalisés')}
+                  </p>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLES[t.status] ?? ''}`}>
                   {t.status}
@@ -284,6 +288,10 @@ export default function PlatformGovernancePage() {
               <div>
                 <h2 className="font-semibold text-gray-900 dark:text-white">{tenant.name}</h2>
                 <p className="text-xs font-mono text-gray-400">{tenant.slug} — {tenant.status} — {tenant.plan}</p>
+                {/* §6.2 V3 — « niveaux personnalisés » : agrégat structurel, lecture seule (D7). */}
+                <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+                  <Network className="w-3 h-3" /> {tenant.customLevelCount ?? 0} {tText('niveaux personnalisés (lecture seule)')}
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">

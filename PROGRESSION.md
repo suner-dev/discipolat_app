@@ -162,7 +162,31 @@ Exemples : `ONB-A1` = « Garde de statut tenant » (onboarding).
 
 <!-- Une entrée par tâche, dans l'ordre d'exécution. Format §0.2 -->
 
-_Aucune tâche démarrée._
+> **Chantier hors plans `ONB-*`/`ORC-*`** : `SPEC_ORGANISATION_MODULABLE_V3` (fullstack,
+> branche `feat/org-modulable-v3-lot1`). Consigné ici (zone `backend/**`, `docs/**`, CI) ;
+> le détail complet est dans `docs/rapports/RAPPORT_T-ORG-V3.md`.
+
+```
+Statut  : DONE  (A→E livrés, gaps soldés ; propulsion P1–P10 = phase 2, hors périmètre)
+Commit  : feat/org-modulable-v3-lot1 (Lots A→E + LOT 2 §LB coexistants)
+Fichiers: migrations V224..V228 ; domain/{OrganizationLevel,RoleTitle,MemberRoleAssignment,
+          OrganizationNodeFeature,NodeAggregateSnapshot,NodeAggregate}Service ; api/{OrganizationLevel,
+          OrganizationNodeV3,OrganizationRbac}Controller (+ /nodes/{id}/team) ; OrganizationHierarchyService
+          (createNode levelId+modules) ; AuthorizationService (ancêtre via path, additive après F17) ;
+          web pages admin (Levels/NodeDetail/MemberRoles) + CreateNodeWizard + RoleTitleMatrix + OrgTreeNav
+          + drill-down/browser + scope modules/thème par nœud + console plateforme (nb niveaux) ;
+          mobile organization_v3_api (nodeTeam)/models (barrel + 4 fichiers §7.2) + node_detail (§7.1 équipe)
+Tests   : mvn -o clean test-compile → EXIT 0 (arbre V3 + navigation LOT 2)
+          mvn -o test -Dtest=OrganizationV3ServiceTest,TenantAdminAuthorizationTest → 13 verts
+          mvn -o test -Dtest=TenantSwitcherMultiMembershipTest (F17) → 1 vert
+          mvn -o test -Dtest=NoNullUnsafeMapLiteralTest → 4 verts (plafond jamais relevé)
+          mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest (Docker) → 11/11, schéma 230, 193 migrations
+          npx tsc --noEmit → EXIT 0 ; npx vitest run → 499/499 (T-Q2 OrgTreeNav+Matrix+routeAccess+Browser)
+          flutter analyze → EXIT 0 ; flutter test → 556 passés
+Preuve  : « Successfully applied/validated 193 migrations / Current version of schema public: 230 » ;
+          « Tests run: 11, Failures: 0, Errors: 0 » (gate PG) ; vitest « 499 passed (499) »
+Gaps    : mvn verify backend COMPLET à confirmer en CI (collisions de build sur machine partagée).
+```
 
 ### 3.2 Blocages ouverts (NEED-HELP)
 

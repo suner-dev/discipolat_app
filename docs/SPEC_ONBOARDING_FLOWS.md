@@ -151,3 +151,32 @@ Auth (public) :
 - `TenantStatusGuard`/`TenantStatus` inchangés ; ban = `CANCELLED`, blocage = `SUSPENDED` + raison en table de gouvernance.
 - Migrations montantes uniquement (V219+), pas d'édition des V≤218.
 - Le flux legacy « demande de création approuvée par Super Admin » reste intact.
+
+## 7. Alignement `SPEC_ORGANISATION_MODULABLE_V3` (T-Q4 — réaligné 05/10/2026)
+
+Les flows d'entrée ci-dessus **créent** la structure que V3 rend **configurable**. Points de
+raccord vérifiés dans l'arbre (`feat/org-modulable-v3-lot1`) :
+
+- **Création d'église / de campus** : le `createRootChurch`/`createNode` du provisioning accepte
+  désormais `levelId` + `moduleCodes` **inline** (V3 §5, T-B10/T-B13). Le web passe par
+  `<CreateNodeWizard>` (identité → **niveau** → modules + **thème**), et non plus un formulaire nu.
+- **Niveaux configurables (A)** : le fondateur renomme/ordonne ses niveaux
+  (`OrganizationLevelsPage`, `GET /tenant/organization/levels`) ; `type` sémantique porte la logique,
+  `level_id` n'est que l'affichage (repli `type` si `levelId` null). Un `tenant_join_code` peut cibler
+  un `org_node_id` dont le libellé affiché vient du **niveau** (§C « Campus Nord »).
+- **Codes de rejointure (§C)** : sans changement de contrat ; la résolution `join → {churchName,
+  orgNodeName}` renvoie le **nom du nœud**, l'affichage du niveau suit V3. Toujours **sans PII** ni `tenant_id`.
+- **Modules & branding indépendants par nœud (D)** : `TenantAdminModulesPage` et
+  `TenantAdminBrandingPage` ont un **scope tenant ↔ nœud** ; cocher un module sur la racine **n'active
+  pas** les enfants (garde-fou V3-D5). Le thème se surcharge **par campus** (`PATCH /nodes/{id}/theme`).
+- **Console Super Admin (§B) — D7 strict** : la gouvernance plateforme n'affiche **que des nombres**.
+  La colonne **« niveaux personnalisés »** de `PlatformGovernancePage` est un **COUNT en lecture seule**
+  (`OrganizationLevelRepository.countByRootTenantId`, `customLevelCount`) — **jamais** de nominatif,
+  jamais l'édition du contenu d'une église. `navForRole`/`routeAccess` garantissent qu'un
+  `SUPER_ADMIN` ne joint **aucun** `/tenant/organization/*` (test `routeAccessV3.test.ts`).
+- **Multi-affiliation (C)** : un compte peut rejoindre plusieurs campus (`POST /tenant/join` par code
+  de sous-église) → `member_role_assignments` **plusieurs lignes actives** ; le prérequis **T-B-fix-F17**
+  (listes, pas d'`Optional` unique) est **dur** et vérifié (`TenantSwitcherMultiMembershipTest`).
+
+> Détail complet et preuve de chaque tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`. La propulsion
+> P1–P10 (templates, délégation par nœud, carte publique, etc.) reste **phase 2**, hors de ces flows.

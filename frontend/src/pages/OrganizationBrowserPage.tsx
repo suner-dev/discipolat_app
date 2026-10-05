@@ -4,12 +4,14 @@ import toast from 'react-hot-toast';
 import {
   Network, ChevronRight, ChevronDown, Church, Building2, Map as MapIcon,
   MapPin, Users, UsersRound, Home, Landmark, Search as SearchIcon,
-  Loader2, GripVertical, Eye, Plus,
+  Loader2, GripVertical, Eye, Plus, UserCog,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useI18n } from '@/i18n';
 import { useTenant } from '@/contexts/TenantContext';
 import CreateNodeWizard from '@/components/organization/CreateNodeWizard';
+import OrgTreeNav from '@/components/organization/OrgTreeNav';
+import { useOrgTreeV3, type TreeNode } from '@/hooks/useOrganizationV3';
 
 /**
  * G5.2 — Navigateur d'organisation (Church OS niveau 1).
@@ -82,6 +84,10 @@ export default function OrganizationBrowserPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  // §6.2 (E) — deux lectures du même réseau : arbre structurel (drag & drop,
+  // `/org/tree`) et vue agrégée par niveau custom (`/tenant/organization/tree`,
+  // `<OrgTreeNav>` : levelName + compteurs + responsable, drill-down collapssible).
+  const [view, setView] = useState<'structural' | 'aggregated'>('structural');
 
   // Édition réservée aux porteurs de la permission serveur ORG_NODE_MOVE
   const canMove = hasPermission('ORG_NODE_MOVE');
@@ -145,6 +151,14 @@ export default function OrganizationBrowserPage() {
 
   const tree = treeQuery.data;
   const childrenByParent = useMemo(() => tree?.childrenByParent ?? {}, [tree]);
+
+  // §6.2 (E) — vue agrégée V3 : map nodeId → { levelName, compteurs } pour
+  // enrichir l'arbre structurel sans PII (compteurs = snapshots serveur).
+  const v3 = useOrgTreeV3();
+  const v3ById = useMemo(
+    () => new Map<string, TreeNode>((v3.data ?? []).map((n) => [n.id, n])),
+    [v3.data]
+  );
 
   // Ensembles de descendants pré-calculés pour la garde anti-cycle du drag & drop
   // (le backend revalide de toute façon — jamais de confiance aveugle au client).
@@ -222,6 +236,8 @@ export default function OrganizationBrowserPage() {
     const hasChildren = children.length > 0;
     const isSelected = selectedId === node.id;
     const dropForbidden = !!dragId && (dragId === node.id || descendantsOf(dragId).has(node.id));
+    // §6.2 (E) — enrichissement niveau custom + compteurs (map V3, sinon repli type).
+    const tn = v3ById.get(node.id);
 
     return (
       <div key={node.id} role="treeitem" aria-expanded={hasChildren ? isOpen : undefined} aria-selected={isSelected}>
@@ -285,8 +301,15 @@ export default function OrganizationBrowserPage() {
             {node.name}
           </span>
           <span className="text-[10px] uppercase tracking-wide text-gray-400 shrink-0">
-            {t(`organization.type.${node.type}`)}
+            {tn?.levelName ?? t(`organization.type.${node.type}`)}
           </span>
+          {tn && (tn.memberCount != null || tn.churchCount != null || tn.leaderCount != null) && (
+            <span className="flex items-center gap-2 text-[11px] text-gray-400 shrink-0">
+              <span className="inline-flex items-center gap-0.5" title={t('orgV3.agg.members')}><Users className="w-3 h-3" />{tn.memberCount ?? 0}</span>
+              <span className="inline-flex items-center gap-0.5" title={t('orgV3.agg.churches')}><Church className="w-3 h-3" />{tn.churchCount ?? 0}</span>
+              <span className="inline-flex items-center gap-0.5" title={t('orgV3.agg.leaders')}><UserCog className="w-3 h-3" />{tn.leaderCount ?? 0}</span>
+            </span>
+          )}
           {node.status !== 'ACTIVE' && (
             <span className="badge text-[10px] bg-gray-200 dark:bg-gray-700 text-gray-500 shrink-0">
               {node.status}
@@ -362,49 +385,85 @@ export default function OrganizationBrowserPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Arbre */}
         <div className="lg:col-span-2 glass-card p-4 animate-slide-up">
-          <div className="relative mb-4">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="search"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder={t('organization.search')}
-              aria-label={t('organization.search')}
-              className="input pl-9 text-sm"
-            />
+          {/* §6.2 (E) — bascule structurel ↔ agrégé (niveau custom + compteurs). */}
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setView('structural')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                view === 'structural' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'
+              }`}
+            >
+              {t('orgV3.browser.structural')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('aggregated')}
+              className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                view === 'aggregated' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'
+              }`}
+            >
+              {t('orgV3.browser.aggregated')}
+            </button>
           </div>
 
-          {treeQuery.isLoading && (
-            <div className="flex items-center justify-center py-16 text-gray-400">
-              <Loader2 className="w-6 h-6 animate-spin" />
+          {view === 'aggregated' && (
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              <OrgTreeNav
+                nodes={v3.data ?? []}
+                loading={v3.isLoading}
+                onOpen={(n) => setSelectedId(n.id)}
+              />
             </div>
           )}
 
-          {treeQuery.isError && (
-            <div className="text-center py-16">
-              <p className="text-sm text-red-500">{t('organization.loadErr')}</p>
-              <button
-                type="button"
-                onClick={() => treeQuery.refetch()}
-                className="btn btn-secondary btn-sm mt-3"
-              >
-                {t('organization.retry')}
-              </button>
-            </div>
-          )}
+          {view === 'structural' && (
+            <>
+              <div className="relative mb-4">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="search"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder={t('organization.search')}
+                  aria-label={t('organization.search')}
+                  className="input pl-9 text-sm"
+                />
+              </div>
 
-          {!treeQuery.isLoading && tree && !tree.root && (
-            <RootChurchForm
-              canCreate={canCreateRoot}
-              creating={createRootMutation.isPending}
-              onCreate={(payload) => createRootMutation.mutate(payload)}
-            />
-          )}
+              {treeQuery.isLoading && (
+                <div className="flex items-center justify-center py-16 text-gray-400">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              )}
 
-          {tree?.root && (
-            <div role="tree" aria-label={t('organization.title')} className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
-              {renderNode(tree.root, 0)}
-            </div>
+              {treeQuery.isError && (
+                <div className="text-center py-16">
+                  <p className="text-sm text-red-500">{t('organization.loadErr')}</p>
+                  <button
+                    type="button"
+                    onClick={() => treeQuery.refetch()}
+                    className="btn btn-secondary btn-sm mt-3"
+                  >
+                    {t('organization.retry')}
+                  </button>
+                </div>
+              )}
+
+              {!treeQuery.isLoading && tree && !tree.root && (
+                <RootChurchForm
+                  canCreate={canCreateRoot}
+                  creating={createRootMutation.isPending}
+                  onCreate={(payload) => createRootMutation.mutate(payload)}
+                />
+              )}
+
+              {tree?.root && (
+                <div role="tree" aria-label={t('organization.title')} className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
+                  {renderNode(tree.root, 0)}
+                </div>
+              )}
+            </>
           )}
         </div>
 

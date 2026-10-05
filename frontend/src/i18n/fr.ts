@@ -3401,6 +3401,8 @@ const fr = {
   'orgV3.codes.open': "Ouvrir la gestion des codes",
   'orgV3.browser.structural': "Structure",
   'orgV3.browser.aggregated': "Vue agrégée",
+  'orgV3.platform.levels': "niveaux personnalisés",
+  'orgV3.platform.levelsReadOnly': "niveaux personnalisés (lecture seule)",
   'orgV3.modulesScope.tenant': "Tenant (racine)",
   'orgV3.modulesScope.node': "Nœud (campus)",
   'orgV3.modulesScope.pickNode': "Sélectionner un nœud",

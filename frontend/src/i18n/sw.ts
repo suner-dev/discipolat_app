@@ -3505,6 +3505,8 @@ const sw: Record<string, string> = {
   'orgV3.codes.open': "Fungua usimamizi wa misimbo",
   'orgV3.browser.structural': "Muundo",
   'orgV3.browser.aggregated': "Mwono uliounganishwa",
+  'orgV3.platform.levels': "ngazi za kawaida",
+  'orgV3.platform.levelsReadOnly': "ngazi za kawaida (kusoma tu)",
   'orgV3.modulesScope.tenant': "Tenant (mzizi)",
   'orgV3.modulesScope.node': "Nodi (kampasi)",
   'orgV3.modulesScope.pickNode': "Chagua nodi",
