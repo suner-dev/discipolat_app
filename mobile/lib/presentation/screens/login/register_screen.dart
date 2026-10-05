@@ -37,6 +37,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _churchNameController = TextEditingController();
+
+  /// SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — nature de l'organisation
+  /// créée. `CHURCH` par défaut : on ne change pas le comportement historique
+  /// de « Créer une église », on AJOUTE la capacité de créer une dénomination,
+  /// une association, une organisation ou une méga-association.
+  static const List<({String value, String label})> _orgKinds = [
+    (value: 'CHURCH', label: 'Église'),
+    (value: 'DENOMINATION', label: 'Dénomination (réseau d\u2019églises)'),
+    (value: 'ASSOCIATION', label: 'Association'),
+    (value: 'ORGANIZATION', label: 'Organisation'),
+    (value: 'MEGA_ASSOCIATION', label: 'Méga-association'),
+  ];
+  String _orgKind = 'CHURCH';
   final _apiService = ApiService();
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -91,6 +104,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // SPEC_ONBOARDING_FLOWS (MO-1) — deux gestes self-service.
         if (widget.createChurch) 'createChurch': true,
         if (widget.createChurch) 'churchName': _churchNameController.text.trim(),
+        // SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — la NATURE de
+        // l'organisation. Un tenant n'est plus « une église » : c'est une
+        // dénomination, une église, une asso, une orga ou une méga-asso.
+        // Défaut CHURCH = comportement historique.
+        if (widget.createChurch) 'kind': _orgKind,
         if (widget.joinCode != null && widget.joinCode!.isNotEmpty) 'joinCode': widget.joinCode!.trim(),
       });
 
@@ -339,15 +357,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (widget.createChurch) ...[
                               TextFormField(
                                 controller: _churchNameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nom de l\'église',
-                                  prefixIcon: Icon(Icons.church_outlined),
+                                decoration: InputDecoration(
+                                  labelText: _orgKind == 'CHURCH'
+                                      ? 'Nom de l\'église'
+                                      : 'Nom de l\'organisation',
+                                  prefixIcon: const Icon(Icons.church_outlined),
                                 ),
                                 style: const TextStyle(color: Colors.white),
                                 validator: (v) => v == null || v.trim().isEmpty
-                                    ? 'Le nom de l\'église est requis'
+                                    ? 'Le nom est requis'
                                     : null,
                               ),
+                              const SizedBox(height: 16),
+                              // SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) —
+                              // la nature de l'organisation. Une dénomination
+                              // pourra ensuite accueillir ses églises enfants.
+                              DropdownButtonFormField<String>(
+                                initialValue: _orgKind,
+                                dropdownColor: const Color(0xFF1F2937),
+                                style: const TextStyle(color: Colors.white),
+                                decoration: const InputDecoration(
+                                  labelText: 'Type d\'organisation',
+                                  prefixIcon: Icon(Icons.account_tree_outlined),
+                                ),
+                                items: _orgKinds
+                                    .map((k) => DropdownMenuItem<String>(
+                                          value: k.value,
+                                          child: Text(k.label,
+                                              style:
+                                                  const TextStyle(color: Colors.white)),
+                                        ))
+                                    .toList(),
+                                onChanged: (v) => setState(() => _orgKind = v ?? 'CHURCH'),
+                              ),
+                              if (_orgKind != 'CHURCH') ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Vous pourrez créer vos églises enfants depuis '
+                                  'votre espace organisation.',
+                                  style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.6),
+                                      fontSize: 12),
+                                ),
+                              ],
                               const SizedBox(height: 16),
                             ],
                             // Prénom / Nom

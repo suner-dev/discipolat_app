@@ -33,8 +33,15 @@
 ### A. Landing page — 2 CTA + annonces
 
 - **Hero** : deux boutons primaires :
-  - `Créer mon église` → `/register?intent=create-church` (formulaire : nom église + nom/prénom + email + mot de passe + consentements → POST `/auth/register` avec `createChurch=true, churchName=…` → compte actif immédiatement, `TENANT_OWNER`, redirection onboarding tenant).
-  - `Rejoindre une église` → `/join` (saisie code ou slug → lookup public → si trouvé : proposition « créer mon compte membre » (`/register?joinCode=…`) ou « me connecter » (`/login?joinCode=…`) → après connexion, rattachement automatique membership).
+  - `Créer mon église` → `/register?mode=church` (**CONTRAT FIGÉ — le paramètre
+    d'URL est `mode=church`, pas `intent=…`** : c'est ce que lit
+    `RegisterPage.tsx`. Toute divergence casserait le CTA. F4 de l'audit
+    du 04/10/2026.) Le formulaire porte aussi le **type d'organisation**
+    (`kind` : `CHURCH` par défaut, `DENOMINATION`, `ASSOCIATION`,
+    `ORGANIZATION`, `MEGA_ASSOCIATION` — SPEC_ORGANISATION_DENOMINATION_V2 D2),
+    puis POST `/auth/register` avec `createChurch=true, churchName=…, kind=…`
+    → compte actif immédiatement, `TENANT_OWNER`, session réémise.
+  - `Rejoindre une église` → `/join` (saisie code ou slug → lookup public → si trouvé : proposition « créer mon compte membre » (`/register?joinCode=…`) ou « me connecter » (`/login?joinCode=…`) → après connexion, rattachement automatique membership). Si l'utilisateur est **connecté** et que le code appartient à sa **même dénomination**, l'IHM annonce un **TRANSFERT** (pas une nouvelle adhésion).
 - Section **annonces publiques** (carrousel) : `GET /api/v1/public/announcements` (PUBLISHED, non expirées, tri dateEvenement) — carte : titre, église, ville, date, visuel, lien/code d'accès. CTA « J'y suis invité → /join ».
 
 ### B. Console Super Admin isolée

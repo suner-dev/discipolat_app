@@ -47,6 +47,18 @@ export default function TenantOrganizationPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState('');
+  /**
+   * SPEC_ORGANISATION_DENOMINATION_V2 §1.3 / D1 — modèle HYBRIDE.
+   *
+   * <p>`autonomous` : une vraie église-enfant, son propre stock de membres,
+   * ses quotas, sa facturation (mode AUTONOME).
+   * <p>`light` : un simple regroupement interne (campus, quartier, ministère) —
+   * aucun tenant créé, les données restent partagées.
+   *
+   * <p>Avant, le mode était figé à `autonomous` : le mode léger était donc
+   * INATTEIGNABLE depuis l'IHM, alors qu'il fait partie du modèle livré.
+   */
+  const [mode, setMode] = useState<'light' | 'autonomous'>('autonomous');
 
   const { data: current, isLoading } = useQuery<OrgNode & { children?: OrgNode[] }>({
     queryKey: ['tenant', 'organization'],
@@ -63,14 +75,17 @@ export default function TenantOrganizationPage() {
       if (!name.trim()) throw new Error(tText('Donnez un nom à la nouvelle église.'));
       return api.post('/tenant/organization/sub-churches', {
         name: name.trim(),
-        mode: 'autonomous',
+        mode,   // §1.3 : le roi choisit le mode (léger ou autonome)
       });
     },
     onSuccess: () => {
-      setNotice(tText('Église créée. Elle a son propre code d’entrée.'));
+      setNotice(mode === 'light'
+        ? tText('Groupe créé. Il partage les données de votre église.')
+        : tText('Église créée. Elle a son propre code d’entrée.'));
       setError('');
       setFormOpen(false);
       setName('');
+      setMode('autonomous');
       queryClient.invalidateQueries({ queryKey: ['tenant', 'organization'] });
     },
     onError: (err) => setError(getErrorMessage(err)),
@@ -145,6 +160,32 @@ export default function TenantOrganizationPage() {
               className="mt-1 w-full rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
             />
           </label>
+
+          {/* SPEC_ORGANISATION_DENOMINATION_V2 §1.3 — le mode HYBRIDE se
+              choisit ici. `light` = simple regroupement (données partagées,
+              aucun nouveau tenant) ; `autonomous` = vraie église-enfant. */}
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-medium text-gray-600 dark:text-gray-300">
+              {tText('Type de sous-organisation')}
+            </legend>
+            {([['light', tText('Groupe (campus, quartier, ministère) — données partagées')],
+              ['autonomous', tText('Église autonome — ses propres membres et sa factribution')]] as const).map(
+              ([value, label]) => (
+                <label key={value} className="flex items-start gap-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="sub-church-mode"
+                    value={value}
+                    checked={mode === value}
+                    onChange={() => setMode(value)}
+                    className="mt-1"
+                  />
+                  <span className="text-gray-700 dark:text-gray-200">{label}</span>
+                </label>
+              ),
+            )}
+          </fieldset>
+
           <button
             type="button"
             onClick={() => createMutation.mutate()}

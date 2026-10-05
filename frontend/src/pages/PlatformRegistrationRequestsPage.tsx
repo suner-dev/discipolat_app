@@ -43,17 +43,34 @@ export default function PlatformRegistrationRequestsPage() {
     void load();
   }, [load]);
 
-  const decide = async (id: string, action: 'approve' | 'reject') => {
-    const reason = window.prompt(action === 'approve' ? 'Motif facultatif' : 'Motif du refus') ?? '';
+  /**
+   * F3 (console plateforme) — la décision ne passe plus par `window.prompt` :
+   * une modale in-app à champ contrôlé. Le refus EXIGE un motif (il est
+   * communiqué à la demandeuse et journalisé) ; l'approbation l'accepte.
+   */
+  const [deciding, setDeciding] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
+  const [decideReason, setDecideReason] = useState('');
+
+  const decide = async (id: string, action: 'approve' | 'reject', reason: string) => {
     setLoading(true);
     try {
       await api.post(`/platform/admin/registration-requests/${id}/${action}`, { reason });
+      setDeciding(null);
+      setDecideReason('');
       await load();
     } catch {
       setError('La décision n\'a pas pu être enregistrée.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const confirmDecision = () => {
+    if (!deciding) return;
+    const reason = decideReason.trim();
+    // Refus sans motif = refus impossible : le demandeur doit savoir pourquoi.
+    if (deciding.action === 'reject' && !reason) return;
+    void decide(deciding.id, deciding.action, reason);
   };
 
   return (
@@ -79,8 +96,8 @@ export default function PlatformRegistrationRequestsPage() {
                   <p className="mt-1 font-mono text-xs text-slate-400">{request.slug} · {new Date(request.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm text-white disabled:opacity-50" onClick={() => void decide(request.id, 'approve')} disabled={loading}><Check className="mr-1 h-4 w-4" />Approuver</button>
-                  <button type="button" className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 disabled:opacity-50" onClick={() => void decide(request.id, 'reject')} disabled={loading}><X className="mr-1 h-4 w-4" />Refuser</button>
+                  <button type="button" className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm text-white disabled:opacity-50" onClick={() => { setDecideReason(''); setDeciding({ id: request.id, action: 'approve' }); }} disabled={loading}><Check className="mr-1 h-4 w-4" />Approuver</button>
+                  <button type="button" className="inline-flex items-center rounded-md border border-red-200 px-3 py-2 text-sm text-red-700 disabled:opacity-50" onClick={() => { setDecideReason(''); setDeciding({ id: request.id, action: 'reject' }); }} disabled={loading}><X className="mr-1 h-4 w-4" />Refuser</button>
                 </div>
               </div>
             ))}
@@ -94,6 +111,49 @@ export default function PlatformRegistrationRequestsPage() {
           </div>
         ) : <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">Aucune demande en attente.</div>}
       </div>
+
+      {/* ---- Modale de décision (F3 : zéro window.prompt) ---- */}
+      {deciding && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">
+              {deciding.action === 'approve' ? 'Approuver la demande' : 'Refuser la demande'}
+            </h2>
+            <label className="block text-sm font-medium text-slate-700">
+              {deciding.action === 'approve' ? 'Motif (facultatif)' : 'Motif du refus (obligatoire)'}
+            </label>
+            <textarea
+              value={decideReason}
+              onChange={(e) => setDecideReason(e.target.value)}
+              rows={3}
+              autoFocus
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+            {deciding.action === 'reject' && (
+              <p className="text-xs text-slate-500">Le motif est obligatoire : il est communiqué à la demandeuse.</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setDeciding(null); setDecideReason(''); }}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDecision}
+                disabled={loading || (deciding.action === 'reject' && !decideReason.trim())}
+                className={`rounded-md px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                  deciding.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'
+                }`}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : deciding.action === 'approve' ? 'Approuver' : 'Refuser'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

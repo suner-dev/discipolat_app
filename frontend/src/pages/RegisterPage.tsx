@@ -68,6 +68,14 @@ export default function RegisterPage() {
   const [churchResult, setChurchResult] = useState<{ name: string; slug: string; joinCode: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  /**
+   * SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — NATURE de l'organisation
+   * créée. `CHURCH` par défaut : on ne change pas le comportement historique,
+   * on AJOUTE la capacité de créer une dénomination / asso / orga /
+   * méga-association.
+   */
+  const [orgKind, setOrgKind] = useState('CHURCH');
+
   /** SPEC_ONBOARDING_FLOWS §4.1 — URL d'invitation canonique (vanity link). */
   const inviteUrl = (slug: string) => `${window.location.origin}/j/${slug}`;
 
@@ -126,6 +134,9 @@ export default function RegisterPage() {
         tenantSlug,
         createChurch: createChurch || undefined,
         churchName: createChurch ? data.churchName?.trim() : undefined,
+        // SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — nature de
+        // l'organisation. Envoyée seulement en mode création.
+        kind: createChurch ? orgKind : undefined,
         joinCode: joinCode || undefined,
         consentCgu: data.consentCgu,
         consentPrivacy: data.consentPrivacy,
@@ -312,7 +323,7 @@ export default function RegisterPage() {
         {createChurch && (
           <div>
             <label htmlFor="churchName" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">
-              {tText("Nom de l'église")}
+              {tText(orgKind === 'CHURCH' ? "Nom de l'église" : "Nom de l'organisation")}
             </label>
             <input
               id="churchName"
@@ -320,9 +331,40 @@ export default function RegisterPage() {
               autoComplete="organization"
               className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400
                          px-4 py-3 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
-              placeholder={tText('Église Bethel')}
+              placeholder={tText(orgKind === 'CHURCH' ? 'Église Bethel' : 'Dénomination Bethel')}
               {...register('churchName')}
             />
+          </div>
+        )}
+
+        {/* SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — la NATURE de
+            l'organisation. Un tenant n'est plus « une église » : c'est une
+            dénomination, une église, une association, une organisation ou une
+            méga-association. CHURCH reste le défaut (comportement historique). */}
+        {createChurch && (
+          <div>
+            <label htmlFor="orgKind" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">
+              {tText("Type d'organisation")}
+            </label>
+            <select
+              id="orgKind"
+              value={orgKind}
+              onChange={(e) => setOrgKind(e.target.value)}
+              className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10
+                         text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none
+                         focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
+            >
+              <option value="CHURCH">{tText('Église')}</option>
+              <option value="DENOMINATION">{tText("Dénomination (réseau d'églises)")}</option>
+              <option value="ASSOCIATION">{tText('Association')}</option>
+              <option value="ORGANIZATION">{tText('Organisation')}</option>
+              <option value="MEGA_ASSOCIATION">{tText('Méga-association')}</option>
+            </select>
+            {orgKind !== 'CHURCH' && (
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {tText("Vous pourrez créer vos églises enfants depuis votre espace organisation.")}
+              </p>
+            )}
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">

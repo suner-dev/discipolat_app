@@ -98,12 +98,29 @@ public class SelfServiceChurchService {
     @Transactional
     public ChurchCreation createChurch(String email, String rawPassword, String firstName, String lastName,
                                        String phone, String churchName, String plan, String country) {
+        return createChurch(email, rawPassword, firstName, lastName, phone, churchName, plan, country, null);
+    }
+
+    /**
+     * SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — variante acceptant la
+     * NATURE de l'organisation. `kind` nul ou vide = {@code CHURCH}, ce qui
+     * préserve exactement le comportement historique.
+     *
+     * @param kindRaw nature demandée ; valeur invalide = refus explicite
+     *                (fail-closed) plutôt qu'un silence qui laisserait croire
+     *                à une création réussie dans une catégorie inconnue.
+     */
+    @Transactional
+    public ChurchCreation createChurch(String email, String rawPassword, String firstName, String lastName,
+                                       String phone, String churchName, String plan, String country,
+                                       String kindRaw) {
         if (email == null || email.isBlank() || rawPassword == null || rawPassword.isBlank()) {
             throw new BusinessRuleException("Email et mot de passe sont requis", "NAME_REQUIRED");
         }
         if (churchName == null || churchName.isBlank()) {
             throw new BusinessRuleException("Le nom de l'église est requis", "CHURCH_NAME_REQUIRED");
         }
+        TenantKind kind = parseKind(kindRaw);
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw new BusinessRuleException("Email already exists: " + normalizedEmail);
@@ -116,6 +133,17 @@ public class SelfServiceChurchService {
         TenantResponse tenant = tenantService.create(new CreateTenantRequest(
                 name, slug, plan, country, null, null, null, null, null, null));
         final UUID tenantId = tenant.id();
+
+        // T-M3 (D2) — la nature demandée est posée sur l'organisation. La
+        // hiérarchie (parent/racine) reste neutre : une organisation isolée est
+        // sa propre racine (cf. Tenant.effectiveRootTenantId()), et une
+        // dénomination greeting ses enfants via TenantOrganizationService.
+        if (kind != TenantKind.CHURCH) {
+            tenantRepository.findById(tenantId).ifPresent(t -> {
+                t.setKind(kind);
+                tenantRepository.save(t);
+            });
+        }
 
         // 2) Fondateur = compte ACTIVE, rôle legacy ADMIN (l'éditeur moderne
         //    TENANT_OWNER est posé par le membership ci-dessous).
@@ -202,6 +230,29 @@ public class SelfServiceChurchService {
         } catch (RuntimeException failure) {
             log.warn("Email de bienvenue non envoyé pour {}: {}", founder.getEmail(), failure.getMessage());
         }
+    }
+
+    /**
+     * SPEC_ORGANISATION_DENOMINATION_V2 (D2) — analyse fail-closed de la
+     * nature d'organisation demandée.
+     *
+     * <p>Valeur nulle/vide = {@code CHURCH} (comportement historique). Valeur
+     * inconnue = refus explicite : mieux vaut un message d'erreur clair qu'une
+     * création silencieuse dans une catégorie que personne ne pourra ensuite
+     * identifier dans la console.
+     */
+    private TenantKind parseKind(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return TenantKind.CHURCH;
+        }
+        String value = raw.trim().toUpperCase(Locale.ROOT);
+        for (TenantKind candidate : TenantKind.values()) {
+            if (candidate.name().equals(value)) {
+                return candidate;
+            }
+        }
+        throw new BusinessRuleException(
+                "Type d'organisation non reconnu : " + raw, "ORG_KIND_INVALID");
     }
 
     /** Slug dérivé du nom, débarrassé des accents, unique (suffixe numérique si collision). */

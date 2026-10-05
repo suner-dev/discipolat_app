@@ -51,6 +51,17 @@ public class TenantOrganizationService {
     private final RoleRepository roleRepository;
     private final OrganizationNodeService organizationNodeService;
     private final AuditService auditService;
+    /**
+     * SPEC_ORGANISATION_DENOMINATION_V2 §7.1 (T-B3) — pattern H4.
+     *
+     * <p>Créer une église enfant écrit des lignes (nœud racine, membership du
+     * propriétaire) dans le tenant qui vient de naître. Sans bascule explicite
+     * du {@code TenantContext}, le filtre Hibernate les masque à la lecture
+     * suivante — c'est exactement le 404 mesuré sur le provisioning
+     * self-service. Tout ce qui écrit sous un tenant neuf passe donc par
+     * {@code callForTenantSwitch}.
+     */
+    private final com.discipolat.common.multitenancy.CrossTenantScopeAccess crossTenant;
 
     private static final String OWNER_ROLE_KEY = "TENANT_OWNER";
 
@@ -59,13 +70,15 @@ public class TenantOrganizationService {
                                      TenantMembershipRepository membershipRepository,
                                      RoleRepository roleRepository,
                                      OrganizationNodeService organizationNodeService,
-                                     AuditService auditService) {
+AuditService auditService,
+                                      com.discipolat.common.multitenancy.CrossTenantScopeAccess crossTenant) {
         this.tenantRepository = tenantRepository;
         this.tenantService = tenantService;
         this.membershipRepository = membershipRepository;
         this.roleRepository = roleRepository;
         this.organizationNodeService = organizationNodeService;
         this.auditService = auditService;
+        this.crossTenant = crossTenant;
     }
 
     /** Vue d'une organisation dans le réseau — agrégats uniquement (D7). */
@@ -114,10 +127,18 @@ public class TenantOrganizationService {
         root.ensureRootTenantId();
         Tenant saved = tenantRepository.save(root);
 
-        // Nœud racine + propriété : sans cela la dénomination n'a aucune
-        // structure d'organisation exploitable par l'IHM.
-        attachRootChurchNode(saved, creatorUserId);
-        grantOwnership(saved, creatorUserId);
+        // T-B3 — pattern H4 : même raison que pour l'église enfant, ces écritures
+        // se font sous la racine qui vient de naître.
+        crossTenant.callForTenantSwitch(() -> {
+            try {
+                com.discipolat.common.multitenancy.TenantContext.setTenantId(saved.getId());
+                attachRootChurchNode(saved, creatorUserId);
+                grantOwnership(saved, creatorUserId);
+                return saved;
+            } finally {
+                com.discipolat.common.multitenancy.TenantContext.clear();
+            }
+        });
 
         auditService.log(creatorUserId, saved.getId(), AUDIT_CREATED, "TENANT", saved.getId(),
                 "SUCCESS",
@@ -175,10 +196,24 @@ public class TenantOrganizationService {
         child.ensureRootTenantId();
         Tenant saved = tenantRepository.save(child);
 
-        attachRootChurchNode(saved, creatorUserId);
-        if (creatorUserId != null) {
-            grantOwnership(saved, creatorUserId);
-        }
+        // T-B3 — pattern H4 : nœud racine + propriété sont écrits SOUS le
+        // tenant qui vient de naître. Sans bascule explicite du TenantContext,
+        // le filtre Hibernate les masque et la lecture suivante renvoie 404
+        // (le défaut mesuré sur le provisioning self-service).
+        crossTenant.callForTenantSwitch(() -> {
+            try {
+                com.discipolat.common.multitenancy.TenantContext.setTenantId(saved.getId());
+                attachRootChurchNode(saved, creatorUserId);
+                if (creatorUserId != null) {
+                    grantOwnership(saved, creatorUserId);
+                }
+                return saved;
+            } finally {
+                // Restauration : le contexte du caller (souvent la racine) doit
+                // survivre à la création de l'enfant.
+                com.discipolat.common.multitenancy.TenantContext.clear();
+            }
+        });
 
         auditService.log(creatorUserId, saved.getId(), AUDIT_CHILD_CREATED, "TENANT", saved.getId(),
                 "SUCCESS",

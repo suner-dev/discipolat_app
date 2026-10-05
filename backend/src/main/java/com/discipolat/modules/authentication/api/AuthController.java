@@ -142,13 +142,20 @@ public class AuthController {
             com.discipolat.modules.tenants.domain.SelfServiceChurchService.ChurchCreation creation =
                     selfServiceChurchService.createChurch(request.email(), request.password(),
                             request.firstName(), request.lastName(), request.phone(),
-                            request.churchName(), request.plan(), null);
+                            request.churchName(), request.plan(), null,
+                            // SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) —
+                            // nature de l'organisation (dénominination, église,
+                            // asso, orga, méga-asso). Null = CHURCH.
+                            request.kind());
             AuthResponse session = toAuthResponse(authService.issueSession(creation.founder()));
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "session", session,
                     "church", Map.of(
                             "name", creation.tenant().name(),
                             "slug", creation.tenant().slug(),
+                            "kind", creation.tenant().kind() == null
+                                    ? com.discipolat.modules.tenants.domain.TenantKind.CHURCH.name()
+                                    : creation.tenant().kind().name(),
                             "joinCode", creation.joinCode() == null ? "" : creation.joinCode())
             ));
         }

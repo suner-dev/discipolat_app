@@ -281,17 +281,36 @@ export default function AdminTenantsPage() {
 
   // PORT Develop1 (§G1.9) — impersonation depuis la fiche tenant : motif
   // obligatoire, la demande est journalisee cote serveur.
+  //
+  // F3 (console plateforme) : plus de `window.prompt`. Une impersonation est
+  // l'acte le plus sensible de la console (D7 — c'est LA voie par laquelle un
+  // Super Admin accède à des données d'église). Deux champs contrôlés, les
+  // DEUX obligatoires, et une confirmation explicite : on ne veut ni une
+  // boîte de dialogue système, ni un clic accidentel.
+  const [impersonating, setImpersonating] = useState<Tenant | null>(null);
+  const [impersonationEmail, setImpersonationEmail] = useState('');
+  const [impersonationReason, setImpersonationReason] = useState('');
+
+  const openImpersonation = (tenant: Tenant) => {
+    setImpersonating(tenant);
+    setImpersonationEmail('');
+    setImpersonationReason('');
+  };
+
   const impersonateTenant = async (tenant: Tenant) => {
-    const email = window.prompt(
-      tText('Email du membre à impersoner dans {name}').replace('{name}', tenant.name),
-    );
-    if (!email || !email.trim()) return;
-    const reason = window.prompt(tText("Motif de l'impersonation (obligatoire, journalisé) :"));
-    if (!reason || !reason.trim()) {
-      toast.error(tText('Un motif est requis pour impersoner'));
+    const email = impersonationEmail.trim();
+    const reason = impersonationReason.trim();
+    if (!email || !reason) {
+      toast.error(tText('Un email et un motif sont requis pour impersoner'));
       return;
     }
-    await startImpersonation?.(email.trim(), reason.trim(), tenant.id);
+    // `startImpersonation` renvoie `void` : les erreurs sont déjà remontées par
+    // le contexte. On ferme donc la modale après l'appel — le serveur reste
+    // la source de vérité (motif obligatoire, journalisation côté serveur).
+    await startImpersonation?.(email, reason, tenant.id);
+    setImpersonating(null);
+    setImpersonationEmail('');
+    setImpersonationReason('');
   };
 
   const saveMutation = useMutation({
@@ -859,7 +878,7 @@ export default function AdminTenantsPage() {
                   <button
                     type="button"
                     className="btn-secondary btn-sm mt-2 text-violet-600"
-                    onClick={() => impersonateTenant(detailTenant)}
+                    onClick={() => openImpersonation(detailTenant)}
                   >
                     {tText('Impersoner un membre')}
                   </button>
@@ -889,6 +908,56 @@ export default function AdminTenantsPage() {
                 onClick={() => { setDetailTenant(null); openEdit(detailTenant); }}
               >
                 <Pencil className="w-3.5 h-3.5" /> Modifier
+              </button>
+            </div>
+          </div>
+        </div>
+)}
+
+      {/* ---- Modale d'impersonation (F3 : zéro window.prompt, D7) ---- */}
+      {impersonating && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Impersonation</h2>
+            <p className="text-sm text-slate-600">
+              Vous allez vous connecter en tant que membre de{' '}
+              <span className="font-medium">{impersonating.name}</span>. Cette action est
+              journalisée côté serveur.
+            </p>
+            <label className="block text-sm font-medium text-slate-700">
+              Email du membre à impersoner
+            </label>
+            <input
+              type="email"
+              value={impersonationEmail}
+              onChange={(e) => setImpersonationEmail(e.target.value)}
+              autoFocus
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+            <label className="block text-sm font-medium text-slate-700">
+              Motif de l&apos;impersonation (obligatoire, journalisé)
+            </label>
+            <textarea
+              value={impersonationReason}
+              onChange={(e) => setImpersonationReason(e.target.value)}
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setImpersonating(null); setImpersonationEmail(''); setImpersonationReason(''); }}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => void impersonateTenant(impersonating)}
+                disabled={!impersonationEmail.trim() || !impersonationReason.trim()}
+                className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 hover:bg-slate-800"
+              >
+                Impersonner
               </button>
             </div>
           </div>

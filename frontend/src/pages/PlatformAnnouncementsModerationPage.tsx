@@ -28,6 +28,14 @@ export default function PlatformAnnouncementsModerationPage() {
   const [status, setStatus] = useState('PENDING_MODERATION');
   const [error, setError] = useState('');
 
+  /**
+   * F3 (console plateforme) — le motif de rejet ne passe plus par
+   * `window.prompt` : une modale in-app, champs contrôlés, motif
+   * obligatoire (c'est la trace d'audit et le texte renvoyé à l'église).
+   */
+  const [rejecting, setRejecting] = useState<QueueItem | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
+
   const { data: items, isLoading } = useQuery<QueueItem[]>({
     queryKey: ['platform', 'announcements', status],
     queryFn: async () => (await api.get('/platform/announcements', { params: status ? { status } : {} })).data,
@@ -42,13 +50,22 @@ export default function PlatformAnnouncementsModerationPage() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const note = window.prompt(tText('Motif du rejet (communiqué à l’église)')) ?? '';
-      return api.post(`/platform/announcements/${id}/reject`, { note });
-    },
-    onSuccess: () => { setError(''); refresh(); },
+    mutationFn: async ({ id, note }: { id: string; note: string }) =>
+      api.post(`/platform/announcements/${id}/reject`, { note }),
+    onSuccess: () => { setError(''); setRejecting(null); setRejectNote(''); refresh(); },
     onError: (err) => setError(getErrorMessage(err)),
   });
+
+  const openReject = (item: QueueItem) => {
+    setRejecting(item);
+    setRejectNote('');
+  };
+
+  const confirmReject = () => {
+    const note = rejectNote.trim();
+    if (!rejecting || !note) return;   // motif obligatoire
+    rejectMutation.mutate({ id: rejecting.id, note });
+  };
 
   return (
     <main className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -98,7 +115,7 @@ export default function PlatformAnnouncementsModerationPage() {
                     className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
                     <Check className="h-3.5 w-3.5" /> {tText('Publier')}
                   </button>
-                  <button type="button" onClick={() => rejectMutation.mutate(a.id)} disabled={rejectMutation.isPending}
+                  <button type="button" onClick={() => openReject(a)} disabled={rejectMutation.isPending}
                     className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-500/10 disabled:opacity-50">
                     <X className="h-3.5 w-3.5" /> {tText('Rejeter')}
                   </button>
@@ -108,6 +125,50 @@ export default function PlatformAnnouncementsModerationPage() {
           </div>
         )}
       </section>
+
+      {/* ---- Modale de rejet (F3 : zéro window.prompt) ---- */}
+      {rejecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 p-5 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              {tText('Rejeter l’annonce')}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {rejecting.title}
+            </p>
+            <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">
+              {tText('Motif du rejet (communiqué à l’église)')}
+            </label>
+            <textarea
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              rows={3}
+              autoFocus
+              className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10
+                         text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none
+                         focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20"
+            />
+            <p className="text-xs text-gray-400">{tText('Le motif est obligatoire.')}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setRejecting(null); setRejectNote(''); }}
+                className="rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                {tText('Annuler')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmReject}
+                disabled={rejectMutation.isPending || !rejectNote.trim()}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {rejectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : tText('Rejeter')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

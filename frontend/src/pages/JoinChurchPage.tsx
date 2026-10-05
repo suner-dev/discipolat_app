@@ -24,6 +24,20 @@ type LookupResult = {
   reason?: string;
 };
 
+/**
+ * Réponse de `GET /tenant/transfer/preview` — permet de savoir, AVANT de
+ * join, si l'utilisateur va faire un TRANSFERT (même dénomination) ou une
+ * simple adhésion. SPEC_ORGANISATION_DENOMINATION_V2 §4.4.
+ */
+type TransferPreview = {
+  sameNetwork?: boolean;
+  alreadyMember?: boolean;
+  willTransfer?: boolean;
+  fromChurch?: string;
+  toChurch?: string;
+  toKind?: string;
+};
+
 /** Réponse de `POST /tenant/join` — les jetons sont réémis par le backend (T-B0bis). */
 type JoinResponse = {
   status: string;
@@ -53,6 +67,33 @@ export default function JoinChurchPage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState<'JOINED' | 'PENDING_APPROVAL' | null>(null);
+
+  /**
+   * SPEC_ORGANISATION_DENOMINATION_V2 §4.4 (T-W6) — quand l'utilisateur est
+   * CONNECTÉ et saisit le code d'une église de sa MÊME dénomination, il ne
+   * s'agit pas d'une adhésion mais d'un TRANSFERT : son identité est déjà
+   * connue, son parcours pastoral est conservé. L'UI doit le dire, sinon on
+   * lui fait croire qu'il va créer une nouvelle appartenance.
+   */
+  const [transfer, setTransfer] = useState<TransferPreview | null>(null);
+
+  /** Interroge le backend : ce code déclenche-t-il un transfert ? */
+  const detectTransfer = async (value: string) => {
+    if (!isAuthenticated || !value.trim()) {
+      setTransfer(null);
+      return;
+    }
+    try {
+      const { data } = await api.get<TransferPreview>('/tenant/transfer/preview', {
+        params: { code: value.trim() },
+      });
+      setTransfer(data ?? null);
+    } catch {
+      // Preview best-effort : un échec ne doit jamais empêcher de rejoindre
+      // (le POST /tenant/join reste la source de vérité).
+      setTransfer(null);
+    }
+  };
 
   const resolveSlug = async () => {
     if (!slug) return;
@@ -104,6 +145,8 @@ export default function JoinChurchPage() {
           setError(tText('Aucune église ne correspond à ce code.'));
         }
       }
+      // Même dénomination ? On le demande au backend (transfert vs adhésion).
+      void detectTransfer(value);
     } catch (err) {
       // 429 : message dédié, sinon on afficherait « aucune église ne correspond »
       // alors que le code est peut-être valide — Trompeur et frustrant.
@@ -230,6 +273,22 @@ export default function JoinChurchPage() {
                 {tText('Cette église valide chaque demande d’adhésion avant l’entrée.')}
               </p>
             )}
+            {/* SPEC_ORGANISATION_DENOMINATION_V2 §4.4 (T-W6) — bandeau « transfert ».
+                Un membre de la même dénomination qui saisit le code d'une
+                autre église de son réseau ne crée PAS de nouveau compte :
+                son identité et son parcours pastoral sont conservés. */}
+            {transfer?.willTransfer && (
+              <div className="rounded-xl border border-blue-500/25 bg-blue-500/10 px-4 py-3 space-y-1">
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                  {tText('Vous êtes déjà membre de cette dénomination')}
+                </p>
+                <p className="text-xs text-blue-700/80 dark:text-blue-200/80">
+                  {transfer.fromChurch
+                    ? `${tText('Vous transférez de')} ${transfer.fromChurch} ${tText('vers')} ${lookup?.churchName ?? ''}. ${tText('Votre parcours est conservé.')}`
+                    : tText('Votre identité et votre parcours pastoral sont conservés.')}
+                </p>
+              </div>
+            )}
             {isAuthenticated ? (
               <button
                 type="button"
@@ -239,7 +298,7 @@ export default function JoinChurchPage() {
                            disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                {tText('Rejoindre maintenant')}
+                {transfer?.willTransfer ? tText('Confirmer le transfert') : tText('Rejoindre maintenant')}
               </button>
             ) : (
               <div className="space-y-2">

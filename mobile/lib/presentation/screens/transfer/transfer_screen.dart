@@ -19,8 +19,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app.dart';
 import '../../../data/models/transfer_models.dart';
 import '../../../data/services/api_service.dart';
-import '../widgets/glass_theme.dart';
-import '../widgets/secure_screen.dart';
+import '../../widgets/glass_theme.dart';
+import '../../widgets/secure_screen.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});

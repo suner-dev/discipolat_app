@@ -66,6 +66,19 @@ public record RegisterRequest(
         Boolean createChurch,
 
         /** Nom de l'église à créer (obligatoire quand {@code createChurch}). */
-        String churchName
+        String churchName,
+
+        /**
+         * SPEC_ORGANISATION_DENOMINATION_V2 (T-M3, D2) — NATURE de
+         * l'organisation créée. Un tenant n'est plus « une église » : c'est
+         * une dénomination, une église, une association, une organisation ou
+         * une méga-association.
+         *
+         * <p>{@code null} = {@code CHURCH} (comportement historique). La
+         * validation de la valeur est faite côté service (fail-closed) : un
+         * client ne doit pas pouvoir créer une organisation de nature
+         * arbitraire.
+         */
+        String kind
 ) {
 }

@@ -123,8 +123,55 @@ class TenantOrganizationServiceTest {
 
         service = new TenantOrganizationService(
                 tenantRepository, tenantService, membershipRepository, roleRepository,
-                new NoopOrganizationNodeService(), auditService);
+                new NoopOrganizationNodeService(), auditService,
+                // T-B3 : la création bascule désormais sur le tenant qui naît
+                // (pattern H4). On délègue au vrai composant pour que le
+                // contexte soit réellement restauré, et on instrumente le
+                // nombre d'appels pour prouver que la bascule a lieu.
+                crossTenant);
     }
+
+    @Test
+    @DisplayName("La création d'une église enfant BASCULE sur le tenant qui naît (H4)")
+    void createChildChurch_basculeSurLeNouveauTenant() {
+        UUID ownerId = UUID.randomUUID();
+        Tenant root = Tenant.builder()
+                .id(UUID.randomUUID())
+                .name("Reseau")
+                .slug("reseau")
+                .status(TenantStatus.ACTIVE)
+                .plan("free")
+                .kind(TenantKind.DENOMINATION)
+                .rootTenantId(null)
+                .build();
+        root.setRootTenantId(root.getId());
+        persisted.put(root.getId(), root);
+
+        service.createChildChurch(root.getId(), "Eglise Enfant", ownerId, null);
+
+        assertEquals(1, crossTenantCalls.get(),
+                "la création DOIT passer par callForTenantSwitch (sinon le filtre "
+                        + "Hibernate masque le nœud et la propriété)");
+    }
+
+    /** Compte les basculements — le but du test est qu'elles AIENT lieu. */
+    private final java.util.concurrent.atomic.AtomicInteger crossTenantCalls =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    /**
+     * T-B3 : on fournit un composant qui EXÉCUTE réellement l'opération (comme
+     * le vrai {@code CrossTenantScopeAccess}) tout en comptant les appels. Un
+     * mock « qui ne fait rien » ferait passer le test sans prouver que la
+     * bascule a eu lieu — ce serait un test creux.
+     */
+    private final com.discipolat.common.multitenancy.CrossTenantScopeAccess crossTenant =
+            new com.discipolat.common.multitenancy.CrossTenantScopeAccess() {
+                @Override
+                public <T> T callForTenantSwitch(java.util.function.Supplier<T> operation) {
+                    crossTenantCalls.incrementAndGet();
+                    return operation.get();
+                }
+            };
 
     /** Faux qui n'enregistre que les actions d'audit — sans dépendance Mockito. */
     private static final class RecordingAuditService extends AuditService {
