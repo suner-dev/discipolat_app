@@ -25,6 +25,7 @@ public class AuthorizationService {
     private final PermissionRepository permissionRepository;
     private final OrganizationNodeRepository orgNodeRepository;
     private final UserRepository userRepository;
+    private final MemberRoleAssignmentRepository assignmentRepository;
 
     private static final Set<String> TENANT_ADMIN_ROLE_KEYS = Set.of(
             "ADMIN", "PASTEUR", "TENANT_OWNER", "TENANT_ADMIN"
@@ -73,7 +74,69 @@ public class AuthorizationService {
             }
         }
 
+        // SPEC_ORGANISATION_MODULABLE_V3 §C / T-B12 — affiliation multi-nœuds.
+        // Une permission est AUSSI accordée si le membre porte un rôle-capacité
+        // la contenant sur le nœud cible OU un ancêtre de celui-ci (descendance
+        // par path). Purement ADDITIVE : découplée de l'appartenance, et sans
+        // jamais dépendre d'un intitulé (V3-B). La capacité = `role.permissions`.
+        if (hasAssignmentPermission(userId, tenantId, permissionKey, scopeId)) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * V3 §C — le membre porte-t-il, via une {@link MemberRoleAssignment} ACTIVE,
+     * un rôle contenant {@code permissionKey} et couvrant le nœud {@code scopeId}
+     * (assignation de portée tenant, ou posée sur le nœud / un ancêtre) ?
+     */
+    private boolean hasAssignmentPermission(UUID userId, UUID tenantId, String permissionKey, UUID scopeId) {
+        List<MemberRoleAssignment> active = assignmentRepository.findByTenantIdAndUserIdAndStatus(
+                tenantId, userId, MemberRoleAssignment.AssignmentStatus.ACTIVE);
+        if (active.isEmpty()) {
+            return false;
+        }
+        String targetPath = scopeId == null ? null : orgNodeRepository.findById(scopeId)
+                .filter(n -> n.getTenantId().equals(tenantId))
+                .map(OrganizationNode::getPath).orElse(null);
+        // scopeId fourni mais inconnu/étranger au tenant → aucune couverture nœud.
+        if (scopeId != null && targetPath == null) {
+            return false;
+        }
+        for (MemberRoleAssignment a : active) {
+            if (!coversScopePath(a.getNodeId(), targetPath, tenantId)) {
+                continue;
+            }
+            Set<String> perms = permissionRepository.findByRoleId(a.getRoleId()).stream()
+                    .map(Permission::getKey).collect(Collectors.toSet());
+            if (perms.stream().anyMatch(p -> p.equalsIgnoreCase(permissionKey))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Une assignation couvre la cible si elle est de portée tenant
+     * ({@code nodeId == null}) ou posée sur un ancêtre (ou le nœud lui-même)
+     * de {@code targetPath}. Sans cible nœud ({@code targetPath == null}),
+     * seules les assignations tenant comptent.
+     */
+    private boolean coversScopePath(UUID assignmentNodeId, String targetPath, UUID tenantId) {
+        if (assignmentNodeId == null) {
+            return true; // portée tenant : couvre tout le tenant
+        }
+        if (targetPath == null) {
+            return false;
+        }
+        String ancestorPath = orgNodeRepository.findById(assignmentNodeId)
+                .filter(n -> n.getTenantId().equals(tenantId))
+                .map(OrganizationNode::getPath).orElse(null);
+        if (ancestorPath == null) {
+            return false;
+        }
+        return targetPath.equals(ancestorPath) || targetPath.startsWith(ancestorPath + ".");
     }
 
     /**

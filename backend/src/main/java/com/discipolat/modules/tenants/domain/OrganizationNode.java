@@ -15,6 +15,7 @@ import java.util.UUID;
         @Index(name = "idx_org_node_parent", columnList = "parent_id"),
         @Index(name = "idx_org_node_type", columnList = "type"),
         @Index(name = "idx_org_node_path", columnList = "path"),
+        @Index(name = "idx_org_node_level", columnList = "level_id"),
         @Index(name = "idx_org_node_tenant_type", columnList = "tenant_id, type")
 })
 @Getter
@@ -82,6 +83,15 @@ public class OrganizationNode {
     @Column(name = "color", length = 7)
     private String color;
 
+    /**
+     * SPEC_ORGANISATION_MODULABLE_V3 §A — niveau custom de la dénomination
+     * (référentiel {@code organization_levels}). {@code null} = repli sur le
+     * {@link #type} sémantique (rétrocompat). Le {@code type} reste la source de
+     * la logique transverse ; {@code levelId} n'apporte que libellé/ordre/parenté.
+     */
+    @Column(name = "level_id")
+    private UUID levelId;
+
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;
@@ -106,6 +116,15 @@ public class OrganizationNode {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "resolved_config_json", columnDefinition = "jsonb")
     private String resolvedConfigJson;
+
+    /**
+     * SPEC_ORGANISATION_MODULABLE_V3 §D — override de THÈME local pour ce
+     * nœud (subset de {@code TenantSettings} : couleurs, polices, logo…).
+     * {@code null} = indépendant (V3-D) : on n'hérite pas forcement du parent.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "theme_json", columnDefinition = "jsonb")
+    private String themeJson;
 
     public enum ConfigSource {
         DEFAULT, INHERITED, OVERRIDDEN

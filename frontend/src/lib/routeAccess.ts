@@ -86,6 +86,11 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tenant/ownership': ['ADMIN', 'PASTEUR'],
   // T-W5 : réseau d'une dénomination (§1.3) — organigramme racine + enfants.
   '/tenant/organization': ['ADMIN', 'PASTEUR'],
+  // SPEC_ORGANISATION_MODULABLE_V3 §6 / T-W15 — écrans « modulable » scopés tenant.
+  // Le super-admin ne doit PAS joindre /tenant/organization/* (redirection V2).
+  '/tenant/organization/levels': ['ADMIN', 'PASTEUR'],
+  '/tenant/organization/nodes/:nodeId': ['ADMIN', 'PASTEUR'],
+  '/tenant/members/:userId/roles': ['ADMIN', 'PASTEUR'],
 
   // Administration
   '/admin/payments': ['ADMIN', 'PASTEUR'],

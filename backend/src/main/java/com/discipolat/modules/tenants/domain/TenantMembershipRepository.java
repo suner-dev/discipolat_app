@@ -44,6 +44,17 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
 
     List<TenantMembership> findAllByUserIdAndTenantIdAndStatus(UUID userId, UUID tenantId, MembershipStatus status);
 
+    /**
+     * F17 — Lecture LISTE de toutes les appartenances d'un utilisateur dans un
+     * tenant, sans restriction de statut. Une organisation peut légitimement
+     * porter plusieurs lignes (périmètres distincts — spec V2 §1.3 mode LÉGER :
+     * racine + campus), auquel cas {@link #findByUserIdAndTenantId} renvoyant un
+     * {@code Optional} lèverait {@code IncorrectResultSizeDataAccessException}
+     * (500). Les services sélectionnent la ligne « principale » de façon
+     * déterministe (ACTIVE &gt; portée TENANT &gt; la plus ancienne).
+     */
+    List<TenantMembership> findAllByUserIdAndTenantId(UUID userId, UUID tenantId);
+
     List<TenantMembership> findByUserId(UUID userId);
 
     List<TenantMembership> findByTenantIdAndStatusIn(UUID tenantId, List<MembershipStatus> statuses);

@@ -270,6 +270,17 @@
                          démarrage du JVM forké, avant l'extension JUnit. -->
                     <systemPropertyVariables>
                         <api.version>1.44</api.version>
+                        <!-- Le projet compile en Java 21 (major 65) mais la machine
+                             de build peut tourner sur un JDK plus récent. Byte Buddy
+                             (embarqué par Mockito) refuse alors d'instrumenter les
+                             classes ET refuse tout mock de classe concrète :
+                             « Java 25 (69) is not supported by the current version of
+                             Byte Buddy » → OrganizationV3ServiceTest, SpaceServiceTest…
+                             échouent sur un JDK ≥ 25 alors que le code est correct.
+                             net.bytebuddy.experimental est le mécanisme officiel
+                             d'opt-in pour les versions de class file non encore
+                             supportées ; sans effet sur un JDK ≤ 24. -->
+                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

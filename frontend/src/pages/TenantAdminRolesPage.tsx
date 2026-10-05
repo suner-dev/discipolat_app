@@ -9,7 +9,8 @@ import toast from "react-hot-toast";
 import { useI18n } from "@/i18n";
 import { useTenant } from "@/contexts/TenantContext";
 import api, { getErrorMessage } from "@/lib/api";
-import { Plus, Pencil, Trash2, KeyRound, X, Save, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, KeyRound, X, Save, Loader2, Search, Tags } from "lucide-react";
+import RoleTitleMatrix from "@/components/organization/RoleTitleMatrix";
 
 /**
  * G5.5 (§58) — Éditeur de rôles/permissions SCOPÉ au tenant.
@@ -217,6 +218,7 @@ function CardRole({ role, canUpdate = false, canAssign, canDelete = false, onEdi
   onEdit?: () => void; onPermissions: () => void; onDelete?: () => void;
   t: (k: string, p?: Record<string, string>) => string;
 }) {
+  const [showTitles, setShowTitles] = useState(false);
   return (
     <div className="bg-white rounded-lg border p-4">
       <div className="flex items-start justify-between">
@@ -271,6 +273,12 @@ function CardRole({ role, canUpdate = false, canAssign, canDelete = false, onEdi
         >
           <KeyRound className="w-3.5 h-3.5" /> {t("admin.permEditor")}
         </button>
+        <button
+          className="flex items-center gap-1 text-sm text-purple-700 hover:text-purple-900"
+          onClick={() => setShowTitles((s) => !s)}
+        >
+          <Tags className="w-3.5 h-3.5" /> {t("orgV3.titles.expand")}
+        </button>
         {onDelete && (
           <button
             className="ml-auto flex items-center gap-1 text-sm text-red-600 hover:text-red-800 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -282,6 +290,11 @@ function CardRole({ role, canUpdate = false, canAssign, canDelete = false, onEdi
           </button>
         )}
       </div>
+      {showTitles && (
+        <div className="mt-3 pt-3 border-t">
+          <RoleTitleMatrix roleId={role.id} roleLabel={role.label} />
+        </div>
+      )}
     </div>
   );
 }

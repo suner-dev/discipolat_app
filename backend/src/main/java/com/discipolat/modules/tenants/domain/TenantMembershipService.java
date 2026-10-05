@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,14 +81,19 @@ public class TenantMembershipService {
                 .orElseGet(() -> roleRepository.findByTenantIdIsNullAndKey(roleKey.toUpperCase())
                         .orElseThrow(() -> new EntityNotFoundException("Role", "key", roleKey)));
 
-        // Vérifier si l'appartenance existe déjà
-        Optional<TenantMembership> existing = membershipRepository.findByUserIdAndTenantId(userId, tenantId);
-        if (existing.isPresent()) {
-            TenantMembership membership = existing.get();
-            if (membership.getStatus() == MembershipStatus.ACTIVE) {
-                throw new BusinessRuleException(
-                        "L'utilisateur est déjà membre actif de ce tenant", "MEMBERSHIP_EXISTS");
-            }
+        // Vérifier si l'appartenance existe déjà.
+        // F17 : lecture par LISTE — une organisation peut porter plusieurs lignes
+        // (périmètres distincts). On refuse si une ligne ACTIVE existe déjà ;
+        // sinon on réactive la ligne « principale » inactive plutôt qu'une
+        // création en doublon.
+        List<TenantMembership> existingAll = membershipRepository.findAllByUserIdAndTenantId(userId, tenantId);
+        boolean alreadyActive = existingAll.stream().anyMatch(m -> m.getStatus() == MembershipStatus.ACTIVE);
+        if (alreadyActive) {
+            throw new BusinessRuleException(
+                    "L'utilisateur est déjà membre actif de ce tenant", "MEMBERSHIP_EXISTS");
+        }
+        if (!existingAll.isEmpty()) {
+            TenantMembership membership = pickPrimary(existingAll);
             // Réactiver si inactif/pending
             membership.setStatus(MembershipStatus.ACTIVE);
             membership.setRole(role);
@@ -126,8 +132,11 @@ public class TenantMembershipService {
      * Change le rôle d'un utilisateur dans un tenant
      */
     public TenantMembership changeRole(UUID userId, UUID tenantId, String newRoleKey, UUID changedBy) {
-        TenantMembership membership = membershipRepository.findByUserIdAndTenantId(userId, tenantId)
-                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId));
+        // F17 : sélection déterministe de la ligne principale (liste, pas Optional).
+        TenantMembership membership = pickPrimary(membershipRepository.findAllByUserIdAndTenantId(userId, tenantId));
+        if (membership == null) {
+            throw new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId);
+        }
 
         Role newRole = roleRepository.findByTenantIdAndKey(tenantId, newRoleKey.toUpperCase())
                 .orElseGet(() -> roleRepository.findByTenantIdIsNullAndKey(newRoleKey.toUpperCase())
@@ -157,8 +166,12 @@ public class TenantMembershipService {
      * Désactive (soft delete) une appartenance
      */
     public void removeMembership(UUID userId, UUID tenantId, UUID removedBy) {
-        TenantMembership membership = membershipRepository.findByUserIdAndTenantId(userId, tenantId)
-                .orElseThrow(() -> new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId));
+        // F17 : ligne principale déterministe ; on révoque la portée TENANT en
+        // priorité, puis la plus ancienne.
+        TenantMembership membership = pickPrimary(membershipRepository.findAllByUserIdAndTenantId(userId, tenantId));
+        if (membership == null) {
+            throw new EntityNotFoundException("TenantMembership", "userId:tenantId", userId + ":" + tenantId);
+        }
 
         membership.setStatus(MembershipStatus.REVOKED);
         membershipRepository.save(membership);
@@ -188,7 +201,8 @@ public class TenantMembershipService {
      */
     @Transactional(readOnly = true)
     public Optional<TenantMembership> getMembership(UUID userId, UUID tenantId) {
-        return membershipRepository.findByUserIdAndTenantId(userId, tenantId)
+        // F17 : on résout la ligne principale puis on filtre ACTIVE.
+        return Optional.ofNullable(pickPrimary(membershipRepository.findAllByUserIdAndTenantId(userId, tenantId)))
                 .filter(m -> m.getStatus() == MembershipStatus.ACTIVE);
     }
 
@@ -219,6 +233,29 @@ public class TenantMembershipService {
     @Transactional(readOnly = true)
     public List<TenantMembership> findByUserId(UUID userId) {
         return membershipRepository.findByUserId(userId);
+    }
+
+    /**
+     * F17 — Sélectionne l'appartenance « principale » d'un utilisateur dans un
+     * tenant quand plusieurs lignes coexistent (périmètres distincts, spec V2
+     * §1.3 mode LÉGER). Ordre de priorité : ligne ACTIVE &gt; portée {@code TENANT}
+     * &gt; la plus ancienne. Retourne {@code null} si la liste est vide.
+     *
+     * <p>Ce helper remplace les lectures {@code findByUserIdAndTenantId} renvoyant
+     * un {@code Optional}, qui lèveraient
+     * {@code IncorrectResultSizeDataAccessException} (500) dès qu'un membre porte
+     * deux appartenances dans la même organisation.
+     */
+    private static TenantMembership pickPrimary(List<TenantMembership> all) {
+        if (all == null || all.isEmpty()) {
+            return null;
+        }
+        return all.stream()
+                .min(Comparator
+                        .comparing((TenantMembership m) -> m.getStatus() == MembershipStatus.ACTIVE ? 0 : 1)
+                        .thenComparing(m -> m.getScopeType() == MembershipScopeType.TENANT ? 0 : 1)
+                        .thenComparing(m -> m.getJoinedAt() == null ? Instant.EPOCH : m.getJoinedAt()))
+                .orElse(null);
     }
 
     private void auditMembership(TenantMembership membership, String action, UUID actorId) {

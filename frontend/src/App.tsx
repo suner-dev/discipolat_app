@@ -27,6 +27,11 @@ const TenantAnnouncementsAdminPage = lazy(() => import('@/pages/TenantAnnounceme
 const TenantJoinManagementPage = lazy(() => import('@/pages/TenantJoinManagementPage'));
 // SPEC_ORGANISATION_DENOMINATION_V2 §7.2 / T-W5, T-W6, T-W7
 const TenantOrganizationPage = lazy(() => import('@/pages/TenantOrganizationPage'));
+// SPEC_ORGANISATION_MODULABLE_V3 §6 — écrans « tout est modulable » (niveaux,
+// fiche nœud drill-down, assignations membre).
+const OrganizationLevelsPage = lazy(() => import('@/pages/admin/OrganizationLevelsPage'));
+const OrganizationNodeDetailPage = lazy(() => import('@/pages/admin/OrganizationNodeDetailPage'));
+const MemberRolesPage = lazy(() => import('@/pages/admin/MemberRolesPage'));
 const TenantOwnershipPage = lazy(() => import('@/pages/TenantOwnershipPage'));
 const TransferPage = lazy(() => import('@/pages/TransferPage'));
 const RegistrationStatusPage = lazy(() => import('@/pages/RegistrationStatusPage'));
@@ -1254,6 +1259,16 @@ export default function App() {
               propriété & délégation, transfert de membre. */}
           <Route path="/tenant/organization" element={
             <ProtectedRoute scope="tenant"><TenantOrganizationPage /></ProtectedRoute>
+          } />
+          {/* SPEC_ORGANISATION_MODULABLE_V3 §6 — niveaux, fiche nœud, assignations. */}
+          <Route path="/tenant/organization/levels" element={
+            <ProtectedRoute scope="tenant"><OrganizationLevelsPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant/organization/nodes/:nodeId" element={
+            <ProtectedRoute scope="tenant"><OrganizationNodeDetailPage /></ProtectedRoute>
+          } />
+          <Route path="/tenant/members/:userId/roles" element={
+            <ProtectedRoute scope="tenant"><MemberRolesPage /></ProtectedRoute>
           } />
           <Route path="/tenant/ownership" element={
             <ProtectedRoute scope="tenant"><TenantOwnershipPage /></ProtectedRoute>

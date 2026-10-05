@@ -3,9 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import '../../../data/services/api_service.dart';
 
-/// Écran de gestion des modules et fonctionnalités (TenantFeature API)
+/// Écran de gestion des modules et fonctionnalités (TenantFeature API).
+///
+/// T-M13 (SPEC_ORGANISATION_MODULABLE_V3 §7.1) : sélecteur de **nœud** —
+/// l'activation se fait alors PAR NŒUD (D, `GET/PUT
+/// /tenant/organization/nodes/{id}/features`), réservé à l'admin du tenant
+/// ou du nœud (P2). Sans sélection, comportement historique global.
 class TenantModulesScreen extends ConsumerStatefulWidget {
-  const TenantModulesScreen({super.key});
+  const TenantModulesScreen({super.key, this.apiService});
+
+  final ApiService? apiService;
 
   @override
   ConsumerState<TenantModulesScreen> createState() =>
@@ -13,18 +20,118 @@ class TenantModulesScreen extends ConsumerStatefulWidget {
 }
 
 class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
-  final ApiService _apiService = ApiService();
+  late final ApiService _apiService;
   bool _loading = true;
   bool _saving = false;
   List<_ModuleInfo> _modules = [];
   String? _message;
   String? _messageType;
+  // T-M13 : portée par nœud (D).
+  List<Map<String, dynamic>> _nodes = const [];
+  String? _selectedNodeId;
+  List<Map<String, dynamic>> _nodeFeatures = const [];
 
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? ApiService();
     _loadModules();
+    _loadNodes();
   }
+
+  /// Liste des nœuds accessibles pour la portée par nœud ; silencieux si
+  /// l'API tenant n'est pas disponible (le globale reste utilisable).
+  Future<void> _loadNodes() async {
+    try {
+      final response = await _apiService.get('/tenant/organization/tree');
+      final nodes = response.data is List
+          ? (response.data as List)
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList()
+          : const <Map<String, dynamic>>[];
+      if (mounted) setState(() => _nodes = nodes);
+    } catch (_) {
+      // Pas de portée nœud sur cette session : on garde le globale.
+    }
+  }
+
+  Future<void> _selectNode(String? nodeId) async {
+    setState(() {
+      _selectedNodeId = nodeId;
+      _loading = true;
+    });
+    if (nodeId == null) {
+      await _loadModules();
+      return;
+    }
+    try {
+      final response =
+          await _apiService.get('/tenant/organization/nodes/$nodeId/features');
+      setState(() {
+        _nodeFeatures = response.data is List
+            ? (response.data as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
+            : const [];
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _message = 'Modules du nœud indisponibles: $e';
+        _messageType = 'error';
+      });
+    }
+  }
+
+  /// Bascule sur CE nœud : PUT = remplacement de la liste complète, sinon les
+  /// autres modules configurés seraient perdus (§5.3).
+  Future<void> _toggleNodeFeature(String moduleCode, bool enabled) async {
+    final nodeId = _selectedNodeId;
+    if (nodeId == null) return;
+    HapticFeedback.lightImpact();
+    setState(() => _saving = true);
+    final payload = [for (final f in _nodeFeatures) {
+      'code': f['moduleCode'],
+      'enabled': f['moduleCode'] == moduleCode
+          ? enabled
+          : f['enabled'] == true,
+      if (f['configurationJson'] != null)
+        'configurationJson': f['configurationJson'],
+    ]];
+    if (!_nodeFeatures.any((f) => f['moduleCode'] == moduleCode)) {
+      payload.add({'code': moduleCode, 'enabled': enabled});
+    }
+    try {
+      final response = await _apiService.put(
+        '/tenant/organization/nodes/$nodeId/features',
+        data: {'modules': payload},
+      );
+      setState(() {
+        _nodeFeatures = response.data is List
+            ? (response.data as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
+            : _nodeFeatures;
+        _message = enabled ? 'Module activé (nœud)' : 'Module désactivé (nœud)';
+        _messageType = 'success';
+      });
+    } catch (e) {
+      setState(() {
+        _message = 'Erreur: $e';
+        _messageType = 'error';
+      });
+    } finally {
+      setState(() => _saving = false);
+    }
+  }
+
+  bool _nodeModuleEnabled(String code) => _nodeFeatures
+      .firstWhere((f) => f['moduleCode'] == code, orElse: () => const {})
+      ['enabled'] == true;
 
   Future<void> _loadModules() async {
     try {
@@ -127,16 +234,72 @@ class _TenantModulesScreenState extends ConsumerState<TenantModulesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _buildNodeScopeSelector(),
+                          const SizedBox(height: 12),
                           if (_message != null) ...[
                             _buildMessage(),
                             const SizedBox(height: 16),
                           ],
-                          ..._modules.map((mod) => _buildModuleCard(mod)),
+                          if (_selectedNodeId == null)
+                            ..._modules.map((mod) => _buildModuleCard(mod))
+                          else
+                            ..._buildNodeScopedCards(),
                         ],
                       ),
                     ),
             ),
     );
+  }
+
+  /// T-M13 : sélecteur de portée — global (historique) ou par nœud (D).
+  Widget _buildNodeScopeSelector() {
+    if (_nodes.isEmpty) return const SizedBox.shrink();
+    return DropdownButtonFormField<String?>(
+      initialValue: null,
+      decoration: const InputDecoration(
+        labelText: 'Portée des modules',
+        border: OutlineInputBorder(),
+      ),
+      items: [
+        const DropdownMenuItem<String?>(
+            value: null, child: Text('Tenant (global)')),
+        ..._nodes.map(
+          (node) => DropdownMenuItem<String?>(
+            value: node['id']?.toString(),
+            child: Text([
+              node['name']?.toString() ?? 'Unité',
+              if (node['levelName'] != null) ' · ${node['levelName']}',
+            ].join()),
+          ),
+        ),
+      ],
+      onChanged: _saving ? null : _selectNode,
+    );
+  }
+
+  /// Cartes de modules en portée nœud : état résolu depuis `node_features`.
+  List<Widget> _buildNodeScopedCards() {
+    final known = _modules.map((m) => m.key).toSet();
+    for (final f in _nodeFeatures) {
+      final code = f['moduleCode']?.toString();
+      if (code != null) known.add(code);
+    }
+    return [
+      for (final code in known.where((c) => c.isNotEmpty))
+        Card(
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: SwitchListTile(
+            title: Text(moduleLabelStatic(code)),
+            subtitle: Text(
+                _nodeModuleEnabled(code) ? 'Activé (nœud)' : 'Désactivé'),
+            value: _nodeModuleEnabled(code),
+            onChanged: _saving
+                ? null
+                : (v) => _toggleNodeFeature(code, v),
+          ),
+        ),
+    ];
   }
 
   Widget _buildMessage() {
@@ -236,47 +399,7 @@ class _ModuleInfo {
   final String createdAt;
   final String updatedAt;
 
-  String get label => _formatLabelStatic(key);
-
-  static String _formatLabelStatic(String key) {
-    const labels = {
-      'people': 'Membres',
-      'events': 'Événements',
-      'notifications': 'Notifications',
-      'dashboard': 'Tableau de bord',
-      'org': 'Organisation',
-      'families': 'Familles',
-      'groups': 'Groupes',
-      'discipleship': 'Discipleship',
-      'academy': 'Académie',
-      'finance': 'Finances',
-      'media': 'Médias',
-      'pastoral': 'Pastoral',
-      'prayer': 'Prière',
-      'assets': 'Matériel',
-      'workflow': 'Workflows',
-      'custom_fields': 'Champs personnalisés',
-      'dress_code': 'Dress Code',
-      'health': 'Santé / Infirmerie',
-      'reports': 'Rapports',
-      'analytics': 'Analytics',
-      'messaging': 'Messagerie',
-      'documents': 'Documents',
-      'calendar': 'Calendrier',
-      'forms': 'Formulaires',
-      'marketplace': 'Marketplace',
-      'ai': 'Intelligence Artificielle',
-      'chat': 'Chat',
-      'payments': 'Paiements',
-    };
-    return labels[key] ??
-        key
-            .replaceAll('_', ' ')
-            .split(' ')
-            .map((w) =>
-                w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
-            .join(' ');
-  }
+  String get label => moduleLabelStatic(key);
 
   _ModuleInfo({
     required this.id,
@@ -301,4 +424,45 @@ class _ModuleInfo {
       updatedAt: json['updatedAt']?.toString() ?? '',
     );
   }
+}
+
+/// Libellé FR d'un code module — partagé avec la fiche nœud V3 (T-M11).
+String moduleLabelStatic(String key) {
+  const labels = {
+    'people': 'Membres',
+    'events': 'Événements',
+    'notifications': 'Notifications',
+    'dashboard': 'Tableau de bord',
+    'org': 'Organisation',
+    'families': 'Familles',
+    'groups': 'Groupes',
+    'discipleship': 'Discipleship',
+    'academy': 'Académie',
+    'finance': 'Finances',
+    'media': 'Médias',
+    'pastoral': 'Pastoral',
+    'prayer': 'Prière',
+    'assets': 'Matériel',
+    'workflow': 'Workflows',
+    'custom_fields': 'Champs personnalisés',
+    'dress_code': 'Dress Code',
+    'health': 'Santé / Infirmerie',
+    'reports': 'Rapports',
+    'analytics': 'Analytics',
+    'messaging': 'Messagerie',
+    'documents': 'Documents',
+    'calendar': 'Calendrier',
+    'forms': 'Formulaires',
+    'marketplace': 'Marketplace',
+    'ai': 'Intelligence Artificielle',
+    'chat': 'Chat',
+    'payments': 'Paiements',
+  };
+  return labels[key] ??
+      key
+          .replaceAll('_', ' ')
+          .split(' ')
+          .map((w) =>
+              w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w)
+          .join(' ');
 }

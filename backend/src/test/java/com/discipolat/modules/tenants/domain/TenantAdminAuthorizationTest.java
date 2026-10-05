@@ -20,6 +20,7 @@ class TenantAdminAuthorizationTest {
     @Mock private PermissionRepository permissionRepository;
     @Mock private OrganizationNodeRepository organizationNodeRepository;
     @Mock private UserRepository userRepository;
+    @Mock private MemberRoleAssignmentRepository assignmentRepository;
     @InjectMocks private AuthorizationService authorizationService;
 
     @Test

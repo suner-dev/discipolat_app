@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
+import 'node_detail_screen.dart';
 
-/// Écran de gestion de la structure organisationnelle
+/// Écran de gestion de la structure organisationnelle.
+///
+/// T-M10 (SPEC_ORGANISATION_MODULABLE_V3 §7.1) : arbre étendu par **niveau
+/// custom** (A) + compteurs agrégés (E) + responsable, via
+/// `GET /tenant/organization/tree`. Repli sur l'ancien endpoint admin
+/// (`/admin/org/tree`) si le tenant tree est indisponible — un écran terrain
+/// ne doit jamais être plus aveugle qu'avant.
 class OrganizationsScreen extends ConsumerStatefulWidget {
-  const OrganizationsScreen({super.key});
+  const OrganizationsScreen({super.key, this.apiService});
+
+  final ApiService? apiService;
 
   @override
   ConsumerState<OrganizationsScreen> createState() =>
@@ -12,17 +21,39 @@ class OrganizationsScreen extends ConsumerStatefulWidget {
 }
 
 class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
-  final ApiService _apiService = ApiService();
+  late final ApiService _apiService;
   bool _loading = true;
+  bool _usingV3Tree = false;
   List<Map<String, dynamic>> _nodes = [];
 
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? ApiService();
     _loadOrganizations();
   }
 
   Future<void> _loadOrganizations() async {
+    // 1. Endpoint V3 tenant (levels + agrégats + responsable).
+    try {
+      final response = await _apiService.get('/tenant/organization/tree');
+      final list = response.data is List
+          ? (response.data as List).whereType<Map>()
+          : const <Map>[];
+      if (list.isNotEmpty) {
+        setState(() {
+          _nodes = list
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+          _usingV3Tree = true;
+          _loading = false;
+        });
+        return;
+      }
+    } catch (e) {
+      debugPrint('Endpoint V3 tree indisponible, repli admin: $e');
+    }
+    // 2. Repli : ancien endpoint admin (rétrocompat V2).
     try {
       final response = await _apiService.get('/admin/org/tree');
       final data = response.data is Map
@@ -35,6 +66,7 @@ class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
                     : const <Map>[])
                 .map((item) => Map<String, dynamic>.from(item))
                 .toList();
+        _usingV3Tree = false;
         _loading = false;
       });
     } catch (e) {
@@ -184,14 +216,23 @@ class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       subtitle: Text(
-                        '${node['type'] ?? ''} - Niveau ${node['level'] ?? 0}',
+                        _usingV3Tree
+                            ? [
+                                // Niveau custom (A) ; le serveur replie sur le
+                                // type si levelId est null → jamais vide.
+                                if (node['levelName'] != null)
+                                  '${node['levelName']}',
+                                if (node['responsibleName'] != null)
+                                  '${node['responsibleName']}',
+                              ].join(' - ')
+                            : '${node['type'] ?? ''} - Niveau ${node['level'] ?? 0}',
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
                         ),
                       ),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _showNodeDetails(node),
+                      onTap: () => _openNode(node),
                     ),
                   );
                 },
@@ -200,49 +241,18 @@ class _OrganizationsScreenState extends ConsumerState<OrganizationsScreen> {
     );
   }
 
-  void _showNodeDetails(Map<String, dynamic> node) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(node['name']?.toString() ?? 'Unité'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _detailRow('Identifiant', node['id']?.toString()),
-              _detailRow('Type', node['type']?.toString()),
-              _detailRow('Niveau', node['level']?.toString()),
-              _detailRow('Code', node['code']?.toString()),
-              _detailRow('Parent', node['parentId']?.toString()),
-            ],
-          ),
+  /// T-M10 → T-M11 : drill-down dans la fiche nœud (agrégats, enfants,
+  /// modules, intitulés). L'ancien dialogue fourre-tout est remplacé.
+  void _openNode(Map<String, dynamic> node) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NodeDetailScreen(
+          nodeId: node['id']?.toString() ?? '',
+          nodeName: node['name']?.toString() ?? 'Unité',
+          levelName: node['levelName']?.toString(),
+          responsibleName: node['responsibleName']?.toString(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(child: Text(value?.isNotEmpty == true ? value! : '—')),
-        ],
       ),
     );
   }

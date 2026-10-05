@@ -33,6 +33,13 @@ public interface OrganizationNodeRepository extends TenantAwareRepository<Organi
 
     List<OrganizationNode> findByResponsibleId(UUID responsibleId);
 
+    /**
+     * V3 §A — nombre de nœuds rattachés à un niveau (garde de suppression :
+     * on ne supprime pas un niveau encore utilisé). Comptage scopé par le
+     * tenant courant (filtre {@code tenantFilter}).
+     */
+    long countByLevelId(UUID levelId);
+
     @Query("SELECT n FROM OrganizationNode n WHERE n.path LIKE :pathPattern")
     List<OrganizationNode> findByPathPrefix(@Param("pathPattern") String pathPattern);
 
