@@ -10,10 +10,13 @@ le dépôt ou par les commandes citées.
 > agrégats & drill-down **sans PII**). La propulsion P1–P10 est **phase 2** (hors périmètre).
 > Rapport détaillé et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
 
-**RAG : 🟢 DONE** — A→E livrés et vérifiés, gaps du cycle précédent **soldés** (section équipe
-mobile §7.1, découpage modèles §7.2, tests web dédiés T-Q2, `flutter test` 556 verts, gate PG
-revalidé jusqu'à **V230**). Ne reste qu'à confirmer `mvn verify` **complet** en CI (machine de dev
-partagée/saturée, voir « Vigilance shared-tree »).
+**RAG : 🟡 DONE_WITH_GAPS** — A→E livrés et vérifiés ; les gaps de code du cycle précédent sont
+**soldés** (section équipe mobile §7.1, découpage modèles §7.2, `SPEC_ONBOARDING_FLOWS.md`
+réaligné, gate PG revalidé jusqu'à **V230**). Restent **trois gaps de couverture** §4, qui
+portent sur des *tests absents* et non sur du code manquant : (1) **aucun test mobile V3** —
+`flutter test` est vert (564) mais ne couvre aucune ligne V3 ; (2) **`<MemberRolesPage>` sans
+test dédié** (T-Q2 partiel) ; (3) `mvn verify` **complet** non rejoué proprement (machine
+partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : `PROGRESSION.md` §0.1.
 
 - **Backend** : migrations montantes `V224`–`V228` (V≤223 intouchées) ; services/entities
   `OrganizationLevel`, `RoleTitle`, `MemberRoleAssignment`, `OrganizationNodeFeature`,
@@ -36,7 +39,10 @@ partagée/saturée, voir « Vigilance shared-tree »).
   **193** migrations validées, **parité entités↔colonnes OK** (gate T-Q3, bloquant avant merge)
 - `npx tsc --noEmit` → **EXIT 0** ; `npx vitest run` (suite complète) → **499/499, 0 échec**
   (T-Q2 : `OrgTreeNav` 5, `RoleTitleMatrix` 3, `routeAccessV3` 12, `OrganizationBrowserPage` 7)
-- `flutter analyze` (mobile) → **EXIT 0**, 0 nouvelle erreur ; `flutter test` → **556 passés**
+- `flutter analyze` (mobile) → **EXIT 0**, 0 nouvelle erreur ; `flutter test` → **564 passés**,
+  « All tests passed! », EXIT 0 — **mais aucun test V3 n'existe** (`grep` sur `mobile/test/` :
+  0 occurrence de `OrganizationV3`/`NodeTeamMember`/`RoleTitle`/`OrganizationLevel`). Ce total
+  ne vaut donc **pas** preuve de couverture V3 (cf. §4).
 
 **Gaps restants (factuel)** : seule la suite backend `mvn verify` **complète** n'est pas stable sur
 cette machine partagée (collisions de build, § shared-tree) → validée en CI sur temurin 21. Le
