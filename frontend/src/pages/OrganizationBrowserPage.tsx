@@ -4,11 +4,12 @@ import toast from 'react-hot-toast';
 import {
   Network, ChevronRight, ChevronDown, Church, Building2, Map as MapIcon,
   MapPin, Users, UsersRound, Home, Landmark, Search as SearchIcon,
-  Loader2, GripVertical, Eye,
+  Loader2, GripVertical, Eye, Plus,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { useI18n } from '@/i18n';
 import { useTenant } from '@/contexts/TenantContext';
+import CreateNodeWizard from '@/components/organization/CreateNodeWizard';
 
 /**
  * G5.2 — Navigateur d'organisation (Church OS niveau 1).
@@ -80,10 +81,13 @@ export default function OrganizationBrowserPage() {
   const [filter, setFilter] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Édition réservée aux porteurs de la permission serveur ORG_NODE_MOVE
   const canMove = hasPermission('ORG_NODE_MOVE');
   const canCreateRoot = hasPermission('CHURCH_CREATE');
+  // T-W14 : assistant de création (level + modules + thème).
+  const canCreateNode = hasPermission('ORG_NODE_CREATE');
 
   const treeQuery = useQuery<OrgTreeView>({
     queryKey: ['org', 'tree'],
@@ -324,6 +328,16 @@ export default function OrganizationBrowserPage() {
           {canMove ? <GripVertical className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           {canMove ? t('organization.dragHint') : t('organization.readOnly')}
         </span>
+        {canCreateNode && (
+          <button
+            type="button"
+            onClick={() => setWizardOpen(true)}
+            className="btn btn-primary btn-sm inline-flex items-center gap-1.5 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            {t('orgV3.wizard.open')}
+          </button>
+        )}
       </div>
 
       {/* Stats par type (API réelle /org/stats) */}
@@ -490,6 +504,8 @@ export default function OrganizationBrowserPage() {
           })()}
         </div>
       </div>
+
+      <CreateNodeWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </div>
   );
 }

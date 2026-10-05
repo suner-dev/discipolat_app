@@ -15,6 +15,9 @@ import CommandPalette from '@/components/CommandPalette';
 import { FlaskConical, X } from 'lucide-react';
 import ImpersonationBanner from '@/components/shared/ImpersonationBanner';
 import OnboardingBanner from '@/components/onboarding/OnboardingBanner';
+import { NavigationProvider } from '@/navigation/NavigationContext';
+import BackButton from '@/components/navigation/BackButton';
+import Breadcrumbs from '@/components/navigation/Breadcrumbs';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
 
@@ -46,6 +49,7 @@ export default function MainLayout() {
   if (gated) return gated;
 
   return (
+    <NavigationProvider user={user}>
     <div className="min-h-screen flex bg-gradient-mesh">
       {/* Synchronisation temps réel (SSE) : les données saisies par d'autres rôles
           apparaissent automatiquement, sans rechargement. */}
@@ -90,8 +94,21 @@ export default function MainLayout() {
           </div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
-          <Outlet />
+        {/* LOT 2 §BK — retour arrière + fil d'Ariane, montés ICI une seule fois
+            pour que TOUTES les pages en profitent, au lieu des 16 boutons
+            « Retour » copiés-collés qui divergeaient entre eux. */}
+        <div className="px-4 sm:px-6 lg:px-8 pt-4 flex items-center gap-3 flex-wrap">
+          <BackButton />
+          <Breadcrumbs />
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          {/* La clé force le remontage à chaque changement de route : sans elle,
+              l'animation du conteneur ne se rejoue pas et la navigation paraît
+              figée (c'était le cas — `animate-fade-in` sur un `<main>` stable). */}
+          <div key={location.pathname} className="page-enter-active animate-fade-in">
+            <Outlet />
+          </div>
         </main>
 
         {/* §G5.1 — Palette de commandes (Ctrl/Cmd+K) */}
@@ -116,5 +133,6 @@ export default function MainLayout() {
         </footer>
       </div>
     </div>
+    </NavigationProvider>
   );
 }

@@ -174,6 +174,32 @@ export function useNodeAggregate(nodeId: string | null, refresh = false) {
   });
 }
 
+// T-W14 — assistant de création d'un nœud : niveau (A) + modules (D) à la
+// création. Le backend accepte levelId + moduleCodes inline (T-B10/T-B13) via
+// POST /org/nodes ; le thème s'applique ensuite (PATCH /nodes/{id}/theme).
+export interface CreateNodeInput {
+  name: string;
+  type: string;
+  parentId?: string | null;
+  levelId?: string | null;
+  responsibleId?: string | null;
+  code?: string;
+  moduleCodes?: string[];
+}
+
+export function useCreateOrgNodeV3() {
+  const qc = useQueryClient();
+  const { currentTenant } = useTenant();
+  return useMutation({
+    mutationFn: async (input: CreateNodeInput) =>
+      (await api.post('/org/nodes', input)).data as TreeNode,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['t', currentTenant?.id, 'org', 'tree-v3'] });
+      qc.invalidateQueries({ queryKey: ['org'] });
+    },
+  });
+}
+
 export function useNodeChildren(nodeId: string | null) {
   const { currentTenant } = useTenant();
   const tenantKey = currentTenant?.id ?? 'no-tenant';
