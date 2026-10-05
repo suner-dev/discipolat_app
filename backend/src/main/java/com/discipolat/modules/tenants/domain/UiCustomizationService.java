@@ -266,6 +266,9 @@ public class UiCustomizationService {
         for (UiLabelOverride label : labelRepository.findByTenantId(tenantId)) {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("id", label.getId());
+            // `tenantId` permet à l'admin de distinguer ses propres réglages des
+            // réglages globaux livrés par la plateforme.
+            body.put("tenantId", label.getTenantId());
             body.put("labelKey", label.getLabelKey());
             body.put("locale", label.getLocale());
             body.put("value", label.getValue());
@@ -278,6 +281,7 @@ public class UiCustomizationService {
         for (UiPageFeature feature : featureRepository.findByTenantId(tenantId)) {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("id", feature.getId());
+            body.put("tenantId", feature.getTenantId());
             body.put("pageKey", feature.getPageKey());
             body.put("featureKey", feature.getFeatureKey());
             body.put("labelOverride", feature.getLabelOverride());

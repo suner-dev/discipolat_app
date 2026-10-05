@@ -571,18 +571,60 @@
 }
 
 /* ============================================
-   Page Transitions
-   ============================================ */
+   Page Transitions — LOT 2 §AN
+   ============================================
+   Ces deux classes étaient déclarées mais JAMAIS utilisées (CSS mort) : la
+   transition de page ne se jouait donc jamais. La navigation paraissait figée.
+   `MainLayout` pose désormais `.page-enter-active` sur un conteneur dont la clé
+   est le chemin courant, ce qui rejoue réellement l'animation à chaque route.
+
+   L'état de départ est fourni par l'animation elle-même (translate + opacity
+   keyframes) plutôt que par `.page-enter` : poser `opacity: 0` en CSS rendait
+   le contenu invisible si l'animation était coupée (préférences de mouvement
+   réduit) — un bug classique, et le pire endroit pour le DISTRICT. */
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
 
 .page-enter {
-  opacity: 0;
-  transform: translateY(12px);
+  opacity: 1;
+  transform: none;
 }
 
 .page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  animation: pageEnter 380ms cubic-bezier(0, 0, 0.2, 1) both;
+  will-change: opacity, transform;
+}
+
+/* ============================================
+   Enchaînement (cascading) des listes
+   ============================================
+   Une liste qui apparaît d'un bloc n'est pas plus lisible qu'une liste
+   instantanée — mais 14 éléments décalés de 60 ms le sont nettement moins.
+   `--stagger-step` borne donc l'attente totale. */
+
+.stagger-item {
+  animation: fade-in 320ms cubic-bezier(0, 0, 0.2, 1) both;
+  animation-delay: calc(var(--stagger-index, 0) * var(--stagger-step, 40ms));
+}
+
+/* Barre d'onglets défilable sans ascenseur visible (le dépôt l'utilisait
+   dans 5 écrans sans que la classe soit définie : ascenseur visible sur mobile). */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* ============================================
@@ -615,6 +657,15 @@
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+  /* LOT 2 §AN — la règle globale ci-dessus raccourcit déjà les animations ;
+     on neutralise explicitement celles qui sont en `both`/infinies pour
+     qu'aucun élément n'apparaisse figé dans son état de départ. */
+  .page-enter-active,
+  .stagger-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

@@ -372,6 +372,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Mon réseau d\'églises', href: '/tenant/organization', icon: Network, subtitle: 'Dénomination & églises filles' },
       { name: 'Changer d\'église', href: '/transfer', icon: ArrowLeftRight, subtitle: 'Transfert sans réinscription' },
       { name: 'Identité & marque', href: '/admin/settings', icon: Palette, subtitle: 'Nom, logo & couleurs' },
+      { name: 'Personnalisation', href: '/tenant/customization', icon: SlidersHorizontal, subtitle: 'Groupes d’onglets, noms & boutons' },
       { name: 'Modules', href: '/admin/modules', icon: Boxes, subtitle: 'Activer / désactiver' },
       { name: 'Menus', href: '/admin/menus', icon: MenuList, subtitle: 'Configurer la navigation' },
       { name: 'Pages', href: '/admin/pages', icon: FileText, subtitle: 'Pages personnalisées' },

@@ -91,6 +91,8 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tenant/organization/levels': ['ADMIN', 'PASTEUR'],
   '/tenant/organization/nodes/:nodeId': ['ADMIN', 'PASTEUR'],
   '/tenant/members/:userId/roles': ['ADMIN', 'PASTEUR'],
+  // LOT 2 §GR + §LB — écran « tout est paramétrable ».
+  '/tenant/customization': ['ADMIN', 'PASTEUR'],
 
   // Administration
   '/admin/payments': ['ADMIN', 'PASTEUR'],

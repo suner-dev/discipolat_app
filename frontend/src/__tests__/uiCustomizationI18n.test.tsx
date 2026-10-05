@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { I18nProvider, useI18n, tText } from '@/i18n';
 import { render, screen } from '@testing-library/react';
 import { resetUiCustomization, setUiCustomization } from '@/config/uiCustomization';
-import type { ReactNode } from 'react';
+
 
 /**
  * LOT 2 §LB — la surcharge d'église doit gagner sur le dictionnaire i18n.
@@ -82,8 +82,9 @@ describe('LOT 2 §LB — le magasin reste sûr hors application', () => {
     expect(tText('')).toBe('');
   });
 
-  it('les deux accesseurs tolèrent un état absent', () => {
-    const provider = I18nProvider as unknown as (props: { children: ReactNode }) => JSX.Element;
-    expect(typeof provider).toBe('function');
+  it('tText renvoie la chaîne source quand elle est introuvable', () => {
+    // Utile hors provider et pour une chaîne jamais traduite : le texte
+    // français doit rester lisible, pas disparaître.
+    expect(tText('libellé jamais traduit')).toBe('libellé jamais traduit');
   });
 });

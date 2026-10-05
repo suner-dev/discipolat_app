@@ -104,6 +104,8 @@ export const navKeyMap: Record<string, string> = {
   "Paramètres de l'église": 'nav.tenantSettings',
   "Modules de l'église": 'nav.tenantModules',
   'Identité & marque': 'nav.identity',
+  // LOT 2 §GR + §LB — écran « tout est paramétrable ».
+  'Personnalisation': 'nav.customization',
   'Modules': 'nav.modules',
   'Menus': 'nav.menus',
   'Pages': 'nav.pages',

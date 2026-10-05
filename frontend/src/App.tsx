@@ -32,6 +32,8 @@ const TenantOrganizationPage = lazy(() => import('@/pages/TenantOrganizationPage
 const OrganizationLevelsPage = lazy(() => import('@/pages/admin/OrganizationLevelsPage'));
 const OrganizationNodeDetailPage = lazy(() => import('@/pages/admin/OrganizationNodeDetailPage'));
 const MemberRolesPage = lazy(() => import('@/pages/admin/MemberRolesPage'));
+// LOT 2 §GR + §LB — groupes d'onglets, libellés et fonctionnalités.
+const TenantAdminCustomizationPage = lazy(() => import('@/pages/admin/TenantAdminCustomizationPage'));
 const TenantOwnershipPage = lazy(() => import('@/pages/TenantOwnershipPage'));
 const TransferPage = lazy(() => import('@/pages/TransferPage'));
 const RegistrationStatusPage = lazy(() => import('@/pages/RegistrationStatusPage'));
@@ -1269,6 +1271,11 @@ export default function App() {
           } />
           <Route path="/tenant/members/:userId/roles" element={
             <ProtectedRoute scope="tenant"><MemberRolesPage /></ProtectedRoute>
+          } />
+          {/* LOT 2 §GR + §LB — tout est paramétrable : groupes d'onglets,
+              renommage des libellés, activation/retrait de fonctionnalités. */}
+          <Route path="/tenant/customization" element={
+            <ProtectedRoute scope="tenant"><TenantAdminCustomizationPage /></ProtectedRoute>
           } />
           <Route path="/tenant/ownership" element={
             <ProtectedRoute scope="tenant"><TenantOwnershipPage /></ProtectedRoute>
