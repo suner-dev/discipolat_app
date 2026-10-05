@@ -1,4 +1,4 @@
-import 'package:discipolat/data/models/navigation_group.dart';
+import 'package:discipolat_mobile/data/models/navigation_group.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// LOT 2 §GR — modèle de groupes de navigation (parité web).
@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Une entrée sans groupe affecté n'est jamais perdue — c'est ce qui permet à
 /// une église de réorganiser son menu sans jamais casser une fonctionnalité.
 void main() {
-  NavigationGroup group({
+  NavigationGroup mkGroup({
     required String id,
     required String label,
     String? tenantId,
@@ -69,7 +69,7 @@ void main() {
   group('NavigationShape.groupOf', () {
     test('retrouve le groupe affecté à une route', () {
       final shape = shapeOf(
-        [group(id: 'g1', label: 'Zones')],
+        [mkGroup(id: 'g1', label: 'Zones')],
         assignments: {
           '/zones': ['g1'],
         },
@@ -80,7 +80,7 @@ void main() {
 
     test('renvoie null pour une route non regroupée : elle reste visible', () {
       final shape = shapeOf(
-        [group(id: 'g1', label: 'Zones')],
+        [mkGroup(id: 'g1', label: 'Zones')],
         assignments: {
           '/zones': ['g1'],
         },
@@ -92,7 +92,7 @@ void main() {
     test('renvoie null quand une affectation pointe vers un groupe absent', () {
       // Le groupe a été supprimé côté serveur : l'entrée ne doit pas disparaître.
       final shape = shapeOf(
-        [group(id: 'g1', label: 'Zones')],
+        [mkGroup(id: 'g1', label: 'Zones')],
         assignments: {
           '/zones': ['groupe-supprime'],
         },
@@ -102,7 +102,7 @@ void main() {
     });
 
     test('renvoie null sur une affectation vide', () {
-      final shape = shapeOf([group(id: 'g1', label: 'Zones')], assignments: {'/zones': []});
+      final shape = shapeOf([mkGroup(id: 'g1', label: 'Zones')], assignments: {'/zones': []});
       expect(shape.groupOf('/zones'), isNull);
     });
   });
