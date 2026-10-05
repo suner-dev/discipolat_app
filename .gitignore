@@ -73,5 +73,20 @@ docs/PRMPT.txt
 # Racine de stockage fichiers pour launches jetables de recette (DISCIPOLAT_FILE_STORAGE_ROOT)
 backend/storage-e2e/
 
+# Scripts de recette locaux — contient des MOTS DE PASSE et des chemins de
+# cles privees en clair (PGPASSWORD, SPRING_DATASOURCE_PASSWORD, ENCRYPTION_AES_KEY).
+# Ne jamais committer : un push les exposerait sur le remote.
+*.ps1
+
+# Artefacts d'audit et de recette (logs/erreurs de compil, regeneres a chaque run).
+# On NE masque PAS tout `audit/` : les deux inventories de contract y sont
+# versionnes volontairement (audit/backend_endpoints.txt,
+# audit/frontend_consumed_endpoints.txt) — ce sont des documents de reference.
+audit/*
+!audit/backend_endpoints.txt
+!audit/frontend_consumed_endpoints.txt
+*.err
+*.log
+
 # Worktrees jetables de recette E2E (base « main-base » détachée, revues comparatives)
 .e2e-tmp/
