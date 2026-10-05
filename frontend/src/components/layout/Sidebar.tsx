@@ -1,6 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
@@ -13,6 +13,9 @@ import { resolveIcon } from '@/lib/menuIcons';
 import type { MenuEntry } from '@/types';
 import { useI18n } from '@/i18n';
 import { navKeyMap } from '@/i18n/navKeys';
+import { buildGroupedNav, type NavEntry, type NavSection } from '@/navigation/grouping';
+import { useNavigationGroups } from '@/navigation/useNavigationGroups';
+import { NavGroupSection, useNavGroupState } from '@/components/navigation/NavGroupSection';
 
 interface NavItemData {
   name: string;
@@ -151,6 +154,47 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
     ? PLATFORM_META
     : ROLE_META[activeRole as keyof typeof ROLE_META] || ROLE_META.FAISEUR;
 
+  // LOT 2 §GR — onglets groupés. Les entrées sont d'abord résolues comme
+  // aujourd'hui (menus backend si disponibles, sinon navigation statique du
+  // rôle), PUIS regroupées : par groupe configuré si l'église en a défini, sinon
+  // par section d'origine. Le résultat est toujours exhaustif — aucune entrée
+  // n'est perdue, quelle que soit la configuration.
+  const { openState, onToggle } = useNavGroupState();
+  const { groups: navGroups, assignments: navAssignments } = useNavigationGroups(user, !platformAdmin);
+  const grouped = useMemo(
+    () =>
+      buildGroupedNav({
+        sections: workspaceSections as NavSection[],
+        groups: platformAdmin ? [] : navGroups,
+        assignments: platformAdmin ? {} : navAssignments,
+      }),
+    [workspaceSections, navGroups, navAssignments, platformAdmin],
+  );
+
+  const renderNavItem = (item: NavEntry, onNavigate: () => void) => (
+    <NavItem item={item} collapsed={collapsed} t={t} onClick={onNavigate} />
+  );
+
+  // Rendu de la navigation : groupes repliables (desktop + mobile).
+  const renderNavGroups = (onNavigate?: () => void) => (
+    <nav
+      className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden"
+      aria-label="Navigation principale"
+    >
+      {grouped.nodes.map((node) => (
+        <NavGroupSection
+          key={node.id}
+          node={node}
+          renderItem={renderNavItem}
+          openState={openState}
+          onToggle={onToggle}
+          onNavigate={onNavigate}
+          rail={collapsed}
+        />
+      ))}
+    </nav>
+  );
+
   return (
     <>
       {/* Desktop sidebar */}
@@ -210,22 +254,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2.5 py-3 overflow-y-auto overflow-x-hidden">
-            {workspaceSections.map((section) => (
-              <div key={section.title} className="mb-1">
-                {!collapsed && (
-                  <p className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
-                    {t(navKeyMap[section.title] ?? section.title)}
-                  </p>
-                )}
-                {collapsed && <div className="pt-3" />}
-                {section.items.map((item) => (
-                  <NavItem key={`${section.title}::${item.href}`} item={item} collapsed={collapsed} t={t} />
-                ))}
-              </div>
-            ))}
-          </nav>
+          {/* Navigation — groupes d'onglets repliables */}
+          {renderNavGroups()}
 
           {/* Footer user info */}
           <div className={`flex-shrink-0 border-t border-white/20 dark:border-white/[0.06] p-3
@@ -312,29 +342,32 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </button>
           </div>
 
-          {/* Mobile navigation */}
-          <nav className="px-3 py-3 overflow-y-auto" style={{ height: 'calc(100% - 4rem)' }}>
-            {/* Bandeau espace métier */}
-            <div className="flex items-center gap-2.5 mx-1 mt-1 mb-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-primary-500/10 to-gold-500/5 border border-primary-500/15 dark:border-white/[0.06]">
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
-                <Church className="w-4 h-4 text-white" />
+          {/* Mobile navigation — groupes d'onglets repliables */}
+            <div className="px-3 py-3 overflow-y-auto" style={{ height: 'calc(100% - 4rem)' }}>
+              {/* Bandeau espace métier */}
+              <div className="flex items-center gap-2.5 mx-1 mt-1 mb-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-primary-500/10 to-gold-500/5 border border-primary-500/15 dark:border-white/[0.06]">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                  <Church className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{t(`role.${activeRole}.label`) || meta.label}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t(`role.${activeRole}.tagline`) || meta.tagline}</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate">{t(`role.${activeRole}.label`) || meta.label}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{t(`role.${activeRole}.tagline`) || meta.tagline}</p>
-              </div>
-            </div>
-            {workspaceSections.map((section) => (
-              <div key={section.title} className="mb-1">
-                <p className="px-3 pt-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400/90 dark:text-gray-500">
-                  {t(navKeyMap[section.title] ?? section.title)}
-                </p>
-                {section.items.map((item) => (
-                  <NavItem key={`${section.title}::${item.href}`} item={item} onClick={onClose} t={t} />
+              <div className="-mx-2.5 px-2.5">
+                {grouped.nodes.map((node) => (
+                  <NavGroupSection
+                    key={`mobile::${node.id}`}
+                    node={node}
+                    renderItem={(entry, onNavigate) => (
+                      <NavItem item={entry} t={t} onClick={() => { onNavigate(); onClose(); }} />
+                    )}
+                    openState={openState}
+                    onToggle={onToggle}
+                  />
                 ))}
               </div>
-            ))}
-          </nav>
+            </div>
         </div>
       </aside>
     </>
