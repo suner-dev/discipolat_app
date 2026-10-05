@@ -49,6 +49,18 @@ public class MemberRoleAssignmentService {
     }
 
     /**
+     * §6.2 / §7.1 — équipe d'un nœud : porteurs ACTIFS d'un rôle-capacité sur
+     * CE nœud (vue « pasteurs / anciens de ce campus »). La portée tenant
+     * ({@code node_id == null}) n'est pas remontée ici : on veut les gens
+     * rattachés à ce nœud précis.
+     */
+    @Transactional(readOnly = true)
+    public List<MemberRoleAssignment> listActiveForNode(UUID tenantId, UUID nodeId) {
+        return assignmentRepository.findByTenantIdAndNodeIdAndStatus(tenantId, nodeId,
+                MemberRoleAssignment.AssignmentStatus.ACTIVE);
+    }
+
+    /**
      * Affecte un rôle-capacité à un membre sur un nœud (ou le tenant si
      * {@code nodeId == null}). Réactive la ligne ENDED/SUSPENDED existante
      * plutôt que d'en créer une doublon.

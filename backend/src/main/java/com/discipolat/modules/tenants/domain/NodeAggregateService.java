@@ -120,6 +120,22 @@ public class NodeAggregateService {
         return snapshotRepository.findByTenantIdAndNodeIdOrderBySnapshotAtAsc(tenantId, nodeId);
     }
 
+    /**
+     * Dernier snapshot par nœud pour TOUT le tenant, en une seule lecture.
+     * Utilisé par l'arbre §5.4 (compteurs inline) — évite le N+1 et surtout le
+     * effet de bord d'écriture de {@link #latest} (qui recrée un snapshot absent).
+     * Les snapshots sont remontés du plus ancien au plus récent : le dernier
+     * écrasement par nœud donne donc le plus récent.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, NodeAggregateSnapshot> latestForTenant(UUID tenantId) {
+        Map<UUID, NodeAggregateSnapshot> latest = new LinkedHashMap<>();
+        for (NodeAggregateSnapshot s : snapshotRepository.findByTenantIdOrderBySnapshotAtAsc(tenantId)) {
+            latest.put(s.getNodeId(), s);
+        }
+        return latest;
+    }
+
     /** Vue drill-down : enfants directs + dernier snapshot de chacun. */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> childrenWithAggregate(UUID tenantId, UUID nodeId) {

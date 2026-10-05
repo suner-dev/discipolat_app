@@ -26,17 +26,20 @@ public class OrganizationHierarchyService {
     private final EntityPropagationPublisher propagationPublisher;
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
+    private final OrganizationNodeFeatureService nodeFeatureService;
 
     public OrganizationHierarchyService(OrganizationNodeRepository nodeRepository,
                                         AuditService auditService,
                                         EntityPropagationPublisher propagationPublisher,
                                         TenantMembershipRepository membershipRepository,
-                                        UserRepository userRepository) {
+                                        UserRepository userRepository,
+                                        OrganizationNodeFeatureService nodeFeatureService) {
         this.nodeRepository = nodeRepository;
         this.auditService = auditService;
         this.propagationPublisher = propagationPublisher;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
+        this.nodeFeatureService = nodeFeatureService;
     }
 
     // ==================== READ OPERATIONS ====================
@@ -196,9 +199,21 @@ public class OrganizationHierarchyService {
                 .sortOrder(request.sortOrder() != null ? request.sortOrder() : 0)
                 .metadataJson(request.metadata() != null ? toJson(request.metadata()) : null)
                 .responsibleId(request.responsibleId())
+                // V3-A : un nœud peut référencer un niveau custom (repli sur type si null).
+                .levelId(request.levelId())
                 .build();
 
         node = nodeRepository.save(node);
+
+        // V3-D (T-B13) : cocher des modules à la création. Liste vide/null =
+        // nœud indépendant par défaut (aucune ligne) ; on n'hérite jamais.
+        if (request.moduleCodes() != null && !request.moduleCodes().isEmpty()) {
+            List<OrganizationNodeFeatureService.ModuleSelection> selections = request.moduleCodes().stream()
+                    .filter(Objects::nonNull)
+                    .map(code -> new OrganizationNodeFeatureService.ModuleSelection(code, Boolean.TRUE, Map.of()))
+                    .toList();
+            nodeFeatureService.setModules(tenantId, node.getId(), selections);
+        }
 
         auditAndPropagate(creatorId, tenantId, "ORG_NODE_CREATED", node,
                 Map.of("type", request.type().name(), "name", request.name(), "parentId", parentId != null ? parentId.toString() : "ROOT"));
@@ -210,7 +225,7 @@ public class OrganizationHierarchyService {
         if (nodeRepository.findRootByTenantId(tenantId).isPresent()) {
             throw new BusinessRuleException("Une église racine existe déjà pour ce tenant", "ROOT_CHURCH_EXISTS");
         }
-        return createNode(tenantId, new CreateNodeRequest(name, OrganizationNodeType.ROOT_CHURCH, null, null, code, null, null, null, null, null, null, null, null), creatorId);
+        return createNode(tenantId, new CreateNodeRequest(name, OrganizationNodeType.ROOT_CHURCH, null, null, code, null, null, null, null, null, null, null, null, null, null), creatorId);
     }
 
     // ==================== G1.5 — CAMPUS CREATION (pasteur principal) ====================
@@ -246,7 +261,7 @@ public class OrganizationHierarchyService {
                 root.getCountry(),
                 root.getCity(),
                 Map.of("origin", "G1.5_CAMPUS_WIZARD"),
-                null, null, null, null
+                null, null, null, null, null, null
         ), creatorId);
 
         // Date de création du campus dans les métadonnées pour les settings hérités (G1.7)
@@ -643,7 +658,11 @@ public class OrganizationHierarchyService {
             String description,
             String icon,
             String color,
-            Integer sortOrder
+            Integer sortOrder,
+            // V3 additifs (null = comportement historique) ; constructeurs
+            // internes appelants passent explicitement null, null.
+            UUID levelId,
+            List<String> moduleCodes
     ) {}
 
     public record UpdateNodeRequest(

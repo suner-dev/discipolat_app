@@ -16,6 +16,9 @@ public interface NodeAggregateSnapshotRepository extends JpaRepository<NodeAggre
 
     List<NodeAggregateSnapshot> findByTenantIdAndNodeIdOrderBySnapshotAtAsc(UUID tenantId, UUID nodeId);
 
+    /** Tous les snapshots d'un tenant, du plus ancien au plus récent (parité de lecture de l'arbre). */
+    List<NodeAggregateSnapshot> findByTenantIdOrderBySnapshotAtAsc(UUID tenantId);
+
     List<NodeAggregateSnapshot> findByTenantIdAndNodeIdInOrderBySnapshotAtDesc(UUID tenantId, List<UUID> nodeIds);
 
     void deleteByTenantIdAndNodeId(UUID tenantId, UUID nodeId);

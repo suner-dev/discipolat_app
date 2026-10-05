@@ -31,6 +31,8 @@ public class OrganizationNodeV3Controller {
     private final NodeAggregateService aggregateService;
     private final OrganizationNodeFeatureService nodeFeatureService;
     private final ConfigurationResolver configurationResolver;
+    private final MemberRoleAssignmentService assignmentService;
+    private final RoleRepository roleRepository;
     private final ObjectMapper objectMapper;
 
     public OrganizationNodeV3Controller(OrganizationNodeRepository nodeRepository,
@@ -39,6 +41,8 @@ public class OrganizationNodeV3Controller {
                                         NodeAggregateService aggregateService,
                                         OrganizationNodeFeatureService nodeFeatureService,
                                         ConfigurationResolver configurationResolver,
+                                        MemberRoleAssignmentService assignmentService,
+                                        RoleRepository roleRepository,
                                         ObjectMapper objectMapper) {
         this.nodeRepository = nodeRepository;
         this.levelRepository = levelRepository;
@@ -46,6 +50,8 @@ public class OrganizationNodeV3Controller {
         this.aggregateService = aggregateService;
         this.nodeFeatureService = nodeFeatureService;
         this.configurationResolver = configurationResolver;
+        this.assignmentService = assignmentService;
+        this.roleRepository = roleRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -64,6 +70,9 @@ public class OrganizationNodeV3Controller {
         nodes = new ArrayList<>(nodes);
         nodes.sort(Comparator.comparingInt(OrganizationNode::getLevel)
                 .thenComparing(OrganizationNode::getName, Comparator.nullsLast(Comparator.naturalOrder())));
+        // §5.4 — compteurs inline : un seul relevé en lecture pour tout l'arbre
+        // (map nodeId → dernier snapshot), sans effet de bord d'écriture.
+        Map<UUID, NodeAggregateSnapshot> counts = aggregateService.latestForTenant(tenantId);
         List<Map<String, Object>> out = new ArrayList<>();
         for (OrganizationNode n : nodes) {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -75,7 +84,10 @@ public class OrganizationNodeV3Controller {
             row.put("levelName", levelName(n.getLevelId(), n.getType()));
             row.put("responsibleId", n.getResponsibleId());
             row.put("responsibleName", responsibleName(n.getResponsibleId()));
-            aggregateService.latest(tenantId, n.getId());
+            NodeAggregateSnapshot snap = counts.get(n.getId());
+            row.put("memberCount", snap == null ? 0L : snap.getMemberCount());
+            row.put("churchCount", snap == null ? 0L : snap.getChurchCount());
+            row.put("leaderCount", snap == null ? 0L : snap.getLeaderCount());
             out.add(row);
         }
         return ResponseEntity.ok(out);
@@ -108,6 +120,30 @@ public class OrganizationNodeV3Controller {
         UUID tenantId = TenantContext.requireTenantId();
         requireNode(tenantId, nodeId);
         return ResponseEntity.ok(aggregateService.childrenWithAggregate(tenantId, nodeId));
+    }
+
+    /**
+     * §6.2 / §7.1 — « Responsable & équipe » d'un nœud : porteurs actifs d'un
+     * rôle-capacité posés sur CE nœud, enrichis (libellé de rôle, nom du membre).
+     * Réservé à l'admin tenant (les noms sont du PII ; la plateforme ne voit que
+     * des nombres, D7).
+     */
+    @GetMapping("/nodes/{nodeId}/team")
+    public ResponseEntity<List<Map<String, Object>>> team(@PathVariable UUID nodeId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        requireNode(tenantId, nodeId);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (MemberRoleAssignment a : assignmentService.listActiveForNode(tenantId, nodeId)) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("assignmentId", a.getId());
+            m.put("userId", a.getUserId());
+            m.put("roleId", a.getRoleId());
+            m.put("roleLabel", roleRepository.findById(a.getRoleId()).map(Role::getLabel).orElse(null));
+            m.put("memberName", memberName(a.getUserId()));
+            m.put("status", a.getStatus() == null ? null : a.getStatus().name());
+            out.add(m);
+        }
+        return ResponseEntity.ok(out);
     }
 
     // ================= §5.3 — modules & thème par nœud =================
@@ -209,6 +245,12 @@ public class OrganizationNodeV3Controller {
     private String responsibleName(UUID responsibleId) {
         if (responsibleId == null) return null;
         return userRepository.findById(responsibleId)
+                .map(u -> (u.getFirstName() + " " + u.getLastName()).trim()).orElse(null);
+    }
+
+    private String memberName(UUID userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId)
                 .map(u -> (u.getFirstName() + " " + u.getLastName()).trim()).orElse(null);
     }
 

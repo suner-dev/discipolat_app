@@ -73,11 +73,13 @@ class FlywayMigrationChainPostgreSqlTest {
     // SPEC_ORGANISATION_DENOMINATION_V2 §5 — V222/V223 (modèle d'organisation
     // + traçabilité transfert). SPEC_ORGANISATION_MODULABLE_V3 — V224..V228
     // (niveaux configurables, intitulés, affiliations, modules/thème par
-    // nœud, snapshots agrégés). Ce gate est le SEUL qui applique la chaîne
+    // nœud, snapshots agrégés). LOT 2 §GR — V229 (groupes de navigation).
+    // LOT 2 §LB — V230 (surcharges de libellés + fonctionnalités par écran).
+    // Ce gate est le SEUL qui applique la chaîne
     // sur PostgreSQL réel (le profil `test` tourne sur H2, Flyway coupé) :
-    // sans cette remontée, une erreur SQL dans V224..V228 n'apparaît
+    // sans cette remontée, une erreur SQL dans V224..V230 n'apparaît
     // qu'en production.
-    private static final int EXPECTED_MIN_VERSION = 228;
+    private static final int EXPECTED_MIN_VERSION = 230;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
