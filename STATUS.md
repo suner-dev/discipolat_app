@@ -18,6 +18,11 @@ portent sur des *tests absents* et non sur du code manquant : (1) **aucun test m
 test dédié** (T-Q2 partiel) ; (3) `mvn verify` **complet** non rejoué proprement (machine
 partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : `PROGRESSION.md` §0.1.
 
+> **Mise à jour** — les gaps (1) et (2) sont **fermés** depuis : `mobile/test/organization_v3_models_test.dart`
+> (**11/11 verts**, `flutter test`, EXIT 0 — tolérance JSON partiel §7.2, garde D2 capacité≠intitulé,
+> garde D7 compteurs≠null) et `frontend/src/__tests__/MemberRolesPage.test.tsx` (**7/7 verts**, `vitest`,
+> EXIT 0 — portée découplée, retrait=ENDED, filtre ACTIVE, `null` vs `nodeId`). Ne reste que le gap (3).
+
 - **Backend** : migrations montantes `V224`–`V228` (V≤223 intouchées) ; services/entities
   `OrganizationLevel`, `RoleTitle`, `MemberRoleAssignment`, `OrganizationNodeFeature`,
   `NodeAggregateSnapshot` ; contrôleurs `OrganizationLevel`, `OrganizationNodeV3`, `OrganizationRbac` ;
@@ -35,6 +40,11 @@ partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : 
 - `mvn -o test -Dtest=OrganizationV3ServiceTest,TenantAdminAuthorizationTest` → **13 verts**
 - `mvn -o test -Dtest=TenantSwitcherMultiMembershipTest` (F17) → **1 vert**
 - `mvn -o test -Dtest=NoNullUnsafeMapLiteralTest` → **4 verts** (plafond d'audit jamais relevé)
+- `mvn -o test -Dtest=OrganizationV3ServiceTest,TenantAdminAuthorizationTest,
+  PlatformTenantGovernanceControllerOrganizationTest,NoNullUnsafeMapLiteralTest,
+  TenantSwitcherMultiMembershipTest` (Temurin 21, arbre propre, 05/10) → **25/25, 0 échec**,
+  BUILD SUCCESS en 4:13 (`OrganizationV3ServiceTest` 13, `TenantAdmin` 2, `Gouvernance` 5,
+  `NoNullUnsafeMapLiteral` 4, `MultiMembership` F17 1)
 - `mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest` (Docker) → **11/11**, schéma **230**,
   **193** migrations validées, **parité entités↔colonnes OK** (gate T-Q3, bloquant avant merge)
 - `npx tsc --noEmit` → **EXIT 0** ; `npx vitest run` (suite complète) → **499/499, 0 échec**
@@ -47,6 +57,11 @@ partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : 
 **Gaps restants (factuel)** : seule la suite backend `mvn verify` **complète** n'est pas stable sur
 cette machine partagée (collisions de build, § shared-tree) → validée en CI sur temurin 21. Le
 rapport complet et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
+
+> **Mise à jour 05/10 (arbre propre, sans collision)** : `mvn -o clean test-compile` → BUILD SUCCESS
+> en 0:55 ; cycle ciblé V3 (Temurin 21) → **25/25, 0 échec, BUILD SUCCESS** en 4:13. Ces deux runs
+> valident la compilation et les tranches V3/F17/garde-`NoNullUnsafeMapLiteral`/gouvernance. La suite
+> `verify` **complète** (~1 200 tests) reste le dernier mot de la CI.
 
 **Vigilance shared-tree** : un autre agent écrit/committe « navigation groups » (LOT 2 §GR, `V229`)
  dans le **même** working tree ; ne jamais lancer deux Maven dans le même `backend/` (`target/` partagé).

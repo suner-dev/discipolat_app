@@ -290,6 +290,9 @@ flutter test                                            → 556 tests passés, E
 
 ### T-W13 — Assignations membre
 - Statut : **DONE** · Fichiers : `pages/admin/MemberRolesPage.tsx`.
+  Tests ajoutés : `frontend/src/__tests__/MemberRolesPage.test.tsx` (**7/7 verts**, `vitest`, EXIT 0) —
+  portée découplée rôle-capacité×nœud, retrait = transition ENDED (pas de purge), filtre ACTIVE à
+  l'écran, `nodeId: null` = tout le tenant vs `nodeId` explicite (contrat backend vérifié par l'appel).
 
 ### T-W14 — Assistant création campus (modules + thème)
 - Statut : **DONE** · Fichiers : `components/organization/CreateNodeWizard.tsx` (3 étapes), `useCreateOrgNodeV3`, branche `Plus`/`canCreateNode` dans `OrganizationBrowserPage.tsx` ; scopes modules/thème dans la fiche nœud · i18n `orgV3.wizard.*` × 6 langues · DoD : créer un nœud avec niveau + modules + thème · Tests : `OrganizationBrowserPage.test.tsx` (7).
@@ -314,6 +317,7 @@ flutter test                                            → 556 tests passés, E
 
 ### T-Q1 — Tests backend
 - Statut : **DONE** · `OrganizationV3ServiceTest` (11 : isolation 404, capacité≠intitulé, agrégat sous-arbre, features indépendantes) + `TenantAdminAuthorizationTest` (2) + `TenantSwitcherMultiMembershipTest`/F17 (1) = **14** ; `NoNullUnsafeMapLiteralTest` 4 (garde-fou `Payloads.of`).
+- Cycle regroupé 05/10 (Temurin 21, arbre propre, sans collision) : ces 14 + `PlatformTenantGovernanceControllerOrganizationTest` (5, `customLevelCount` §6.2, D7) + `NoNullUnsafeMapLiteralTest` 4 + F17 1 + §Aggregates/Authorization/NodeFeatures/Assignments/RoleTitles → **25/25 verts, BUILD SUCCESS** en 4:13.
 
 ### T-Q2 — Tests web
 - Statut : **DONE** · `routeAccessV3.test.ts` (12) + `OrgTreeNav.test.tsx` (5) + `RoleTitleMatrix.test.tsx` (3) + `OrganizationBrowserPage.test.tsx` (7) = **27 verts** ; matrice et `levelName` désormais testés **directement** (plus de couverture seulement indirecte).
@@ -334,9 +338,10 @@ flutter test                                            → 556 tests passés, E
 | `mvn -o test -Dtest=OrganizationV3ServiceTest,TenantAdminAuthorizationTest` | **13 verts** |
 | `mvn -o test -Dtest=TenantSwitcherMultiMembershipTest` (F17) | **1 vert** |
 | `mvn -o test -Dtest=NoNullUnsafeMapLiteralTest` | **4 verts** |
+| Cycle ciblé V3 regroupé (05/10, Temurin 21, arbre propre) : `OrganizationV3ServiceTest` 13 + `TenantAdminAuthorizationTest` 2 + `PlatformTenantGovernanceControllerOrganizationTest` 5 + `NoNullUnsafeMapLiteralTest` 4 + `TenantSwitcherMultiMembershipTest` (F17) 1 | **25/25, 0 échec, BUILD SUCCESS** en 4:13 |
 | `mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest` (Docker) | **11/11**, schéma **230**, **193** migrations, BUILD SUCCESS |
 | `npx tsc --noEmit` | **EXIT 0** |
-| `npx vitest run` (suite complète) | **499/499**, 0 échec (T-Q2 : 27 verts org dont 8 nouveaux) |
+| `npx vitest run` (suite complète) | **499/499**, 0 échec (T-Q2 : 27 verts org dont 8 nouveaux) — complété depuis par `MemberRolesPage.test.tsx` (**7/7 verts**) : portée découplée, retrait=ENDED, filtre ACTIVE, `null` vs `nodeId` |
 | `flutter analyze` (mobile) | **EXIT 0** (0 nouvelle erreur ; lints préexistants) |
-| `flutter test` (mobile) | **556 passés**, EXIT 0 |
+| `flutter test` (mobile) | **564 passés**, « All tests passed! », EXIT 0 — dont `organization_v3_models_test.dart` (**11/11**) : tolérance JSON partiel §7.2, garde D2 capacité≠intitulé, garde D7 compteurs≠null |
 | `mvn -o verify` (suite backend complète) | non stable sur machine **partagée/saturée** → dernier mot CI (§4) |
