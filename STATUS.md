@@ -88,6 +88,19 @@ rapport complet et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
  `target/test-classes` = collision de builds, **pas** une régression de code. Avant de
  `mvn clean`, vérifier `pgrep -f maven` et `pgrep -f surefirebooter` (0 processus attendu).
 
+## Distribution mobile aux testeurs (Diawi) — constat 06/10
+
+- Procédure : `docs/DISTRIBUTION_TESTEURS.md` + build `scripts/build-apk-distribution.sh`
+  (release, version auto-incrémentée, SHA256 affiché, choix explicite de l'API cible).
+- **BLOCANT 06/10** : l'API de prod `https://discipolat-api.onrender.com` **ne répond pas**
+  (sonde 300 s, `curl` code `000` ; la bêta `discipolat-beta.onrender.com` répond 404 sur
+  `/api/v1/public/legal` et 404 à la racine — ce n'est **pas** une API Spring).
+  Le script refuse le build si `/public/legal` ≠ 200, donc **aucun APK ne sera distribué
+  tant que l'API cible ne répond pas**. Ne pas contourner : c'est ce garde-fou qui évite
+  d'envoyer aux testeurs une app morte.
+- Option validée : `ApiConfig` supporte déjà `--dart-define=API_URL=...` ; dès que la prod
+  (ou une bêta API) répond 200, relancer le script vers cette URL pour la campagne.
+
 ## Périmètre livré dans ce cycle (RGPD — correction des limites réelles)
 
 ### Purge de rétention : exécution réelle (au lieu d'un simple comptage)
