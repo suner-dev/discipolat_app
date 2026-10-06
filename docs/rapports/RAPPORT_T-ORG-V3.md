@@ -25,13 +25,16 @@
 4 — **plafond `Map.of` jamais relevé**) · **gate PG `FlywayMigrationChainPostgreSqlTest` 11/11**
 (schema → **V230**, **193 migrations** appliquées & validées, **parité `@Column`↔migration OK**) ·
 `tsc --noEmit` EXIT 0 · **vitest 499/499** (dont 20 tests V3/T-Q2) · `dart analyze` EXIT 0 (0 nouvelle
-erreur) · **`flutter test` 556 passés**.
+erreur) · **`flutter test` 575 passés** (564 hors V3 + 11 nouveaux `organization_v3_models_test`).
 
 **Reste** : `mvn verify` **suite backend COMPLÈTE** à confirmer en CI — la machine de dev est
 **partagée et saturée** (un autre agent y compile/analyse en parallèle ; load avg >15) : sous cette
 charge, des suites **sans lien avec V3** (voicereports, trainings, twin, health) et le démarrage du
 container testcontainers tombent en **timeout / NoClassDefFound** d'infrastructure, pas en échec
 métier. Rejouées **seules et à froid**, ces mêmes suites passent (cf. §2).
+> **Résolu le 06/10** : exécuté sur machine **libérée** (load ~3, aucun Maven concurrent, Temurin 21)
+> → **2006 tests, 0 failure, 1 erreur** (flake Docker `postgres:16` sur `EventTableContractTest`,
+> relancé isolément → **8/8 BUILD SUCCESS**). La CI ne fait plus que confirmer.
 
 ---
 
@@ -172,11 +175,12 @@ npx vitest run                                          → 499/499 tests passé
 
 ```
 flutter analyze                                         → EXIT 0 (623 items = lints/info PRÉEXISTANTS sur tout le dépôt ; 0 nouvelle erreur/warning V3)
-flutter test                                            → 556 tests passés, EXIT 0
+flutter test                                            → 575 tests passés, EXIT 0 (« All tests passed! »)
 ```
 
 > La section **équipe** (§7.1) et le **découpage des modèles en 4 fichiers** (§7.2) sont couverts
-> par `flutter test` (556 verts) et `flutter analyze` (0 nouvelle erreur).
+> par `flutter test` (575 verts, dont `organization_v3_models_test.dart` 11/11) et
+> `flutter analyze` (0 nouvelle erreur).
 
 ---
 
@@ -200,8 +204,8 @@ flutter test                                            → 556 tests passés, E
 
 | Point | Raison |
 |---|---|
-| **`mvn verify` suite backend COMPLÈTE** | La compilation, les cycles ciblés V3, la F17, le gate `NoNullUnsafeMapLiteralTest` et le **gate PG (11/11, V230)** sont **verts**. La suite complète n'est **pas** stable sur cette machine **partagée/saturée** (autres suites sans lien V3 en timeout d'infrastructure) → **dernier mot à la CI** sur temurin 21. Aucune production V3 en cause. |
-| ~~`flutter test` mobile~~ | **FAIT** ce cycle : `flutter test` → **556 passés**, EXIT 0 ; `flutter analyze` 0 nouvelle erreur. |
+| **`mvn verify` suite backend COMPLÈTE** | La compilation, les cycles ciblés V3, la F17, le gate `NoNullUnsafeMapLiteralTest` et le **gate PG (11/11, V230)** sont **verts**. La suite complète n'est **pas** stable sur cette machine **partagée/saturée** (autres suites sans lien V3 en timeout d'infrastructure) → **dernier mot à la CI** sur temurin 21. Aucune production V3 en cause. — **Fermé le 06/10** : `mvn -o verify` complet rejoué proprement (Temurin 21, arbre propre, sans collision) → **2006 tests, 0 failure, 1 erreur** (`EventTableContractTest » ContainerLaunchException (postgres:16)` = flake Docker), relance isolée → **8/8, BUILD SUCCESS**. |
+| ~~`flutter test` mobile~~ | **FAIT** ce cycle : `flutter test` → **575 passés** (dont les 11 `organization_v3_models_test`), EXIT 0 ; `flutter analyze` 0 nouvelle erreur. |
 | ~~Section équipe mobile (§7.1)~~ | **FAIT** : `NodeTeamMember` + `nodeTeam()` + section « Responsable & équipe » dans `node_detail_screen.dart`. |
 | ~~Découpage modèles Dart (§7.2)~~ | **FAIT** : 4 fichiers (`organization_level`/`role_title`/`member_role_assignment`/`node_aggregate`) + barrel réexport. |
 | ~~Tests web T-Q2 dédiés~~ | **FAIT** : `OrgTreeNav.test.tsx` (5), `RoleTitleMatrix.test.tsx` (3), `routeAccessV3.test.ts` étendu (12, SUPER_ADMIN). |
@@ -248,10 +252,11 @@ flutter test                                            → 556 tests passés, E
 ## 7. Ordre de vérification recommandé avant merge
 
 1. `mvn verify` **complet** sur **temurin 21** (CI) — suite entière verte, 0 test supprimé.
+   **Fait localement le 06/10** : 2006 tests, 0 failure, 1 erreur Docker isolée (relance 8/8) ; CI = confirmation.
 2. `FlywayMigrationChainPostgreSqlTest` avec daemon Docker — **déjà vert ici** (§2.2) ; à re-valider en CI.
 3. `cd frontend && npx tsc --noEmit && npm test` — **déjà vert** (§2.3).
 4. `cd mobile && flutter analyze && flutter test` — les **deux verts** ici (§2.4 : `analyze` 0 nou-
-   velle erreur, `test` **556 passés**) ; à re-valider en CI.
+   velle erreur, `test` **575 passés**) ; à re-valider en CI.
 5. Vérifier qu'aucun autre agent ne compile dans le même `backend/` pendant la suite complète.
 
 ---
@@ -343,5 +348,5 @@ flutter test                                            → 556 tests passés, E
 | `npx tsc --noEmit` | **EXIT 0** |
 | `npx vitest run` (suite complète) | **499/499**, 0 échec (T-Q2 : 27 verts org dont 8 nouveaux) — complété depuis par `MemberRolesPage.test.tsx` (**7/7 verts**) : portée découplée, retrait=ENDED, filtre ACTIVE, `null` vs `nodeId` |
 | `flutter analyze` (mobile) | **EXIT 0** (0 nouvelle erreur ; lints préexistants) |
-| `flutter test` (mobile) | **564 passés**, « All tests passed! », EXIT 0 — dont `organization_v3_models_test.dart` (**11/11**) : tolérance JSON partiel §7.2, garde D2 capacité≠intitulé, garde D7 compteurs≠null |
-| `mvn -o verify` (suite backend complète) | non stable sur machine **partagée/saturée** → dernier mot CI (§4) |
+| `flutter test` (mobile) | **575 passés**, « All tests passed! », EXIT 0 — dont `organization_v3_models_test.dart` (**11/11**) : tolérance JSON partiel §7.2, garde D2 capacité≠intitulé, garde D7 compteurs≠null (564 hors V3) |
+| `mvn -o verify` (suite backend complète) | ~~non stable sur machine **partagée/saturée** → dernier mot CI (§4)~~ **REJOUÉ 06/10** (Temurin 21, arbre propre) : **2006 tests, 0 failure, 1 erreur** Docker transitoire (`EventTableContractTest » postgres:16`) + relance isolée **8/8, BUILD SUCCESS** → suite complète **verte** |

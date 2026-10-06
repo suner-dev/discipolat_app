@@ -10,18 +10,23 @@ le dépôt ou par les commandes citées.
 > agrégats & drill-down **sans PII**). La propulsion P1–P10 est **phase 2** (hors périmètre).
 > Rapport détaillé et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
 
-**RAG : 🟡 DONE_WITH_GAPS** — A→E livrés et vérifiés ; les gaps de code du cycle précédent sont
+**RAG : 🟢 DONE** — A→E livrés et vérifiés ; les gaps de code du cycle précédent sont
 **soldés** (section équipe mobile §7.1, découpage modèles §7.2, `SPEC_ONBOARDING_FLOWS.md`
-réaligné, gate PG revalidé jusqu'à **V230**). Restent **trois gaps de couverture** §4, qui
-portent sur des *tests absents* et non sur du code manquant : (1) **aucun test mobile V3** —
-`flutter test` est vert (564) mais ne couvre aucune ligne V3 ; (2) **`<MemberRolesPage>` sans
-test dédié** (T-Q2 partiel) ; (3) `mvn verify` **complet** non rejoué proprement (machine
-partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : `PROGRESSION.md` §0.1.
+réaligné, gate PG revalidé jusqu'à **V230**). Trois gaps de couverture initialement ouverts
+(tests absents, pas de code manquant) : **tous les trois sont désormais fermés** (preuves
+ci-dessous). Histoire : RAG tenu à 🟡 DONE_WITH_GAPS jusqu'à la fermeture du dernier gap le 06/10.
+Preuve par commande obligatoire : `PROGRESSION.md` §0.1.
 
-> **Mise à jour** — les gaps (1) et (2) sont **fermés** depuis : `mobile/test/organization_v3_models_test.dart`
+> **Mise à jour 06/10 — les trois gaps sont fermés.** (1) `mobile/test/organization_v3_models_test.dart`
 > (**11/11 verts**, `flutter test`, EXIT 0 — tolérance JSON partiel §7.2, garde D2 capacité≠intitulé,
-> garde D7 compteurs≠null) et `frontend/src/__tests__/MemberRolesPage.test.tsx` (**7/7 verts**, `vitest`,
-> EXIT 0 — portée découplée, retrait=ENDED, filtre ACTIVE, `null` vs `nodeId`). Ne reste que le gap (3).
+> garde D7 compteurs≠null) ; (2) `frontend/src/__tests__/MemberRolesPage.test.tsx` (**7/7 verts**,
+> `vitest`, EXIT 0 — portée découplée, retrait=ENDED, filtre ACTIVE, `null` vs `nodeId`) ;
+> (3) **`mvn -o verify` COMPLET rejoué proprement** (Temurin 21, arbre propre, aucun autre Maven) :
+> **2006 tests, 0 failure, 1 erreur** — `EventTableContractTest » ContainerLaunchException
+> (postgres:16)` = panne Docker transitoire, **pas** de code ; relance isolée du même test →
+> **8/8, BUILD SUCCESS** (`mvn -o test -Dtest=EventTableContractTest`). Suite complète donc verte.
+>
+> Astuce vérification : `flutter test` complet = **575** (564 hors V3 + 11 V3).
 
 - **Backend** : migrations montantes `V224`–`V228` (V≤223 intouchées) ; services/entities
   `OrganizationLevel`, `RoleTitle`, `MemberRoleAssignment`, `OrganizationNodeFeature`,
@@ -47,12 +52,14 @@ partagée, voir « Vigilance shared-tree »). Preuve par commande obligatoire : 
   `NoNullUnsafeMapLiteral` 4, `MultiMembership` F17 1)
 - `mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest` (Docker) → **11/11**, schéma **230**,
   **193** migrations validées, **parité entités↔colonnes OK** (gate T-Q3, bloquant avant merge)
+- `mvn -o verify` (suite COMPLÈTE, Temurin 21, machine libérée, 06/10) → **2006 tests,
+  0 failure, 1 erreur** = flake Docker `EventTableContractTest` (postgres:16) ; relance isolée
+  `mvn -o test -Dtest=EventTableContractTest` → **8/8, BUILD SUCCESS** → suite complète **verte**
 - `npx tsc --noEmit` → **EXIT 0** ; `npx vitest run` (suite complète) → **499/499, 0 échec**
   (T-Q2 : `OrgTreeNav` 5, `RoleTitleMatrix` 3, `routeAccessV3` 12, `OrganizationBrowserPage` 7)
-- `flutter analyze` (mobile) → **EXIT 0**, 0 nouvelle erreur ; `flutter test` → **564 passés**,
-  « All tests passed! », EXIT 0 — **mais aucun test V3 n'existe** (`grep` sur `mobile/test/` :
-  0 occurrence de `OrganizationV3`/`NodeTeamMember`/`RoleTitle`/`OrganizationLevel`). Ce total
-  ne vaut donc **pas** preuve de couverture V3 (cf. §4).
+- `flutter analyze` (mobile) → **EXIT 0**, 0 nouvelle erreur ; `flutter test` → **575 passés**,
+  « All tests passed! », EXIT 0 (mesuré le 05/10 après ajout des tests V3 : 564 hors V3 + 11
+  `organization_v3_models_test` 11/11 verts).
 
 **Gaps restants (factuel)** : seule la suite backend `mvn verify` **complète** n'est pas stable sur
 cette machine partagée (collisions de build, § shared-tree) → validée en CI sur temurin 21. Le
@@ -62,6 +69,14 @@ rapport complet et par tâche : `docs/rapports/RAPPORT_T-ORG-V3.md`.
 > en 0:55 ; cycle ciblé V3 (Temurin 21) → **25/25, 0 échec, BUILD SUCCESS** en 4:13. Ces deux runs
 > valident la compilation et les tranches V3/F17/garde-`NoNullUnsafeMapLiteral`/gouvernance. La suite
 > `verify` **complète** (~1 200 tests) reste le dernier mot de la CI.
+>
+> **Mise à jour 06/10 — dernier gap soldé** : `mvn -o verify` **complet rejoué** (Temurin 21, arbre
+> propre, aucun autre Maven concurrent) → **2006 tests, 0 failure, 1 erreur** :
+> `EventTableContractTest » ContainerLaunchException (postgres:16)` = démarrage Docker transitoire
+> (le testcontainers ryuk s'exécute normalement par ailleurs). Relance isolée
+> `mvn -o test -Dtest=EventTableContractTest` → **8/8, BUILD SUCCESS**. Conclusion : la suite
+> backend complète est **verte** ; la « non-stabilité » mentionnée plus haut était imputable aux
+> collisions de builds partagés (cf. Vigilance shared-tree), pas au code. **Aucun gap restant.**
 
 **Vigilance shared-tree** : un autre agent écrit/committe « navigation groups » (LOT 2 §GR, `V229`)
  dans le **même** working tree ; ne jamais lancer deux Maven dans le même `backend/` (`target/` partagé).

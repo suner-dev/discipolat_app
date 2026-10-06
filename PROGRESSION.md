@@ -182,10 +182,13 @@ Tests   : mvn -o clean test-compile → EXIT 0 (arbre V3 + navigation LOT 2)
           mvn -o test -Dtest=NoNullUnsafeMapLiteralTest → 4 verts (plafond jamais relevé)
           mvn -o test -Dtest=FlywayMigrationChainPostgreSqlTest (Docker) → 11/11, schéma 230, 193 migrations
           npx tsc --noEmit → EXIT 0 ; npx vitest run → 499/499 (T-Q2 OrgTreeNav+Matrix+routeAccess+Browser)
-          flutter analyze → EXIT 0 ; flutter test → 556 passés
+          flutter analyze → EXIT 0 ; flutter test → 575 passés
 Preuve  : « Successfully applied/validated 193 migrations / Current version of schema public: 230 » ;
           « Tests run: 11, Failures: 0, Errors: 0 » (gate PG) ; vitest « 499 passed (499) »
-Gaps    : mvn verify backend COMPLET à confirmer en CI (collisions de build sur machine partagée).
+Gaps    : AUCUN — fermés le 06/10 : mvn verify COMPLET rejoué (2006 tests, 0 failure, 1 flake
+          Docker isolé relancé 8/8 vert) ; tests mobiles V3 11/11 ; MemberRolesPage 7/7 ;
+          SPEC_ONBOARDING_FLOWS.md réaligné. (État historique : à confirmer en CI à cause des
+          collisions de build sur machine partagée.)
 ```
 
 ### 3.2 Blocages ouverts (NEED-HELP)
