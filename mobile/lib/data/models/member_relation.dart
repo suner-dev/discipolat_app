@@ -63,6 +63,22 @@ class MemberRelation {
         createdAt: json['createdAt']?.toString(),
         revocable: json['revocable'] is bool ? json['revocable'] as bool : true,
       );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'fromUserId': fromUserId,
+        'fromNom': fromNom,
+        'toUserId': toUserId,
+        'toNom': toNom,
+        'otherUserId': otherUserId,
+        'otherNom': otherNom,
+        'relationType': relationType,
+        'typeLabel': typeLabel,
+        'statut': statut,
+        if (note != null) 'note': note,
+        if (createdAt != null) 'createdAt': createdAt,
+        'revocable': revocable,
+      };
 }
 
 /// Vue « mes relations » : sortantes (mes encadrants) + entrantes (mes
@@ -85,6 +101,11 @@ class RelationsSummary {
       entrantes: rows(json['entrantes']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'sortantes': sortantes.map((r) => r.toJson()).toList(),
+        'entrantes': entrantes.map((r) => r.toJson()).toList(),
+      };
 }
 
 /// Page de « ses membres » — la liste est bornée et paginée côté serveur,

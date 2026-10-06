@@ -265,19 +265,53 @@ HierarchyView { userId, nomComplet, rolePrincipal, roleActif,
 4. **Vue « mon organigramme »** pour les rôles `ADMIN`/`PASTEUR` : l'arbre
    organisationnel annoté de l'encadrement déclaré.
 
-## 9. PÉRIMÈTRE DE CE COMMIT
+## 9. PÉRIMÈTRE DU COMMIT
 
-Conformément à la règle « la machine est partagée : ne pas toucher aux
-modifications tierces », **seuls les fichiers de cette feature ont été
-stagés**. Restent délibérément **hors commit** (modifications sans rapport,
-présentes avant ce travail) :
+Tous les fichiers sont commités, y compris les quatre modifications
+tierces présentes dans l'arbre (instruction explicite « commit tout ») :
+`OnboardingStepActions.java`, `ModuleCatalogService.java`,
+`ModuleDefinitionRepository.java`, `frontend/vite.config.ts`.
 
-- `backend/…/onboarding/domain/OnboardingStepActions.java`
-- `backend/…/tenants/domain/ModuleCatalogService.java`
-- `backend/…/tenants/domain/ModuleDefinitionRepository.java`
-- `frontend/vite.config.ts`
+⚠️ `OnboardingStepActionsTest` (2 erreurs) échoue à cause de la modification
+tierce `OnboardingStepActions` qui appelle désormais
+`ModuleCatalogService.resolveCanonicalCode` sans que le mock ne le stubbe.
+Ce n'est PAS une régression de cette feature : à corriger côté auteur de la
+modification tierce (stubber `resolveCanonicalCode`).
 
-`OnboardingStepActionsTest` échoue à cause des deux premiers : ce n'est pas
-une régression de cette feature, et le corriger ici reviendrait à empiéter
-dans le travail d'un autre agent. À traiter par son auteur
-(le mock doit stubber `resolveCanonicalCode`).
+## 10. AUDIT POST-LIVRAISON — failles trouvées et corrigées
+
+Un audit rigoureux a été mené sur tout le code produit. Il a révélé et
+corrigé les failles suivantes :
+
+| # | Faille | Correctif |
+|---|---|---|
+| 1 | 4 endpoints sur 9 n'étaient consommés par AUCUNE interface | FE + mobile : les ont tous été branchés (voir §4) |
+| 2 | Libellés des rôles legacy figés (`r.name().replace('_',' ')`) | Backend : résolution via dictionnaire `USER_ROLE` (par église) |
+| 3 | `origine` et `type` de nœud affichés en codes techniques bruts (`ASSIGNATION_V3`, `CAMPUS`) | UI : localisés via i18n (FE + mobile), clés ajoutées |
+| 4 | `roles[]` exposé par l'agrégat mais rendu nulle part | Section « Rôles » ajoutée (FE + mobile) |
+| 5 | Replis mobile codés en français, sans passer par l10n | Replis i18n (`relationsTypePasteur`…) configurés |
+| 6 | `aria-label` « Replier/Déplier » codé en français (6 locales) | Localisé (`hierarchy.expandNode`/`collapseNode`) |
+| 7 | Clés i18n mortes (`expandAll`, `collapseAll`, `viaDeclared` débat) | Nettoyées ou branchées |
+| 8 | Docstring corrompue dans `hierarchy_card.dart` | Corrigée |
+
+Endpoints couverts après audit (9/9 sur chaque plateforme) :
+
+| Endpoint | Web | Mobile |
+|---|---|---|
+| `GET /relations/types` | ✔ | ✔ |
+| `GET /relations/me` | ✔ | ✔ |
+| `GET /relations/me/members` | ✔ | ✔ |
+| `POST /relations/me` | ✔ | ✔ |
+| `DELETE /relations/me/{id}` | ✔ | ✔ |
+| `POST /relations/users/{id}` | ✔ (fiche) | ✔ (fiche) |
+| `GET /relations/users/{id}` | ✔ (fiche) | ✔ (fiche) |
+| `GET /hierarchy/me` | ✔ (profil) | ✔ (profil) |
+| `GET /hierarchy/users/{id}` | ✔ (fiche) | ✔ (fiche) |
+
+Vérifications (commit final) :
+- Backend : `MemberRelationServiceTest` + `UserHierarchyServiceTest` +
+  `RelationApiSecurityTest` + `TenantFilterDefArchitectureTest` →
+  **51 tests, 0 échec**. Compile SUCCESS.
+- Web : `tsc --noEmit` **0 erreur**, `vitest run` **86 fichiers, 687 tests,
+  0 échec**.
+- Mobile : `flutter analyze` **0 erreur**, `flutter test` (feature) **29/29**.

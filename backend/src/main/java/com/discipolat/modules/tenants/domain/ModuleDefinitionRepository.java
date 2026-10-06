@@ -15,6 +15,20 @@ public interface ModuleDefinitionRepository extends JpaRepository<ModuleDefiniti
 
     Optional<ModuleDefinition> findByCode(String code);
 
+    /**
+     * Variantes de casse d'un même code.
+     *
+     * <p>Renvoie une LISTE et non un {@code Optional} : le catalogue contient
+     * 3 doublons de casse ({@code AUDIT}/{@code audit},
+     * {@code PARALLEL_FOLLOWUPS}/{@code parallel_followups},
+     * {@code SETTINGS}/{@code settings}), conséquence de seeds historiques.
+     * Un {@code Optional} lèverait alors
+     * {@code IncorrectResultSizeDataAccessException} — un 500 sur une simple
+     * lecture. Le tri se fait dans {@link ModuleCatalogService}, qui applique
+     * une règle déterministe.
+     */
+    List<ModuleDefinition> findByCodeIgnoreCase(String code);
+
     List<ModuleDefinition> findBySource(String source);
 
     List<ModuleDefinition> findByCategory(String category);

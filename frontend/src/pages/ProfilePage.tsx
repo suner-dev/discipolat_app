@@ -11,6 +11,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 
 import { MyRelationsCard } from '@/components/relations/MyRelationsCard';
+import { MyHierarchyCard } from '@/components/relations/MyHierarchyCard';
 import { UserDetailModal } from '@/components/users/UserDetailModal';
 
 import { getI18nLocale } from '@/i18n';
@@ -632,6 +633,10 @@ export default function ProfilePage() {
       <div className="mt-6 animate-slide-up">
         <MyRelationsCard onOpenUser={setViewedUserId} />
       </div>
+
+      {/* V231 — « Ma hiérarchie » : mon rattachement organisationnel et mes
+          responsables par niveau (endpoint GET /hierarchy/me). */}
+      <MyHierarchyCard onOpenUser={setViewedUserId} />
 
       {/* Fiche complète d'un encadrant / membre rattaché — ouverte depuis la
           carte ci-dessus ou depuis n'importe quelle personne cliquable de

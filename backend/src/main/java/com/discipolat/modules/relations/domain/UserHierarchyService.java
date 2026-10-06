@@ -18,6 +18,8 @@ import com.discipolat.modules.tenants.domain.RoleRepository;
 import com.discipolat.modules.tenants.domain.RoleTitleService;
 import com.discipolat.modules.tenants.domain.TenantMembership;
 import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
+import com.discipolat.modules.platform.domain.DictionaryEntry;
+import com.discipolat.modules.platform.domain.DictionaryEntryRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
@@ -88,6 +90,7 @@ public class UserHierarchyService {
     private final DepartmentRepository departmentRepository;
     private final FamilyRepository familyRepository;
     private final MemberRelationService relationService;
+    private final DictionaryEntryRepository dictionaryEntryRepository;
 
     public UserHierarchyService(UserRepository userRepository,
                                 MemberRoleAssignmentRepository assignmentRepository,
@@ -98,7 +101,8 @@ public class UserHierarchyService {
                                 SoulRepository soulRepository,
                                 DepartmentRepository departmentRepository,
                                 FamilyRepository familyRepository,
-                                MemberRelationService relationService) {
+                                MemberRelationService relationService,
+                                DictionaryEntryRepository dictionaryEntryRepository) {
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.roleRepository = roleRepository;
@@ -109,6 +113,7 @@ public class UserHierarchyService {
         this.departmentRepository = departmentRepository;
         this.familyRepository = familyRepository;
         this.relationService = relationService;
+        this.dictionaryEntryRepository = dictionaryEntryRepository;
     }
 
     /** Vue complète : identité, rôles, branches, relations, ascendants, suivi. */
@@ -259,13 +264,40 @@ public class UserHierarchyService {
             if (r == null) continue;
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("code", r.name());
-            m.put("label", r.name().replace('_', ' '));
+            m.put("label", legacyRoleLabel(tenantId, r));
             m.put("source", "SYSTEME");
             m.put("nodeId", null);
             m.put("nodeName", null);
             roles.add(m);
         }
         return roles;
+    }
+
+    /**
+     * Libellé AFFICHÉ d'un rôle legacy : la ligne du dictionnaire
+     * {@code USER_ROLE} (paramétrable par église — « responsable » peut devenir
+     * « ministre » ou « dirigeant »). Repli : nom technique de l'enum. Sans ce
+     * passage par le dictionnaire, le libellé serait figé dans le code et
+     * identique pour toutes les églises quelle que soit leur langue.
+     */
+    private String legacyRoleLabel(UUID tenantId, com.discipolat.common.domain.UserRole r) {
+        try {
+            String label = null;
+            for (DictionaryEntry e : dictionaryEntryRepository.findByDictKeyOrderByOrdreAsc("USER_ROLE")) {
+                if (e == null || e.getCode() == null || !e.getCode().equalsIgnoreCase(r.name())) {
+                    continue;
+                }
+                if (e.getTenantId() == null) {
+                    if (label == null) label = e.getLabel();
+                } else if (e.getTenantId().equals(tenantId)) {
+                    return e.getLabel(); // ligne d'église prioritaire
+                }
+            }
+            if (label != null) return label;
+        } catch (Exception ignored) {
+            // tombe sur le repli ci-dessous
+        }
+        return r.name().replace('_', ' ');
     }
 
     private String roleLabel(UUID tenantId, MemberRoleAssignment a) {

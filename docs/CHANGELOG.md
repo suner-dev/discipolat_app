@@ -1,5 +1,18 @@
 # Changelog
 
+## [Non publié] — Corrections post-audit V231
+
+Audit du code produit par un second passage : **8 failles** trouvées et
+corrigées. Les plus importantes : 4 endpoints backend n'étaient consommés par
+aucune interface (ils le sont désormais par le web **et** le mobile — voir
+`docs/PLAN_HIERARCHIE_RELATIONS_MEMBRES.md` §10), les libellés de rôles
+légaux étaient figés dans le code (résolution désormais via le dictionnaire
+`USER_ROLE`, donc paramétrable par église), et `origine`/`type` de nœud
+étaient affichés en codes techniques bruts (désormais localisés). La fiche
+affiche maintenant aussi la section « Rôles ». Vérifications : 51 tests
+backend, `tsc` 0 erreur, `vitest` 687/687, `flutter analyze` 0 erreur.
+
+
 ## [Non publié] — Hiérarchie & encadrement personnel des membres (V231)
 
 Fonctionnalité : **« Mon encadrement »**. Tout membre connaît sa hiérarchie

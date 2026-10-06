@@ -467,16 +467,29 @@ public class OnboardingStepActions {
             if (!(entry instanceof String code) || code.isBlank()) {
                 throw invalid("modules", "Chaque module doit être un code texte non vide.");
             }
-            String normalizedCode = code.trim().toLowerCase(Locale.ROOT);
-            if (codes.contains(normalizedCode)) {
+            String requested = code.trim();
+            if (codes.contains(requested)) {
                 continue;
             }
             // Validation contre le catalogue : un code inconnu est refusé, on
-            // n'active jamais une chainette inexistante.
-            if (moduleCatalogService.getByCode(normalizedCode).isEmpty()) {
-                throw invalid("modules", "Module inconnu : " + normalizedCode);
+            // n'active jamais une chaînette inexistante.
+            //
+            // Deux défauts corrigés ici, tous deux bloquants pour cette étape :
+            // 1) la casse. Le catalogue stocke majoritairement des MAJUSCULES
+            //    (`SOULS`, `DASHBOARD`) ; la normalisation en minuscule utilisée
+            //    ici faisait échouer la recherche et renvoyait « Module
+            //    inconnu : souls » avec le code canonique. La résolution est
+            //    désormais insensible à la casse, dans ModuleCatalogService.
+            // 2) la persistance. Valider `souls` contre `SOULS` ne suffisait
+            //    pas : il fallait PERSISTER le code canonique, sinon
+            //    tenant_features.module_code contenait une clé que les autres
+            //    résolveurs (strictes) ne retrouvaient plus — module « activé »
+            //    mais invisible partout.
+            String canonicalCode = moduleCatalogService.resolveCanonicalCode(requested)
+                    .orElseThrow(() -> invalid("modules", "Module inconnu : " + requested));
+            if (!codes.contains(canonicalCode)) {
+                codes.add(canonicalCode);
             }
-            codes.add(normalizedCode);
         }
 
         List<UUID> createdIds = new ArrayList<>();

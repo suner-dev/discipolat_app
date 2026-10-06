@@ -106,10 +106,10 @@ class _MyRelationsCardState extends State<MyRelationsCard> {
   Future<void> _openDeclareDialog() async {
     final l10n = AppLocalizations.of(context);
     final types = _types.isEmpty
-        ? const [
-            RelationType(code: 'PASTEUR', label: 'Mon pasteur'),
-            RelationType(code: 'SUPERIEUR', label: 'Mon supérieur'),
-            RelationType(code: 'MENTOR', label: 'Mon mentor'),
+        ? [
+            RelationType(code: 'PASTEUR', label: l10n.relationsTypePasteur),
+            RelationType(code: 'SUPERIEUR', label: l10n.relationsTypeSuperieur),
+            RelationType(code: 'MENTOR', label: l10n.relationsTypeMentor),
           ]
         : _types;
     String typeCode = types.first.code;

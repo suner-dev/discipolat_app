@@ -105,6 +105,8 @@ function renderModal(userId = MEMBRE_ID) {
 beforeEach(() => {
   vi.clearAllMocks();
   apiGet.mockImplementation(async (url: string) => {
+    if (url.startsWith('/hierarchy/users/')) return { data: detail().hierarchie };
+    if (url.startsWith('/relations/users/')) return { data: detail().relations };
     if (url.startsWith('/users/')) return { data: detail() };
     if (url.startsWith('/evaluations')) return { data: [] };
     return { data: [] };
@@ -135,7 +137,8 @@ describe('UserDetailModal — hiérarchie et encadrement (V231)', () => {
     // Le libellé de branche porte son origine (traçabilité de la donnée) :
     // « Campus Nord » apparaît en racine ET en maillon de la chaîne.
     expect(screen.getAllByText(/Campus Nord/).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/ASSIGNATION_V3/)).toBeInTheDocument();
+    // L'origine est désormais LOCALISÉE (plus le code technique brut).
+    expect(screen.getByText(/assignation/i)).toBeInTheDocument();
   });
 
   it('navigue vers la fiche du responsable et revient en arrière (fil d’Ariane)', async () => {
@@ -179,8 +182,10 @@ describe('UserDetailModal — hiérarchie et encadrement (V231)', () => {
   it('hiérarchiePartielle=true → message explicite au lieu d’une carte vide', async () => {
     apiGet.mockImplementation(async (url: string) => {
       if (url.startsWith('/users/')) {
-        return { data: detail({ hierarchiePartielle: true, hierarchie: null, relations: null }) };
+        return { data: detail({ hierarchiePartielle: true }) };
       }
+      if (url.startsWith('/hierarchy/users/')) return { data: null };
+      if (url.startsWith('/relations/users/')) return { data: null };
       return { data: [] };
     });
     renderModal();
@@ -190,11 +195,13 @@ describe('UserDetailModal — hiérarchie et encadrement (V231)', () => {
 
   it('aucune branche organisationnelle → message explicite (pas de vide muet)', async () => {
     apiGet.mockImplementation(async (url: string) => {
-      if (url.startsWith('/users/')) {
-        const d = detail();
-        d.hierarchie.branches = [];
-        return { data: d };
+      if (url.startsWith('/hierarchy/users/')) {
+        const h = detail().hierarchie;
+        h.branches = [];
+        return { data: h };
       }
+      if (url.startsWith('/relations/users/')) return { data: detail().relations };
+      if (url.startsWith('/users/')) return { data: detail() };
       return { data: [] };
     });
     renderModal();

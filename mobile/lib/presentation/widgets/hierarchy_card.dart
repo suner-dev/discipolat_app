@@ -2,14 +2,16 @@
 ///
 /// Reflet de `frontend/src/components/relations/HierarchyTree.tsx` : une
 /// racine par branche organisationnelle, la chaîne d'ascendance en dessous,
-/// chaque responsable directement cliquable (sa fiche s'ouvre)..widget testable
-/// isolément, sans dépendre de l'écran appelant.
+/// chaque responsable directement cliquable (sa fiche s'ouvre). Widget
+/// testable isolément, sans dépendre de l'écran appelant.
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../../l10n/app_localizations.dart';
 import '../../../data/models/member_relation.dart';
+import '../../../data/services/api_service.dart';
+import '../../../data/services/relation_service.dart';
 
 /// Arbre des branches organisationnelles + ascendants unifiés + encadrement
 /// pastoral. Rendu adaptatif : le repli `branches` est obligatoire, le reste
@@ -244,9 +246,15 @@ class _BranchNodeState extends State<_BranchNode> {
   @override
   Widget build(BuildContext context) {
     final steps = widget.branch.steps;
-    final meta = [widget.branch.nodeType, widget.branch.origine]
-        .where((e) => e != null && e.isNotEmpty)
-        .join(' · ');
+    final l10n = AppLocalizations.of(context);
+    final metaParts = <String>[];
+    if (widget.branch.nodeType.isNotEmpty) {
+      metaParts.add(_nodeTypeLabel(l10n, widget.branch.nodeType));
+    }
+    if (widget.branch.origine != null && widget.branch.origine!.isNotEmpty) {
+      metaParts.add(_originLabel(l10n, widget.branch.origine!));
+    }
+    final meta = metaParts.join(' · ');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,6 +431,47 @@ class _SuiviRow extends StatelessWidget {
   }
 }
 
+/// Libellé localisé d'un type de nœud organisationnel — le serveur renvoie le
+/// CODE technique (CAMPUS, ROOT_CHURCH…), on l'affiche traduit. Sinon, aucune
+/// église ne reconnaît « CAMPUS » sur sa carte.
+String _nodeTypeLabel(AppLocalizations l10n, String code) {
+  switch (code) {
+    case 'ROOT_CHURCH':
+      return l10n.translate('hierarchyNodeTypeRootChurch');
+    case 'CAMPUS':
+      return l10n.translate('hierarchyNodeTypeCampus');
+    case 'SUB_CHURCH':
+      return l10n.translate('hierarchyNodeTypeSubChurch');
+    case 'ASSEMBLY':
+      return l10n.translate('hierarchyNodeTypeAssembly');
+    case 'REGION':
+      return l10n.translate('hierarchyNodeTypeRegion');
+    case 'DISTRICT':
+      return l10n.translate('hierarchyNodeTypeDistrict');
+    case 'DEPARTMENT':
+      return l10n.translate('hierarchyNodeTypeDepartment');
+    case 'GROUP':
+      return l10n.translate('hierarchyNodeTypeGroup');
+    default:
+      return code;
+  }
+}
+
+/// Libellé localisé de l'origine d'un rattachement — le serveur renvoie le
+/// CODE technique (ASSIGNATION_V3, ADHESION_NOEUD…), on l'affiche traduit.
+String _originLabel(AppLocalizations l10n, String code) {
+  switch (code) {
+    case 'ASSIGNATION_V3':
+      return l10n.translate('hierarchyOriginAssignation');
+    case 'ADHESION_NOEUD':
+      return l10n.translate('hierarchyOriginAdhesion');
+    case 'RESPONSABLE_NOEUD':
+      return l10n.translate('hierarchyOriginResponsable');
+    default:
+      return code;
+  }
+}
+
 /// Emballage visuel aligné sur les autres cartes de l'application.
 class GlassCardLike extends StatelessWidget {
   const GlassCardLike({super.key, required this.child});
@@ -465,6 +514,85 @@ class RelationServiceParsing {
         .map(Ascendant.fromJson)
         .where((a) => a.id.isNotEmpty)
         .toList();
+  }
+}
+
+/// « Ma hiérarchie » — section du PROFIL : charge son propre endpoint
+/// `GET /hierarchy/me` et rend l'arbre + ascendants + suivi. Distinct de
+/// « Mon encadrement » (relations DÉCLARATIVES) : ensemble, les deux sections
+/// donnent la vue complète demandée par le plan V231.
+class MyHierarchyCard extends StatefulWidget {
+  const MyHierarchyCard({super.key, this.apiService, this.onOpenProfile});
+
+  final ApiService? apiService;
+  final void Function(String userId)? onOpenProfile;
+
+  @override
+  State<MyHierarchyCard> createState() => _MyHierarchyCardState();
+}
+
+class _MyHierarchyCardState extends State<MyHierarchyCard> {
+  late final RelationService _service =
+      RelationService(widget.apiService ?? ApiService());
+  Map<String, dynamic> _hierarchy = const {};
+  bool _loading = true;
+  bool _error = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = false;
+    });
+    try {
+      final h = await _service.myHierarchy();
+      if (!mounted) return;
+      setState(() {
+        _hierarchy = h;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (_loading) {
+      return GlassCardLike(
+        child: const Padding(
+          padding: EdgeInsets.all(8),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_error) {
+      return GlassCardLike(
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(l10n.hierarchyUnavailable,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6))),
+            ),
+            TextButton(onPressed: _load, child: Text(l10n.relationsRetry)),
+          ],
+        ),
+      );
+    }
+    return HierarchyCard(
+      hierarchy: _hierarchy,
+      onOpenProfile: widget.onOpenProfile,
+    );
   }
 }
 

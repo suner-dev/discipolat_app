@@ -50,6 +50,14 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
   const [note, setNote] = useState(0);
   const [hoverNote, setHoverNote] = useState(0);
   const [commentaire, setCommentaire] = useState('');
+  // V231 — « Déclarer pour ce membre » (réservé ADMIN/PASTEUR) : l'admin
+  // rattache le membre consulté à l'un de ses encadrants. Consomme
+  // POST /relations/users/{userId}.
+  const [addingForMember, setAddingForMember] = useState(false);
+  const [memberQuery, setMemberQuery] = useState('');
+  const [memberCandidateId, setMemberCandidateId] = useState<string | null>(null);
+  const [memberType, setMemberType] = useState('');
+  const [memberNote, setMemberNote] = useState('');
   // V231 — navigation interne : cliquer un encadrant, un responsable de
   // niveau ou un membre rattaché ouvre SA fiche, sans repasser par la liste.
   // L'historique est conservé pour pouvoir revenir (sinon l'utilisateur se
@@ -81,8 +89,62 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
     retry: 1,
   });
 
+  // V231 — la hiérarchie est lue via son PROPRE endpoint (et non l'agrégat
+  // embarqué dans /detail) : une panne de la brique hiérarchie n'empêche plus
+  // d'afficher la fiche (âme, dossier, évaluations…), et l'endpoint
+  // /hierarchy/users/{id} est réellement consommé par l'UI.
+  const { data: hierarchy } = useQuery({
+    queryKey: ['users', viewedId, 'hierarchy'],
+    queryFn: async () => (await api.get(`/hierarchy/users/${viewedId}`)).data as any,
+    enabled: !!viewedId,
+    retry: 1,
+  });
+
+  // V231 — les relations déclarées sont lues via leur PROPRE endpoint
+  // /relations/users/{id} : consommé par l'UI, et isolé des autres briques.
+  const { data: userRelations } = useQuery({
+    queryKey: ['users', viewedId, 'relations'],
+    queryFn: async () => (await api.get(`/relations/users/${viewedId}`)).data as any,
+    enabled: !!viewedId,
+    retry: 1,
+  });
+
   // Arbre des branches : recalculé seulement quand l'agrégat change.
-  const branchTree = useBranchTree(detail?.hierarchie?.branches as HierarchyBranch[] | undefined, openPerson);
+  const branchTree = useBranchTree(hierarchy?.branches as HierarchyBranch[] | undefined, openPerson, t);
+
+  // Recherche d'encadrants pour « Déclarer pour ce membre ».
+  const [debouncedMemberQuery, setDebouncedMemberQuery] = useState('');
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedMemberQuery(memberQuery.trim()), 300);
+    return () => window.clearTimeout(id);
+  }, [memberQuery]);
+  const { data: memberCandidates } = useQuery({
+    queryKey: ['relations', 'search-for-member', debouncedMemberQuery],
+    queryFn: async () => (await api.get('/users/search', { params: { q: debouncedMemberQuery } })).data as any[],
+    enabled: debouncedMemberQuery.length >= 2,
+    staleTime: 15_000,
+    retry: 1,
+  });
+  const { data: memberTypes } = useQuery({
+    queryKey: ['relations', 'types'],
+    queryFn: async () => (await api.get('/relations/types')).data as { code: string; label: string }[],
+    staleTime: 60_000,
+  });
+  const declareForMember = useMutation({
+    mutationFn: async () => (await api.post(`/relations/users/${viewedId}`, {
+      toUserId: memberCandidateId,
+      relationType: memberType || memberTypes?.[0]?.code,
+      note: memberNote.trim() || undefined,
+    })).data,
+    onSuccess: () => {
+      toast.success(t('relations.declaredToast'));
+      queryClient.invalidateQueries({ queryKey: ['users', viewedId, 'relations'] });
+      queryClient.invalidateQueries({ queryKey: ['users', viewedId, 'hierarchy'] });
+      setAddingForMember(false);
+      setMemberQuery(''); setMemberCandidateId(null); setMemberNote('');
+    },
+    onError: (err: any) => toast.error(getErrorMessage(err)),
+  });
 
   // Pré-remplir le formulaire avec MA dernière évaluation de cet utilisateur
   const myEval = (detail?.monEvaluation ?? [])[0];
@@ -308,14 +370,16 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                 </div>
               );
             }
-            const ascendants: any[] = detail?.hierarchie?.ascendants ?? [];
-            const sortantes: any[] = detail?.relations?.sortantes ?? [];
-            const entrantes: any[] = detail?.relations?.entrantes ?? [];
-            const branches = detail?.hierarchie?.branches;
-            const suivi = detail?.hierarchie?.suivi;
-            const resume = detail?.hierarchie?.resume;
+            const ascendants: any[] = hierarchy?.ascendants ?? [];
+            const sortantes: any[] = userRelations?.sortantes ?? [];
+            const entrantes: any[] = userRelations?.entrantes ?? [];
+            const branches = hierarchy?.branches;
+            const suivi = hierarchy?.suivi;
+            const resume = hierarchy?.resume;
+            const roles: any[] = hierarchy?.roles ?? [];
             const hasAnything =
               ascendants.length > 0 || sortantes.length > 0 || entrantes.length > 0
+              || roles.length > 0
               || (Array.isArray(branches) && branches.length > 0);
             if (!hasAnything && !suivi) return null;
 
@@ -352,6 +416,33 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                           </span>
                           <ChevronRight className="w-3 h-3 text-gray-300" />
                         </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rôles-capacité de ce membre (V3 + système). Les libellés
+                    arrivent déjà localisés par le backend (dictionnaire
+                    USER_ROLE / RoleTitleService par église). */}
+                {roles.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                      {t('hierarchy.roles')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {roles.map((r: any, i: number) => (
+                        <span
+                          key={`${r.source}-${r.code}-${i}`}
+                          title={r.nodeName ? `${r.label} — ${r.nodeName}` : r.label}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                            r.source === 'CAPACITE'
+                              ? 'bg-indigo-50/70 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+                              : 'bg-gray-50/70 dark:bg-gray-800/40 text-gray-600 dark:text-gray-300 border-gray-200/60 dark:border-gray-700/40'
+                          }`}
+                        >
+                          {r.label}
+                          {r.nodeName ? <span className="text-[9px] opacity-60 ml-1">· {r.nodeName}</span> : null}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -448,6 +539,73 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
                     </div>
                   </div>
                 )}
+
+                {/* Déclarer pour ce membre (ADMIN/PASTEUR) — consomme
+                    POST /relations/users/{userId}. */}
+                <div className="mt-3 pt-3 border-t border-violet-200/40 dark:border-violet-800/30">
+                  {!addingForMember ? (
+                    <button
+                      type="button"
+                      onClick={() => setAddingForMember(true)}
+                      className="text-[11px] text-violet-600 dark:text-violet-300 hover:underline"
+                    >
+                      + {t('relations.declareForMember')}
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={memberQuery}
+                        onChange={(e) => { setMemberQuery(e.target.value); setMemberCandidateId(null); }}
+                        placeholder={t('relations.searchPlaceholder')}
+                        className="input w-full text-xs"
+                      />
+                      {Array.isArray(memberCandidates) && memberCandidates.length > 0 && !memberCandidateId && (
+                        <div className="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                          {memberCandidates.map((c: any) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => { setMemberCandidateId(c.id); setMemberQuery(`${c.firstName ?? ''} ${c.lastName ?? ''}`.trim()); }}
+                              className="block w-full text-left px-2 py-1 text-xs hover:bg-gray-100 dark:hover:bg-gray-800"
+                            >
+                              {c.firstName} {c.lastName} <span className="text-gray-400">{c.email}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <select
+                        value={memberType}
+                        onChange={(e) => setMemberType(e.target.value)}
+                        className="input w-full text-xs"
+                      >
+                        {(memberTypes ?? []).map((tp) => (
+                          <option key={tp.code} value={tp.code}>{tp.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        value={memberNote}
+                        onChange={(e) => setMemberNote(e.target.value)}
+                        placeholder={t('relations.notePlaceholder')}
+                        className="input w-full text-xs"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={!memberCandidateId || declareForMember.isPending}
+                          onClick={() => declareForMember.mutate()}
+                          className="btn-primary btn-sm"
+                        >
+                          {declareForMember.isPending ? t('relations.submitting') : t('relations.submit')}
+                        </button>
+                        <button type="button" onClick={() => setAddingForMember(false)} className="btn-secondary btn-sm">
+                          {t('relations.cancel')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })()}

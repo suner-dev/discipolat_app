@@ -11,6 +11,7 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/secure_screen.dart';
 import 'my_relations_card.dart';
+import '../../widgets/hierarchy_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.apiService});
@@ -259,6 +260,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // V231 — « Mon encadrement » : relations déclaratives du
                       // membre (pasteur, supérieur, mentor…) — section additive.
                       MyRelationsCard(apiService: widget.apiService),
+                      const SizedBox(height: 16),
+
+                      // V231 — « Ma hiérarchie » : rattachement organisationnel
+                      // et responsables par niveau (GET /hierarchy/me).
+                      MyHierarchyCard(
+                        apiService: widget.apiService,
+                        onOpenProfile: (id) => context.push('/user/$id'),
+                      ),
                       const SizedBox(height: 16),
 
                       // PORT Develop1 (§G5.9) — Portail basse connexion

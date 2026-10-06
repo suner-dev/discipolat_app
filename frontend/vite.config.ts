@@ -2,6 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+/**
+ * Backend que le serveur de développement relaie (/api et /ws-church).
+ * Surchargeable par `API_PROXY_TARGET` quand le port 8080 est occupé.
+ */
+const apiProxyTarget = process.env.API_PROXY_TARGET || 'http://localhost:8080';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -16,13 +22,16 @@ export default defineConfig({
     // pour que le dev server réponde aux hôtes publics.
     allowedHosts: ['.trycloudflare.com', '.cloudflare.com', '.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', 'localhost'],
     proxy: {
+      // Cible du backend paramétrable, défaut inchangé (localhost:8080).
+      // Nécessaire quand le port 8080 est déjà occupé (autre conteneur, autre
+      // instance) : `API_PROXY_TARGET=http://localhost:8090 npm run dev`.
       '/api': {
-        target: 'http://localhost:8080',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
       // §G5.8 — bus temps réel STOMP/SockJS (firehose outbox web ↔ mobile)
       '/ws-church': {
-        target: 'http://localhost:8080',
+        target: apiProxyTarget,
         changeOrigin: true,
         ws: true,
       },

@@ -4,6 +4,7 @@ import '../../widgets/glass_theme.dart';
 import '../../widgets/hierarchy_card.dart';
 import '../../widgets/open_url.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../data/services/relation_service.dart';
 
 /// Fiche utilisateur complète (mobile) : identité, âme liée, âmes suivies si
 /// faiseur, départements + membres si responsable, famille gérée si chef de
@@ -21,6 +22,8 @@ class UserDetailScreen extends StatefulWidget {
 class _UserDetailScreenState extends State<UserDetailScreen> {
   late final ApiService _apiService = widget.apiService ?? ApiService();
   Map<String, dynamic>? _detail;
+  Map<String, dynamic>? _hierarchy;
+  Map<String, dynamic>? _relations;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -75,10 +78,25 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     super.dispose();
   }
 
+  late final RelationService _relationsService =
+      RelationService(widget.apiService ?? ApiService());
+
   Future<void> _load() async {
     setState(() => _isLoading = true);
     try {
+      // Fiche détail (autres briques) + hiérarchie/relations sur LEUR propre
+      // endpoint (panne d'une brique n'effondre pas la fiche, endpoints
+      // réellement consommés côté mobile).
       final res = await _apiService.get('/users/${widget.userId}/detail');
+      Map<String, dynamic>? hierarchy;
+      Map<String, dynamic>? relations;
+      try {
+        hierarchy = await _relationsService.hierarchyOf(widget.userId);
+      } catch (_) {}
+      try {
+        final s = await _relationsService.relationsOf(widget.userId);
+        relations = s.toJson();
+      } catch (_) {}
       if (mounted) {
         final detail = res.data as Map<String, dynamic>;
         // Pré-remplir avec MA dernière évaluation
@@ -90,12 +108,137 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         }
         setState(() {
           _detail = detail;
+          _hierarchy = hierarchy;
+          _relations = relations;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// « Déclarer pour ce membre » — un ADMIN/PASTEUR rattache le membre
+  /// consulté à l'un de ses encadrants (POST /relations/users/{id}).
+  Future<void> _openDeclareForDialog() async {
+    final l10n = AppLocalizations.of(context);
+    String typeCode = 'PASTEUR';
+    String query = '';
+    Map<String, dynamic>? selected;
+    String note = '';
+    var candidates = const <Map<String, dynamic>>[];
+    var searching = false;
+    List<Map<String, dynamic>> types = const [];
+    try {
+      types = await _relationsService.types().then((l) => l
+          .map((t) => {'code': t.code, 'label': t.label})
+          .toList());
+      if (types.isNotEmpty) typeCode = types.first['code']!;
+    } catch (_) {}
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> onQuery(String v) async {
+            setDialogState(() {
+              searching = true;
+              selected = null;
+            });
+            try {
+              final found = await _relationsService.searchMembers(v);
+              if (context.mounted) setDialogState(() => candidates = found);
+            } catch (_) {}
+            if (context.mounted) setDialogState(() => searching = false);
+          }
+
+          return AlertDialog(
+            title: Text(l10n.relationsDeclareForMember),
+            content: SizedBox(
+              width: 420,
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (types.isNotEmpty)
+                    DropdownButtonFormField<String>(
+                      value: typeCode,
+                      items: types
+                          .map((t) => DropdownMenuItem<String>(
+                              value: t['code'].toString(), child: Text(t['label'].toString())))
+                          .toList(),
+                      onChanged: (v) => setDialogState(() => typeCode = v ?? typeCode),
+                    ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: l10n.relationsSearchMember,
+                    ),
+                    onChanged: (v) {
+                      query = v;
+                      if (v.trim().length >= 2) onQuery(v);
+                    },
+                  ),
+                  if (searching) const Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator()),
+                  if (selected == null)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 160),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: candidates.take(8).map((c) {
+                          final name = '${c['firstName'] ?? ''} ${c['lastName'] ?? ''}'.trim();
+                          return ListTile(
+                            title: Text(name.isEmpty ? '—' : name),
+                            subtitle: Text('${c['email'] ?? ''}'),
+                            onTap: () => setDialogState(() => selected = c),
+                          );
+                        }).toList(),
+                      ),
+                    )
+                  else
+                    ListTile(
+                      title: Text('${selected!['firstName'] ?? ''} ${selected!['lastName'] ?? ''}'.trim()),
+                      trailing: IconButton(icon: const Icon(Icons.close), onPressed: () => setDialogState(() => selected = null)),
+                    ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: InputDecoration(hintText: l10n.relationsNoteOptional),
+                    onChanged: (v) => note = v,
+                  ),
+                ]),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(l10n.cancel)),
+              FilledButton(
+                onPressed: selected == null
+                    ? null
+                    : () async {
+                        try {
+                          await _relationsService.declareFor(
+                            widget.userId,
+                            toUserId: '${selected!['id']}',
+                            relationType: typeCode,
+                            note: note.isEmpty ? null : note,
+                          );
+                          if (!mounted) return;
+                          Navigator.pop(dialogContext);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.relationsDeclaredToast)),
+                          );
+                          _load();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('$e')),
+                          );
+                        }
+                      },
+                child: Text(l10n.relationsSubmit),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _saveEvaluation() async {
@@ -181,20 +324,31 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     final sections = <Widget>[
       _buildIdentityCard(d),
       const SizedBox(height: 12),
-      // V231 — hiérarchie agrégée + encadrement déclaratif (clés additionnelles
-      // du endpoint /users/{id}/detail). `hierarchiePartielle` distingue
-      // « ce membre n'a pas d'encadrement » de « la brique a échoué » :
-      // sans ce marqueur, la carte s'afficherait vide et silencieuse.
+      // V231 — « Déclarer pour ce membre » : un ADMIN/PASTEUR rattache le
+      // membre consulté à un encadrant (POST /relations/users/{id}).
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          icon: const Icon(Icons.add_link, size: 16),
+          label: Text(l10n.relationsDeclareForMember),
+          onPressed: _openDeclareForDialog,
+        ),
+      ),
+      const SizedBox(height: 4),
+      // V231 — hiérarchie agrégée + encadrement déclaratif (endpoints dédiés).
+      // `hierarchiePartielle` distingue « ce membre n'a pas d'encadrement » de
+      // « la brique a échoué » : sans ce marqueur, la carte s'afficherait vide
+      // et silencieuse.
       if (d['hierarchiePartielle'] == true)
         ...[HierarchyUnavailableCard(), const SizedBox(height: 12)]
-      else if (d['hierarchie'] is Map || d['relations'] is Map)
+      else if (_hierarchy is Map || _relations is Map)
         ...[
           HierarchyCard(
-            hierarchy: d['hierarchie'] is Map
-                ? Map<String, dynamic>.from(d['hierarchie'] as Map)
+            hierarchy: _hierarchy is Map
+                ? Map<String, dynamic>.from(_hierarchy as Map)
                 : const {},
-            relations: d['relations'] is Map
-                ? Map<String, dynamic>.from(d['relations'] as Map)
+            relations: _relations is Map
+                ? Map<String, dynamic>.from(_relations as Map)
                 : null,
             onOpenProfile: (id) => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => UserDetailScreen(userId: id)),

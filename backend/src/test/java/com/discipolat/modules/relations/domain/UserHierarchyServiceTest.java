@@ -77,11 +77,12 @@ class UserHierarchyServiceTest {
     @Mock private DepartmentRepository departmentRepository;
     @Mock private FamilyRepository familyRepository;
     @Mock private MemberRelationService relationService;
+    @Mock private com.discipolat.modules.platform.domain.DictionaryEntryRepository dictionaryEntryRepository;
 
     private UserHierarchyService svc() {
         return new UserHierarchyService(userRepository, assignmentRepository, roleRepository,
                 roleTitleService, membershipRepository, nodeRepository, soulRepository,
-                departmentRepository, familyRepository, relationService);
+                departmentRepository, familyRepository, relationService, dictionaryEntryRepository);
     }
 
     private static OrganizationNode node(UUID id, UUID parentId, String path,

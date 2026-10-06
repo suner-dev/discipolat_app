@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, CornerDownRight, Loader2 } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 /**
  * V231 — composant d'arbre générique et réutilisable.
@@ -79,6 +80,7 @@ function TreeBranch({
   const children = node.children ?? [];
   const collapsible = children.length > 0;
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const { t } = useI18n();
 
   // L'état de pliage est local au nœud : pas de registre global, donc pas
   // de risque d'invalidation croisée entre branches.
@@ -99,7 +101,7 @@ function TreeBranch({
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={isOpen}
-          aria-label={`${isOpen ? 'Replier' : 'Déplier'} ${node.label}`}
+          aria-label={`${isOpen ? t('hierarchy.collapseNode') : t('hierarchy.expandNode')} ${node.label}`}
           className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
         >
           {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -163,9 +165,32 @@ export function LoadingTree({ label }: { label: string }) {
 export function useBranchTree(
   branches: HierarchyBranch[] | undefined,
   onSelectPerson: (personId: string) => void,
+  t?: (key: string) => string,
 ): TreeNodeModel[] {
   return useMemo(() => {
     if (!branches?.length) return [];
+    const localizeOrigin = (o: string) => {
+      switch (o) {
+        case 'ASSIGNATION_V3': return t?.('hierarchy.originAssignation') ?? o;
+        case 'ADHESION_NOEUD': return t?.('hierarchy.originAdhesion') ?? o;
+        case 'RESPONSABLE_NOEUD': return t?.('hierarchy.originResponsable') ?? o;
+        default: return o;
+      }
+    };
+    const localizeNodeType = (n: string) => {
+      const map: Record<string, string> = {
+        ROOT_CHURCH: 'hierarchy.nodeType.rootChurch',
+        CAMPUS: 'hierarchy.nodeType.campus',
+        SUB_CHURCH: 'hierarchy.nodeType.subChurch',
+        ASSEMBLY: 'hierarchy.nodeType.assembly',
+        REGION: 'hierarchy.nodeType.region',
+        DISTRICT: 'hierarchy.nodeType.district',
+        DEPARTMENT: 'hierarchy.nodeType.department',
+        GROUP: 'hierarchy.nodeType.group',
+      };
+      const key = map[n];
+      return key ? t?.(key) ?? n : n;
+    };
     return branches.map((branch, index) => {
       const noeud: HierarchyNode = branch.noeud ?? { id: branchKey(branch, index) };
       const chaine: HierarchyStep[] = branch.chaine ?? [];
@@ -182,11 +207,13 @@ export function useBranchTree(
       return {
         id: branchKey(branch, index),
         label: noeud.nom ?? '—',
-        meta: [noeud.type, branch.origine].filter(Boolean).join(' · ') || undefined,
+        meta: [noeud.type ? localizeNodeType(noeud.type) : undefined, branch.origine ? localizeOrigin(branch.origine) : undefined]
+          .filter(Boolean)
+          .join(' · ') || undefined,
         children: childNodes,
       };
     });
-  }, [branches, onSelectPerson]);
+  }, [branches, onSelectPerson, t]);
 }
 
 function branchKey(branch: HierarchyBranch, index: number): string {

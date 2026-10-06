@@ -243,8 +243,8 @@ void main() {
       expect(find.text('Campus Nord'), findsWidgets);
       expect(find.text('Paul Beye'), findsWidgets);
       expect(find.text('Église mère'), findsWidgets);
-      // Origine de la branche affichée : la donnée est traçable.
-      expect(find.textContaining('ASSIGNATION_V3'), findsOneWidget);
+      // Origine de la branche affichée, LOCALISÉE (plus le code brut ASSIGNATION_V3).
+      expect(find.textContaining('assignation'), findsOneWidget);
     });
 
     testWidgets('ascendants : organisation et déclaratif distingués',

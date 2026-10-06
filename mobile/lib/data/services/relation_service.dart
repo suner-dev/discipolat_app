@@ -98,6 +98,38 @@ class RelationService {
     return _map(res);
   }
 
+  /// GET /hierarchy/users/{id} — hiérarchie d'UN membre (déclarant/pasteur/
+  /// responsable). Consommé par la fiche utilisateur pour isoler une panne de
+  /// la brique hiérarchie du reste de la fiche.
+  Future<Map<String, dynamic>> hierarchyOf(String userId) async {
+    final res = await _api.get('/hierarchy/users/$userId');
+    return _map(res);
+  }
+
+  /// GET /relations/users/{id} — {sortantes, entrantes} d'un membre.
+  /// Utilisé par la fiche pour lister ses encadrants et ses rattachés sans
+  /// recharger toute la fiche détail.
+  Future<RelationsSummary> relationsOf(String userId) async {
+    final res = await _api.get('/relations/users/$userId');
+    return RelationsSummary.fromJson(_map(res));
+  }
+
+  /// POST /relations/users/{id} — déclarer, pour le membre consulté, un
+  /// encadrant (réservé ADMIN/PASTEUR). Notification automatique.
+  Future<MemberRelation> declareFor(
+    String userId, {
+    required String toUserId,
+    required String relationType,
+    String? note,
+  }) async {
+    final res = await _api.post('/relations/users/$userId', data: {
+      'toUserId': toUserId,
+      'relationType': relationType,
+      if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+    });
+    return MemberRelation.fromJson(_map(res));
+  }
+
   /// GET /users/search?q= — recherche de membres enregistrés (déclaration).
   Future<List<Map<String, dynamic>>> searchMembers(String query) async {
     if (query.trim().length < 2) return const [];
