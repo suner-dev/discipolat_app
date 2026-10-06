@@ -154,6 +154,7 @@
 | Garde d'architecture | `mvn -o test -Dtest='TenantFilterDefArchitectureTest'` | **2 run, 0 failure, 0 error** |
 | Contextes Spring complet | `mvn -o test -Dtest='EventTableContractTest,MultiTenantSecurityTests,OnboardingWizardControllerTest,PeopleCriticalPathIntegrationTest,PeopleRoleAssignmentRbacTest,TenantSwitcherMultiMembershipTest,InvitationAdminTenantScopeRbacTest,SpaceCriticalPathIntegrationTest'` | **84 run, 0 failure, 0 error** — c'est exactement la classe de tests que le défaut #1 faisait échouer |
 | **Suite backend complète** | `mvn -o test` | **2047 run, 0 failure, 4 errors** (voir §5.1) |
+| Suite backend complète — **double-sourçage indépendant** (autre session, HEAD `36727c77`, copie isolée, `mvn -B -o clean test`) | même commande, exécutée à part | **2064 run, 0 failure, 2 errors** — les 2 errors sont EXACTEMENT `OnboardingStepActionsTest` (tierce, §5.1), **déjà corrigée depuis** par `75a3639d` : revalidée **23/23, BUILD SUCCESS** sur le HEAD courant. Zéro échec relations/hiérarchie, tous contextes Spring verts. |
 | Chaîne Flyway sur PostgreSQL réel | `mvn -o test -Dtest='FlywayMigrationChainPostgreSqlTest,EventTableContractTest'` | **19 run, 0 failure, 0 error** (dont V231 et V232) |
 | Validation SQL déterministe | `./scripts/validate-migrations-v231.sh` | **OK** — table/index/CHECK/FK/CASCADE, seed et backfill **idempotents**, libellé personnalisé **préservé**, base de dev **intacte** |
 | Typage frontend | `npx tsc --noEmit` | **0 erreur** |
