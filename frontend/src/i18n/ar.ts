@@ -3484,6 +3484,8 @@ const ar: Record<string, string> = {
   'hierarchy.roles': 'الأدوار',
   'hierarchy.expandNode': 'توسيع',
   'hierarchy.collapseNode': 'طيّ',
+  'hierarchy.expandAll': 'توسيع الكل',
+  'hierarchy.collapseAll': 'طيّ الكل',
   'hierarchy.nodeType.rootChurch': 'الكنيسة الأم',
   'hierarchy.nodeType.campus': 'الفرع',
   'hierarchy.nodeType.subChurch': 'كنيسة محلية',

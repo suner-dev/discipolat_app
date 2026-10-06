@@ -3393,6 +3393,8 @@ const en: Record<string, string> = {
   'hierarchy.roles': 'Roles',
   'hierarchy.expandNode': 'Expand',
   'hierarchy.collapseNode': 'Collapse',
+  'hierarchy.expandAll': 'Expand all',
+  'hierarchy.collapseAll': 'Collapse all',
   'hierarchy.nodeType.rootChurch': 'Root church',
   'hierarchy.nodeType.campus': 'Campus',
   'hierarchy.nodeType.subChurch': 'Local church',

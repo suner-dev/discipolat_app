@@ -3554,6 +3554,8 @@ const sw: Record<string, string> = {
   'hierarchy.roles': 'Majukumu',
   'hierarchy.expandNode': 'Panua',
   'hierarchy.collapseNode': 'Kog',
+  'hierarchy.expandAll': 'Panua yote',
+  'hierarchy.collapseAll': 'Kog yote',
   'hierarchy.nodeType.rootChurch': 'Kanisa mama',
   'hierarchy.nodeType.campus': 'Kituo',
   'hierarchy.nodeType.subChurch': 'Kanisa la eneo',

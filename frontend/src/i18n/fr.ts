@@ -3450,6 +3450,8 @@ const fr = {
   'hierarchy.roles': 'Rôles',
   'hierarchy.expandNode': 'Déplier',
   'hierarchy.collapseNode': 'Replier',
+  'hierarchy.expandAll': 'Tout déplier',
+  'hierarchy.collapseAll': 'Tout replier',
   'hierarchy.nodeType.rootChurch': 'Église mère',
   'hierarchy.nodeType.campus': 'Campus',
   'hierarchy.nodeType.subChurch': 'Église locale',

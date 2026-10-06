@@ -3339,6 +3339,8 @@ const pt: Record<string, string> = {
   'hierarchy.roles': 'Funções',
   'hierarchy.expandNode': 'Expandir',
   'hierarchy.collapseNode': 'Recolher',
+  'hierarchy.expandAll': 'Expandir tudo',
+  'hierarchy.collapseAll': 'Recolher tudo',
   'hierarchy.nodeType.rootChurch': 'Igreja mãe',
   'hierarchy.nodeType.campus': 'Campus',
   'hierarchy.nodeType.subChurch': 'Igreja local',

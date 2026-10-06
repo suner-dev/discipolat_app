@@ -402,8 +402,12 @@ class OnboardingStepActionsTest {
     @Test
     @DisplayName("MODULES : chaque code est validé contre le catalogue puis activé")
     void modulesValidatesAgainstCatalogAndEnables() {
-        when(moduleCatalogService.getByCode("people")).thenReturn(Optional.of(new ModuleDefinition()));
-        when(moduleCatalogService.getByCode("events")).thenReturn(Optional.of(new ModuleDefinition()));
+        // resolveCanonicalCode est l'API utilisée par la production (cf.
+        // commentaire dans OnboardingStepActions) : c'est elle qu'on stubbe.
+        // « PEOPLE » (3e élément) sera dédupliqué via le code canonique déjà vu,
+        // donc resolveCanonicalCode n'est appelé que 2 fois.
+        when(moduleCatalogService.resolveCanonicalCode("people")).thenReturn(Optional.of("PEOPLE"));
+        when(moduleCatalogService.resolveCanonicalCode("events")).thenReturn(Optional.of("EVENTS"));
         TenantFeature feature = new TenantFeature();
         feature.setId(UUID.randomUUID());
         when(tenantFeatureService.enableFeature(eq(tenantId), anyString(), any())).thenReturn(feature);
@@ -411,19 +415,20 @@ class OnboardingStepActionsTest {
         Map<String, Object> result = actions.execute(OnboardingWizardStep.StepType.MODULES, tenantId,
                 Map.of("modules", List.of("people", "events", "PEOPLE")));
 
-        // Le doublon ( casse différente) n'est activé qu'une fois.
+        // Le doublon (casse différente) n'est activé qu'une fois, et c'est le
+        // code CANONIQUE qui est persisté (exigence du catalogue).
         verify(tenantFeatureService, times(2)).enableFeature(eq(tenantId), anyString(), any());
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(tenantFeatureService, times(2)).enableFeature(eq(tenantId), captor.capture(), any());
-        assertThat(captor.getAllValues()).containsExactly("people", "events");
-        assertThat((List<String>) result.get("modules")).containsExactly("people", "events");
+        assertThat(captor.getAllValues()).containsExactly("PEOPLE", "EVENTS");
+        assertThat((List<String>) result.get("modules")).containsExactly("PEOPLE", "EVENTS");
         verify(auditService).logSimple("TENANT_ONBOARDING_MODULES_ENABLED", "TENANT", tenantId);
     }
 
     @Test
     @DisplayName("MODULES : un code inconnu est refusé SANS activer quoi que ce soit")
     void modulesRejectsUnknownCode() {
-        when(moduleCatalogService.getByCode("inexistant")).thenReturn(Optional.empty());
+        when(moduleCatalogService.resolveCanonicalCode("inexistant")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> actions.execute(
                 OnboardingWizardStep.StepType.MODULES, tenantId, Map.of("modules", List.of("inexistant"))))

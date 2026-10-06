@@ -3570,6 +3570,8 @@ const es: Record<string, string> = {
   'hierarchy.roles': 'Roles',
   'hierarchy.expandNode': 'Expandir',
   'hierarchy.collapseNode': 'Contraer',
+  'hierarchy.expandAll': 'Expandir todo',
+  'hierarchy.collapseAll': 'Contraer todo',
   'hierarchy.nodeType.rootChurch': 'Iglesia principal',
   'hierarchy.nodeType.campus': 'Campus',
   'hierarchy.nodeType.subChurch': 'Iglesia local',
