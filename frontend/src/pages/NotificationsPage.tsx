@@ -21,6 +21,8 @@ const TYPE_FALLBACK: Record<string, string> = {
   TRANSFERT_INFOS_DEMANDEES: 'Informations demandées', TRANSFERT_CORRECTION: 'Correction demandée',
   TRANSFERT_EXECUTEE: 'Transfert exécuté', TRANSFERT_ANNULEE: 'Transfert annulé',
   TRANSFERT_DELAI_DEPASSE: 'Délai dépassé',
+  // V231 — relations personnelles (« Mon encadrement »)
+  RELATION_DECLAREE: 'Nouveau rattachement', RELATION_REVOQUEE: 'Rattachement retiré',
 };
 
 const CANAL_FALLBACK: Record<string, string> = { IN_APP: 'Dans l\'application', EMAIL: 'E-mail', PUSH: 'Push' };
@@ -161,7 +163,9 @@ export default function NotificationsPage() {
               className="input !w-auto text-xs">
               <option value="">{tText('Tous les types')}</option>
               {typeEntries.map(([type, count]) => (
-                <option key={type} value={type}>{TYPE_FALLBACK[type] || type} ({count})</option>
+                <option key={type} value={type}>
+                  {dictionaries.label('NOTIFICATION_TYPE', type) || TYPE_FALLBACK[type] || type} ({count})
+                </option>
               ))}
             </select>
             <select value={canalFilter} onChange={(e) => { setCanalFilter(e.target.value); setPage(0); }}

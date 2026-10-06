@@ -49,6 +49,34 @@ PostgreSQL 16 + Flyway, 132 migrations (`V1`→`V164`) : transfer workflow (V32-
 
 Local : `docker-compose.yml` (db, redis, api, mailhog, web, nginx). Prod : `render.yaml` (API Docker, frontend statique CDN, Postgres, Redis) + `ci.yml`, `ci-cd.yml`, `deploy-beta.yml`, `backup-postgres.yml` (dump chiffre AES-256), `keep-alive.yml`. Monitoring Prometheus + Grafana (`infra/monitoring`). Detail : [DEPLOYMENT.md](DEPLOYMENT.md) · [ENV_TEMPLATE.md](ENV_TEMPLATE.md) · [RUNBOOK.md](RUNBOOK.md).
 
+## 7 bis. Module `relations` — encadrement personnel (V231)
+
+```
+modules/relations/
+├── api/  RelationController  (/api/v1/relations)  ·  HierarchyController (/api/v1/hierarchy)
+│        dto/MemberRelationView  (contrat JSON, 9 clés historiques + fromNom/toNom/endedAt/declaredBy/revocable)
+└── domain/  MemberRelation (arête dirigée, @Filter tenantFilter)
+            MemberRelationService (invariants + catalogue des types + pagination)
+            UserHierarchyService (agrégat « toute la hiérarchie d'un membre »)
+```
+
+L'agrégat **fusionne sans remplacer** : rôles legacy + capacités V3 × nœuds,
+branches organisationnelles (3 origines tracées), chaîne d'ascendance avec
+responsable par niveau, relations déclarées, encadrement pastoral (`suivi`)
+et `resume` (complétude). La décision d'architecture — pourquoi une nouvelle
+entité plutôt qu'une réutilisation de `modules/mentoring` — est tracée dans
+[ADR_001_MEMBER_RELATIONS.md](ADR_001_MEMBER_RELATIONS.md).
+
+Deux invariants non négociables :
+
+1. **Un seul `@FilterDef(name = "tenantFilter")`** dans toute la base
+   (sur `User`). Redéclarer le même nom empêche l'`EntityManagerFactory` de
+   démarrer. Verrouillé par `TenantFilterDefArchitectureTest`.
+2. **Aucune dépendance à `OrganizationHierarchyService.getAncestors`** dans
+   l'agrégat : les ancêtres sont dérivés en mémoire par remontée de
+   `parentId` (1 requête au lieu d'une par branche, et protection anti-cycle).
+   `getAncestors` reste utilisé par le reste de l'application.
+
 ## 8. References
 
 - [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) · [ADMINISTRATION_MODEL.md](ADMINISTRATION_MODEL.md) · [RBAC.md](RBAC.md) · [security/SECURITY_MATRIX.md](security/SECURITY_MATRIX.md)

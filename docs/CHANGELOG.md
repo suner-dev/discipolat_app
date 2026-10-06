@@ -1,5 +1,108 @@
 # Changelog
 
+## [Non publié] — Hiérarchie & encadrement personnel des membres (V231)
+
+Fonctionnalité : **« Mon encadrement »**. Tout membre connaît sa hiérarchie
+complète (arbre multi-branches, responsable par niveau, encadrement pastoral)
+et déclare lui-même son pasteur / ses supérieurs / son mentor / son parrain
+**selon le paramétrage de son église**. Le supérieur est notifié
+automatiquement et le membre apparaît dans sa liste « ses membres », chaque
+personne restant cliquable jusqu'à sa fiche complète. Web **et** mobile.
+
+### Backend
+- **Ajouté** `module relations` (`MemberRelation`, `MemberRelationService`,
+  `UserHierarchyService`) + `RelationController` (`/api/v1/relations`) et
+  `HierarchyController` (`/api/v1/hierarchy`).
+- **Ajouté** migration `V231__member_relations.sql` (table `member_relations`,
+  index, `CHECK` de cohérence temporelle, seed du dictionnaire
+  `MEMBER_RELATION_TYPE` par tenant) — conventions alignées sur V222–V230.
+- **Ajouté** migration `V232__notification_type_dictionary_backfill.sql` :
+  comble l'écart entre l'enum `TypeNotification` (24 valeurs) et le
+  dictionnaire `NOTIFICATION_TYPE` (15) — 12 types manquants n'avaient **ni
+  libellé personnalisable ni couleur de badge**.
+- **Ajouté** `MemberRelationView` : `POST`/`DELETE /relations/me` ne renvoient
+  plus l'entité JPA brute mais la vue annoncée (avec `fromNom`, `toNom`,
+  `typeLabel`, `revocable`).
+- **Ajouté** `POST /relations/users/{userId}` : un pasteur ou un administrateur
+  peut déclarer l'encadrement d'un membre ; `declared_by` et l'audit tracent
+  l'intervenant.
+- **Corrigé** un défaut qui **empêchait l'application de démarrer** : un second
+  `@FilterDef(name = "tenantFilter")` sur la nouvelle entité faisait échouer
+  l'`EntityManagerFactory`. Verrouillé par `TenantFilterDefArchitectureTest`.
+- **Corrigé** le paramétrage d'église : un type `MEMBER_RELATION_TYPE`
+  désactivé était malgré tout proposé **et accepté** à la déclaration
+  (`DEFAULT_TYPES` écrasait la désactivation). Il est désormais rejeté
+  (`RELATION_TYPE_DISABLED`).
+- **Corrigé** une fuite inter-tenant possible dans l'agrégat de hiérarchie :
+  le tenant du membre chargé est maintenant vérifié explicitement.
+- **Corrigé** le N+1 systématique (résolution des noms par lot, catalogue des
+  types chargé une fois, ancêtres dérivés d'un seul chargement de nœuds).
+- **Corrigé** `chaine` qui sérialisait `null` au lieu de `{nœud, responsable}`.
+- **Ajouté** plafonds : 10 encadrants déclarés, 500 membres rattachés par
+  encadrant, et **pagination** de « ses membres » (bornée à 200/page).
+- **Ajouté** `suivi` (pasteur, chef de famille, départements et nœuds dirigés,
+  âmes suivies) et `resume` (complétude et origines) — le `suivi` était
+  annoncé dans le contrat d'API mais n'existait pas.
+- **Enrichi** `GET /users/{id}/detail` : `hierarchiePartielle` distingue
+  « pas d'encadrement » de « brique dégradée » au lieu d'avaler l'anomalie
+  en silence.
+- **Tests** : 31 tests unitaires + 18 tests HTTP/RBAC/isolation
+  (`@WebMvcTest`) + 2 tests d'architecture, tous verts.
+
+### Frontend
+- **Ajouté** `components/relations/HierarchyTree.tsx` : composant d'arbre
+  générique (pliage, `role="tree"`, personnes cliquables) et
+  `useBranchTree` qui transforme l'agrégat backend en arbre. `OrgTreeNav` n'est
+  pas réutilisé : il est typé sur `TreeNode` et affiche en dur des compteurs
+  d'organisation.
+- **Ajouté** « Mes encadrants » dans `ProfilePage`, avec ouverture de la fiche
+  complète depuis un encadrant **ou** un membre rattaché.
+- **Amélioré** `UserDetailModal` : arbre des branches, encadrement pastoral,
+  **fil d'Ariane + bouton Retour** (la navigation interne empilait les fiches
+  sans issue), état d'erreur explicite (avant : fiche vide silencieuse), et
+  garde corrigée (la carte s'affichait vide pour tout le monde).
+- **Amélioré** `MyRelationsCard` : « mes membres » lu depuis l'endpoint
+  **paginé**, compteur total, nom cliquable, bouton « Détacher » conditionné
+  par le `revocable` du serveur, état d'erreur + Réessayer.
+- **Corrigé** `NotificationsPage` : le filtre par type et le badge affichaient
+  deux libellés **différents** pour un même type (le filtre ignorait le
+  dictionnaire de l'église). Les deux passent maintenant par
+  `dictionaries.label(...) || TYPE_FALLBACK[...]`, comme le badge.
+- **Corrigé** libellés de notification : `RELATION_DECLAREE` et
+  `RELATION_REVOQUEE` n'avaient **aucune** ligne dans le dictionnaire
+  `NOTIFICATION_TYPE` — donc aucun libellé personnalisable par l'église et
+  **aucune couleur de badge** (voir migration `V232` ci-dessus). Le
+  `TYPE_FALLBACK` français reste en filet de sécurité, comme pour les 15
+  autres types de la même table.
+- **i18n** : 56 nouvelles clés × 6 locales (fr/en/pt/es/sw/ar) en **parité
+  stricte vérifiée par script** (`fr` est un sous-ensemble des 6 locales).
+- **Tests** : 9 tests `MyRelationsCard` + 8 tests `UserDetailModal` (arbre,
+  navigation/retour, encadrement pastoral, dégradation, erreur).
+
+### Mobile
+- **Ajouté** `data/models/member_relation.dart` : modèles immuables au parsing
+  **défensif** (aucun cast dur — une réponse partielle ne casse pas l'écran).
+- **Ajouté** `presentation/widgets/hierarchy_card.dart` : l'arbre de hiérarchie
+  (racine + chaîne dépliable + responsables cliquables), reflet du composant
+  web ; affiche un message explicite quand le backend a dégradé la hiérarchie.
+- **Amélioré** `MyRelationsCard` : source paginée pour « mes membres »,
+  pagination avec compteur, nom tapable ouvrant la fiche, détachement conditionné
+  par `revocable`, état d'erreur + Réessayer.
+- **Corrigé** `RelationService` : seule variante **paginée** de « ses membres »
+  ; `declare`/`revoke` renvoient désormais le modèle typé.
+- **i18n** : 34 nouvelles clés × 6 locales, parité stricte vérifiée.
+- **Tests** : 7 tests du profil « Mon encadrement » + 22 tests (modèles +
+  rendu de l'arbre).
+
+### Documentation
+- **Ajouté** `docs/ADR_001_MEMBER_RELATIONS.md` (pourquoi `MemberRelation` et
+  pas `modules/mentoring`).
+- **Mis à jour** `docs/DATABASE.md` (migrations + index), `docs/RBAC.md`
+  (§4.11, gardes + isolation), `docs/ARCHITECTURE.md` (§7 bis).
+- `docs/API.md` reste **généré** par `scripts/generate-api-docs.sh` (ne pas
+  éditer à la main).
+
+
 ## [v1.0-commercial-release] - 2026-09-22
 
 > Gate G6.10 / Annexe G : verdict **GO** — tag `v1.0-commercial-release` **CRÉÉ**

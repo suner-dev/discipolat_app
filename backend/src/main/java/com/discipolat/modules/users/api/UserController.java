@@ -40,6 +40,9 @@ public class UserController {
     /** §G6.4 — cohérence legacy↔catalogue : le rôle du compte pilote sa tenant_membership. */
     private final com.discipolat.modules.tenants.domain.TenantMembershipRepository tenantMembershipRepository;
     private final com.discipolat.modules.tenants.domain.RoleRepository roleRepository;
+    /** V231 — hiérarchie & relations personnelles (« Mon encadrement »), additif à la fiche. */
+    private final com.discipolat.modules.relations.domain.MemberRelationService memberRelationService;
+    private final com.discipolat.modules.relations.domain.UserHierarchyService userHierarchyService;
 
     public UserController(UserService userService, AuthService authService, SecurityUtils securityUtils,
                           EvaluationService evaluationService,
@@ -48,7 +51,9 @@ public class UserController {
                           com.discipolat.modules.audit.domain.AuditService auditService,
                           com.discipolat.modules.families.service.PermissionResolver permissionResolver,
                           com.discipolat.modules.tenants.domain.TenantMembershipRepository tenantMembershipRepository,
-                          com.discipolat.modules.tenants.domain.RoleRepository roleRepository) {
+                          com.discipolat.modules.tenants.domain.RoleRepository roleRepository,
+                          com.discipolat.modules.relations.domain.MemberRelationService memberRelationService,
+                          com.discipolat.modules.relations.domain.UserHierarchyService userHierarchyService) {
         this.userService = userService;
         this.authService = authService;
         this.securityUtils = securityUtils;
@@ -59,6 +64,8 @@ public class UserController {
         this.permissionResolver = permissionResolver;
         this.tenantMembershipRepository = tenantMembershipRepository;
         this.roleRepository = roleRepository;
+        this.memberRelationService = memberRelationService;
+        this.userHierarchyService = userHierarchyService;
     }
 
     /**
@@ -117,7 +124,7 @@ public class UserController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> me() {
-        User user = userService.findById(securityUtils.getCurrentUserId());
+        User user = userService.findById(com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId());
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
@@ -340,7 +347,30 @@ public class UserController {
     @GetMapping("/{id}/detail")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
     public ResponseEntity<Map<String, Object>> getUserDetail(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserDetail(id));
+        Map<String, Object> detail = userService.getUserDetail(id);
+        // V231 — additif rétrocompatible : encadrement déclaré + hiérarchie.
+        // Une anomalie de ces briques NE DOIT PAS casser la fiche (elle
+        // s'ouvre déjà sans elles), mais elle ne doit pas non plus être
+        // silencieuse : sans marqueur, l'interface ne peut pas distinguer
+        // « ce membre n'a pas d'encadrement » de « la brique est cassée »
+        // et afficherait une carte vide sans explication.
+        java.util.UUID tenantId = com.discipolat.common.multitenancy.TenantContext.getTenantId();
+        try {
+            detail.put("relations", memberRelationService.summary(tenantId, id,
+                    com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId()));
+            detail.put("hierarchie", userHierarchyService.summarize(tenantId, id,
+                    com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId()));
+            detail.put("hierarchiePartielle", Boolean.FALSE);
+        } catch (Exception e) {
+            java.util.List<String> indisponible = java.util.List.of("relations", "hierarchie");
+            detail.put("relations", null);
+            detail.put("hierarchie", null);
+            detail.put("hierarchiePartielle", Boolean.TRUE);
+            detail.put("hierarchieIndisponible", indisponible);
+            org.slf4j.LoggerFactory.getLogger(UserController.class)
+                    .warn("Hiérarchie/relations indisponibles pour {} : {}", id, e.getMessage());
+        }
+        return ResponseEntity.ok(detail);
     }
 
     // ======================== US-16: FAISEUR HISTORY ========================

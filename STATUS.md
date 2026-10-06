@@ -3,6 +3,50 @@
 Ce document est un constat, pas une promesse. Chaque ligne est vérifiable dans
 le dépôt ou par les commandes citées.
 
+## Cycle — Hiérarchie & encadrement personnel des membres (V231, 06/10/2026)
+
+> `docs/PLAN_HIERARCHIE_RELATIONS_MEMBRES.md` — rapport exhaustif et preuves.
+> Décision d'architecture : `docs/ADR_001_MEMBER_RELATIONS.md`.
+
+**RAG : 🟢 DONE** — web **et** mobile, testé et vérifié.
+
+**Ce qui est livré**
+- Module `relations` : `MemberRelation` (arête dirigée membre → autorité
+  déclarée), `MemberRelationService`, `UserHierarchyService`, contrôleurs
+  `/api/v1/relations` et `/api/v1/hierarchy`.
+- Migrations `V231` (table + index + `CHECK` + seed par église) et `V232`
+  (backfill de 12 types `NOTIFICATION_TYPE` qui n'avaient **ni libellé ni
+  couleur**).
+- Web : carte « Mon encadrement » sur le profil, **arbre de hiérarchie**
+  générique (`HierarchyTree`), « ses membres » **paginé et cliquable**,
+  fil d'Ariane + retour dans la fiche utilisateur, états d'erreur explicites.
+- Mobile : modèles typés à parsing défensif, `HierarchyCard` (arbre), carte de
+  profil paginée et cliquable.
+- i18n : **56 clés web + 34 clés mobile**, parité stricte vérifiée sur les
+  6 locales.
+
+**Défauts trouvés et corrigés en cours de route** (16 au total, détail §5.2 du
+plan) — dont un **bloquant production** : un second
+`@FilterDef(name = "tenantFilter")` empêchait l'`EntityManagerFactory` de
+démarrer, donc toute l'application de démarrer. Verrouillé par
+`TenantFilterDefArchitectureTest`.
+
+**Preuves par commande**
+| Vérification | Résultat |
+|---|---|
+| `mvn -o test` (suite complète) | **2047 run, 0 failure, 4 errors** — les 4 sont externes (2 Docker/testcontainers qui **passent** en relance isolée, 2 dus à une modification tierce non committée, cf. §5.1 du plan) |
+| Contextes Spring complet (8 classes) | **84 run, 0 failure, 0 error** — la classe que le défaut bloquant faisait échouer |
+| `./scripts/validate-migrations-v231.sh` | **OK** — V231/V232 validées sur PostgreSQL réel, schéma jetable, base de dev intacte |
+| `npx tsc --noEmit` | **0 erreur** |
+| `npx vitest run` (suite complète) | **86 fichiers, 687 tests, 0 failure** |
+| `flutter analyze --no-pub` | **0 error** |
+| `flutter test` (feature) | **29 run, 0 failure** |
+
+**Résidu assumé** : `OnboardingStepActionsTest` (2 erreurs) vient de
+modifications tierces **non committées** présentes avant ce travail
+(`OnboardingStepActions` + `ModuleCatalogService.resolveCanonicalCode`). Ces
+fichiers n'ont pas été stagés : à traiter par leur auteur.
+
 ## Cycle — Organisation modulable V3 (fullstack, `feat/org-modulable-v3-lot1`)
 
 > `docs/SPEC_ORGANISATION_MODULABLE_V3.md` — dimensions **A→E** (niveaux configurables,

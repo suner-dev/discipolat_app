@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
+import '../../widgets/hierarchy_card.dart';
 import '../../widgets/open_url.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -180,6 +181,27 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     final sections = <Widget>[
       _buildIdentityCard(d),
       const SizedBox(height: 12),
+      // V231 — hiérarchie agrégée + encadrement déclaratif (clés additionnelles
+      // du endpoint /users/{id}/detail). `hierarchiePartielle` distingue
+      // « ce membre n'a pas d'encadrement » de « la brique a échoué » :
+      // sans ce marqueur, la carte s'afficherait vide et silencieuse.
+      if (d['hierarchiePartielle'] == true)
+        ...[HierarchyUnavailableCard(), const SizedBox(height: 12)]
+      else if (d['hierarchie'] is Map || d['relations'] is Map)
+        ...[
+          HierarchyCard(
+            hierarchy: d['hierarchie'] is Map
+                ? Map<String, dynamic>.from(d['hierarchie'] as Map)
+                : const {},
+            relations: d['relations'] is Map
+                ? Map<String, dynamic>.from(d['relations'] as Map)
+                : null,
+            onOpenProfile: (id) => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => UserDetailScreen(userId: id)),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
       if (d['ame'] != null) ...[_buildAmeCard(d['ame'] as Map<String, dynamic>), const SizedBox(height: 12)],
       _buildEvaluationCard(d),
       const SizedBox(height: 12),

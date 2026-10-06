@@ -227,6 +227,52 @@ public class RoleAssignment {
 
 ---
 
+### 4.11 Hiérarchie & encadrement personnel (V231)
+
+Guides d'endpoint (Spring `@PreAuthorize`) — **aucune nouvelle entrée dans le
+catalogue de permissions** : ces endpoints suivent le modèle `@PreAuthorize`
+des ressources personnes, cohérent avec `GET /users/{id}/detail`.
+
+| Endpoint | Garde | Raison |
+|---|---|---|
+| `GET /api/v1/relations/types` | `isAuthenticated()` | paramétrage de l'église, non sensible |
+| `GET /api/v1/relations/me` | `isAuthenticated()` | self-service strict |
+| `GET /api/v1/relations/me/members` | `isAuthenticated()` | « ses membres », borné et paginé |
+| `POST /api/v1/relations/me` | `isAuthenticated()` | déclaration en son nom propre |
+| `DELETE /api/v1/relations/me/{id}` | `isAuthenticated()` + contrôle en service | voir ci-dessous |
+| `POST /api/v1/relations/users/{userId}` | `hasAnyRole('ADMIN','PASTEUR')` | déclarer pour le compte d'un membre |
+| `GET /api/v1/relations/users/{userId}` | `hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')` | lecture d'autrui, aligné sur la fiche |
+| `GET /api/v1/hierarchy/me` | `isAuthenticated()` | self-service strict |
+| `GET /api/v1/hierarchy/users/{userId}` | `hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR')` | lecture d'autrui, aligné sur la fiche |
+
+**Contrôle de révocation (en service, pas seulement dans l'annotation).**
+`MemberRelationService.revoke` autorise trois catégories d'acteurs :
+le **déclarant**, l'**encadrant concerné** (il doit pouvoir détacher un
+membre mal rattaché — cas d'usage principal), ou un **modérateur**
+(`ROLE_ADMIN` / `ROLE_PASTEUR`). Tout autre acteur reçoit
+`RELATION_NOT_OWNER`. La réponse expose `revocable` sur chaque relation afin
+que l'interface n'ait jamais un bouton doomed qui échouerait en 403.
+
+**Déclaration pour autrui.** `declare(...)` refuse un `actorId` différent du
+déclarant si l'acteur n'est pas `ADMIN`/`PASTEUR` (`RELATION_FORBIDENT`), et
+trace l'intervenant dans `declared_by` + dans la charge utile d'audit
+(`moderatedBy`).
+
+**Isolation multi-tenant.** Le tenant provient **exclusivement** du contexte
+serveur (`TenantContext`, alimenté par la claim JWT) — jamais d'un paramètre
+de requête. `UserHierarchyService.requireTenantUser` et
+`MemberRelationService.requireTenantUser` revérifient explicitement
+`tenant_id` sur le membre chargé : le filtre Hibernate `tenantFilter` n'est
+actif qu'en contexte HTTP et ne protège ni les tâches planifiées ni les
+tests. Un compte d'une autre église est **invisible** (`EntityNotFoundException`
+→ 404), jamais « forbidden ».
+
+**Garde-fou d'architecture.** Le filtre `tenantFilter` ne doit être
+**déclaré qu'une seule fois** (sur l'entité `User`). Redéclarer un second
+`@FilterDef` de même nom empêche l'`EntityManagerFactory` de démarrer, donc
+l'application entière de démarrer. Verrouillé par
+`TenantFilterDefArchitectureTest`.
+
 ## 5. Scope Resolution Algorithm
 
 ```java

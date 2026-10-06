@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import {
   X, Loader2, Star, Send, UserRound, Heart, Building2, Users,
   Phone, Mail, Shield, Calendar, UserX,
-  ChevronRight, RefreshCw, Home, Sparkles, Target, FileText, Paperclip,
-  StickyNote, Clock, ClipboardList,
+  ChevronRight, ChevronLeft, RefreshCw, Home, Sparkles, Target, FileText, Paperclip,
+  StickyNote, Clock, ClipboardList, HeartHandshake, HandHeart, GitBranch, AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
+import { HierarchyTree, useBranchTree, type HierarchyBranch } from '@/components/relations/HierarchyTree';
 
 import { tText } from '@/i18n';
 const ROLE_LABELS: Record<string, string> = {
@@ -44,17 +45,44 @@ const CATEGORIE_LABELS: Record<string, string> = {
 };
 
 export function UserDetailModal({ userId, onClose }: { userId: string; onClose: () => void }) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const queryClient = useQueryClient();
   const [note, setNote] = useState(0);
   const [hoverNote, setHoverNote] = useState(0);
   const [commentaire, setCommentaire] = useState('');
+  // V231 — navigation interne : cliquer un encadrant, un responsable de
+  // niveau ou un membre rattaché ouvre SA fiche, sans repasser par la liste.
+  // L'historique est conservé pour pouvoir revenir (sinon l'utilisateur se
+  // perd dans la pile : la seule sortie restant « Fermer »).
+  const [visited, setVisited] = useState<string[]>([userId]);
+  const viewedId = visited[visited.length - 1];
+  useEffect(() => {
+    setVisited([userId]);
+    setNote(0);
+    setCommentaire('');
+  }, [userId]);
 
-  const { data: detail, isLoading, refetch } = useQuery({
-    queryKey: ['users', userId, 'detail'],
-    queryFn: async () => (await api.get(`/users/${userId}/detail`)).data as any,
-    enabled: !!userId,
+  const openPerson = useCallback((personId: string) => {
+    if (!personId || personId === visited[visited.length - 1]) return;
+    setVisited((stack) => [...stack, personId]);
+    setNote(0);
+    setCommentaire('');
+  }, [visited]);
+  const goBack = useCallback(() => {
+    setVisited((stack) => (stack.length > 1 ? stack.slice(0, -1) : stack));
+    setNote(0);
+    setCommentaire('');
+  }, []);
+
+  const { data: detail, isLoading, isError, refetch } = useQuery({
+    queryKey: ['users', viewedId, 'detail'],
+    queryFn: async () => (await api.get(`/users/${viewedId}/detail`)).data as any,
+    enabled: !!viewedId,
+    retry: 1,
   });
+
+  // Arbre des branches : recalculé seulement quand l'agrégat change.
+  const branchTree = useBranchTree(detail?.hierarchie?.branches as HierarchyBranch[] | undefined, openPerson);
 
   // Pré-remplir le formulaire avec MA dernière évaluation de cet utilisateur
   const myEval = (detail?.monEvaluation ?? [])[0];
@@ -62,13 +90,13 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
 
   const saveMutation = useMutation({
     mutationFn: async (payload: { note: number; commentaire?: string }) =>
-      (await api.put(`/evaluations/${userId}`, payload)).data,
+      (await api.put(`/evaluations/${viewedId}`, payload)).data,
     onSuccess: () => {
       toast.success(hasMyEval ? 'Évaluation modifiée ✅' : 'Évaluation enregistrée ✅');
       setNote(0);
       setCommentaire('');
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['users', userId, 'detail'] });
+      queryClient.invalidateQueries({ queryKey: ['users', viewedId, 'detail'] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -110,6 +138,34 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
         <div className="glass-card p-10 flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
           <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
           <p className="text-sm text-gray-400">Chargement de la fiche…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Échec de chargement : AVANT toute lecture de `detail`, sinon la fiche
+  // s'affiche vide (nom, e-mail en « — ») sans aucun message.
+  if (isError) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="glass-card p-8 flex flex-col items-center gap-3 max-w-sm text-center" onClick={(e) => e.stopPropagation()}>
+          <p className="text-sm text-red-600 dark:text-red-300">{t('hierarchy.loadUserError')}</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="px-3 py-1.5 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 cursor-pointer"
+            >
+              {t('relations.retry')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg text-sm border border-gray-300 dark:border-gray-600 cursor-pointer"
+            >
+              {t('relations.cancel')}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -161,6 +217,18 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {/* V231 — la navigation interne empile les fiches consultées ;
+                sans ce retour explicite l'utilisateur se perdrait dans la
+                pile, la seule sortie restante étant « Fermer ». */}
+            {visited.length > 1 && (
+              <button
+                onClick={goBack}
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-900/40 cursor-pointer"
+                title={t('hierarchy.back')}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> {t('hierarchy.back')}
+              </button>
+            )}
             <button onClick={() => refetch()} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" title={tText('Rafraîchir')}>
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -169,6 +237,26 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
             </button>
           </div>
         </div>
+
+        {/* Fil d'Ariane de la navigation interne (V231) */}
+        {visited.length > 1 && (
+          <nav
+            aria-label={t('hierarchy.breadcrumb')}
+            className="px-5 py-2 border-b border-gray-100 dark:border-gray-700/60 bg-gray-50/60 dark:bg-gray-900/30 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 overflow-x-auto"
+          >
+            <span className="shrink-0 uppercase tracking-wider text-[10px] font-semibold text-gray-400">
+              {t('hierarchy.breadcrumb')}
+            </span>
+            {visited.map((id, i) => (
+              <span key={`${id}-${i}`} className="flex items-center gap-1 shrink-0">
+                {i > 0 && <ChevronRight className="w-3 h-3 text-gray-300" />}
+                <span className={i === visited.length - 1 ? 'font-semibold text-violet-700 dark:text-violet-300' : ''}>
+                  {t('hierarchy.step', { n: String(i + 1) })}
+                </span>
+              </span>
+            ))}
+          </nav>
+        )}
 
         {/* Body */}
         <div className="p-5 overflow-y-auto space-y-5">
@@ -200,6 +288,169 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
               </div>
             </div>
           )}
+
+          {/* V231 — Hiérarchie et encadrement : ascendants unifiés (org ∪
+              déclaratif), ARBRE des branches avec le responsable de chaque
+              niveau, encadrement pastoral, membres rattachés. Chaque personne
+              est cliquable et la pile de navigation est affichée plus haut. */}
+          {(() => {
+            // `hierarchiePartielle` vient du backend : il distingue « ce membre
+            // n'a pas d'encadrement » de « la brique a échoué ». La garde ne
+            // doit donc pas être une simple tests sur la présence des clés —
+            // le backend les pose toujours, même vides.
+            if (detail?.hierarchiePartielle) {
+              return (
+                <div className="rounded-2xl bg-amber-50/60 dark:bg-amber-900/10 border border-amber-200/40 dark:border-amber-800/30 p-4 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {t('hierarchy.unavailable')}
+                  </p>
+                </div>
+              );
+            }
+            const ascendants: any[] = detail?.hierarchie?.ascendants ?? [];
+            const sortantes: any[] = detail?.relations?.sortantes ?? [];
+            const entrantes: any[] = detail?.relations?.entrantes ?? [];
+            const branches = detail?.hierarchie?.branches;
+            const suivi = detail?.hierarchie?.suivi;
+            const resume = detail?.hierarchie?.resume;
+            const hasAnything =
+              ascendants.length > 0 || sortantes.length > 0 || entrantes.length > 0
+              || (Array.isArray(branches) && branches.length > 0);
+            if (!hasAnything && !suivi) return null;
+
+            return (
+              <div className="rounded-2xl bg-violet-50/60 dark:bg-violet-900/10 border border-violet-200/40 dark:border-violet-800/30 p-4">
+                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <HeartHandshake className="w-3.5 h-3.5 text-violet-500" /> {t('hierarchy.title')}
+                </p>
+
+                {ascendants.length === 0 && sortantes.length === 0 && (
+                  <p className="text-xs text-gray-400 mb-3">{t('hierarchy.emptyDeclared')}</p>
+                )}
+
+                {ascendants.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                      {t('hierarchy.ascendants')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ascendants.map((a: any, i: number) => (
+                        <button
+                          key={`${a.via}-${a.id}-${i}`}
+                          type="button"
+                          onClick={() => openPerson(a.id)}
+                          title={t('hierarchy.viewProfile')}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/70 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700/50 text-gray-700 dark:text-gray-200 hover:border-violet-300 cursor-pointer"
+                        >
+                          <Shield className={`w-3 h-3 ${a.via === 'DECLARATIF' ? 'text-violet-500' : 'text-blue-500'}`} />
+                          {a.nom}
+                          <span className="text-[9px] text-gray-400">
+                            {a.via === 'DECLARATIF'
+                              ? (a.typeLabel || a.typeRelation)
+                              : `${a.noeud ?? t('hierarchy.viaOrg')}`}
+                          </span>
+                          <ChevronRight className="w-3 h-3 text-gray-300" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ARBRE multi-branches : une racine par branche, la chaîne
+                    d'ascendance en dessous, chaque responsable cliquable. */}
+                <div className="mb-3">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <GitBranch className="w-3 h-3 text-amber-500" /> {t('hierarchy.branches')}
+                  </p>
+                  <HierarchyTree
+                    nodes={branchTree}
+                    emptyLabel={t('hierarchy.branchesEmpty')}
+                    emptyIcon={<GitBranch className="w-3 h-3" />}
+                  />
+                </div>
+
+                {suivi && (Object.keys(suivi).length > 0) && (
+                  <div className="mb-3 pt-3 border-t border-violet-200/40 dark:border-violet-800/30">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <HandHeart className="w-3 h-3 text-rose-400" /> {t('hierarchy.suivi')}
+                    </p>
+                    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                      {suivi.faiseur && (
+                        <SuiviRow
+                          label={t('hierarchy.faiseur')}
+                          person={suivi.faiseur}
+                          onSelect={openPerson}
+                        />
+                      )}
+                      {suivi.chefDeFamille && (
+                        <SuiviRow
+                          label={t('hierarchy.chefDeFamille')}
+                          person={suivi.chefDeFamille}
+                          onSelect={openPerson}
+                        />
+                      )}
+                      {Array.isArray(suivi.familleGeree) && suivi.familleGeree.length > 0 && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-gray-400 shrink-0">{t('hierarchy.familyHeaded')}</dt>
+                          <dd className="text-gray-700 dark:text-gray-300 truncate">
+                            {suivi.familleGeree.map((f: any) => f.nom).join(', ')}
+                          </dd>
+                        </div>
+                      )}
+                      {Array.isArray(suivi.departementsDiriges) && suivi.departementsDiriges.length > 0 && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-gray-400 shrink-0">{t('hierarchy.departmentsLed')}</dt>
+                          <dd className="text-gray-700 dark:text-gray-300 truncate">
+                            {suivi.departementsDiriges.map((d: any) => d.nom).join(', ')}
+                          </dd>
+                        </div>
+                      )}
+                      {Array.isArray(suivi.noeudsDiriges) && suivi.noeudsDiriges.length > 0 && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-gray-400 shrink-0">{t('hierarchy.nodesLed')}</dt>
+                          <dd className="text-gray-700 dark:text-gray-300 truncate">
+                            {suivi.noeudsDiriges.map((n: any) => n.nom).join(', ')}
+                          </dd>
+                        </div>
+                      )}
+                      {typeof suivi.amesSuiviesTotal === 'number' && suivi.amesSuiviesTotal > 0 && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-gray-400 shrink-0">{t('hierarchy.soulsFollowed')}</dt>
+                          <dd className="text-gray-700 dark:text-gray-300">{suivi.amesSuiviesTotal}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+
+                {entrantes.length > 0 && (
+                  <div className="pt-3 border-t border-violet-200/40 dark:border-violet-800/30">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-violet-400" /> {t('hierarchy.membersAttached')}
+                      <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-1.5 text-[9px] font-semibold text-gray-600 dark:text-gray-300">
+                        {resume?.membresRattaches ?? entrantes.length}
+                      </span>
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {entrantes.map((r: any) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => openPerson(r.otherUserId)}
+                          title={t('hierarchy.viewProfile')}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-white/70 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-700/50 text-gray-700 dark:text-gray-200 hover:border-violet-300 cursor-pointer"
+                        >
+                          {r.otherNom}
+                          <span className="text-[9px] text-gray-400">{r.typeLabel}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Évaluation */}
           <div className="rounded-2xl bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-900/10 dark:to-orange-900/5 border border-amber-200/40 dark:border-amber-800/30 p-4">
@@ -573,6 +824,45 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
           <button onClick={onClose} className="btn-secondary btn-sm">Fermer</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Ligne du bloc « encadrement pastoral » : libellé + personne cliquable. */
+function SuiviRow({
+  label,
+  person,
+  onSelect,
+}: {
+  label: string;
+  person?: { id?: string; nom?: string; chefFamilleNom?: string } | null;
+  onSelect: (personId: string) => void;
+}) {
+  if (!person) return null;
+  const displayed = person.nom || person.chefFamilleNom;
+  if (!displayed) return null;
+  const body = (
+    <dd className="text-gray-700 dark:text-gray-300 truncate">
+      {displayed}
+      {person.chefFamilleNom && person.chefFamilleNom !== person.nom
+        ? ` · ${person.chefFamilleNom}`
+        : ''}
+    </dd>
+  );
+  return (
+    <div className="flex gap-1.5">
+      <dt className="text-gray-400 shrink-0">{label}</dt>
+      {person.id ? (
+        <button
+          type="button"
+          onClick={() => onSelect(person.id as string)}
+          className="text-left hover:underline cursor-pointer truncate"
+        >
+          {body}
+        </button>
+      ) : (
+        body
+      )}
     </div>
   );
 }

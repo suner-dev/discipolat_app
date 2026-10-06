@@ -16,5 +16,9 @@ public enum TypeNotification {
     // G4.1 — rappel quotidien des suivis dus/en retard (famille)
     SUIVI_RAPPEL,
     // G4.3 — nomination/transfert pastoral d'un berger
-    PASTORAT_NOMINATION
+    PASTORAT_NOMINATION,
+    // Hiérarchie & relations (V231) — un membre déclare son encadrement
+    RELATION_DECLAREE,
+    // Hiérarchie & relations (V231) — fin d'un rattachement déclaré
+    RELATION_REVOQUEE
 }

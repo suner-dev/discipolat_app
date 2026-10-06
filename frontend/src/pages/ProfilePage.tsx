@@ -10,6 +10,9 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 
+import { MyRelationsCard } from '@/components/relations/MyRelationsCard';
+import { UserDetailModal } from '@/components/users/UserDetailModal';
+
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 /** Replis (dictionnaires indisponibles) — les valeurs réelles viennent de la base. */
@@ -180,6 +183,8 @@ export default function ProfilePage() {
 
   // ── Self-service RGPD (art. 15/17/20) — actions sur le compte courant uniquement ──
   const [gdprMotif, setGdprMotif] = useState('');
+  // V231 — clic sur un encadrant / membre rattaché = ouvrir sa fiche complète.
+  const [viewedUserId, setViewedUserId] = useState<string | null>(null);
 
   const portabilityMutation = useMutation({
     mutationFn: async () => {
@@ -622,6 +627,18 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* V231 — « Mon encadrement » : relations déclaratives (pasteur, supérieur…), additif */}
+      <div className="mt-6 animate-slide-up">
+        <MyRelationsCard onOpenUser={setViewedUserId} />
+      </div>
+
+      {/* Fiche complète d'un encadrant / membre rattaché — ouverte depuis la
+          carte ci-dessus ou depuis n'importe quelle personne cliquable de
+          l'encadrement. */}
+      {viewedUserId && (
+        <UserDetailModal userId={viewedUserId} onClose={() => setViewedUserId(null)} />
+      )}
 
       {/* Mes données (RGPD) — self-service, sans destruction de l'existant */}
       <div className="glass-card p-6 mt-6 animate-slide-up border-l-4 border-emerald-500">

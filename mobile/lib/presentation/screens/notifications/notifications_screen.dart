@@ -48,6 +48,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'TRANSFERT_EXECUTEE': return Colors.green;
       case 'TRANSFERT_ANNULEE': return Colors.blueGrey;
       case 'TRANSFERT_DELAI_DEPASSE': return Colors.deepOrange;
+      // V231 — relations personnelles (« Mon encadrement »)
+      case 'RELATION_DECLAREE': return Colors.pinkAccent;
+      case 'RELATION_REVOQUEE': return Colors.blueGrey;
       default: return Colors.grey;
     }
   }
@@ -66,6 +69,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'TRANSFERT_EXECUTEE': return Icons.swap_horiz;
       case 'TRANSFERT_ANNULEE': return Icons.block;
       case 'TRANSFERT_DELAI_DEPASSE': return Icons.hourglass_bottom;
+      // V231 — relations personnelles (« Mon encadrement »)
+      case 'RELATION_DECLAREE': return Icons.favorite;
+      case 'RELATION_REVOQUEE': return Icons.link_off;
       default: return Icons.info;
     }
   }

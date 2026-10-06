@@ -11,6 +11,20 @@
 
 ---
 
+## 0.0 Cycle V231 — Hiérarchie & encadrement personnel (clos le 06/10/2026)
+
+| Tâche | Statut | Preuve |
+|---|---|---|
+| Backend (module `relations`, V231, V232, contrat API, invariants) | `DONE` | 31 unit + 18 HTTP/RBAC + 2 arch ; 84 tests de contexte Spring verts |
+| Web (arbre, profil, fiche, pagination, i18n, tests) | `DONE` | `tsc` 0 erreur ; vitest **687/687** sur la suite complète |
+| Mobile (modèles, arbre, profil, i18n, tests) | `DONE` | `flutter analyze` 0 error ; `flutter test` 29/29 |
+| Documentation (ADR, DATABASE, RBAC, ARCHITECTURE, CHANGELOG, script SQL) | `DONE` | §5 du plan |
+| Correctif bloquant `@FilterDef` dupliqué | `DONE` | `TenantFilterDefArchitectureTest` + suite de contexte verte |
+| Validation SQL sur PostgreSQL réel | `DONE` | `scripts/validate-migrations-v231.sh` |
+| Hors périmètre laissé tel quel | `NOT_STARTED` | `OnboardingStepActionsTest` (2) — modification tierce, voir `STATUS.md` |
+
+---
+
 ## 0. CONVENTIONS
 
 ### 0.1 Statuts (utiliser exactement ces libellés)

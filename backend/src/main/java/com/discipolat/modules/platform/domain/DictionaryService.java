@@ -263,6 +263,14 @@ public class DictionaryService {
                 row("VEUF", "Veuf / veuve", "#6b7280"),
                 row("PARENT_CELIBATAIRE", "Parent célibataire", "#06b6d4"),
                 row("AUTRE", "Autre", "#94a3b8")));
+        // V231 — types de rattachement personnel (« Mon encadrement »),
+        // paramétrables par église ; miroir du seed de la migration V231.
+        map.put("MEMBER_RELATION_TYPE", rows(
+                row("PASTEUR", "Mon pasteur", "#a855f7"),
+                row("SUPERIEUR", "Mon supérieur", "#3b82f6"),
+                row("RESPONSABLE", "Mon responsable", "#f59e0b"),
+                row("MENTOR", "Mon mentor", "#22c55e"),
+                row("PARRAIN", "Mon parrain / père (mère) spirituel(le)", "#ec4899")));
         map.put("PRAYER_CATEGORIE", rows(
                 row("SANTE", "Santé", "#ef4444"),
                 row("FAMILLE", "Famille", "#22c55e"),
@@ -460,7 +468,13 @@ public class DictionaryService {
                 row("TRANSFERT_CORRECTION", "Correction demandée", "#f59e0b"),
                 row("TRANSFERT_EXECUTEE", "Transfert exécuté", "#22c55e"),
                 row("TRANSFERT_ANNULEE", "Transfert annulé", "#6b7280"),
-                row("TRANSFERT_DELAI_DEPASSE", "Délai de traitement dépassé", "#ef4444")));
+                row("TRANSFERT_DELAI_DEPASSE", "Délai de traitement dépassé", "#ef4444"),
+                // V231 — hiérarchie & relations personnelles (« Mon encadrement »).
+                // Sans ces lignes, ces deux types n'auraient ni libellé
+                // personnalisable par l'église, ni couleur de badge, et
+                // afficheraient le code brut dans l'interface.
+                row("RELATION_DECLAREE", "Nouveau rattachement", "#ec4899"),
+                row("RELATION_REVOQUEE", "Rattachement retiré", "#64748b")));
         map.put("NOTIFICATION_CANAL", rows(
                 row("IN_APP", "Dans l'application", "#3b82f6"),
                 row("EMAIL", "E-mail", "#8b5cf6"),
