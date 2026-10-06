@@ -16,4 +16,6 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     Page<Prescription> findByPatientIdAndTenantId(UUID patientId, UUID tenantId, Pageable pageable);
     List<Prescription> findByPatientIdAndTenantIdAndStatus(UUID patientId, UUID tenantId, Prescription.PrescriptionStatus status);
     long countByPatientIdAndTenantId(UUID patientId, UUID tenantId);
+
+    long countByTenantIdAndDeletedFalse(UUID tenantId);
 }

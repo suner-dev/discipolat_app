@@ -44,6 +44,11 @@ public class FinanceService {
     private final EntityPropagationPublisher propagationPublisher;
     private final CurrencyService currencyService;
     private final Iso4217CurrencyValidator currencyValidator;
+    private final FinanceAccountRepository accountRepository;
+    private final FinanceDonationRepository donationRepository;
+    private final FinanceTontineRepository tontineRepository;
+    private final FinanceTontineMemberRepository tontineMemberRepository;
+    private final FinanceTontinePayoutRepository tontinePayoutRepository;
 
     public FinanceService(FinanceTransactionRepository transactionRepository,
                           FinanceBudgetRepository budgetRepository,
@@ -51,7 +56,12 @@ public class FinanceService {
                           AuditService auditService,
                           EntityPropagationPublisher propagationPublisher,
                           CurrencyService currencyService,
-                          Iso4217CurrencyValidator currencyValidator) {
+                          Iso4217CurrencyValidator currencyValidator,
+                          FinanceAccountRepository accountRepository,
+                          FinanceDonationRepository donationRepository,
+                          FinanceTontineRepository tontineRepository,
+                          FinanceTontineMemberRepository tontineMemberRepository,
+                          FinanceTontinePayoutRepository tontinePayoutRepository) {
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
         this.securityUtils = securityUtils;
@@ -59,6 +69,11 @@ public class FinanceService {
         this.propagationPublisher = propagationPublisher;
         this.currencyService = currencyService;
         this.currencyValidator = currencyValidator;
+        this.accountRepository = accountRepository;
+        this.donationRepository = donationRepository;
+        this.tontineRepository = tontineRepository;
+        this.tontineMemberRepository = tontineMemberRepository;
+        this.tontinePayoutRepository = tontinePayoutRepository;
     }
 
     /* ----------------------------- Transactions ----------------------------- */
@@ -402,5 +417,268 @@ public class FinanceService {
                     return map;
                 })
                 .toList();
+    }
+
+    // ========== ACCOUNTS (V236) ==========
+
+    public List<Map<String, Object>> listAccounts(UUID tenantId) {
+        return accountRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).stream().map(a -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", a.getId());
+            m.put("name", a.getName());
+            m.put("accountNumber", a.getAccountNumber());
+            m.put("bankName", a.getBankName());
+            m.put("balance", a.getBalance());
+            m.put("devise", a.getDevise());
+            m.put("isActive", a.isActive());
+            m.put("createdAt", a.getCreatedAt().toString());
+            m.put("updatedAt", a.getUpdatedAt() != null ? a.getUpdatedAt().toString() : null);
+            return m;
+        }).toList();
+    }
+
+    public Map<String, Object> getAccount(UUID tenantId, UUID id) {
+        FinanceAccount a = accountRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("FinanceAccount", "id", id.toString()));
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", a.getId());
+        m.put("name", a.getName());
+        m.put("accountNumber", a.getAccountNumber());
+        m.put("bankName", a.getBankName());
+        m.put("balance", a.getBalance());
+        m.put("devise", a.getDevise());
+        m.put("isActive", a.isActive());
+        m.put("createdAt", a.getCreatedAt().toString());
+        m.put("updatedAt", a.getUpdatedAt() != null ? a.getUpdatedAt().toString() : null);
+        return m;
+    }
+
+    public Map<String, Object> createAccount(UUID tenantId, UUID actorId, Map<String, Object> body) {
+        FinanceAccount a = FinanceAccount.builder()
+                .tenantId(tenantId)
+                .name((String) body.get("name"))
+                .accountNumber((String) body.get("accountNumber"))
+                .bankName((String) body.get("bankName"))
+                .balance(body.get("balance") != null ? new java.math.BigDecimal(String.valueOf(body.get("balance"))) : java.math.BigDecimal.ZERO)
+                .devise(body.get("devise") != null ? String.valueOf(body.get("devise")) : "XOF")
+                .isActive(true)
+                .build();
+        FinanceAccount saved = accountRepository.save(a);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", saved.getId());
+        m.put("name", saved.getName());
+        m.put("accountNumber", saved.getAccountNumber());
+        m.put("bankName", saved.getBankName());
+        m.put("balance", saved.getBalance());
+        m.put("devise", saved.getDevise());
+        m.put("isActive", saved.isActive());
+        m.put("createdAt", saved.getCreatedAt().toString());
+        return m;
+    }
+
+    // ========== DONATIONS (V236) ==========
+
+    public List<Map<String, Object>> listDonations(UUID tenantId) {
+        return donationRepository.findByTenantIdOrderByDonationDateDesc(tenantId).stream().map(d -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", d.getId());
+            m.put("donorName", d.getDonorName());
+            m.put("amount", d.getAmount());
+            m.put("devise", d.getDevise());
+            m.put("donationDate", d.getDonationDate().toString());
+            m.put("purpose", d.getPurpose());
+            m.put("isAnonymous", d.isAnonymous());
+            m.put("createdAt", d.getCreatedAt().toString());
+            return m;
+        }).toList();
+    }
+
+    public Map<String, Object> createDonation(UUID tenantId, UUID actorId, Map<String, Object> body) {
+        FinanceDonation d = FinanceDonation.builder()
+                .tenantId(tenantId)
+                .donorName((String) body.get("donorName"))
+                .amount(new java.math.BigDecimal(String.valueOf(body.get("amount"))))
+                .devise(body.get("devise") != null ? String.valueOf(body.get("devise")) : "XOF")
+                .donationDate(body.get("donationDate") != null ? java.time.Instant.parse(String.valueOf(body.get("donationDate"))) : java.time.Instant.now())
+                .purpose((String) body.get("purpose"))
+                .isAnonymous(Boolean.parseBoolean(String.valueOf(body.get("isAnonymous"))))
+                .build();
+        FinanceDonation saved = donationRepository.save(d);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", saved.getId());
+        m.put("donorName", saved.getDonorName());
+        m.put("amount", saved.getAmount());
+        m.put("devise", saved.getDevise());
+        m.put("donationDate", saved.getDonationDate().toString());
+        m.put("purpose", saved.getPurpose());
+        m.put("isAnonymous", saved.isAnonymous());
+        m.put("createdAt", saved.getCreatedAt().toString());
+        return m;
+    }
+
+    // ========== TONTINES (V236) ==========
+
+    public List<Map<String, Object>> listTontines(UUID tenantId) {
+        return tontineRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).stream().map(t -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", t.getId());
+            m.put("name", t.getName());
+            m.put("description", t.getDescription());
+            m.put("amountPerTurn", t.getAmountPerTurn());
+            m.put("frequency", t.getFrequency().name());
+            m.put("startDate", t.getStartDate().toString());
+            m.put("endDate", t.getEndDate() != null ? t.getEndDate().toString() : null);
+            m.put("isActive", t.isActive());
+            m.put("createdAt", t.getCreatedAt().toString());
+            m.put("updatedAt", t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : null);
+            return m;
+        }).toList();
+    }
+
+    public Map<String, Object> getTontine(UUID tenantId, UUID id) {
+        FinanceTontine t = tontineRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("FinanceTontine", "id", id.toString()));
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId());
+        m.put("name", t.getName());
+        m.put("description", t.getDescription());
+        m.put("amountPerTurn", t.getAmountPerTurn());
+        m.put("frequency", t.getFrequency().name());
+        m.put("startDate", t.getStartDate().toString());
+        m.put("endDate", t.getEndDate() != null ? t.getEndDate().toString() : null);
+        m.put("isActive", t.isActive());
+        m.put("createdAt", t.getCreatedAt().toString());
+        m.put("updatedAt", t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : null);
+        return m;
+    }
+
+    public Map<String, Object> createTontine(UUID tenantId, UUID actorId, Map<String, Object> body) {
+        FinanceTontine t = FinanceTontine.builder()
+                .tenantId(tenantId)
+                .name((String) body.get("name"))
+                .description((String) body.get("description"))
+                .amountPerTurn(new java.math.BigDecimal(String.valueOf(body.get("amountPerTurn"))))
+                .frequency(FinanceTontine.Frequency.valueOf(String.valueOf(body.get("frequency"))))
+                .startDate(body.get("startDate") != null ? java.time.Instant.parse(String.valueOf(body.get("startDate"))) : java.time.Instant.now())
+                .endDate(body.get("endDate") != null ? java.time.Instant.parse(String.valueOf(body.get("endDate"))) : null)
+                .isActive(true)
+                .build();
+        FinanceTontine saved = tontineRepository.save(t);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", saved.getId());
+        m.put("name", saved.getName());
+        m.put("description", saved.getDescription());
+        m.put("amountPerTurn", saved.getAmountPerTurn());
+        m.put("frequency", saved.getFrequency().name());
+        m.put("startDate", saved.getStartDate().toString());
+        m.put("endDate", saved.getEndDate() != null ? saved.getEndDate().toString() : null);
+        m.put("isActive", saved.isActive());
+        m.put("createdAt", saved.getCreatedAt().toString());
+        return m;
+    }
+
+    public List<Map<String, Object>> listTontineMembers(UUID tenantId, UUID tontineId) {
+        return tontineMemberRepository.findByTenantIdAndTontineIdOrderByTurnOrderAsc(tenantId, tontineId).stream().map(m -> {
+            Map<String, Object> v = new LinkedHashMap<>();
+            v.put("id", m.getId());
+            v.put("tontineId", m.getTontineId());
+            v.put("userId", m.getUserId());
+            v.put("joinedAt", m.getJoinedAt().toString());
+            v.put("turnOrder", m.getTurnOrder());
+            v.put("isActive", m.isActive());
+            return v;
+        }).toList();
+    }
+
+    public List<Map<String, Object>> listTontinePayouts(UUID tenantId, UUID tontineId) {
+        return tontinePayoutRepository.findByTenantIdAndTontineIdOrderByPayoutDateDesc(tenantId, tontineId).stream().map(p -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", p.getId());
+            m.put("tontineId", p.getTontineId());
+            m.put("memberId", p.getMemberId());
+            m.put("amount", p.getAmount());
+            m.put("payoutDate", p.getPayoutDate().toString());
+            m.put("turnNumber", p.getTurnNumber());
+            m.put("createdAt", p.getCreatedAt().toString());
+            return m;
+        }).toList();
+    }
+
+    // ========== REPORTS (V236) ==========
+
+    public Map<String, Object> reportSummary(UUID tenantId) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("accounts", accountRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).size());
+        m.put("donations", donationRepository.findByTenantIdOrderByDonationDateDesc(tenantId).size());
+        m.put("tontines", tontineRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).size());
+        return m;
+    }
+
+    public List<Map<String, Object>> reportByCategory(UUID tenantId) {
+        return transactionRepository.findByTenantId(tenantId, org.springframework.data.domain.Pageable.unpaged())
+                .getContent().stream()
+                .collect(java.util.stream.Collectors.groupingBy(FinanceTransaction::getCategorie))
+                .entrySet().stream().map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("categorie", e.getKey());
+                    m.put("count", e.getValue().size());
+                    return m;
+                }).toList();
+    }
+
+    public List<Map<String, Object>> reportCashFlow(UUID tenantId) {
+        return transactionRepository.findByTenantId(tenantId, org.springframework.data.domain.Pageable.unpaged())
+                .getContent().stream()
+                .collect(java.util.stream.Collectors.groupingBy(t -> t.getDateTransaction().getMonth()))
+                .entrySet().stream().map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("month", e.getKey().name());
+                    m.put("count", e.getValue().size());
+                    return m;
+                }).toList();
+    }
+
+    // ========== TRANSACTION DETAIL / RECONCILE (V236) ==========
+
+    public Map<String, Object> getTransaction(UUID tenantId, UUID id) {
+        FinanceTransaction t = transactionRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("FinanceTransaction", "id", id.toString()));
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId());
+        m.put("type", t.getType().name());
+        m.put("categorie", t.getCategorie());
+        m.put("montant", t.getMontant());
+        m.put("devise", t.getDevise());
+        m.put("description", t.getDescription());
+        m.put("dateTransaction", t.getDateTransaction().toString());
+        m.put("createdAt", t.getCreatedAt().toString());
+        return m;
+    }
+
+    public List<Map<String, Object>> listUnreconciledTransactions(UUID tenantId) {
+        return transactionRepository.findByTenantId(tenantId, org.springframework.data.domain.Pageable.unpaged())
+                .getContent().stream()
+                .filter(t -> !t.isReconciled())
+                .map(t -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", t.getId());
+                    m.put("type", t.getType().name());
+                    m.put("categorie", t.getCategorie());
+                    m.put("montant", t.getMontant());
+                    m.put("devise", t.getDevise());
+                    m.put("dateTransaction", t.getDateTransaction().toString());
+                    return m;
+                }).toList();
+    }
+
+    public Map<String, Object> reconcileTransaction(UUID tenantId, UUID id) {
+        FinanceTransaction t = transactionRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("FinanceTransaction", "id", id.toString()));
+        t.setReconciled(true);
+        transactionRepository.save(t);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", t.getId());
+        m.put("reconciled", t.isReconciled());
+        return m;
     }
 }

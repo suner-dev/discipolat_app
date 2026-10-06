@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -21,4 +22,6 @@ public interface PharmacyStockRepository extends JpaRepository<PharmacyStock, UU
     @Query("SELECT ps FROM PharmacyStock ps WHERE ps.tenantId = :tenantId AND ps.deleted = false AND ps.dateExpiration <= :threshold AND ps.status <> 'EXPIR E'")
     List<PharmacyStock> findExpiringBefore(UUID tenantId, LocalDate threshold);
     long countByTenantIdAndDeletedFalse(UUID tenantId);
+
+    Optional<PharmacyStock> findByTenantIdAndId(UUID tenantId, UUID id);
 }

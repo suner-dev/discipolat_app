@@ -167,7 +167,12 @@ class IsolationBackupCurrencyTest {
                     mock(com.discipolat.common.infrastructure.security.SecurityUtils.class),
                     mock(com.discipolat.modules.audit.domain.AuditService.class),
                     mock(com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher.class),
-                    currencyService, new Iso4217CurrencyValidator());
+                    currencyService, new Iso4217CurrencyValidator(),
+                    mock(com.discipolat.modules.finances.domain.FinanceAccountRepository.class),
+                    mock(com.discipolat.modules.finances.domain.FinanceDonationRepository.class),
+                    mock(com.discipolat.modules.finances.domain.FinanceTontineRepository.class),
+                    mock(com.discipolat.modules.finances.domain.FinanceTontineMemberRepository.class),
+                    mock(com.discipolat.modules.finances.domain.FinanceTontinePayoutRepository.class));
         }
 
         private static CurrencyConfig currency(String code, String symbol) {

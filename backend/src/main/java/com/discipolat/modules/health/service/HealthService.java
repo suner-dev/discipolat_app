@@ -1,5 +1,6 @@
 package com.discipolat.modules.health.service;
 
+import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.health.domain.*;
 import com.discipolat.modules.people.domain.Person;
@@ -31,8 +32,12 @@ public class HealthService {
     private final HealthCampaignRepository healthCampaignRepository;
     private final PersonRepository personRepository;
     private final UserRepository userRepository;
+    private final HealthMedicationRepository healthMedicationRepository;
+    private final HealthKitRepository healthKitRepository;
+    private final HealthDutyRepository healthDutyRepository;
+    private final CampaignParticipantRepository campaignParticipantRepository;
 
-    // ========== PATIENT RECORDS ==========
+    // @RequiredArgsConstructor génère le constructeur ci-dessous à partir des champs final.
 
     public PatientRecord createPatientRecord(UUID tenantId, UUID actorId, PatientRecord record) {
         record.setTenantId(tenantId);
@@ -229,6 +234,87 @@ public class HealthService {
         stats.put("activeCampaigns", activeCampaigns);
         stats.put("plannedCampaigns", plannedCampaigns);
 
+        return stats;
+    }
+
+    // ========== MEDICATIONS (V235) ==========
+
+    public List<HealthMedication> getMedications(UUID tenantId) {
+        return healthMedicationRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId);
+    }
+
+    public HealthMedication getMedication(UUID tenantId, UUID id) {
+        return healthMedicationRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new EntityNotFoundException("HealthMedication", "id", id.toString()));
+    }
+
+    public HealthMedication createMedication(UUID tenantId, UUID actorId, HealthMedication medication) {
+        medication.setTenantId(tenantId);
+        return healthMedicationRepository.save(medication);
+    }
+
+    // ========== KITS (V235) ==========
+
+    public List<HealthKit> getKits(UUID tenantId) {
+        return healthKitRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId);
+    }
+
+    public HealthKit getKit(UUID tenantId, UUID id) {
+        return healthKitRepository.findByTenantIdAndId(tenantId, id)
+                .orElseThrow(() -> new EntityNotFoundException("HealthKit", "id", id.toString()));
+    }
+
+    // ========== DUTIES (V235) ==========
+
+    public List<HealthDuty> getDuties(UUID tenantId) {
+        return healthDutyRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId);
+    }
+
+    // ========== CAMPAIGN PARTICIPANTS (V235) ==========
+
+    public List<CampaignParticipant> getCampaignParticipants(UUID tenantId, UUID campaignId) {
+        return campaignParticipantRepository.findByTenantIdAndCampaignId(tenantId, campaignId);
+    }
+
+    public CampaignParticipant registerCampaignParticipant(UUID tenantId, UUID actorId, UUID campaignId, UUID userId) {
+        CampaignParticipant cp = CampaignParticipant.builder()
+                .tenantId(tenantId)
+                .campaignId(campaignId)
+                .userId(userId)
+                .status(CampaignParticipant.Status.REGISTERED)
+                .build();
+        return campaignParticipantRepository.save(cp);
+    }
+
+    // ========== PHARMACY STOCK DETAIL (V235) ==========
+
+    public PharmacyStock getPharmacyStockById(UUID tenantId, UUID stockId) {
+        return pharmacyStockRepository.findByTenantIdAndId(tenantId, stockId)
+                .orElseThrow(() -> new EntityNotFoundException("PharmacyStock", "id", stockId.toString()));
+    }
+
+    // ========== PATIENTS BY CONDITION (V235) ==========
+
+    public List<PatientRecord> getPatientsByCondition(UUID tenantId, String condition) {
+        String c = condition == null ? "" : condition.toLowerCase();
+        return patientRecordRepository.findByTenantIdAndDeletedFalse(tenantId).stream()
+                .filter(p -> c.isBlank()
+                        || (p.getAntecedents() != null && p.getAntecedents().toLowerCase().contains(c))
+                        || (p.getAllergies() != null && p.getAllergies().toLowerCase().contains(c))
+                        || (p.getNotesSensibles() != null && p.getNotesSensibles().toLowerCase().contains(c)))
+                .toList();
+    }
+
+    // ========== HEALTH REPORTS STATISTICS (V235) ==========
+
+    public Map<String, Object> getHealthReportsStatistics(UUID tenantId) {
+        Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("medications", healthMedicationRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).size());
+        stats.put("kits", healthKitRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).size());
+        stats.put("duties", healthDutyRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId).size());
+        stats.put("patients", patientRecordRepository.countByTenantIdAndDeletedFalse(tenantId));
+        stats.put("consultations", medicalConsultationRepository.countByTenantIdAndDeletedFalse(tenantId));
+        stats.put("prescriptions", prescriptionRepository.countByTenantIdAndDeletedFalse(tenantId));
         return stats;
     }
 }

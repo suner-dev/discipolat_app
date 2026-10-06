@@ -45,7 +45,12 @@ class FinanceServiceTest {
         // d'une règle métier comptable — la validation doit être testée pour de vrai).
         service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService,
                 propagationPublisher, currencyService,
-                new com.discipolat.modules.currency.domain.Iso4217CurrencyValidator());
+                new com.discipolat.modules.currency.domain.Iso4217CurrencyValidator(),
+                mock(com.discipolat.modules.finances.domain.FinanceAccountRepository.class),
+                mock(com.discipolat.modules.finances.domain.FinanceDonationRepository.class),
+                mock(com.discipolat.modules.finances.domain.FinanceTontineRepository.class),
+                mock(com.discipolat.modules.finances.domain.FinanceTontineMemberRepository.class),
+                mock(com.discipolat.modules.finances.domain.FinanceTontinePayoutRepository.class));
     }
 
     private FinanceTransaction tx(UUID id, FinanceTransaction.TransactionType type, String categorie,

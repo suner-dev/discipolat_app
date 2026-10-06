@@ -87,6 +87,10 @@ public class FinanceTransaction {
     @Builder.Default
     private boolean deleted = false;
 
+    @Column(name = "reconciled", nullable = false)
+    @Builder.Default
+    private boolean reconciled = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

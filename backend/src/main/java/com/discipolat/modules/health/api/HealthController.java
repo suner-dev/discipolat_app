@@ -216,4 +216,95 @@ public class HealthController {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(healthService.getDashboardStats(tenantId));
     }
+
+    // ========== MEDICATIONS (V235) ==========
+
+    @GetMapping("/medications")
+    public ResponseEntity<List<HealthMedication>> getMedications() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getMedications(tenantId));
+    }
+
+    @GetMapping("/medications/{id}")
+    public ResponseEntity<HealthMedication> getMedication(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getMedication(tenantId, id));
+    }
+
+    @PostMapping("/medications")
+    public ResponseEntity<HealthMedication> createMedication(@RequestBody HealthMedication medication) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(healthService.createMedication(tenantId, actorId, medication));
+    }
+
+    // ========== KITS (V235) ==========
+
+    @GetMapping("/kits")
+    public ResponseEntity<List<HealthKit>> getKits() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getKits(tenantId));
+    }
+
+    @GetMapping("/kits/{id}")
+    public ResponseEntity<HealthKit> getKit(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getKit(tenantId, id));
+    }
+
+    // ========== DUTIES (V235) ==========
+
+    @GetMapping("/duties")
+    public ResponseEntity<List<HealthDuty>> getDuties() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getDuties(tenantId));
+    }
+
+    // ========== CAMPAIGN PARTICIPANTS (V235) ==========
+
+    @GetMapping("/campaigns/{campaignId}/participants")
+    public ResponseEntity<List<CampaignParticipant>> getCampaignParticipants(@PathVariable UUID campaignId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getCampaignParticipants(tenantId, campaignId));
+    }
+
+    @PostMapping("/campaigns/{campaignId}/register")
+    public ResponseEntity<CampaignParticipant> registerCampaignParticipant(@PathVariable UUID campaignId, @RequestBody Map<String, UUID> body) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        UUID userId = body.get("userId");
+        return ResponseEntity.ok(healthService.registerCampaignParticipant(tenantId, actorId, campaignId, userId));
+    }
+
+    // ========== CONSULTATION PRESCRIPTIONS (V235) ==========
+
+    @GetMapping("/consultations/{consultationId}/prescriptions")
+    public ResponseEntity<List<Prescription>> getConsultationPrescriptions(@PathVariable UUID consultationId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getPrescriptions(tenantId, null, consultationId, org.springframework.data.domain.Pageable.unpaged()).getContent());
+    }
+
+    // ========== PHARMACY STOCK DETAIL (V235) ==========
+
+    @GetMapping("/pharmacy/stock/{id}")
+    public ResponseEntity<PharmacyStock> getPharmacyStockById(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getPharmacyStockById(tenantId, id));
+    }
+
+    // ========== PATIENTS BY CONDITION (V235) ==========
+
+    @GetMapping("/patients/by-condition")
+    public ResponseEntity<List<PatientRecord>> getPatientsByCondition(@RequestParam String condition) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getPatientsByCondition(tenantId, condition));
+    }
+
+    // ========== HEALTH REPORTS STATISTICS (V235) ==========
+
+    @GetMapping("/reports/statistics")
+    public ResponseEntity<Map<String, Object>> getHealthReportsStatistics() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.getHealthReportsStatistics(tenantId));
+    }
 }

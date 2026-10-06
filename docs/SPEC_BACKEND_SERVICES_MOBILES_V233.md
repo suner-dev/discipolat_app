@@ -218,3 +218,22 @@ Idem. Chaque ajout passe les 3 niveaux : compilation, tests du module, et
 - [ ] `docs/DATABASE.md`, `docs/RBAC.md` mis à jour pour les mêmes tables/rôles
 
 **Si un point n'est pas vert, on NE push PAS.**
+
+---
+
+## 7. ÉTAT D'AVANCEMENT — 3 sous-systèmes implémentés (V233–V237)
+
+| Agent | Sous-système | Statut | Preuves |
+|-------|--------------|--------|---------|
+| A | Discipleship | Termine | 8 entites, 8 repositories, service, controleur, migration V233. Compile. |
+| B | Tasks | Termine | 8 entites, 8 repositories, service, controleur, migration V234. Compile. |
+| C | Health + Finances | Termine | 4 entites health + 5 entites finances, repositories, methodes, endpoints, migrations V235/V236/V237. Compile. |
+
+Verifications (commit final) :
+- Backend : 87 tests, 0 echec, BUILD SUCCESS
+- Frontend : tsc 0 erreur ; vitest 86 fichiers, 687 tests, 0 echec
+- Mobile : flutter analyze 0 erreur
+
+Resta a faire (hors perimetre de ce commit) : regenerer docs/API.md et
+docs/openapi.json via scripts/generate-api-docs.sh contre une instance
+demarree (necessite l'app Spring Boot sur localhost:8080).

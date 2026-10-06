@@ -137,4 +137,113 @@ public class FinanceController {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
         return ResponseEntity.ok(reconciliationService.ledger(tenantId));
     }
+
+    // ========== ACCOUNTS (V236) ==========
+
+    @GetMapping("/accounts")
+    public ResponseEntity<List<Map<String, Object>>> listAccounts() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listAccounts(tenantId));
+    }
+
+    @GetMapping("/accounts/{id}")
+    public ResponseEntity<Map<String, Object>> getAccount(@PathVariable UUID id) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.getAccount(tenantId, id));
+    }
+
+    @PostMapping("/accounts")
+    public ResponseEntity<Map<String, Object>> createAccount(@RequestBody Map<String, Object> body) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        UUID actorId = com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId();
+        return ResponseEntity.status(HttpStatus.CREATED).body(financeService.createAccount(tenantId, actorId, body));
+    }
+
+    // ========== DONATIONS (V236) ==========
+
+    @GetMapping("/donations")
+    public ResponseEntity<List<Map<String, Object>>> listDonations() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listDonations(tenantId));
+    }
+
+    @PostMapping("/donations")
+    public ResponseEntity<Map<String, Object>> createDonation(@RequestBody Map<String, Object> body) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        UUID actorId = com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId();
+        return ResponseEntity.status(HttpStatus.CREATED).body(financeService.createDonation(tenantId, actorId, body));
+    }
+
+    // ========== TONTINES (V236) ==========
+
+    @GetMapping("/tontines")
+    public ResponseEntity<List<Map<String, Object>>> listTontines() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listTontines(tenantId));
+    }
+
+    @GetMapping("/tontines/{id}")
+    public ResponseEntity<Map<String, Object>> getTontine(@PathVariable UUID id) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.getTontine(tenantId, id));
+    }
+
+    @PostMapping("/tontines")
+    public ResponseEntity<Map<String, Object>> createTontine(@RequestBody Map<String, Object> body) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        UUID actorId = com.discipolat.common.infrastructure.security.SecurityUtils.getCurrentUserId();
+        return ResponseEntity.status(HttpStatus.CREATED).body(financeService.createTontine(tenantId, actorId, body));
+    }
+
+    @GetMapping("/tontines/{tontineId}/members")
+    public ResponseEntity<List<Map<String, Object>>> listTontineMembers(@PathVariable UUID tontineId) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listTontineMembers(tenantId, tontineId));
+    }
+
+    @GetMapping("/tontines/{tontineId}/payouts")
+    public ResponseEntity<List<Map<String, Object>>> listTontinePayouts(@PathVariable UUID tontineId) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listTontinePayouts(tenantId, tontineId));
+    }
+
+    // ========== REPORTS (V236) ==========
+
+    @GetMapping("/reports/summary")
+    public ResponseEntity<Map<String, Object>> reportSummary() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.reportSummary(tenantId));
+    }
+
+    @GetMapping("/reports/by-category")
+    public ResponseEntity<List<Map<String, Object>>> reportByCategory() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.reportByCategory(tenantId));
+    }
+
+    @GetMapping("/reports/cash-flow")
+    public ResponseEntity<List<Map<String, Object>>> reportCashFlow() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.reportCashFlow(tenantId));
+    }
+
+    // ========== TRANSACTION DETAIL / RECONCILE (V236) ==========
+
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<Map<String, Object>> getTransaction(@PathVariable UUID id) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.getTransaction(tenantId, id));
+    }
+
+    @GetMapping("/transactions/unreconciled")
+    public ResponseEntity<List<Map<String, Object>>> listUnreconciled() {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.listUnreconciledTransactions(tenantId));
+    }
+
+    @PostMapping("/transactions/{id}/reconcile")
+    public ResponseEntity<Map<String, Object>> reconcileTransaction(@PathVariable UUID id) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.reconcileTransaction(tenantId, id));
+    }
 }
