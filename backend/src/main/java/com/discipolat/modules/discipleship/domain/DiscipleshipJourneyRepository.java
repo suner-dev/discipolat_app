@@ -10,7 +10,11 @@ import java.util.UUID;
 
 public interface DiscipleshipJourneyRepository extends JpaRepository<DiscipleshipJourney, Long> {
 
+    List<DiscipleshipJourney> findByTenantIdOrderByNameAsc(UUID tenantId);
+
     List<DiscipleshipJourney> findByTenantIdAndIsActiveTrueOrderByNameAsc(UUID tenantId);
+
+    List<DiscipleshipJourney> findByTenantIdAndIsActiveFalseOrderByNameAsc(UUID tenantId);
 
     Page<DiscipleshipJourney> findByTenantIdAndIsActiveTrue(UUID tenantId, Pageable pageable);
 

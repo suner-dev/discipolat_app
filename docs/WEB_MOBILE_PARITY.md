@@ -63,7 +63,8 @@
 | Navigation sidebar | OUI | OUI (drawer) | Adaptatif | UX différente par plateforme | Acceptable |
 | Profil utilisateur | OUI | OUI | Aucun | — | — |
 | Journal spirituel | OUI | OUI | Aucun | — | — |
-| Parcours disciple | OUI | OUI | Aucun | — | — |
+| Parcours disciple (API `/api/v1/discipleship`) | OUI | OUI | Aucun | Backend V233 ; 22 tests de service | — |
+| Tâches & Kanban (API `/api/v1/tasks`) | OUI | OUI | Aucun | Backend V234 ; 18 tests de service | — |
 | Portail public | OUI | NON | Absent mobile | Pas de mobile public | Acceptable |
 
 ---
@@ -72,11 +73,16 @@
 
 | Statut | Nombre |
 |--------|--------|
-| Parité Web/Mobile | 48 |
+| Parité Web/Mobile | 50 |
 | Absent Mobile (acceptable) | 9 |
 | Absent Mobile (à implémenter) | 3 |
 | Incohérent (MOCK vs Vrai) | 4 |
 | Absent Web (acceptable) | 5 |
 | Absent Web (à implémenter) | 1 |
 
-**60 fonctionnalités comparées.**
+**62 fonctionnalités comparées.**
+
+> Contrats exposés côté mobile et servis par le backend (V233/V234) :
+> `docs/SPEC_BACKEND_SERVICES_MOBILES_V233.md`. Les pages web correspondantes
+> n'existant pas pour Discipleship ni Tasks, ces API sont consommées par le
+> mobile uniquement — écart assumé et documenté ici.

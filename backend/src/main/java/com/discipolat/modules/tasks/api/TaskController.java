@@ -23,14 +23,31 @@ public class TaskController {
 
     public TaskController(TaskService service) { this.service = service; }
 
+    /**
+     * Liste paginée. Tous les filtres émis par {@code tasks_service.dart} sont
+     * désormais acceptés : le client envoyait 11 paramètres, le serveur n'en
+     * lisait qu'un seul (les 10 autres étaient silencieusement ignorés).
+     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) UUID assignedToId,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) Boolean myTasks) {
         UUID tenantId = TenantContext.getTenantId();
-        return ResponseEntity.ok(service.listTasks(tenantId, page, size, status));
+        return ResponseEntity.ok(service.listTasks(tenantId,
+                new com.discipolat.modules.tasks.api.dto.TaskDtos.TaskFilter(
+                        status, priority, type, assignedToId, projectId, departmentId,
+                        search, overdue, myTasks),
+                page, size));
     }
 
     @GetMapping("/{id}")
@@ -164,11 +181,21 @@ public class TaskController {
         return ResponseEntity.ok(service.updateKanbanColumn(tenantId, id, body));
     }
 
+    /**
+     * Déplacement dans le Kanban : {@code {status, order}}.
+     *
+     * <p>La version précédente déléguait à {@code updateTask}, qui ignore la
+     * clé {@code order} : le glisser-déposer kanban renvoyait 200 sans rien
+     * changer. La position est désormais réellement persistée.
+     */
     @PostMapping("/{taskId}/reorder")
     @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
     public ResponseEntity<Map<String, Object>> reorder(@PathVariable Long taskId, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
-        return ResponseEntity.ok(service.updateTask(tenantId, taskId, body));
+        Integer order = body.get("order") == null ? null
+                : Integer.valueOf(String.valueOf(body.get("order")));
+        return ResponseEntity.ok(service.reorderTask(tenantId, taskId,
+                body.get("status") == null ? null : String.valueOf(body.get("status")), order));
     }
 
     @GetMapping("/{taskId}/time-entries")

@@ -37,6 +37,8 @@ public class TaskService {
     private final TaskTemplateSubtaskRepository templateSubtaskRepository;
     private final KanbanColumnRepository kanbanColumnRepository;
     private final TaskTimeEntryRepository timeEntryRepository;
+    /** Libellés d'utilisateurs attendus par les modèles mobiles. */
+    private final com.discipolat.modules.users.domain.UserRepository userRepository;
 
     public TaskService(TaskRepository taskRepository,
                        TaskAttachmentRepository attachmentRepository,
@@ -45,7 +47,8 @@ public class TaskService {
                        TaskTemplateRepository templateRepository,
                        TaskTemplateSubtaskRepository templateSubtaskRepository,
                        KanbanColumnRepository kanbanColumnRepository,
-                       TaskTimeEntryRepository timeEntryRepository) {
+                       TaskTimeEntryRepository timeEntryRepository,
+                       com.discipolat.modules.users.domain.UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.attachmentRepository = attachmentRepository;
         this.commentRepository = commentRepository;
@@ -54,6 +57,7 @@ public class TaskService {
         this.templateSubtaskRepository = templateSubtaskRepository;
         this.kanbanColumnRepository = kanbanColumnRepository;
         this.timeEntryRepository = timeEntryRepository;
+        this.userRepository = userRepository;
     }
 
     private Pageable clamp(int page, int size) {
@@ -62,12 +66,84 @@ public class TaskService {
 
     // ==================== TASKS ====================
 
+    /**
+     * Liste paginée avec TOUS les filtres du client mobile.
+     *
+     * <p>La version précédente ne lisait que {@code status} : {@code priority},
+     * {@code type}, {@code assignedToId}, {@code projectId},
+     * {@code departmentId}, {@code search}, {@code overdue} et {@code myTasks}
+     * étaient acceptés puis ignorés — l'appelant croyait filtrer, le serveur
+     * renvoyait l'intégralité des tâches du tenant.
+     */
+    /**
+     * Surcharge de compatibilité : l'ancien appel à 4 arguments
+     * (tenant, page, size, status) reste valide et se ramène sur le filtre
+     * complet. Conservée pour ne casser aucun appelant existant.
+     */
     public List<Map<String, Object>> listTasks(UUID tenantId, int page, int size, String status) {
+        return listTasks(tenantId,
+                new com.discipolat.modules.tasks.api.dto.TaskDtos.TaskFilter(
+                        status, null, null, null, null, null, null, null, null),
+                page, size);
+    }
+
+    public List<Map<String, Object>> listTasks(UUID tenantId,
+                                                com.discipolat.modules.tasks.api.dto.TaskDtos.TaskFilter filter,
+                                                int page, int size) {
         Pageable p = clamp(page, size);
-        Page<Task> result = status != null
-                ? taskRepository.findByTenantIdAndStatus(tenantId, parseStatus(status), p)
-                : taskRepository.findByTenantId(tenantId, p);
+        if (filter == null) {
+            return taskRepository.findByTenantId(tenantId, p).getContent().stream().map(this::taskView).toList();
+        }
+        Page<Task> result = taskRepository.findAll(
+                tenantId,
+                filter.status() == null ? null : parseStatus(filter.status()),
+                filter.priority() == null ? null : parsePriority(filter.priority()),
+                filter.type() == null ? null : parseType(filter.type()),
+                filter.assignedToId(),
+                filter.projectId(),
+                filter.departmentId(),
+                blankToNull(filter.search()),
+                Boolean.TRUE.equals(filter.overdue()),
+                // Boolean.TRUE.equals : un `== true` déballerait un null et lèverait
+                // une NullPointerException quand le client n'envoie pas myTasks.
+                Boolean.TRUE.equals(filter.myTasks()) ? currentUserIdOrNull() : null,
+                Instant.now(),
+                Task.TaskStatus.DONE,
+                p);
         return result.getContent().stream().map(this::taskView).toList();
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /** Identifiant de l'utilisateur courant, ou {@code null} hors contexte authentifié. */
+    private static UUID currentUserIdOrNull() {
+        try {
+            return SecurityUtils.getCurrentUserId();
+        } catch (RuntimeException noSecurityContext) {
+            return null;
+        }
+    }
+
+    private Task.TaskPriority parsePriority(String value) {
+        return requireEnum(Task.TaskPriority.class, value);
+    }
+
+    private Task.TaskType parseType(String value) {
+        return requireEnum(Task.TaskType.class, value);
+    }
+
+    /** Parse un enum en rejetant les valeurs inconnues (400) au lieu d'un repli muet. */
+    private static <T extends Enum<T>> T requireEnum(Class<T> cls, String value) {
+        String v = value.trim();
+        for (T candidate : cls.getEnumConstants()) {
+            if (candidate.name().equalsIgnoreCase(v)) return candidate;
+            // Le client Dart envoie parfois le nom camelCase de son enum
+            // (« inProgress ») : on accepte cette forme sans ambiguïté.
+            if (candidate.name().replace("_", "").equalsIgnoreCase(v.replace("_", ""))) return candidate;
+        }
+        throw new IllegalArgumentException("Valeur invalide pour " + cls.getSimpleName() + " : \"" + value + "\"");
     }
 
     public Map<String, Object> getTask(UUID tenantId, Long id) {
@@ -79,11 +155,11 @@ public class TaskService {
                 .tenantId(tenantId)
                 .title(str(body.get("title")))
                 .description(str(body.get("description")))
-                .type(parseEnum(Task.TaskType.class, str(body.get("type")), Task.TaskType.TASK))
-                .priority(parseEnum(Task.TaskPriority.class, str(body.get("priority")), Task.TaskPriority.MEDIUM))
+                .type(optionalEnum(Task.TaskType.class, body.get("type"), Task.TaskType.TASK))
+                .priority(optionalEnum(Task.TaskPriority.class, body.get("priority"), Task.TaskPriority.MEDIUM))
                 .status(Task.TaskStatus.TODO)
                 .projectId(longVal(body.get("projectId")))
-                .assignedToId(uuidVal(body.get("assignedToId")))
+                .assignedToId(requireTenantUser(tenantId, uuidVal(str(body.get("assignedToId")))))
                 .assignedById(SecurityUtils.getCurrentUserId())
                 .departmentId(longVal(body.get("departmentId")))
                 .dueDate(instantVal(body.get("dueDate")))
@@ -101,11 +177,13 @@ public class TaskService {
         Task task = requireTask(tenantId, id);
         if (body.containsKey("title")) task.setTitle(str(body.get("title")));
         if (body.containsKey("description")) task.setDescription(str(body.get("description")));
-        if (body.containsKey("type")) task.setType(parseEnum(Task.TaskType.class, str(body.get("type")), task.getType()));
-        if (body.containsKey("priority")) task.setPriority(parseEnum(Task.TaskPriority.class, str(body.get("priority")), task.getPriority()));
+        if (body.containsKey("type")) task.setType(optionalEnum(Task.TaskType.class, body.get("type"), task.getType()));
+        if (body.containsKey("priority")) task.setPriority(optionalEnum(Task.TaskPriority.class, body.get("priority"), task.getPriority()));
         if (body.containsKey("status")) task.setStatus(parseStatus(str(body.get("status"))));
         if (body.containsKey("projectId")) task.setProjectId(longVal(body.get("projectId")));
-        if (body.containsKey("assignedToId")) task.setAssignedToId(uuidVal(body.get("assignedToId")));
+        if (body.containsKey("assignedToId")) {
+            task.setAssignedToId(requireTenantUser(tenantId, uuidVal(str(body.get("assignedToId")))));
+        }
         if (body.containsKey("departmentId")) task.setDepartmentId(longVal(body.get("departmentId")));
         if (body.containsKey("dueDate")) task.setDueDate(instantVal(body.get("dueDate")));
         if (body.containsKey("startDate")) task.setStartDate(instantVal(body.get("startDate")));
@@ -118,9 +196,35 @@ public class TaskService {
         return taskView(taskRepository.save(task));
     }
 
+    /**
+     * Déplacement kanban : nouveau statut et/ou nouveau rang.
+     *
+     * <p>Un statut absent ne change que le rang, et inversement — ce qui permet
+     * au client de réordonner dans une colonne sans réécrire le statut.
+     */
+    public Map<String, Object> reorderTask(UUID tenantId, Long id, String status, Integer order) {
+        Task task = requireTask(tenantId, id);
+        if (status != null && !status.isBlank()) {
+            Task.TaskStatus newStatus = parseStatus(status);
+            task.setStatus(newStatus);
+            task.setCompletedDate(newStatus == Task.TaskStatus.DONE ? Instant.now() : null);
+        }
+        if (order != null) task.setSortOrder(order);
+        return taskView(taskRepository.save(task));
+    }
+
+    /**
+     * Suppression = archivage (R9 : « Pas de purge »).
+     *
+     * <p>La version précédente appelait {@code repository.delete(task)} : une
+     * suppression DÉFINITIVE, avec ses pièces jointes, commentaires et
+     * dépendances (ON DELETE CASCADE). La règle R9 impose un statut, et le
+     * modèle mobile connaît {@code CANCELLED}.
+     */
     public void deleteTask(UUID tenantId, Long id) {
         Task task = requireTask(tenantId, id);
-        taskRepository.delete(task);
+        task.setStatus(Task.TaskStatus.CANCELLED);
+        taskRepository.save(task);
     }
 
     public Map<String, Object> updateStatus(UUID tenantId, Long id, String status) {
@@ -132,6 +236,12 @@ public class TaskService {
 
     public Map<String, Object> assignTask(UUID tenantId, Long id, UUID assignedToId) {
         Task task = requireTask(tenantId, id);
+        // R4 : l'assigné doit être membre du tenant (une FK ne garantit que
+        // l'existence du compte, pas son appartenance à l'église courante).
+        if (assignedToId != null
+                && userRepository.findByIdWithActiveMembershipInTenant(assignedToId, tenantId).isEmpty()) {
+            throw new EntityNotFoundException("User", "id", assignedToId.toString());
+        }
         task.setAssignedToId(assignedToId);
         task.setAssignedById(SecurityUtils.getCurrentUserId());
         return taskView(taskRepository.save(task));
@@ -161,6 +271,7 @@ public class TaskService {
         m.put("actualHours", t.getActualHours());
         m.put("tags", t.getTags());
         m.put("parentTaskId", t.getParentTaskId());
+        m.put("sortOrder", t.getSortOrder());
         m.put("recurrencePattern", t.getRecurrencePattern());
         m.put("recurrenceEndDate", t.getRecurrenceEndDate() != null ? t.getRecurrenceEndDate().toString() : null);
         m.put("createdAt", t.getCreatedAt().toString());
@@ -183,7 +294,7 @@ public class TaskService {
                 .title(str(body.get("title")))
                 .description(str(body.get("description")))
                 .type(Task.TaskType.SUBTASK)
-                .priority(parseEnum(Task.TaskPriority.class, str(body.get("priority")), Task.TaskPriority.MEDIUM))
+                .priority(optionalEnum(Task.TaskPriority.class, body.get("priority"), Task.TaskPriority.MEDIUM))
                 .status(Task.TaskStatus.TODO)
                 .parentTaskId(parentTaskId)
                 .build();
@@ -223,6 +334,8 @@ public class TaskService {
             m.put("id", c.getId());
             m.put("taskId", c.getTaskId());
             m.put("authorId", c.getAuthorId());
+            // `authorName` est `required` côté mobile : sans lui, le fromJson échoue.
+            m.put("authorName", currentUserName(c.getAuthorId()));
             m.put("content", c.getContent());
             m.put("parentCommentId", c.getParentCommentId());
             m.put("isSystem", c.isSystem());
@@ -269,9 +382,18 @@ public class TaskService {
             m.put("id", d.getId());
             m.put("taskId", d.getTaskId());
             m.put("dependsOnTaskId", d.getDependsOnTaskId());
+            // `dependsOnTaskTitle` est `required` côté mobile.
+            m.put("dependsOnTaskTitle", taskTitle(tenantId, d.getDependsOnTaskId()));
             m.put("type", d.getType().name());
             return m;
         }).toList();
+    }
+
+    /** Titre de la tâche dont on dépend ; repli stable si introuvable. */
+    private String taskTitle(UUID tenantId, Long taskId) {
+        return taskRepository.findByTenantIdAndId(tenantId, taskId)
+                .map(Task::getTitle)
+                .orElse("Tâche " + taskId);
     }
 
     public Map<String, Object> createDependency(UUID tenantId, Long taskId, Map<String, Object> body) {
@@ -345,6 +467,8 @@ public class TaskService {
             m.put("id", e.getId());
             m.put("taskId", e.getTaskId());
             m.put("userId", e.getUserId());
+            // `userName` est `required` côté mobile.
+            m.put("userName", currentUserName(e.getUserId()));
             m.put("startTime", e.getStartTime().toString());
             m.put("endTime", e.getEndTime() != null ? e.getEndTime().toString() : null);
             m.put("durationMinutes", e.getDurationMinutes());
@@ -396,7 +520,7 @@ public class TaskService {
 
     public Map<String, Object> getTimeTotal(UUID tenantId, Long taskId) {
         requireTask(tenantId, taskId);
-        Integer total = timeEntryRepository.sumDurationMinutesByTenantIdAndTaskId(tenantId, taskId);
+        Integer total = timeEntryRepository.sumDurationMinutes(tenantId, taskId);
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("taskId", taskId);
         m.put("totalMinutes", total != null ? total : 0);
@@ -466,16 +590,34 @@ public class TaskService {
         }).toList();
     }
 
+    /**
+     * Charge utile bornée pour une agrégation : évite de matérialiser toute la
+     * table `tasks` d'un tenant en mémoire pour un simple comptage.
+     */
+    private static final int MAX_AGGREGATION_ROWS = 50_000;
+
     public List<Map<String, Object>> reportByAssignee(UUID tenantId) {
-        return taskRepository.findByTenantId(tenantId, Pageable.unpaged()).getContent().stream()
+        return taskRepository.findByTenantId(tenantId, PageRequest.of(0, MAX_AGGREGATION_ROWS))
+                .getContent().stream()
                 .filter(t -> t.getAssignedToId() != null)
                 .collect(java.util.stream.Collectors.groupingBy(Task::getAssignedToId))
                 .entrySet().stream().map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("assignedToId", e.getKey());
+                    m.put("assignedToName", currentUserName(e.getKey()));
                     m.put("count", e.getValue().size());
                     return m;
                 }).toList();
+    }
+
+    /** Nom lisible de l'assigné, attendu par le modèle mobile. */
+    private String currentUserName(UUID userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId).map(u -> {
+            String full = ((u.getFirstName() == null ? "" : u.getFirstName()) + " "
+                    + (u.getLastName() == null ? "" : u.getLastName())).trim();
+            return full.isEmpty() ? (u.getEmail() != null ? u.getEmail() : "—") : full;
+        }).orElse("—");
     }
 
     public List<Map<String, Object>> listOverdue(UUID tenantId) {
@@ -500,6 +642,25 @@ public class TaskService {
     private static <T extends Enum<T>> T parseEnum(Class<T> cls, String value, T def) {
         if (value == null || value.isBlank()) return def;
         try { return Enum.valueOf(cls, value.trim().toUpperCase()); } catch (IllegalArgumentException e) { return def; }
+    }
+
+    /**
+     * Enum fourni à la création : valeur absente → repli, valeur INCONNUE → 400.
+     * Empêche d'enregistrer silencieusement une tâche en type {@code TASK}
+     * parce que le client a envoyé une faute de frappe.
+     */
+    private static <T extends Enum<T>> T optionalEnum(Class<T> cls, Object raw, T def) {
+        if (raw == null || String.valueOf(raw).isBlank()) return def;
+        return requireEnum(cls, String.valueOf(raw));
+    }
+
+    /** R4 : l'utilisateur référencé doit être membre du tenant ; null est toléré. */
+    private UUID requireTenantUser(UUID tenantId, UUID userId) {
+        if (userId == null) return null;
+        if (userRepository.findByIdWithActiveMembershipInTenant(userId, tenantId).isEmpty()) {
+            throw new EntityNotFoundException("User", "id", userId.toString());
+        }
+        return userId;
     }
 
     private static String str(Object o) { return o == null ? null : String.valueOf(o); }

@@ -148,6 +148,23 @@ public final class TaskDtos {
 
     // ==================== REQUÊTES ====================
 
+    /**
+     * Filtres de {@code GET /tasks}, dans l'ordre et avec les noms émis par
+     * {@code tasks_service.dart}. Chaque champ est facultatif ({@code null} =
+     * non filtré).
+     */
+    public record TaskFilter(
+            String status,
+            String priority,
+            String type,
+            UUID assignedToId,
+            Long projectId,
+            Long departmentId,
+            String search,
+            Boolean overdue,
+            Boolean myTasks) {
+    }
+
     /** Corps de {@code POST /tasks} et {@code PUT /tasks/{id}} (mêmes clés mobiles). */
     public record TaskRequest(
             String title,

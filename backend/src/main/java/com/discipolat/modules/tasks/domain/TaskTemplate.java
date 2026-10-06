@@ -41,7 +41,8 @@ public class TaskTemplate {
     @Column(name = "estimated_hours")
     private Integer estimatedHours;
 
-    @Column(name = "default_tags", columnDefinition = "TEXT[]")
+    /** Voir {@link Task#tags} : sérialisé en TEXT par le convertisseur. */
+    @Column(name = "default_tags", columnDefinition = "TEXT")
     @Convert(converter = StringListConverter.class)
     @Builder.Default
     private List<String> defaultTags = List.of();

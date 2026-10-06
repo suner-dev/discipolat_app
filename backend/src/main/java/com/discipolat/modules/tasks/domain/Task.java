@@ -78,13 +78,33 @@ public class Task {
     @Column(name = "actual_hours")
     private Integer actualHours;
 
-    @Column(name = "tags", columnDefinition = "TEXT[]")
+    /**
+     * Tags sérialisés par {@link StringListConverter} (liste jointe par des
+     * virgules).
+     *
+     * <p>La colonne est un {@code TEXT} et NON un {@code TEXT[]} : le
+     * convertisseur écrit une CHAÎNE, alors que la migration V234 déclarait un
+     * tableau PostgreSQL. L'écart était invisible à la compilation mais bloquait
+     * le démarrage sur H2 (le profil de test) — et aurait rejeté toute écriture
+     * sur PostgreSQL. Corrigé par la migration V238.
+     */
+    @Column(name = "tags", columnDefinition = "TEXT")
     @Convert(converter = StringListConverter.class)
     @Builder.Default
     private List<String> tags = List.of();
 
     @Column(name = "parent_task_id")
     private Long parentTaskId;
+
+    /**
+     * Rang d'affichage dans sa colonne Kanban.
+     *
+     * <p>Colonne AJOUTÉE en V239 : le mobile envoie déjà {@code order} lors
+     * d'un {@code POST /tasks/{id}/reorder}, mais le serveur la rejetait
+     * silencieusement — le glisser-déposer ne persistait rien.
+     */
+    @Column(name = "sort_order")
+    private Integer sortOrder;
 
     @Column(name = "recurrence_rule_id")
     private Long recurrenceRuleId;

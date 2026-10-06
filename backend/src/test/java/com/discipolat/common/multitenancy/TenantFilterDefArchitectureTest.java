@@ -49,7 +49,12 @@ class TenantFilterDefArchitectureTest {
                 .as("un seul @FilterDef(name = \"tenantFilter\") est autorisé : Hibernate refuse "
                         + "les définitions dupliquées au démarrage de l'EntityManagerFactory")
                 .hasSize(1);
-        assertThat(declaring.get(0).toString())
+        // Path.toString() uses the OS separator: on Windows it yields
+        // "src\main\java\...\User.java" while the assertion expects
+        // "users/domain/User.java" ("/"). Normalise to "/" before comparing,
+        // otherwise this guard fails on every Windows workstation even though
+        // the architecture rule it protects is respected.
+        assertThat(declaring.get(0).toString().replace('\\', '/'))
                 .as("la définition canonique vit sur l'entité User")
                 .endsWith("users/domain/User.java");
     }

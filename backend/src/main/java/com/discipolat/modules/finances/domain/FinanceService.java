@@ -459,8 +459,8 @@ public class FinanceService {
                 .name((String) body.get("name"))
                 .accountNumber((String) body.get("accountNumber"))
                 .bankName((String) body.get("bankName"))
-                .balance(body.get("balance") != null ? new java.math.BigDecimal(String.valueOf(body.get("balance"))) : java.math.BigDecimal.ZERO)
-                .devise(body.get("devise") != null ? String.valueOf(body.get("devise")) : "XOF")
+                .balance(decimalOrDefault(body.get("balance"), java.math.BigDecimal.ZERO))
+                .devise(deviseOf(body.get("devise")))
                 .isActive(true)
                 .build();
         FinanceAccount saved = accountRepository.save(a);
@@ -474,6 +474,68 @@ public class FinanceService {
         m.put("isActive", saved.isActive());
         m.put("createdAt", saved.getCreatedAt().toString());
         return m;
+    }
+
+    // ========== Helpers de saisie (V236) ==========
+
+    /**
+     * Montant obligatoire, converti proprement.
+     *
+     * <p>{@code new BigDecimal(String.valueOf(body.get("amount")))} levait une
+     * {@code NumberFormatException} sur la chaîne {@code "null"} quand le champ
+     * manquait — donc une 500 « erreur interne » pour une simple erreur de
+     * saisie, au lieu d'un 400 explicite.
+     */
+    private static BigDecimal requireDecimal(Object raw, String field) {
+        if (raw == null || String.valueOf(raw).isBlank()) {
+            throw new IllegalArgumentException(field + " est requis");
+        }
+        try {
+            return new BigDecimal(String.valueOf(raw).trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(field + " n'est pas un montant valide : " + raw);
+        }
+    }
+
+    private static BigDecimal decimalOrDefault(Object raw, BigDecimal def) {
+        if (raw == null || String.valueOf(raw).isBlank()) return def;
+        try {
+            return new BigDecimal(String.valueOf(raw).trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Montant invalide : " + raw);
+        }
+    }
+
+    /**
+     * Fréquence de tontine, en signalant les valeurs acceptées.
+     * {@code Frequency.valueOf} levait une exception opaque sur une valeur
+     * absente (« null ») ou mal orthographiée.
+     */
+    private static FinanceTontine.Frequency requireFrequency(Object raw) {        if (raw == null || String.valueOf(raw).isBlank()) {
+            throw new IllegalArgumentException("frequency est requis");
+        }
+        String v = String.valueOf(raw).trim().toUpperCase();
+        for (FinanceTontine.Frequency f : FinanceTontine.Frequency.values()) {
+            if (f.name().equals(v)) return f;
+        }
+        throw new IllegalArgumentException("Fréquence invalide : \"" + raw + "\". Attendu : "
+                + java.util.Arrays.stream(FinanceTontine.Frequency.values())
+                    .map(Enum::name).collect(java.util.stream.Collectors.joining(", ")));
+    }
+
+    /**
+     * Devise d'un compte ou d'un don.
+     *
+     * <p>Reprend la devise PRIMARYAIRE du tenant ({@code resolveDeviseTenant}),
+     * déjà utilisée par {@link #createTransaction}. Les ajouts V236 codaient
+     * « XOF » en dur : un tenant configuré en EUR se retrouvait avec des
+     * comptes et des dons en XOF alors que ses transactions étaient en EUR.
+     */
+    private String deviseOf(Object explicit) {
+        if (explicit != null && !String.valueOf(explicit).isBlank()) {
+            return String.valueOf(explicit).trim().toUpperCase(Locale.ROOT);
+        }
+        return resolveDeviseTenant();
     }
 
     // ========== DONATIONS (V236) ==========
@@ -497,8 +559,8 @@ public class FinanceService {
         FinanceDonation d = FinanceDonation.builder()
                 .tenantId(tenantId)
                 .donorName((String) body.get("donorName"))
-                .amount(new java.math.BigDecimal(String.valueOf(body.get("amount"))))
-                .devise(body.get("devise") != null ? String.valueOf(body.get("devise")) : "XOF")
+                .amount(requireDecimal(body.get("amount"), "amount"))
+                .devise(deviseOf(body.get("devise")))
                 .donationDate(body.get("donationDate") != null ? java.time.Instant.parse(String.valueOf(body.get("donationDate"))) : java.time.Instant.now())
                 .purpose((String) body.get("purpose"))
                 .isAnonymous(Boolean.parseBoolean(String.valueOf(body.get("isAnonymous"))))
@@ -557,8 +619,8 @@ public class FinanceService {
                 .tenantId(tenantId)
                 .name((String) body.get("name"))
                 .description((String) body.get("description"))
-                .amountPerTurn(new java.math.BigDecimal(String.valueOf(body.get("amountPerTurn"))))
-                .frequency(FinanceTontine.Frequency.valueOf(String.valueOf(body.get("frequency"))))
+                .amountPerTurn(requireDecimal(body.get("amountPerTurn"), "amountPerTurn"))
+                .frequency(requireFrequency(body.get("frequency")))
                 .startDate(body.get("startDate") != null ? java.time.Instant.parse(String.valueOf(body.get("startDate"))) : java.time.Instant.now())
                 .endDate(body.get("endDate") != null ? java.time.Instant.parse(String.valueOf(body.get("endDate"))) : null)
                 .isActive(true)

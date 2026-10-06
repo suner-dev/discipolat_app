@@ -76,6 +76,27 @@ public class HealthService {
 
     // ========== MEDICAL CONSULTATIONS ==========
 
+    /**
+     * Mise à jour d'une consultation (appelée par le mobile).
+     *
+     * <p>Application par champs présents uniquement : une absence de clé
+     * conserve la valeur enregistrée, au lieu de l'effacer.
+     */
+    public MedicalConsultation updateConsultation(UUID tenantId, UUID actorId,
+                                                   UUID consultationId, MedicalConsultation updates) {
+        MedicalConsultation consultation = getConsultation(tenantId, consultationId);
+        if (updates.getConsultationDate() != null) consultation.setConsultationDate(updates.getConsultationDate());
+        if (updates.getTypeConsultation() != null) consultation.setTypeConsultation(updates.getTypeConsultation());
+        if (updates.getMotif() != null) consultation.setMotif(updates.getMotif());
+        if (updates.getConstantes() != null) consultation.setConstantes(updates.getConstantes());
+        if (updates.getDiagnostic() != null) consultation.setDiagnostic(updates.getDiagnostic());
+        if (updates.getTraitement() != null) consultation.setTraitement(updates.getTraitement());
+        if (updates.getResultat() != null) consultation.setResultat(updates.getResultat());
+        if (updates.getOrientation() != null) consultation.setOrientation(updates.getOrientation());
+        if (updates.getStatus() != null) consultation.setStatus(updates.getStatus());
+        return medicalConsultationRepository.save(consultation);
+    }
+
     public MedicalConsultation createConsultation(UUID tenantId, UUID actorId, MedicalConsultation consultation) {
         consultation.setTenantId(tenantId);
         return medicalConsultationRepository.save(consultation);
@@ -291,6 +312,27 @@ public class HealthService {
     public PharmacyStock getPharmacyStockById(UUID tenantId, UUID stockId) {
         return pharmacyStockRepository.findByTenantIdAndId(tenantId, stockId)
                 .orElseThrow(() -> new EntityNotFoundException("PharmacyStock", "id", stockId.toString()));
+    }
+
+    /**
+     * Mise à jour d'un lot de pharmacie (appelée par le mobile).
+     *
+     * <p>La quantité ne peut pas devenir négative : une valeur négative
+     * produirait un stock incohérent avec les alertes de seuil.
+     */
+    public PharmacyStock updatePharmacyStock(UUID tenantId, UUID stockId, PharmacyStock updates) {
+        PharmacyStock stock = getPharmacyStockById(tenantId, stockId);
+        if (updates.getQuantite() != null) {
+            if (updates.getQuantite() < 0) {
+                throw new IllegalArgumentException("La quantité ne peut pas être négative");
+            }
+            stock.setQuantite(updates.getQuantite());
+        }
+        if (updates.getSeuilAlerte() != null) stock.setSeuilAlerte(updates.getSeuilAlerte());
+        if (updates.getPrixUnitaire() != null) stock.setPrixUnitaire(updates.getPrixUnitaire());
+        if (updates.getDateExpiration() != null) stock.setDateExpiration(updates.getDateExpiration());
+        if (updates.getStatus() != null) stock.setStatus(updates.getStatus());
+        return pharmacyStockRepository.save(stock);
     }
 
     // ========== PATIENTS BY CONDITION (V235) ==========

@@ -9,11 +9,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Sort;
 
 /**
  * Discipleship — V233.
@@ -30,6 +34,15 @@ import java.util.UUID;
 public class DiscipleshipService {
 
     private static final int MAX_PAGE_SIZE = 100;
+    /** Plafond serveur du classement de mentors (§2.1 : `limit`). */
+    private static final int MAX_TOP_MENTORS = 50;
+    private static final int DEFAULT_TOP_MENTORS = 10;
+    /**
+     * Garde-fou d'agrégation : on ne charge jamais plus que ce nombre
+     * d'assignations par mentor, pour que le classement reste une requête bornée
+     * et non un chargement intégral de la table.
+     */
+    private static final int MAX_ASSIGNMENTS_PER_MENTOR = 200;
 
     private final DiscipleshipJourneyRepository journeyRepository;
     private final DiscipleshipStageRepository stageRepository;
@@ -39,6 +52,8 @@ public class DiscipleshipService {
     private final DiscipleProgressRequirementRepository progressRequirementRepository;
     private final MentorAssignmentRepository assignmentRepository;
     private final MentorMeetingRepository meetingRepository;
+    /** Résolution des noms d'utilisateur attendus par les modèles mobiles. */
+    private final com.discipolat.modules.users.domain.UserRepository userRepository;
 
     public DiscipleshipService(DiscipleshipJourneyRepository journeyRepository,
                                DiscipleshipStageRepository stageRepository,
@@ -47,7 +62,8 @@ public class DiscipleshipService {
                                DiscipleProgressRepository progressRepository,
                                DiscipleProgressRequirementRepository progressRequirementRepository,
                                MentorAssignmentRepository assignmentRepository,
-                               MentorMeetingRepository meetingRepository) {
+                               MentorMeetingRepository meetingRepository,
+                               com.discipolat.modules.users.domain.UserRepository userRepository) {
         this.journeyRepository = journeyRepository;
         this.stageRepository = stageRepository;
         this.requirementRepository = requirementRepository;
@@ -56,6 +72,19 @@ public class DiscipleshipService {
         this.progressRequirementRepository = progressRequirementRepository;
         this.assignmentRepository = assignmentRepository;
         this.meetingRepository = meetingRepository;
+        this.userRepository = userRepository;
+    }
+
+    /** Nom lisible d'un utilisateur ; repli stable si absent. */
+    private String userName(UUID userId) {
+        if (userId == null) return "—";
+        return userRepository.findById(userId)
+                .map(u -> {
+                    String full = ((u.getFirstName() == null ? "" : u.getFirstName()) + " "
+                            + (u.getLastName() == null ? "" : u.getLastName())).trim();
+                    return full.isEmpty() ? (u.getEmail() != null ? u.getEmail() : "—") : full;
+                })
+                .orElse("—");
     }
 
     private Pageable clamp(int page, int size) {
@@ -66,10 +95,21 @@ public class DiscipleshipService {
 
     // ==================== JOURNEYS ====================
 
+    /**
+     * Le filtre {@code isActive} est honoré. Les deux branches du ternaire
+     * précédent appelaient la MÊME requête « isActive = true » : demander
+     * {@code isActive=false} renvoyait malgré tout les parcours actifs, ce qui
+     * rendait le paramètre muet (et les parcours archivés invisibles).
+     */
     public List<Map<String, Object>> listJourneys(UUID tenantId, Boolean isActive) {
-        List<DiscipleshipJourney> journeys = Boolean.FALSE.equals(isActive)
-                ? journeyRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId)
-                : journeyRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId);
+        List<DiscipleshipJourney> journeys;
+        if (isActive == null) {
+            journeys = journeyRepository.findByTenantIdOrderByNameAsc(tenantId);
+        } else if (isActive) {
+            journeys = journeyRepository.findByTenantIdAndIsActiveTrueOrderByNameAsc(tenantId);
+        } else {
+            journeys = journeyRepository.findByTenantIdAndIsActiveFalseOrderByNameAsc(tenantId);
+        }
         return journeys.stream().map(this::journeyView).toList();
     }
 
@@ -84,7 +124,7 @@ public class DiscipleshipService {
                 .tenantId(tenantId)
                 .name(name.trim())
                 .description((String) body.get("description"))
-                .type(parseEnum(DiscipleshipJourney.JourneyType.class, (String) body.get("type"), DiscipleshipJourney.JourneyType.CUSTOM))
+                .type(optionalEnum(DiscipleshipJourney.JourneyType.class, body.get("type"), DiscipleshipJourney.JourneyType.CUSTOM))
                 .totalStages(intVal(body.get("totalStages"), 0))
                 .startDate(body.get("startDate") != null ? Instant.parse((String) body.get("startDate")) : Instant.now())
                 .endDate(body.get("endDate") != null ? Instant.parse((String) body.get("endDate")) : null)
@@ -128,9 +168,11 @@ public class DiscipleshipService {
     }
 
     public Map<String, Object> createStage(UUID tenantId, Map<String, Object> body) {
-        String name = (String) body.get("name");
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("name est requis");
+        String name = requireText(body, "name");
         Long journeyId = longVal(body.get("journeyId"));
+        // Le parcours parent est validé dans le tenant : une étape ne peut pas
+        // être rattachée à un parcours inexistant ou d'un autre tenant.
+        requireJourney(tenantId, journeyId);
         DiscipleshipStage stage = DiscipleshipStage.builder()
                 .tenantId(tenantId)
                 .journeyId(journeyId)
@@ -198,21 +240,23 @@ public class DiscipleshipService {
 
     // ==================== PROGRESS ====================
 
+    /**
+     * Les filtres journeyId / discipleId / status sont COMBINÉS en base.
+     *
+     * <p>La version précédente testait les filtres en cascade (si journeyId,
+     * puis discipleId, puis status) : les combinaisons tombaient dans une page
+     * unique filtrée en mémoire — donc pagination fausse (une page de 20 pouvait
+     * n'en rendre que 2) — et {@code status} était purement et simplement
+     * IGNORÉ dès qu'un autre filtre était présent. Le repository porte maintenant
+     * une requête dérivée par combinaison.
+     */
     public List<Map<String, Object>> listProgress(UUID tenantId, int page, int size, Long journeyId, UUID discipleId, String status) {
         Pageable p = clamp(page, size);
-        List<DiscipleProgress> all = progressRepository.findByTenantId(tenantId, p).getContent();
-        if (journeyId != null && discipleId != null) {
-            return all.stream().filter(x -> journeyId.equals(x.getJourneyId()) && discipleId.equals(x.getDiscipleId()))
-                    .map(pr -> progressView(tenantId, pr)).toList();
-        } else if (journeyId != null) {
-            return progressRepository.findByTenantIdAndJourneyId(tenantId, journeyId, p).getContent().stream().map(pr -> progressView(tenantId, pr)).toList();
-        } else if (discipleId != null) {
-            return progressRepository.findByTenantIdAndDiscipleId(tenantId, discipleId, p).getContent().stream().map(pr -> progressView(tenantId, pr)).toList();
-        } else if (status != null) {
-            return progressRepository.findByTenantIdAndStatus(tenantId, parseEnum(DiscipleProgress.ProgressStatus.class, status, null), p).getContent().stream().map(pr -> progressView(tenantId, pr)).toList();
-        } else {
-            return all.stream().map(pr -> progressView(tenantId, pr)).toList();
-        }
+        DiscipleProgress.ProgressStatus parsedStatus =
+                status == null ? null : requireEnum(DiscipleProgress.ProgressStatus.class, status);
+        Page<DiscipleProgress> result = progressRepository.findAll(
+                tenantId, journeyId, discipleId, parsedStatus, p);
+        return result.getContent().stream().map(pr -> progressView(tenantId, pr)).toList();
     }
 
     public Map<String, Object> getProgress(UUID tenantId, Long id) {
@@ -220,14 +264,27 @@ public class DiscipleshipService {
     }
 
     public Map<String, Object> createProgress(UUID tenantId, Map<String, Object> body) {
-        UUID discipleId = UUID.fromString(String.valueOf(body.get("discipleId")));
+        UUID discipleId = uuidVal(requireText(body, "discipleId"));
         Long journeyId = longVal(body.get("journeyId"));
         requireJourney(tenantId, journeyId);
+        // R4 : le disciple doit exister ET être membre du tenant. Sans cette
+        // revérification, un appel pouvait rattacher une progression à un
+        // utilisateur d'un autre tenant (la FK ne garantit que l'existence).
+        requireTenantUser(tenantId, discipleId);
+        // Un disciple ne peut avoir qu'une progression par parcours : sinon la
+        // liste en renvoie plusieurs lignes concurrentes pour la même paire.
+        progressRepository.findByTenantIdAndDiscipleIdAndJourneyId(tenantId, discipleId, journeyId)
+                .ifPresent(existing -> {
+                    throw new com.discipolat.common.domain.BusinessRuleException(
+                            "Ce disciple a déjà une progression sur ce parcours", "DISCIPLESHIP_PROGRESS_EXISTS");
+                });
+        Long currentStageId = body.get("currentStageId") != null ? longVal(body.get("currentStageId")) : null;
+        if (currentStageId != null) requireStage(tenantId, currentStageId);
         DiscipleProgress progress = DiscipleProgress.builder()
                 .tenantId(tenantId)
                 .discipleId(discipleId)
                 .journeyId(journeyId)
-                .currentStageId(body.get("currentStageId") != null ? longVal(body.get("currentStageId")) : null)
+                .currentStageId(currentStageId)
                 .completedStages(intVal(body.get("completedStages"), 0))
                 .totalStages(intVal(body.get("totalStages"), 0))
                 .completedRequirements(intVal(body.get("completedRequirements"), 0))
@@ -235,6 +292,28 @@ public class DiscipleshipService {
                 .status(DiscipleProgress.ProgressStatus.NOT_STARTED)
                 .build();
         return progressView(tenantId, progressRepository.save(progress));
+    }
+
+    /**
+     * Vérifie qu'un utilisateur appartient bien au tenant (R4).
+     *
+     * <p>Une clé étrangère ne garantit que l'EXISTENCE de la ligne : sans ce
+     * contrôle, un identifiant devinable ou simplement connu d'un autre tenant
+     * permettait de l'attacher à ses données.
+     */
+    private void requireTenantUser(UUID tenantId, UUID userId) {
+        if (userRepository.findByIdWithActiveMembershipInTenant(userId, tenantId).isEmpty()) {
+            throw new EntityNotFoundException("User", "id", String.valueOf(userId));
+        }
+    }
+
+    /** Parse un UUID en rejetant proprement une valeur absente ou invalide. */
+    private static UUID uuidVal(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Identifiant invalide : \"" + value + "\"");
+        }
     }
 
     public Map<String, Object> updateRequirementProgress(UUID tenantId, Long progressId, Long requirementId, Map<String, Object> body) {
@@ -247,7 +326,7 @@ public class DiscipleshipService {
                         .requirementId(requirementId)
                         .build());
         String status = (String) body.get("status");
-        if (status != null) pr.setStatus(parseEnum(DiscipleProgressRequirement.RequirementStatus.class, status, DiscipleProgressRequirement.RequirementStatus.PENDING));
+        if (status != null) pr.setStatus(requireEnum(DiscipleProgressRequirement.RequirementStatus.class, status));
         pr.setEvidence((String) body.get("evidence"));
         pr.setNotes((String) body.get("notes"));
         if (body.get("verifiedById") != null) pr.setVerifiedBy(UUID.fromString(String.valueOf(body.get("verifiedById"))));
@@ -279,12 +358,35 @@ public class DiscipleshipService {
                 .orElseThrow(() -> new EntityNotFoundException("DiscipleProgress", "id", String.valueOf(id)));
     }
 
+    /**
+     * Vue d'une progression, alignée sur le modèle mobile {@code DiscipleProgress}.
+     *
+     * <p>Deux écarts de la version précédente sont corrigés :
+     * <ul>
+     *   <li>les champs libellés {@code discipleName}, {@code journeyName},
+     *       {@code currentStageName} et {@code currentStageOrder} étaient
+     *       ABSENTS alors que le modèle mobile les déclare {@code required} :
+     *       le {@code fromJson} du client échouait sur chaque lecture ;</li>
+     *   <li>{@code requirementProgress} était renvoyé comme une LISTE alors que
+     *       le modèle mobile attend une MAP indexée par {@code requirementId}
+     *       ({@code Map<int, RequirementProgress>}). La désérialisation Dart
+     *       convertit la clé en {@code int} : un tableau y levait une
+     *       exception de type.</li>
+     * </ul>
+     */
     private Map<String, Object> progressView(UUID tenantId, DiscipleProgress pr) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", pr.getId());
         m.put("discipleId", pr.getDiscipleId());
+        m.put("discipleName", userName(pr.getDiscipleId()));
         m.put("journeyId", pr.getJourneyId());
-        m.put("currentStageId", pr.getCurrentStageId());
+        m.put("journeyName", journeyRepository.findByTenantIdAndId(tenantId, pr.getJourneyId())
+                .map(DiscipleshipJourney::getName).orElse("—"));
+        m.put("currentStageId", pr.getCurrentStageId() != null ? pr.getCurrentStageId() : 0);
+        DiscipleshipStage currentStage = pr.getCurrentStageId() == null ? null
+                : stageRepository.findByTenantIdAndId(tenantId, pr.getCurrentStageId()).orElse(null);
+        m.put("currentStageName", currentStage != null ? currentStage.getName() : "");
+        m.put("currentStageOrder", currentStage != null ? currentStage.getOrder() : 0);
         m.put("completedStages", pr.getCompletedStages());
         m.put("totalStages", pr.getTotalStages());
         m.put("completedRequirements", pr.getCompletedRequirements());
@@ -297,19 +399,39 @@ public class DiscipleshipService {
         m.put("nextMilestoneName", pr.getNextMilestoneName());
         m.put("createdAt", pr.getCreatedAt().toString());
         m.put("updatedAt", pr.getUpdatedAt() != null ? pr.getUpdatedAt().toString() : null);
-        List<Map<String, Object>> reqs = progressRequirementRepository.findByTenantIdAndProgressId(tenantId, pr.getId())
-                .stream().map(r -> {
-                    Map<String, Object> rm = new LinkedHashMap<>();
-                    rm.put("requirementId", r.getRequirementId());
-                    rm.put("status", r.getStatus().name());
-                    rm.put("completedAt", r.getCompletedAt() != null ? r.getCompletedAt().toString() : null);
-                    rm.put("evidence", r.getEvidence());
-                    rm.put("notes", r.getNotes());
-                    rm.put("verifiedById", r.getVerifiedBy());
-                    return rm;
-                }).toList();
-        m.put("requirementProgress", reqs);
+        m.put("requirementProgress", requirementProgressMap(tenantId, pr));
         return m;
+    }
+
+    /**
+     * Avancement par exigence, sous forme de MAP indexée par
+     * {@code requirementId} — forme attendue par le modèle mobile.
+     */
+    private Map<String, Map<String, Object>> requirementProgressMap(UUID tenantId, DiscipleProgress pr) {
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        for (DiscipleProgressRequirement r
+                : progressRequirementRepository.findByTenantIdAndProgressId(tenantId, pr.getId())) {
+            Map<String, Object> rm = new LinkedHashMap<>();
+            rm.put("requirementId", r.getRequirementId());
+            rm.put("requirementName", requirementName(tenantId, r.getRequirementId()));
+            rm.put("status", r.getStatus().name());
+            rm.put("completedAt", r.getCompletedAt() != null ? r.getCompletedAt().toString() : null);
+            rm.put("evidence", r.getEvidence());
+            rm.put("notes", r.getNotes());
+            rm.put("verifiedById", r.getVerifiedBy());
+            rm.put("verifiedByName", r.getVerifiedBy() == null ? null : userName(r.getVerifiedBy()));
+            out.put(String.valueOf(r.getRequirementId()), rm);
+        }
+        return out;
+    }
+
+    /** Libellé d'une exigence de parcours (repli stable si introuvable). */
+    private String requirementName(UUID tenantId, Long requirementId) {
+        return requirementRepository.findByTenantIdAndId(tenantId, requirementId)
+                .map(r -> r.getDescription() != null && !r.getDescription().isBlank()
+                        ? r.getDescription()
+                        : (r.getReferenceName() != null ? r.getReferenceName() : r.getType().name()))
+                .orElse("Exigence " + requirementId);
     }
 
     // ==================== ASSIGNMENTS ====================
@@ -324,7 +446,7 @@ public class DiscipleshipService {
         } else if (journeyId != null) {
             result = assignmentRepository.findByTenantIdAndJourneyId(tenantId, journeyId, p);
         } else if (status != null) {
-            result = assignmentRepository.findByTenantIdAndStatus(tenantId, parseEnum(MentorAssignment.AssignmentStatus.class, status, null), p);
+            result = assignmentRepository.findByTenantIdAndStatus(tenantId, requireEnum(MentorAssignment.AssignmentStatus.class, status), p);
         } else {
             result = assignmentRepository.findByTenantId(tenantId, p);
         }
@@ -332,11 +454,18 @@ public class DiscipleshipService {
     }
 
     public Map<String, Object> createAssignment(UUID tenantId, Map<String, Object> body) {
+        UUID mentorId = uuidVal(requireText(body, "mentorId"));
+        UUID discipleId = uuidVal(requireText(body, "discipleId"));
+        Long journeyId = longVal(body.get("journeyId"));
+        // R4 : mentor, disciple et parcours sont revérifiés dans le tenant.
+        requireTenantUser(tenantId, mentorId);
+        requireTenantUser(tenantId, discipleId);
+        requireJourney(tenantId, journeyId);
         MentorAssignment a = MentorAssignment.builder()
                 .tenantId(tenantId)
-                .mentorId(UUID.fromString(String.valueOf(body.get("mentorId"))))
-                .discipleId(UUID.fromString(String.valueOf(body.get("discipleId"))))
-                .journeyId(longVal(body.get("journeyId")))
+                .mentorId(mentorId)
+                .discipleId(discipleId)
+                .journeyId(journeyId)
                 .status(MentorAssignment.AssignmentStatus.ACTIVE)
                 .meetingFrequencyDays(intVal(body.get("meetingFrequencyDays"), 7))
                 .notes((String) body.get("notes"))
@@ -356,11 +485,14 @@ public class DiscipleshipService {
                 .orElseThrow(() -> new EntityNotFoundException("MentorAssignment", "id", String.valueOf(id)));
     }
 
+    /** `mentorName`/`discipleName` sont `required` côté mobile (R7). */
     private Map<String, Object> assignmentView(MentorAssignment a) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", a.getId());
         m.put("mentorId", a.getMentorId());
+        m.put("mentorName", userName(a.getMentorId()));
         m.put("discipleId", a.getDiscipleId());
+        m.put("discipleName", userName(a.getDiscipleId()));
         m.put("journeyId", a.getJourneyId());
         m.put("assignedAt", a.getAssignedAt().toString());
         m.put("endedAt", a.getEndedAt() != null ? a.getEndedAt().toString() : null);
@@ -382,7 +514,7 @@ public class DiscipleshipService {
         } else if (mentorId != null) {
             result = meetingRepository.findByTenantIdAndMentorId(tenantId, mentorId, p);
         } else if (status != null) {
-            result = meetingRepository.findByTenantIdAndStatus(tenantId, parseEnum(MentorMeeting.MeetingStatus.class, status, null), p);
+            result = meetingRepository.findByTenantIdAndStatus(tenantId, requireEnum(MentorMeeting.MeetingStatus.class, status), p);
         } else {
             result = meetingRepository.findByTenantId(tenantId, p);
         }
@@ -390,12 +522,22 @@ public class DiscipleshipService {
     }
 
     public Map<String, Object> scheduleMeeting(UUID tenantId, Map<String, Object> body) {
+        // L'assignation est revérifiée dans le tenant (R4) : sans cela, on
+        // pouvait créer une réunion rattachée à l'assignation d'un autre tenant.
+        MentorAssignment assignment = requireAssignment(tenantId, longVal(body.get("assignmentId")));
+        UUID mentorId = body.get("mentorId") != null
+                ? uuidVal(requireText(body, "mentorId")) : assignment.getMentorId();
+        UUID discipleId = body.get("discipleId") != null
+                ? uuidVal(requireText(body, "discipleId")) : assignment.getDiscipleId();
+        requireTenantUser(tenantId, mentorId);
+        requireTenantUser(tenantId, discipleId);
         MentorMeeting mt = MentorMeeting.builder()
                 .tenantId(tenantId)
-                .assignmentId(longVal(body.get("assignmentId")))
-                .mentorId(UUID.fromString(String.valueOf(body.get("mentorId"))))
-                .discipleId(UUID.fromString(String.valueOf(body.get("discipleId"))))
+                .assignmentId(assignment.getId())
+                .mentorId(mentorId)
+                .discipleId(discipleId)
                 .scheduledAt(body.get("scheduledAt") != null ? Instant.parse((String) body.get("scheduledAt")) : Instant.now())
+                .location((String) body.get("location"))
                 .status(MentorMeeting.MeetingStatus.SCHEDULED)
                 .isGroup(boolVal(body.get("isGroup"), false))
                 .build();
@@ -423,7 +565,9 @@ public class DiscipleshipService {
         m.put("id", mt.getId());
         m.put("assignmentId", mt.getAssignmentId());
         m.put("mentorId", mt.getMentorId());
+        m.put("mentorName", userName(mt.getMentorId()));
         m.put("discipleId", mt.getDiscipleId());
+        m.put("discipleName", userName(mt.getDiscipleId()));
         m.put("scheduledAt", mt.getScheduledAt().toString());
         m.put("actualAt", mt.getActualAt() != null ? mt.getActualAt().toString() : null);
         m.put("status", mt.getStatus().name());
@@ -440,45 +584,187 @@ public class DiscipleshipService {
 
     // ==================== REPORTS ====================
 
+    /**
+     * Rapport d'un parcours.
+     *
+     * <p>Le payload couvre INTÉGRALEMENT le modèle mobile
+     * {@code DiscipleshipReport} (R7) : sans {@code journeyName},
+     * {@code averageCompletion}, {@code completedMeetings},
+     * {@code stageDistribution}, {@code statusDistribution} et
+     * {@code topMentors}, le {@code fromJson} du client lèverait une exception
+     * sur des champs {@code required}.
+     */
     public Map<String, Object> getReport(UUID tenantId, Long journeyId) {
-        requireJourney(tenantId, journeyId);
+        DiscipleshipJourney journey = requireJourney(tenantId, journeyId);
         long total = progressRepository.countByTenantIdAndJourneyId(tenantId, journeyId);
         long active = progressRepository.countByTenantIdAndJourneyIdAndStatus(tenantId, journeyId, DiscipleProgress.ProgressStatus.IN_PROGRESS);
         long completed = progressRepository.countByTenantIdAndJourneyIdAndStatus(tenantId, journeyId, DiscipleProgress.ProgressStatus.COMPLETED);
         long stalled = progressRepository.countByTenantIdAndJourneyIdAndStatus(tenantId, journeyId, DiscipleProgress.ProgressStatus.STALLED);
         long totalMeetings = meetingRepository.countByTenantIdAndJourneyId(tenantId, journeyId);
+        long completedMeetings = meetingRepository.countByTenantIdAndJourneyIdAndStatus(
+                tenantId, journeyId, MentorMeeting.MeetingStatus.COMPLETED);
+
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("journeyId", journeyId);
+        m.put("journeyName", journey.getName());
         m.put("totalDisciples", total);
         m.put("activeDisciples", active);
         m.put("completedDisciples", completed);
         m.put("stalledDisciples", stalled);
+        // Pourcentage d'avancement MOYEN, sur la même formule que le modèle
+        // mobile `completionPercentage` : 0 quand le total est inconnu, jamais
+        // de division par zéro.
+        m.put("averageCompletion", averageCompletionPercentage(tenantId, journeyId));
         m.put("totalMeetings", totalMeetings);
+        m.put("completedMeetings", completedMeetings);
+        m.put("stageDistribution", stageDistribution(tenantId, journeyId));
+        m.put("statusDistribution", statusDistribution(tenantId, journeyId, journey));
+        m.put("topMentors", getTopMentors(tenantId, journeyId, DEFAULT_TOP_MENTORS));
         m.put("generatedAt", Instant.now().toString());
         return m;
     }
 
+    /** Avancement moyen en % (0 si aucun disciple ou totals nuls). */
+    private double averageCompletionPercentage(UUID tenantId, Long journeyId) {
+        double sum = 0d;
+        int counted = 0;
+        for (DiscipleProgress p : progressRepository
+                .findByTenantIdAndJourneyId(tenantId, journeyId, Pageable.unpaged()).getContent()) {
+            int total = p.getTotalStages() > 0 ? p.getTotalStages() : p.getCompletedStages();
+            if (total > 0) {
+                sum += (p.getCompletedStages() * 100d) / total;
+                counted++;
+            }
+        }
+        return counted == 0 ? 0d : Math.round((sum / counted) * 100d) / 100d;
+    }
+
+    /** Nb de disciples par étape atteinte ; les clés sont les libellés d'étape. */
+    private Map<String, Integer> stageDistribution(UUID tenantId, Long journeyId) {
+        Map<String, Integer> dist = new LinkedHashMap<>();
+        for (DiscipleshipStage stage : stageRepository
+                .findByTenantIdAndJourneyIdOrderByOrderAsc(tenantId, journeyId)) {
+            dist.put(String.valueOf(stage.getOrder()) + " - " + stage.getName(), 0);
+        }
+        for (Object[] row : progressRepository.countByCurrentStage(tenantId, journeyId)) {
+            Long stageId = row[0] == null ? null : (Long) row[0];
+            int count = ((Number) row[1]).intValue();
+            String key = stageId == null
+                    ? "Non démarré"
+                    : stageRepository.findByTenantIdAndId(tenantId, stageId)
+                        .map(s -> String.valueOf(s.getOrder()) + " - " + s.getName())
+                        .orElse("Étape " + stageId);
+            dist.merge(key, count, Integer::sum);
+        }
+        return dist;
+    }
+
+    /** Nb de disciples par statut — couvre TOUS les statuts, même à zéro. */
+    private Map<String, Integer> statusDistribution(UUID tenantId, Long journeyId, DiscipleshipJourney journey) {
+        Map<String, Integer> dist = new LinkedHashMap<>();
+        for (DiscipleProgress.ProgressStatus s : DiscipleProgress.ProgressStatus.values()) {
+            dist.put(s.name(), 0);
+        }
+        for (DiscipleProgress.ProgressStatus s : DiscipleProgress.ProgressStatus.values()) {
+            dist.put(s.name(), (int) progressRepository
+                    .countByTenantIdAndJourneyIdAndStatus(tenantId, journeyId, s));
+        }
+        return dist;
+    }
+
+    /**
+     * Classement des mentors d'un parcours, agrégé par mentor.
+     *
+     * <p>La version précédente listait les ASSIGNATIONS et renvoyait des
+     * compteurs en dur ({@code discipleCount: 1}, {@code meetingCount: 0}) :
+     * un mentor suivi de 5 disciples apparaissait cinq fois, toujours classé 1/0.
+     * On agrège réellement, et on joint le nom du mentor attendu par le modèle
+     * mobile {@code TopMentor}.
+     */
     public List<Map<String, Object>> getTopMentors(UUID tenantId, Long journeyId, int limit) {
         requireJourney(tenantId, journeyId);
-        return assignmentRepository.findByTenantIdAndJourneyId(tenantId, journeyId, PageRequest.of(0, Math.min(limit, 50)))
-                .getContent().stream().map(a -> {
+        int max = Math.min(Math.max(limit, 1), MAX_TOP_MENTORS);
+        Page<MentorAssignment> page = assignmentRepository.findByTenantIdAndJourneyId(
+                tenantId, journeyId, PageRequest.of(0, max * MAX_ASSIGNMENTS_PER_MENTOR, Sort.by("assignedAt")));
+
+        Map<UUID, int[]> counts = new LinkedHashMap<>();
+        for (MentorAssignment a : page.getContent()) {
+            counts.computeIfAbsent(a.getMentorId(), k -> new int[2]);
+            if (a.getStatus() == MentorAssignment.AssignmentStatus.ENDED) continue;
+            counts.get(a.getMentorId())[0]++;
+            counts.get(a.getMentorId())[1] += meetingCountForAssignment(tenantId, a.getId());
+        }
+
+        return counts.entrySet().stream()
+                .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("mentorId", a.getMentorId());
-                    m.put("discipleCount", 1);
-                    m.put("meetingCount", 0);
+                    m.put("mentorId", e.getKey());
+                    m.put("mentorName", mentorName(e.getKey()));
+                    m.put("discipleCount", e.getValue()[0]);
+                    m.put("meetingCount", e.getValue()[1]);
                     return m;
-                }).toList();
+                })
+                .sorted(Comparator.<Map<String, Object>, Integer>comparing(x -> (Integer) x.get("meetingCount")).reversed()
+                        .thenComparing(x -> (Integer) x.get("discipleCount")).reversed())
+                .limit(max)
+                .toList();
+    }
+
+    private int meetingCountForAssignment(UUID tenantId, Long assignmentId) {
+        long count = meetingRepository.countByTenantIdAndAssignmentId(tenantId, assignmentId);
+        return (int) Math.min(count, Integer.MAX_VALUE);
+    }
+
+    /** Nom du mentor, ou un repli stable si l'utilisateur est absent/archivé. */
+    private String mentorName(UUID mentorId) {
+        return userName(mentorId);
     }
 
     // ==================== helpers ====================
 
-    private static <T extends Enum<T>> T parseEnum(Class<T> cls, String value, T def) {
-        if (value == null || value.isBlank()) return def;
-        try { return Enum.valueOf(cls, value); } catch (IllegalArgumentException e) { return def; }
+    /**
+     * Parse un enum en REJETANT les valeurs inconnues (400 via
+     * GlobalExceptionHandler), au lieu de retomber silencieusement sur une
+     * valeur par défaut.
+     *
+     * <p>Le repli silencieux était un défaut de fond : un filtre
+     * {@code ?status=TYPO} renvoyait 200 avec le jeu de données NON filtré,
+     * ce que l'appelant ne peut pas distinguer d'un résultat correct.
+     */
+    /**
+     * Parse un enum fourni à la CRÉATION, en tolérant l'absence de la valeur
+     * (repli sur {@code def}) mais en rejetant une valeur INCONNUE.
+     *
+     * <p>Point d'équilibre volontaire : une création sans {@code type} reste
+     * valide (comportement d'origine), tandis qu'un {@code type: "FOO"} échoue
+     * en 400 au lieu d'être silencieusement enregistré en CUSTOM.
+     */
+    private static <T extends Enum<T>> T optionalEnum(Class<T> cls, Object raw, T def) {
+        if (raw == null || String.valueOf(raw).isBlank()) return def;
+        return requireEnum(cls, String.valueOf(raw));
+    }
+
+    private static <T extends Enum<T>> T requireEnum(Class<T> cls, String value) {
+        try {
+            return Enum.valueOf(cls, value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Valeur invalide pour "
+                    + cls.getSimpleName() + " : \"" + value + "\". Attendu : "
+                    + Arrays.stream(cls.getEnumConstants()).map(Enum::name).collect(Collectors.joining(", ")));
+        }
     }
 
     private static long longVal(Object o) { return o == null ? 0 : Long.parseLong(String.valueOf(o)); }
     private static int intVal(Object o, int def) { return o == null ? def : Integer.parseInt(String.valueOf(o)); }
     private static int intVal(Object o, Integer def) { return o == null || o == "" ? def : Integer.parseInt(String.valueOf(o)); }
     private static boolean boolVal(Object o, boolean def) { return o == null ? def : Boolean.parseBoolean(String.valueOf(o)); }
+
+    private static String requireText(Map<String, Object> body, String field) {
+        Object raw = body.get(field);
+        String value = raw == null ? null : String.valueOf(raw).trim();
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException(field + " est requis");
+        }
+        return value;
+    }
 }

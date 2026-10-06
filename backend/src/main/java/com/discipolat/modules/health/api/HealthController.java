@@ -300,6 +300,32 @@ public class HealthController {
         return ResponseEntity.ok(healthService.getPatientsByCondition(tenantId, condition));
     }
 
+    // ========== MISES À JOUR APPELÉES PAR LE MOBILE (V235) ==========
+
+    /**
+     * {@code PUT /health/consultations/{id}} — appelé par
+     * {@code HealthService.updateConsultation} du mobile, sans endpoint
+     * correspondant côté serveur : la méthodelevait une 404/405.
+     */
+    @PutMapping("/consultations/{id}")
+    public ResponseEntity<MedicalConsultation> updateConsultation(
+            @PathVariable UUID id, @RequestBody MedicalConsultation updates) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(healthService.updateConsultation(tenantId, actorId, id, updates));
+    }
+
+    /**
+     * {@code PUT /health/pharmacy/stock/{id}} — également absent du serveur
+     * alors que le mobile le consomme (mise à jour d'un lot de pharmacie).
+     */
+    @PutMapping("/pharmacy/stock/{id}")
+    public ResponseEntity<PharmacyStock> updatePharmacyStock(
+            @PathVariable UUID id, @RequestBody PharmacyStock updates) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(healthService.updatePharmacyStock(tenantId, id, updates));
+    }
+
     // ========== HEALTH REPORTS STATISTICS (V235) ==========
 
     @GetMapping("/reports/statistics")

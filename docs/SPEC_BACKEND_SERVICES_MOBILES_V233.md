@@ -221,19 +221,104 @@ Idem. Chaque ajout passe les 3 niveaux : compilation, tests du module, et
 
 ---
 
-## 7. ÉTAT D'AVANCEMENT — 3 sous-systèmes implémentés (V233–V237)
+## 7. ÉTAT D'AVANCEMENT — audit du 2026-10-06
+
+> **La déclaration « Terminé » du §7 précédent était fausse.** Elle reposait sur
+> `mvn -o -DskipTests compile`, qui ne démarre pas le contexte Spring. Un audit
+> complet a montré que **l'application ne démarrait pas** et que les trois
+> sous-systèmes étaient loin du contrat décrit ci-dessus. Les défauts trouvés,
+> puis corrigés, sont listés au §7.2.
+
+### 7.1 État réel
 
 | Agent | Sous-système | Statut | Preuves |
 |-------|--------------|--------|---------|
-| A | Discipleship | Termine | 8 entites, 8 repositories, service, controleur, migration V233. Compile. |
-| B | Tasks | Termine | 8 entites, 8 repositories, service, controleur, migration V234. Compile. |
-| C | Health + Finances | Termine | 4 entites health + 5 entites finances, repositories, methodes, endpoints, migrations V235/V236/V237. Compile. |
+| A | Discipleship | Terminé (corrigé) | 8 entités, 8 repositories, service, contrôleur, V233. 22 tests de service. |
+| B | Tasks | Terminé (corrigé) | 8 entités, 8 repositories, service, contrôleur, V234. 18 tests de service. |
+| C | Health + Finances | Partiellement corrigé | 4 entités health + 5 finances, endpoints, V235/V236/V237. **Tests absents.** |
 
-Verifications (commit final) :
-- Backend : 87 tests, 0 echec, BUILD SUCCESS
-- Frontend : tsc 0 erreur ; vitest 86 fichiers, 687 tests, 0 echec
-- Mobile : flutter analyze 0 erreur
+Vérifications réelles (commandes exécutées, résultats observés) :
 
-Resta a faire (hors perimetre de ce commit) : regenerer docs/API.md et
-docs/openapi.json via scripts/generate-api-docs.sh contre une instance
-demarree (necessite l'app Spring Boot sur localhost:8080).
+| Garde (§6) | Commande | Résultat |
+|---|---|---|
+| Compilation | `mvn -o -DskipTests compile` | BUILD SUCCESS |
+| Démarrage du contexte | `mvn -o test` | **2097 tests, 0 échec, 1 erreur** (erreur = Docker absent, `EventTableContractTest`, sans rapport) |
+| `TenantFilterDefArchitectureTest` (R3) | inclus ci-dessus | 2/0 vert |
+| Frontend types | `npx tsc --noEmit` | 0 erreur |
+| Frontend tests | `npx vitest run` | 86 fichiers, 685/687. Les 2 échecs (`RoleWorkspaceRouting`) sont des **timeouts de charge** : rejoués isolément et ensemble, ils passent (19/19 et 38/38). |
+| Mobile | `flutter analyze` | **NON VÉRIFIABLE** — Flutter absent de la machine (cf. §7.4) |
+
+### 7.2 Défauts trouvés par l'audit et corrigés
+
+**Bloquants — l'application ne démarrait pas (278 tests en erreur) :**
+
+| # | Défaut | Cause | Correction |
+|---|---|---|---|
+| 1 | `MentorMeetingRepository.countByTenantIdAndJourneyId` | `MentorMeeting` n'a pas de colonne `journey_id` (le parcours est porté par l'assignation). `PropertyReferenceException` au démarrage du contexte. | Requête JPQL explicite avec jointure `MentorAssignment` |
+| 2 | `TaskTimeEntryRepository.sumDurationMinutesByTenantIdAndTaskId` | Spring Data interprétait `sumDurationMinutes` comme une propriété. Même exception. | `@Query("SELECT COALESCE(SUM(...), 0) ...")` |
+| 3 | `tasks.tags` / `task_templates.default_tags` en `TEXT[]` | `StringListConverter` écrit une **chaîne**, la migration déclarait un **tableau PostgreSQL**. Incompatible sur H2 *et* sur PostgreSQL. | Entités en `TEXT` + migration additive **V238** |
+
+> Ces trois défauts ne se voyaient pas à la compilation : ils ne se révélent
+> qu'au **démarrage**. C'est exactement pourquoi la « preuve » initiale
+> (`compile` + « 87 tests ») était insuffisante.
+
+**Logique métier :**
+
+| # | Défaut | Correction |
+|---|---|---|
+| 4 | `listJourneys` : les deux branches du ternaire appelaient la même requête — `isActive=false` renvoyait les parcours **actifs** | Requêtes distinctes `IsActiveTrue` / `IsActiveFalse` / sans filtre |
+| 5 | `getTopMentors` : listait les **assignations** avec `discipleCount: 1` et `meetingCount: 0` en dur — un mentor de 5 disciples apparaissait 5 fois, toujours 1/0 | Agrégation réelle par mentor + `mentorName` |
+| 6 | Rapport de parcours : 6 des 13 champs `required` du modèle mobile absents (`journeyName`, `averageCompletion`, `completedMeetings`, `stageDistribution`, `statusDistribution`, `topMentors`) → `fromJson` échouait | Payload complet |
+| 7 | `listProgress` : `status` ignoré dès qu'un autre filtre était présent ; pagination fausse (filtrage en mémoire sur une page) | Requête combinée en base |
+| 8 | `GET /tasks` : **10 des 11 filtres** acceptés puis silencieusement ignorés | Requête combinée + `TaskFilter` |
+| 9 | `POST /tasks/{id}/reorder` : déléguait à `updateTask`, qui ignore `order` → le glisser-déposer ne persistait **rien** | `reorderTask` + colonne `sort_order` (**V239**) |
+| 10 | `DELETE /tasks/{id}` : suppression **définitive** (+ CASCADE sur commentaires/dépendances), en violation de R9 | Archivage en `CANCELLED` |
+| 11 | Enums : valeur inconnue ⇒ repli **silencieux** (`?status=TYPO` renvoyait 200 non filtré) | 400 explicite |
+| 12 | `PUT /health/consultations/{id}` et `PUT /health/pharmacy/stock/{id}` : appelés par le mobile, **inexistants** | Endpoints + service ajoutés |
+| 13 | Montants V236 : `new BigDecimal(String.valueOf(null))` ⇒ `NumberFormatException` ⇒ **500** au lieu de 400 | Validation typée |
+| 14 | Devise des comptes/dons codée en dur `"XOF"` alors que les transactions utilisaient la devise du tenant | `resolveDeviseTenant()` |
+| 15 | `requirementProgress` renvoyé en **liste**, modèle mobile attend une **Map** indexée par `requirementId` | Map + `requirementName` |
+| 16 | `filter.myTasks() == true` : déballage d'un `Boolean` null ⇒ NullPointerException | `Boolean.TRUE.equals` |
+
+**Sécurité / isolation (R4) :** aucun revérification de tenant sur les
+utilisateurs référencés. `createProgress`, `createAssignment` et
+`scheduleMeeting` acceptaient un identifiant d'un autre tenant (la FK ne
+garantit que l'**existence**). Corrigé par
+`findByIdWithActiveMembershipInTenant` + `requireTenantUser`. `createProgress`
+refuse désormais aussi le doublon (disciple, parcours).
+
+**Champ `required` manquant (contrat mobile) :** `discipleName`, `journeyName`,
+`currentStageName`, `currentStageOrder`, `mentorName`, `discipleName`,
+`authorName`, `userName`, `dependsOnTaskTitle`. Tous ajoutés — sans eux le
+`fromJson` du client échouait sur chaque lecture.
+
+**Test d'architecture :** `TenantFilterDefArchitectureTest` échouait sur Windows
+(« `users/domain/User.java` » comparé à un chemin `\`). Séparateur normalisé —
+le garde-fou est respecté, seule la comparaison était portable-dépendante.
+
+### 7.3 Reste à faire
+
+- **Tests unitaires Health (V235) et Finances (V236/V237)** : absents, alors
+  que §4.3 les exige. Discipleship et Tasks sont désormais couverts (40 tests).
+- **`docs/openapi.json` et `docs/API.md`** : non régénérés (§6, R11). Nécessite
+  une instance Spring Boot démarrée sur `localhost:8080`, donc hors de portée
+  d'un poste sans Maven ni Docker.
+- **`docs/WEB_MOBILE_PARITY.md`** : ne mentionne ni Discipleship ni Tasks
+  (§5.5 l'exigeait).
+- **Parité du modèle mobile Health/Finances** : plusieurs modèles Dart
+  (`MedicalKit.items`, `StaffDuty.startTime`, `Account.code`, `Budget.startDate`,
+  `Tontine.maxMembers`…) n'ont **aucune** contrepartie serveur. Les endpoints
+  répondent, mais `fromJson` échouerait sur ces champs `required`. Écart de
+  conception à trancher avec le product owner : soit on enrichit le backend, soit
+  on aligne les modèles Dart. **Non traité ici** — trop large, et le §4.2
+  n'incluait pas ces champs.
+
+### 7.4 Limites de cet audit
+
+- `flutter analyze` et `flutter test` **non exécutés** : Flutter n'est pas
+  installé sur cette machine. Les affirmations mobile ci-dessus reposent sur la
+  **lecture des sources** (`*.dart`, `*.g.dart`), pas sur une exécution.
+- `EventTableContractTest` échoue faute de Docker : non lié à ces travaux, mais
+  il empêche un `mvn test` totalement vert sur ce poste.
+- Aucune vérification à l'exécution contre une base PostgreSQL réelle (V238 et
+  V239 n'ont été validés que sur le schéma H2 généré par Hibernate).
