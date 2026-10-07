@@ -198,7 +198,7 @@ Idem. Chaque ajout passe les 3 niveaux : compilation, tests du module, et
    `npx tsc --noEmit`, `npx vitest run`, `flutter test <feature>`.
 5. La livraison « web consomme tout » est vérifiée en ayant branché les endpoints sur la
    web à la place des données de démo — **uniquement si les pages correspondantes existent**;
-   sinon, documenter l'endpoint dans `WEB_MOBILE_PARITY.md` comme «consommé côté mobile,
+   sinon, documenter l'endpoint dans `docs/WEB_MOBILE_PARITY.md` comme «consommé côté mobile,
    côté web prévu (suffisant que le mobile marche)» — à indiquer clairement pour éviter
    de produire du web vide.
 
