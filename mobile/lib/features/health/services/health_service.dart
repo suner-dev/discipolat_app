@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
@@ -13,289 +12,349 @@ HealthService healthService(HealthServiceRef ref) {
   return HealthService(api);
 }
 
+/// Service santé mobile — contrat exact V240 du `HealthController`
+/// (`/api/v1/health`).
+///
+/// Règles vérifiées dans le code serveur (pas supposées) :
+/// 1. Les endpoints paginés renvoient `PageResponse` = `{content, page, size,
+///    totalElements, totalPages}` — jamais une liste brute ; le parsing passe
+///    obligatoirement par [_contentOf].
+/// 2. Les endpoints à relation renvoient des vues Map aplaties (patientName,
+///    itemName, responsibleName…) ; les ids sont des UUID **String**.
+/// 3. Les écritures envoient les associations imbriquées (`person: {id: …}`)
+///    — les corps sont construits par les `createBody`/`updateBody` du
+///    modèle, le service ne fait que les transmettre.
+/// 4. `POST /campaigns/{id}/register` attend `{"userId": "<uuid>"}`
+///    (`Map<String, UUID>` côté serveur), et `POST /campaigns` force le
+///    responsable à l'acteur courant (ne pas l'envoyer).
+/// 5. Les erreurs Dio remontent typées (jamais enveloppées dans une
+///    `Exception` generic qui écrase le statut HTTP) — l'appelant (UI)
+///    décide du message affiché.
 class HealthService {
   final ApiService _api;
 
   HealthService(this._api);
 
-  // Patients
-  Future<List<Patient>> getPatients({
+  static const String _base = '/health';
+
+  // --------------------------------------------------------------------------
+  // Parsing PageResponse — point unique, tolérant aux éléments non-Map.
+  // --------------------------------------------------------------------------
+
+  static List<Map<String, dynamic>> _contentOf(dynamic data) {
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List)
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => e.cast<String, dynamic>())
+          .toList();
+    }
+    // Liste brute acceptée pour les rares endpoints non paginés typés List.
+    if (data is List) {
+      return data
+          .whereType<Map<dynamic, dynamic>>()
+          .map((e) => e.cast<String, dynamic>())
+          .toList();
+    }
+    return const [];
+  }
+
+  static Map<String, dynamic> _mapOf(dynamic data) =>
+      data is Map ? data.cast<String, dynamic>() : const {};
+
+  // --------------------------------------------------------------------------
+  // Patients (vues aplaties {personId, personName, familyId, familyName})
+  // --------------------------------------------------------------------------
+
+  Future<List<PatientRecord>> getPatients({
     int page = 0,
     int size = 20,
-    PatientStatus? status,
     String? search,
   }) async {
-    try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'size': size,
-        if (status != null) 'status': status.name,
-        if (search != null && search.isNotEmpty) 'search': search,
-      };
-      final response = await _api.get('/health/patients', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => Patient.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des patients: $e');
-    }
+    final response = await _api.get('$_base/patients', queryParameters: {
+      'page': page,
+      'size': size,
+      if (search != null && search.isNotEmpty) 'search': search,
+    });
+    return _contentOf(response.data)
+        .map(PatientRecord.fromJson)
+        .toList(growable: false);
   }
 
-  Future<Patient> getPatient(int id) async {
-    try {
-      final response = await _api.get('/health/patients/$id');
-      return Patient.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du patient: $e');
-    }
+  Future<PatientRecord> getPatient(String id) async {
+    final response = await _api.get('$_base/patients/$id');
+    return PatientRecord.fromJson(_mapOf(response.data));
   }
 
-  Future<Patient> createPatient(Patient patient) async {
-    try {
-      final response = await _api.post('/health/patients', data: patient.toJson());
-      return Patient.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la création: $e');
-    }
+  /// Corps construit par [PatientRecord.createBody] (association `person`
+  /// imbriquée exigée par la désérialisation serveur).
+  Future<PatientRecord> createPatient(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/patients', data: body);
+    return PatientRecord.fromJson(_mapOf(response.data));
   }
 
-  Future<Patient> updatePatient(int id, Patient patient) async {
-    try {
-      final response = await _api.put('/health/patients/$id', data: patient.toJson());
-      return Patient.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la mise à jour: $e');
-    }
+  /// Corps construit par [PatientRecord.updateBody] — seuls les champs
+  /// présents sont appliqués par le serveur.
+  Future<PatientRecord> updatePatient(String id, Map<String, dynamic> body) async {
+    final response = await _api.put('$_base/patients/$id', data: body);
+    return PatientRecord.fromJson(_mapOf(response.data));
   }
 
-  // Consultations
-  Future<List<Consultation>> getConsultations({
+  Future<List<PatientRecord>> getPatientsByCondition(String condition) async {
+    final response = await _api.get('$_base/patients/by-condition',
+        queryParameters: {'condition': condition});
+    return _contentOf(response.data)
+        .map(PatientRecord.fromJson)
+        .toList(growable: false);
+  }
+
+  // --------------------------------------------------------------------------
+  // Consultations (vues aplaties {patientName, practitionerName})
+  // --------------------------------------------------------------------------
+
+  /// `patientId` = UUID String ; `from`/`to` = `yyyy-MM-dd` (LocalDate).
+  Future<List<MedicalConsultation>> getConsultations({
+    String? patientId,
+    String? from,
+    String? to,
     int page = 0,
     int size = 20,
-    int? patientId,
-    int? doctorId,
-    ConsultationStatus? status,
-    DateTime? fromDate,
-    DateTime? toDate,
   }) async {
-    try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'size': size,
-        if (patientId != null) 'patientId': patientId,
-        if (doctorId != null) 'doctorId': doctorId,
-        if (status != null) 'status': status.name,
-        if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-        if (toDate != null) 'toDate': toDate.toIso8601String(),
-      };
-      final response = await _api.get('/health/consultations', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => Consultation.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des consultations: $e');
-    }
+    final response = await _api.get('$_base/consultations', queryParameters: {
+      'page': page,
+      'size': size,
+      if (patientId != null) 'patientId': patientId,
+      if (from != null) 'from': from,
+      if (to != null) 'to': to,
+    });
+    return _contentOf(response.data)
+        .map(MedicalConsultation.fromJson)
+        .toList(growable: false);
   }
 
-  Future<Consultation> getConsultation(int id) async {
-    try {
-      final response = await _api.get('/health/consultations/$id');
-      return Consultation.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement de la consultation: $e');
-    }
+  Future<MedicalConsultation> getConsultation(String id) async {
+    final response = await _api.get('$_base/consultations/$id');
+    return MedicalConsultation.fromJson(_mapOf(response.data));
   }
 
-  Future<Consultation> createConsultation(Consultation consultation) async {
-    try {
-      final response = await _api.post('/health/consultations', data: consultation.toJson());
-      return Consultation.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la création: $e');
-    }
+  Future<MedicalConsultation> createConsultation(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/consultations', data: body);
+    return MedicalConsultation.fromJson(_mapOf(response.data));
   }
 
-  Future<Consultation> updateConsultation(int id, Consultation consultation) async {
-    try {
-      final response = await _api.put('/health/consultations/$id', data: consultation.toJson());
-      return Consultation.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la mise à jour: $e');
-    }
+  Future<MedicalConsultation> updateConsultation(String id, Map<String, dynamic> body) async {
+    final response = await _api.put('$_base/consultations/$id', data: body);
+    return MedicalConsultation.fromJson(_mapOf(response.data));
   }
 
-  // Prescriptions
-  Future<List<Prescription>> getPrescriptions(int consultationId) async {
-    try {
-      final response = await _api.get('/health/consultations/$consultationId/prescriptions');
-      final data = response.data as List;
-      return data.map((json) => Prescription.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des prescriptions: $e');
-    }
+  // --------------------------------------------------------------------------
+  // Prescriptions (vue aplatie {patientName}, fallback consultation→patient)
+  // --------------------------------------------------------------------------
+
+  Future<List<Prescription>> getPrescriptions({
+    String? patientId,
+    String? consultationId,
+    int page = 0,
+    int size = 20,
+  }) async {
+    final response = await _api.get('$_base/prescriptions', queryParameters: {
+      'page': page,
+      'size': size,
+      if (patientId != null) 'patientId': patientId,
+      if (consultationId != null) 'consultationId': consultationId,
+    });
+    return _contentOf(response.data)
+        .map(Prescription.fromJson)
+        .toList(growable: false);
   }
 
-  Future<Prescription> createPrescription(Prescription prescription) async {
-    try {
-      final response = await _api.post('/health/prescriptions', data: prescription.toJson());
-      return Prescription.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la création: $e');
-    }
+  Future<Prescription> createPrescription(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/prescriptions', data: body);
+    return Prescription.fromJson(_mapOf(response.data));
   }
 
-  // Medications
-  Future<List<Medication>> getMedications({bool? requiresPrescription, bool? isActive}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (requiresPrescription != null) queryParams['requiresPrescription'] = requiresPrescription.toString();
-      if (isActive != null) queryParams['isActive'] = isActive.toString();
-      final response = await _api.get('/health/medications', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => Medication.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des médicaments: $e');
-    }
+  Future<List<Prescription>> getConsultationPrescriptions(String consultationId) async {
+    final response =
+        await _api.get('$_base/consultations/$consultationId/prescriptions');
+    return _contentOf(response.data)
+        .map(Prescription.fromJson)
+        .toList(growable: false);
   }
 
-  Future<Medication> getMedication(int id) async {
-    try {
-      final response = await _api.get('/health/medications/$id');
-      return Medication.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du médicament: $e');
-    }
+  // --------------------------------------------------------------------------
+  // Pharmacie — articles bruts (pas de LAZY), stocks en vues aplaties
+  // --------------------------------------------------------------------------
+
+  Future<List<PharmacyItem>> getPharmacyItems({
+    String? search,
+    String? categorie,
+    int page = 0,
+    int size = 50,
+  }) async {
+    final response = await _api.get('$_base/pharmacy/items', queryParameters: {
+      'page': page,
+      'size': size,
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (categorie != null && categorie.isNotEmpty) 'categorie': categorie,
+    });
+    return _contentOf(response.data)
+        .map(PharmacyItem.fromJson)
+        .toList(growable: false);
   }
 
-  // Pharmacy Stock
-  Future<List<PharmacyStock>> getPharmacyStock({bool? lowStockOnly, bool? expiredOnly}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (lowStockOnly == true) queryParams['lowStock'] = 'true';
-      if (expiredOnly == true) queryParams['expired'] = 'true';
-      final response = await _api.get('/health/pharmacy/stock', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => PharmacyStock.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du stock: $e');
-    }
+  Future<PharmacyItem> createPharmacyItem(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/pharmacy/items', data: body);
+    return PharmacyItem.fromJson(_mapOf(response.data));
   }
 
-  Future<PharmacyStock> updatePharmacyStock(int id, PharmacyStock stock) async {
-    try {
-      final response = await _api.put('/health/pharmacy/stock/$id', data: stock.toJson());
-      return PharmacyStock.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la mise à jour: $e');
-    }
+  Future<PharmacyItem> updatePharmacyItem(String id, Map<String, dynamic> body) async {
+    final response = await _api.put('$_base/pharmacy/items/$id', data: body);
+    return PharmacyItem.fromJson(_mapOf(response.data));
   }
 
-  // Health Campaigns
-  Future<List<HealthCampaign>> getHealthCampaigns({CampaignStatus? status}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (status != null) queryParams['status'] = status.name;
-      final response = await _api.get('/health/campaigns', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => HealthCampaign.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des campagnes: $e');
-    }
+  /// `status` : valeur wire exacte de [StockStatus] (accents inclus).
+  Future<List<PharmacyStock>> getPharmacyStock({
+    String? itemId,
+    StockStatus? status,
+    int page = 0,
+    int size = 50,
+  }) async {
+    final response = await _api.get('$_base/pharmacy/stock', queryParameters: {
+      'page': page,
+      'size': size,
+      if (itemId != null) 'itemId': itemId,
+      if (status != null) 'status': status.wire,
+    });
+    return _contentOf(response.data)
+        .map(PharmacyStock.fromJson)
+        .toList(growable: false);
   }
 
-  Future<HealthCampaign> getHealthCampaign(int id) async {
-    try {
-      final response = await _api.get('/health/campaigns/$id');
-      return HealthCampaign.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement de la campagne: $e');
-    }
+  Future<PharmacyStock> updatePharmacyStock(String id, Map<String, dynamic> body) async {
+    final response = await _api.put('$_base/pharmacy/stock/$id', data: body);
+    return PharmacyStock.fromJson(_mapOf(response.data));
   }
 
-  Future<HealthCampaign> createHealthCampaign(HealthCampaign campaign) async {
-    try {
-      final response = await _api.post('/health/campaigns', data: campaign.toJson());
-      return HealthCampaign.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la création: $e');
-    }
+  Future<List<PharmacyStock>> getLowStockAlerts() async {
+    final response = await _api.get('$_base/pharmacy/stock/alerts/low');
+    return _contentOf(response.data)
+        .map(PharmacyStock.fromJson)
+        .toList(growable: false);
   }
 
-  Future<List<CampaignParticipant>> getCampaignParticipants(int campaignId) async {
-    try {
-      final response = await _api.get('/health/campaigns/$campaignId/participants');
-      final data = response.data as List;
-      return data.map((json) => CampaignParticipant.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des participants: $e');
-    }
+  Future<List<PharmacyStock>> getExpiringSoonAlerts({int days = 30}) async {
+    final response = await _api.get('$_base/pharmacy/stock/alerts/expiring',
+        queryParameters: {'days': days});
+    return _contentOf(response.data)
+        .map(PharmacyStock.fromJson)
+        .toList(growable: false);
   }
 
-  Future<CampaignParticipant> registerForCampaign(int campaignId, int patientId) async {
-    try {
-      final response = await _api.post('/health/campaigns/$campaignId/register', data: {'patientId': patientId});
-      return CampaignParticipant.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de l\'inscription: $e');
-    }
+  /// Mouvement de stock — corps avec association `stock: {id}` imbriquée ;
+  /// réponse = vue aplatie (le mobile n'a pas de modèle fort pour les
+  /// mouvements, seule la création est exposée à l'UI).
+  Future<Map<String, dynamic>> createMovement(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/pharmacy/movements', data: body);
+    return _mapOf(response.data);
   }
 
-  // Medical Kits
-  Future<List<MedicalKit>> getMedicalKits({KitStatus? status}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (status != null) queryParams['status'] = status.name;
-      final response = await _api.get('/health/kits', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => MedicalKit.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des kits: $e');
-    }
+  // --------------------------------------------------------------------------
+  // Campagnes (vue aplatie {responsibleName, participantsCount})
+  // --------------------------------------------------------------------------
+
+  Future<List<HealthCampaign>> getCampaigns({
+    CampaignStatus? status,
+    int page = 0,
+    int size = 20,
+  }) async {
+    final response = await _api.get('$_base/campaigns', queryParameters: {
+      'page': page,
+      'size': size,
+      if (status != null) 'status': status.wire,
+    });
+    return _contentOf(response.data)
+        .map(HealthCampaign.fromJson)
+        .toList(growable: false);
   }
 
-  Future<MedicalKit> getMedicalKit(int id) async {
-    try {
-      final response = await _api.get('/health/kits/$id');
-      return MedicalKit.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du kit: $e');
-    }
+  Future<HealthCampaign> getCampaign(String id) async {
+    final response = await _api.get('$_base/campaigns/$id');
+    return HealthCampaign.fromJson(_mapOf(response.data));
   }
 
-  // Staff Duties
-  Future<List<StaffDuty>> getStaffDuties({int? staffId, DateTime? fromDate, DateTime? toDate, DutyStatus? status}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (staffId != null) queryParams['staffId'] = staffId;
-      if (fromDate != null) queryParams['fromDate'] = fromDate.toIso8601String();
-      if (toDate != null) queryParams['toDate'] = toDate.toIso8601String();
-      if (status != null) queryParams['status'] = status.name;
-      final response = await _api.get('/health/duties', queryParameters: queryParams);
-      final data = response.data as List;
-      return data.map((json) => StaffDuty.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des gardes: $e');
-    }
+  /// Le serveur force `responsible` à l'acteur courant : ne pas l'envoyer.
+  Future<HealthCampaign> createCampaign(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/campaigns', data: body);
+    return HealthCampaign.fromJson(_mapOf(response.data));
   }
 
-  // Reports
-  Future<Map<String, dynamic>> getHealthStatistics({DateTime? fromDate, DateTime? toDate}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (fromDate != null) queryParams['fromDate'] = fromDate.toIso8601String();
-      if (toDate != null) queryParams['toDate'] = toDate.toIso8601String();
-      final response = await _api.get('/health/reports/statistics', queryParameters: queryParams);
-      return response.data as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des statistiques: $e');
-    }
+  Future<List<CampaignParticipant>> getCampaignParticipants(String campaignId) async {
+    final response =
+        await _api.get('$_base/campaigns/$campaignId/participants');
+    return _contentOf(response.data)
+        .map(CampaignParticipant.fromJson)
+        .toList(growable: false);
   }
 
-  Future<List<Patient>> getPatientsByCondition(String condition) async {
-    try {
-      final response = await _api.get('/health/patients/by-condition', queryParameters: {'condition': condition});
-      final data = response.data as List;
-      return data.map((json) => Patient.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement: $e');
-    }
+  /// `POST /campaigns/{id}/register` — le serveur attend
+  /// `Map<String, UUID>` = `{"userId": "<uuid>"}` (PAS patientId).
+  Future<CampaignParticipant> registerForCampaign(
+      String campaignId, String userId) async {
+    final response = await _api
+        .post('$_base/campaigns/$campaignId/register', data: {'userId': userId});
+    return CampaignParticipant.fromJson(_mapOf(response.data));
+  }
+
+  // --------------------------------------------------------------------------
+  // Médicaments / kits / gardes — entités plates V235 (liste brute)
+  // --------------------------------------------------------------------------
+
+  Future<List<HealthMedication>> getMedications() async {
+    final response = await _api.get('$_base/medications');
+    return _contentOf(response.data)
+        .map(HealthMedication.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<HealthMedication> getMedication(String id) async {
+    final response = await _api.get('$_base/medications/$id');
+    return HealthMedication.fromJson(_mapOf(response.data));
+  }
+
+  Future<HealthMedication> createMedication(Map<String, dynamic> body) async {
+    final response = await _api.post('$_base/medications', data: body);
+    return HealthMedication.fromJson(_mapOf(response.data));
+  }
+
+  Future<List<HealthKit>> getKits() async {
+    final response = await _api.get('$_base/kits');
+    return _contentOf(response.data)
+        .map(HealthKit.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<HealthKit> getKit(String id) async {
+    final response = await _api.get('$_base/kits/$id');
+    return HealthKit.fromJson(_mapOf(response.data));
+  }
+
+  Future<List<HealthDuty>> getDuties() async {
+    final response = await _api.get('$_base/duties');
+    return _contentOf(response.data)
+        .map(HealthDuty.fromJson)
+        .toList(growable: false);
+  }
+
+  // --------------------------------------------------------------------------
+  // Dashboard / statistiques
+  // --------------------------------------------------------------------------
+
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final response = await _api.get('$_base/dashboard/stats');
+    return _mapOf(response.data);
+  }
+
+  Future<Map<String, dynamic>> getHealthReportsStatistics() async {
+    final response = await _api.get('$_base/reports/statistics');
+    return _mapOf(response.data);
   }
 }

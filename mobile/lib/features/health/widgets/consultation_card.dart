@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'package:discipolat_mobile/features/health/models/health_model.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
+/// Fiche consultation — vue aplatie V240 (`patientName`, `practitionerName`,
+/// `consultationDate` au format `yyyy-MM-dd`, `typeConsultation` String
+/// bornée TRIAGE/CONSULTATION/SUIVI côté serveur).
 class ConsultationCard extends StatelessWidget {
-  final Consultation consultation;
+  final MedicalConsultation consultation;
   final VoidCallback onTap;
 
   const ConsultationCard({
@@ -16,9 +18,7 @@ class ConsultationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(consultation.status);
-    final typeColor = _getTypeColor(consultation.type);
-    final isToday = _isToday(consultation.dateTime);
+    final statusColor = _statusColor(consultation.status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -34,129 +34,69 @@ class ConsultationCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(_getTypeIcon(consultation.type), color: typeColor, size: 24),
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    child: const Icon(Icons.medical_information_rounded,
+                        color: Colors.blue, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              consultation.type.displayName,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            if (isToday) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text('AUJOURD\'HUI', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white)),
-                              ),
-                            ],
-                          ],
-                        ),
                         Text(
-                          'Dr. ${consultation.doctorName} • ${consultation.patientName}',
-                          style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
+                          consultation.patientName ?? 'Patient inconnu',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _subtitle(),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.surface.withOpacity(0.7)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       consultation.status.displayName,
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getStatusColor(consultation.status)),
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.schedule_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
-                  const SizedBox(width: 4),
-                  Text(
-                    DateFormat('EEEE dd MMMM yyyy à HH:mm', 'fr_FR').format(consultation.dateTime.toLocal()),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
-                  ),
-                ],
-              ),
-              if (consultation.chiefComplaint != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Motif: ${consultation.chiefComplaint}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              if (consultation.motif != null) ...[
+                const SizedBox(height: 12),
+                _line(Icons.chat_rounded, 'Motif', consultation.motif!),
               ],
-              if (consultation.diagnosis != null) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.medical_information_rounded, size: 14, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Diagnostic: ${consultation.diagnosis}',
-                          style: TextStyle(fontSize: 11, color: Colors.blue, fontStyle: FontStyle.italic),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              if (consultation.diagnostic != null) ...[
+                const SizedBox(height: 6),
+                _line(Icons.medical_information_rounded, 'Diagnostic',
+                    consultation.diagnostic!),
               ],
-              if (consultation.prescriptions != null && consultation.prescriptions!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.medication_rounded, size: 14, color: Colors.green),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${consultation.prescriptions!.length} prescription(s)',
-                      style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
+              if (consultation.traitement != null) ...[
+                const SizedBox(height: 6),
+                _line(Icons.healing_rounded, 'Traitement',
+                    consultation.traitement!),
               ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(consultation.status).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      consultation.status.displayName,
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getStatusColor(consultation.status)),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -164,15 +104,47 @@ class ConsultationCard extends StatelessWidget {
     );
   }
 
-  bool _isToday(DateTime dateTime) {
-    final now = DateTime.now();
-    final date = dateTime;
-    return date.year == DateTime.now().year &&
-        date.month == DateTime.now().month &&
-        date.day == DateTime.now().day;
+  String _subtitle() {
+    final parts = <String>[
+      if (consultation.consultationDate != null)
+        _prettyDate(consultation.consultationDate!),
+      if (consultation.typeConsultation != null) consultation.typeConsultation!,
+      if (consultation.practitionerName != null)
+        'Praticien : ${consultation.practitionerName}',
+    ];
+    return parts.join(' • ');
   }
 
-  Color _getStatusColor(ConsultationStatus status) {
+  /// `yyyy-MM-dd` (LocalDate serveur) → `dd/MM/yyyy` ; retombe sur la valeur
+  /// brute si le format n'est pas analysable (tolérance, jamais de crash).
+  static String _prettyDate(String iso) {
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return iso;
+    final m = parsed.month.toString().padLeft(2, '0');
+    final d = parsed.day.toString().padLeft(2, '0');
+    return '$d/$m/${parsed.year}';
+  }
+
+  Widget _line(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: AppColors.surface.withOpacity(0.7)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '$label : $value',
+            style:
+                TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.85)),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _statusColor(ConsultationStatus status) {
     switch (status) {
       case ConsultationStatus.scheduled:
         return Colors.blue;
@@ -181,47 +153,7 @@ class ConsultationCard extends StatelessWidget {
       case ConsultationStatus.completed:
         return Colors.green;
       case ConsultationStatus.cancelled:
-        return Colors.red;
-      case ConsultationStatus.noShow:
         return Colors.grey;
-    }
-  }
-
-  Color _getTypeColor(ConsultationType type) {
-    switch (type) {
-      case ConsultationType.general:
-        return Colors.blue;
-      case ConsultationType.specialist:
-        return Colors.purple;
-      case ConsultationType.emergency:
-        return Colors.red;
-      case ConsultationType.followUp:
-        return Colors.green;
-      case ConsultationType.preventive:
-        return Colors.teal;
-      case ConsultationType.prenatal:
-        return Colors.pink;
-      case ConsultationType.vaccination:
-        return Colors.orange;
-    }
-  }
-
-  IconData _getTypeIcon(ConsultationType type) {
-    switch (type) {
-      case ConsultationType.general:
-        return Icons.medical_services_rounded;
-      case ConsultationType.specialist:
-        return Icons.local_hospital_rounded;
-      case ConsultationType.emergency:
-        return Icons.emergency_rounded;
-      case ConsultationType.followUp:
-        return Icons.follow_the_signs_rounded;
-      case ConsultationType.preventive:
-        return Icons.shield_rounded;
-      case ConsultationType.prenatal:
-        return Icons.pregnant_woman_rounded;
-      case ConsultationType.vaccination:
-        return Icons.vaccines_rounded;
     }
   }
 }

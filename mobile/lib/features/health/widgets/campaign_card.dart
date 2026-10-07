@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'package:discipolat_mobile/features/health/models/health_model.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
+/// Fiche campagne — vue aplatie V240 (`responsibleName`, `participantsCount`
+/// compté serveur, dates `yyyy-MM-dd`).
 class CampaignCard extends StatelessWidget {
   final HealthCampaign campaign;
   final VoidCallback onTap;
@@ -16,14 +17,8 @@ class CampaignCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = campaign.isActive;
-    final isUpcoming = campaign.isUpcoming;
-    final isCompleted = campaign.isCompleted;
-    final statusColor = _getStatusColor(campaign.status);
-    final typeColor = _getTypeColor(campaign.type);
-    final progress = campaign.targetPopulation != null && campaign.targetPopulation! > 0
-        ? campaign.registeredCount / campaign.targetPopulation!
-        : 0.0;
+    final statusColor = _statusColor(campaign.status);
+    final dateRange = _dateRange();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -39,13 +34,11 @@ class CampaignCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(_getTypeIcon(campaign.type), color: typeColor, size: 24),
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.green.withOpacity(0.2),
+                    child: const Icon(Icons.campaign_rounded,
+                        color: Colors.green, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -53,112 +46,82 @@ class CampaignCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          campaign.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          campaign.title ?? 'Campagne sans titre',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          campaign.type.displayName,
-                          style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
+                          campaign.campaignType.displayName,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.surface.withOpacity(0.7)),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       campaign.status.displayName,
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor),
                     ),
                   ),
                 ],
               ),
               if (campaign.description != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   campaign.description!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.surface.withOpacity(0.85)),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
               const SizedBox(height: 12),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${DateFormat('dd/MM/yyyy').format(campaign.startDate.toLocal())} - ${DateFormat('dd/MM/yyyy').format(campaign.endDate.toLocal())}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
+                  if (dateRange != null)
+                    _badge(Icons.event_rounded, Colors.blue, dateRange),
+                  if (campaign.lieu != null)
+                    _badge(Icons.location_on_rounded, Colors.teal,
+                        campaign.lieu!),
+                  _badge(
+                    Icons.groups_rounded,
+                    Colors.green,
+                    '${campaign.participantsCount} inscrit(s)',
                   ),
-                  if (campaign.location != null) ...[
-                    const SizedBox(width: 16),
-                    Icon(Icons.location_on_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        campaign.location!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                  if (campaign.responsibleName != null)
+                    _badge(Icons.person_rounded, Colors.purple,
+                        'Resp. ${campaign.responsibleName}'),
                 ],
               ),
-              const SizedBox(height: 12),
-              if (campaign.targetPopulation != null) ...[
-                Text(
-                  'Inscriptions: ${campaign.registeredCount}/${campaign.targetPopulation} (${campaign.attendedCount} présents)',
-                  style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
-                ),
+              if (campaign.objectif != null) ...[
                 const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  backgroundColor: AppColors.surfaceDark,
-                  valueColor: AlwaysStoppedAnimation<Color>(isActive ? Colors.green : (isUpcoming ? Colors.blue : Colors.grey)),
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                const SizedBox(height: 4),
                 Text(
-                  '${(progress * 100).toStringAsFixed(1)}% de l\'objectif',
-                  style: TextStyle(fontSize: 10, color: AppColors.surface.withOpacity(0.7)),
+                  'Objectif : ${campaign.objectif}',
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 12),
               ],
-              Row(
-                children: [
-                  if (campaign.coordinatorName != null) ...[
-                    Icon(Icons.person_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Coordinateur: ${campaign.coordinatorName}',
-                      style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.7)),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
-                  if (campaign.targetGroups != null && campaign.targetGroups!.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: typeColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        campaign.targetGroups!.first,
-                        style: TextStyle(fontSize: 10, color: typeColor),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
             ],
           ),
         ),
@@ -166,54 +129,57 @@ class CampaignCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(CampaignStatus status) {
+  String? _dateRange() {
+    final start = campaign.startDate;
+    final end = campaign.endDate;
+    if (start == null && end == null) return null;
+    if (start != null && end != null) {
+      return '${_prettyDate(start)} → ${_prettyDate(end)}';
+    }
+    return _prettyDate((start ?? end)!);
+  }
+
+  /// `yyyy-MM-dd` (LocalDate serveur) → `dd/MM/yyyy`, tolérant au parsing.
+  static String _prettyDate(String iso) {
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return iso;
+    final m = parsed.month.toString().padLeft(2, '0');
+    final d = parsed.day.toString().padLeft(2, '0');
+    return '$d/$m/${parsed.year}';
+  }
+
+  Widget _badge(IconData icon, Color color, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _statusColor(CampaignStatus status) {
     switch (status) {
       case CampaignStatus.planned:
         return Colors.blue;
-      case CampaignStatus.active:
+      case CampaignStatus.inProgress:
         return Colors.green;
       case CampaignStatus.completed:
-        return Colors.purple;
+        return Colors.teal;
       case CampaignStatus.cancelled:
-        return Colors.red;
-    }
-  }
-
-  Color _getTypeColor(CampaignType type) {
-    switch (type) {
-      case CampaignType.vaccination:
-        return Colors.red;
-      case CampaignType.screening:
-        return Colors.blue;
-      case CampaignType.awareness:
-        return Colors.orange;
-      case CampaignType.bloodDonation:
-        return Colors.red;
-      case CampaignType.healthCheck:
-        return Colors.green;
-      case CampaignType.nutrition:
-        return Colors.amber;
-      case CampaignType.maternalChild:
-        return Colors.pink;
-    }
-  }
-
-  IconData _getTypeIcon(CampaignType type) {
-    switch (type) {
-      case CampaignType.vaccination:
-        return Icons.vaccines_rounded;
-      case CampaignType.screening:
-        return Icons.search_rounded;
-      case CampaignType.awareness:
-        return Icons.campaign_rounded;
-      case CampaignType.bloodDonation:
-        return Icons.favorite_rounded;
-      case CampaignType.healthCheck:
-        return Icons.health_and_safety_rounded;
-      case CampaignType.nutrition:
-        return Icons.restaurant_rounded;
-      case CampaignType.maternalChild:
-        return Icons.pregnant_woman_rounded;
+        return Colors.grey;
     }
   }
 }

@@ -25,8 +25,11 @@ import 'package:flutter_test/flutter_test.dart';
 const _allowList = <String, String>{
   'lib/features/streaming/models/stream_model.dart':
       'À migrer : LiveStreamController attend Long sur /streams/{id}, écart à trancher',
-  'lib/features/health/models/health_model.dart':
-      'À migrer : module sans contrôleur événements encore — arbitrage préalable requis',
+  // health_model.dart MIGRÉ (V240) : ids et refs personnes sont des String
+  // (UUID serveur, GenerationType.UUID vérifié) ; le modèle épouse les vues
+  // aplaties du HealthService (personName, patientName, itemName,
+  // responsibleName, participantsCount) et le service parse PageResponse.
+  // Les freezed `.freezed.dart`/`.g.dart` orphelins ont été supprimés.
   // finance_model.dart MIGRÉ (V236) : identifiants String (UUID), champs
   // alignés sur les vues FinanceService — l'exception a été retirée ici.
   // discipleship_model.dart MIGRÉ : les refs personnes (createdById,
