@@ -1,4 +1,6 @@
 gradle-wrapper.jar
+# Sorties de build Gradle (rapport de problems généré par Gradle 8.14+)
+/build/
 /.gradle
 /captures/
 /gradlew
