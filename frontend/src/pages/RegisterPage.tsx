@@ -346,13 +346,20 @@ export default function RegisterPage() {
             <label htmlFor="orgKind" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1.5">
               {tText("Type d'organisation")}
             </label>
+            {/* La liste deroulante native herite la couleur de texte du select
+                mais se peint sur le fond « field » du navigateur (clair) : sans
+                fond opaque sur les <option> et sans color-scheme, le texte
+                devenait blanc sur blanc en mode sombre. */}
             <select
               id="orgKind"
               value={orgKind}
               onChange={(e) => setOrgKind(e.target.value)}
               className="w-full rounded-xl bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10
                          text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none
-                         focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200"
+                         focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200
+                         [color-scheme:light] dark:[color-scheme:dark]
+                         [&>option]:bg-white [&>option]:text-gray-900
+                         dark:[&>option]:bg-gray-900 dark:[&>option]:text-gray-100"
             >
               <option value="CHURCH">{tText('Église')}</option>
               <option value="DENOMINATION">{tText("Dénomination (réseau d'églises)")}</option>
