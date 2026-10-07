@@ -57,3 +57,34 @@ soft-delete · R10 une migration par sous-système (V235/V236) · R11 API régé
 module vertes ; web compile (`tsc`) + `vitest` 0 échec ; `flutter analyze` 0 erreur +
 `flutter test` OK ; endpoints mobiles câblés **et** consommés côté web (page existante
 ou créée) ; docs régénérés. Sinon on **NE push PAS**.
+
+## 5. Statut d'exécution et recette de régénération API (2026-10-07)
+
+**Gates vertes** sur le snapshot `origin/main` (`25e9e2f6`) + docs :
+- Backend `mvn -o test` : **2130 tests / 0 échec / BUILD SUCCESS** (incl.
+  `TenantFilterDefArchitectureTest` 2/0 ; suites contract/isolation discipleship·tasks·
+  health·finances·tontine).
+- Frontend `tsc -b` : **0 erreur** ; `vitest run` : **94 fichiers / 738 tests / 0 échec**.
+- Mobile `flutter test` : **620 tests / All tests passed** ; `dart analyze` : **0 erreur**
+  (only info/warning, spec §6 « 0 erreur » satisfied).
+
+**RBAC** : matrice `@PreAuthorize` par route des 4 contrôleurs V233 documentée en
+`docs/RBAC.md §4.12` (dont note : `HEALTH_STAFF`/`HEALTH_LEAD` restent à provisionner en
+rôles applicatifs pour débloquer le portail santé).
+
+**Écrans Web** : endpoints V233 **tous déjà consommés** par des pages existantes
+(`DiscipleshipPage`, `TasksBoardPage`, `HealthPortalPage`, `FinancePage`, `TontinePage`, …) —
+aucun écran à créer.
+
+**Reste — `docs/openapi.json`/`API.md` (R11, artifact régénérable, jamais édité à la main)** :
+les fichiers actuels datent d'avant V233 (0 occurrence des endpoints). `scripts/generate-api-docs.sh`
+exige un backend **démarré**. La régénération locale par `mvn spring-boot:run` (profil `test`) a
+été tentée et **écartée** : le profil `test` est câblé pour `@SpringBootTest`, pas pour un run
+autonome → seed JDBC « Table ROLES/WORKFLOW_STEP not found » (ordre d'init, même avec
+`flyway.enabled=false`+`sql.init.mode=never`) et clés JWT non liées (« No JWT key provided »).
+Le corriger = surgery de config invasive qui ferait courir un risque aux builds verts.
+**Recette** : booter le profil **main** contre la Postgres de `docker-compose.yml` (Flyway V1–V240
+sur PG) avec les clés JWT réelles (`app.jwt.private-key-path`/`public-key-path` ou base64), puis
+`bash scripts/generate-api-docs.sh <BASE_URL>` ; contrôler que `/api/v1/discipleship`, `/api/v1/tasks`,
+`/api/v1/health/{medications,kits,duties}` et `/api/v1/finances/{accounts,donations,tontines}`
+apparaissent, puis commit + push.
