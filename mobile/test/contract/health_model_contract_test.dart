@@ -1,4 +1,4 @@
-// Contrat de désérialisation du module santé.
+// Contrat de désérialisation du module santé (modèle V240 restauré).
 //
 // POURQUOI CE TEST EXISTE
 // Le modèle déclarait `required int id` alors que les 11 entités de santé sont
@@ -7,43 +7,52 @@
 // un `TypeError` et fait échouer TOUTE la liste. Symptôme en production : l'écran
 // Santé vide, sans erreur visible.
 //
-// Ce test fige le contrat réel : un payload serveur tel qu'il est sérialisé
-// doit se désérialiser. Il couvre aussi la tolérance (clés absentes, enums
-// inconnus, dates nulles) et la non-régression des champs d'affichage.
+// Ce test fige le contrat réel vérifié dans le code serveur (vues aplaties
+// HealthService : {personId, personName}, {patientId, patientName},
+// {itemId, itemName}, {responsibleId, responsibleName, participantsCount}) :
+// un payload serveur tel qu'il est sérialisé doit se désérialiser. Il couvre
+// aussi la tolérance (clés absentes, enums inconnus, dates nulles) et la
+// non-régression des champs d'affichage consommés par les écrans.
 
 import 'package:discipolat_mobile/features/health/models/health_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Payload réel d'un `PatientRecord` sérialisé par Jackson :
-/// l'`id` est une chaîne UUID.
+/// Payload réel d'un `PatientRecord` sérialisé par Jackson (vue aplatie) :
+/// l'`id` est une chaîne UUID, la personne est aplatie en {personId,
+/// personName} — jamais embarquée.
 const _patientJson = <String, dynamic>{
   'id': '3f2504e0-4f89-11d3-9a0c-0305e82c3301',
-  'tenantId': 'aaaaaaaa-0000-0000-0000-000000000001',
+  'personId': '22222222-2222-2222-2222-222222222222',
+  'personName': 'Marie Dupont',
+  'familyId': 'aaaaaaaa-0000-0000-0000-000000000001',
+  'familyName': 'Famille Dupont',
   'groupeSanguin': 'O+',
   'allergies': 'Pénicilline',
   'antecedents': 'Hypertension',
   'notesSensibles': 'Sous anticoagulants',
-  'deleted': false,
   'createdAt': '2026-01-15T08:30:00Z',
   'updatedAt': '2026-02-01T10:00:00Z',
 };
 
 void main() {
   group('Identifiants UUID (le bug qui cassait l\'écran Santé)', () {
-    test('Patient : un id UUID chaîne ne lève pas et devient une String', () {
-      final p = Patient.fromJson(_patientJson);
+    test('PatientRecord : un id UUID chaîne ne lève pas et reste une String', () {
+      final p = PatientRecord.fromJson(_patientJson);
 
       expect(p.id, '3f2504e0-4f89-11d3-9a0c-0305e82c3301');
-      // La régression exacte : un cast num→Int sur une chaîne aurait levé ici.
+      // La régression exacte : un cast num→int sur une chaîne aurait levé ici.
       expect(p.id, isA<String>());
+      expect(p.personId, isA<String>());
     });
 
-    test('Consultation : les ids de relation restent des chaînes', () {
-      final c = Consultation.fromJson(const {
+    test('MedicalConsultation : les ids de relation restent des chaînes', () {
+      final c = MedicalConsultation.fromJson(const {
         'id': '11111111-1111-1111-1111-111111111111',
         'patientId': '22222222-2222-2222-2222-222222222222',
+        'patientName': 'Marie Dupont',
         'practitionerId': '33333333-3333-3333-3333-333333333333',
-        'consultationDate': '2026-03-04T10:15:00Z',
+        'practitionerName': 'Dr Obam',
+        'consultationDate': '2026-03-04',
         'typeConsultation': 'CONSULTATION',
         'motif': 'Fièvre',
         'diagnostic': 'Angine',
@@ -54,8 +63,10 @@ void main() {
       expect(c.patientId, '22222222-2222-2222-2222-222222222222');
       expect(c.practitionerId, '33333333-3333-3333-3333-333333333333');
       expect(c.status, ConsultationStatus.completed);
-      expect(c.dateTime.year, 2026);
-      expect(c.dateTime, c.consultationDate);
+      // `consultationDate` est un LocalDate serveur : String « yyyy-MM-dd »,
+      // lisible telle quelle par les écrans.
+      expect(c.consultationDate, '2026-03-04');
+      expect(DateTime.parse(c.consultationDate!).year, 2026);
     });
 
     test('Prescription : consultationId et patientId UUID', () {
@@ -63,6 +74,7 @@ void main() {
         'id': 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
         'consultationId': '11111111-1111-1111-1111-111111111111',
         'patientId': '22222222-2222-2222-2222-222222222222',
+        'patientName': 'Marie Dupont',
         'medicament': 'Amoxicilline 500 mg',
         'dosage': '1 comprimé',
         'posologie': '3×/jour',
@@ -72,9 +84,9 @@ void main() {
 
       expect(p.id, isA<String>());
       expect(p.consultationId, isA<String>());
-      expect(p.medicationName, 'Amoxicilline 500 mg');
-      expect(p.frequency, '3×/jour');
-      expect(p.isActive, isTrue);
+      expect(p.medicament, 'Amoxicilline 500 mg');
+      expect(p.posologie, '3×/jour');
+      expect(p.status, PrescriptionStatus.active);
     });
 
     test('CampaignParticipant : la référence personne est userId (UUID)', () {
@@ -88,154 +100,177 @@ void main() {
 
       expect(cp.id, isA<String>());
       expect(cp.userId, '22222222-2222-2222-2222-222222222222');
-      // Alias historique consommé par les écrans.
-      expect(cp.patientId, cp.userId);
-      expect(cp.registrationDate, isNotNull);
+      expect(cp.registeredAt, isNotNull);
+      expect(cp.status, ParticipantStatus.registered);
     });
   });
 
   group('Tolérance : un payload incomplet ne casse pas une liste', () {
     test('une entité presque vide reste désérialisable', () {
-      final p = Patient.fromJson(const {'id': 'abc'});
+      final p = PatientRecord.fromJson(const {'id': 'abc'});
       expect(p.id, 'abc');
-      expect(p.firstName, '');
+      expect(p.personName, isNull);
+      expect(p.groupeSanguin, isNull);
       expect(p.createdAt, isNull);
-      expect(p.fullName, 'Patient');
     });
 
     test('un enum inconnu retombe sur une valeur par défaut, sans exception', () {
-      final c = Consultation.fromJson(const {
+      final c = MedicalConsultation.fromJson(const {
         'id': 'x',
         'patientId': 'y',
         'status': 'EN_STATUT_INVENTE',
-        'typeConsultation': 'TYPE_INVENTE',
       });
-      expect(c.status, isA<ConsultationStatus>());
-      expect(c.type, isA<ConsultationType>());
+      expect(c.status, ConsultationStatus.scheduled);
+      final camp = HealthCampaign.fromJson(const {
+        'id': 'c',
+        'campaignType': 'TYPE_INVENTE',
+      });
+      expect(camp.campaignType, CampaignType.autre);
     });
 
-    test('les dates obligatoires ont un repli qui ne dit pas « aujourd\'hui »', () {
-      final camp = HealthCampaign.fromJson(const {'id': 'c', 'name': 'Dépistage'});
+    test('une date LocalDate absente vaut null, jamais un faux « aujourd\'hui »', () {
+      final camp = HealthCampaign.fromJson(const {'id': 'c', 'title': 'Dépistage'});
       // Une date manquante ne doit pas devenir « now » : la campagne
-      // passerait pour "_je démarre aujourd'hui_".
-      expect(camp.startDate.millisecondsSinceEpoch, 0);
-      expect(camp.endDate.millisecondsSinceEpoch, 0);
-      expect(camp.isActive, isFalse);
-      expect(camp.isCompleted, isTrue);
+      // passerait pour « je démarre aujourd'hui ».
+      expect(camp.startDate, isNull);
+      expect(camp.endDate, isNull);
+      expect(camp.participantsCount, 0);
     });
 
-    test('les collections absentes valent null, pas une exception', () {
-      final c = Consultation.fromJson(const {'id': 'x', 'patientId': 'y'});
-      expect(c.prescriptions, isNull);
-      expect(c.vitalSigns, isNull);
+    test('les valeurs nulles ou vides côté serveur deviennent null ici', () {
+      final c = MedicalConsultation.fromJson(const {
+        'id': 'x',
+        'patientId': 'y',
+        'motif': '',
+        'diagnostic': null,
+      });
+      expect(c.motif, isNull);
+      expect(c.diagnostic, isNull);
     });
   });
 
   group('Champs d\'affichage conservés (non-régression des écrans)', () {
-    test('Patient : age, gender et photoUrl restent disponibles', () {
-      final p = Patient.fromJson({
-        ..._patientJson,
-        'dateOfBirth': '1990-06-15',
-        'gender': 'F',
-        'photoUrl': 'https://x/p.png',
-        'person': {'firstName': 'Marie', 'lastName': 'Dupont'},
-      });
+    test('PatientRecord : vue aplatie lisible sans barre de requête', () {
+      final p = PatientRecord.fromJson(_patientJson);
 
-      expect(p.firstName, 'Marie');
-      expect(p.lastName, 'Dupont');
-      expect(p.gender, 'F');
-      expect(p.photoUrl, 'https://x/p.png');
-      // 2026 - 1990 = 36, et l'anniversaire du 15/06 est déjà passé.
-      expect(p.age, greaterThanOrEqualTo(35));
-      expect(p.fullName, 'Marie Dupont');
+      expect(p.personName, 'Marie Dupont');
+      expect(p.familyName, 'Famille Dupont');
+      expect(p.groupeSanguin, 'O+');
+      expect(p.allergies, 'Pénicilline');
+      expect(p.confidentialityLevel, ConfidentialityLevel.strict);
+      expect(p.createdAt!.year, 2026);
     });
 
-    test('Patient sans date de naissance : age = 0, jamais négatif ni d\'exception', () {
-      final p = Patient.fromJson({..._patientJson, 'dateOfBirth': '2200-01-01'});
-      expect(p.age, 0);
-    });
-
-    test('PharmacyStock : alias historiques et seuil d\'alerte', () {
+    test('PharmacyStock : seuil d\'alerte et alias serveur', () {
       final s = PharmacyStock.fromJson(const {
         'id': 's1',
+        'itemId': 'item-1',
+        'itemName': 'Paracétamol 500 mg',
         'lotNumber': 'LOT-42',
         'quantite': 3,
         'seuilAlerte': 10,
         'dateExpiration': '2020-01-01',
         'prixUnitaire': 12.5,
-        'status': 'LOW_STOCK',
+        'status': 'EXPIRÉ',
+        'isExpired': true,
       });
 
-      expect(s.batchNumber, 'LOT-42');
-      expect(s.quantity, 3);
-      expect(s.minStockLevel, 10);
+      expect(s.lotNumber, 'LOT-42');
+      expect(s.quantite, 3);
+      expect(s.seuilAlerte, 10);
+      expect(s.itemName, 'Paracétamol 500 mg');
       expect(s.isLowStock, isTrue);
       expect(s.isExpired, isTrue);
-      expect(s.unitCost, 12.5);
-      // Un lot sans nom de produit reste lisible.
-      expect(s.medicationName, isNotEmpty);
+      expect(s.prixUnitaire, 12.5);
+      expect(s.status, StockStatus.expire);
     });
 
-    test('PharmacyStock : expiryDate est non nul même si absent', () {
+    test('PharmacyStock : isLowStock prudent sans seuil', () {
       final s = PharmacyStock.fromJson(const {'id': 's', 'quantite': 1});
-      expect(s.expiryDate, isNotNull);
-      expect(s.isExpired, isFalse);
+      expect(s.isLowStock, isFalse);
     });
 
-    test('HealthCampaign : distributions et isUpcoming cohérents', () {
-      final future = DateTime.now().add(const Duration(days: 30));
-      final camp = HealthCampaign.fromJson({
+    test('HealthCampaign : compteurs et champs français du serveur', () {
+      final camp = HealthCampaign.fromJson(const {
         'id': 'c',
-        'name': 'Vaccination',
+        'title': 'Vaccination',
         'status': 'PLANNED',
-        'startDate': future.toIso8601String(),
-        'endDate': future.add(const Duration(days: 5)).toIso8601String(),
-        'registeredCount': 12,
+        'startDate': '2026-11-01',
+        'endDate': '2026-11-06',
+        'lieu': 'Plateau technique',
+        'responsibleId': 'r-1',
+        'responsibleName': 'Diacre Essomba',
+        'participantsCount': 12,
+        'campaignType': 'VACCINATION',
       });
 
-      expect(camp.isUpcoming, isTrue);
-      expect(camp.isActive, isFalse);
-      expect(camp.registeredCount, 12);
+      expect(camp.title, 'Vaccination');
+      expect(camp.lieu, 'Plateau technique');
+      expect(camp.responsibleName, 'Diacre Essomba');
+      expect(camp.participantsCount, 12);
       expect(camp.status.displayName, isNotEmpty);
-      expect(camp.type.displayName, isNotEmpty);
+      expect(camp.campaignType.displayName, isNotEmpty);
     });
   });
 
-  group('Contrat d\'écriture (toJson)', () {
-    test('Patient.toJson n\'invente aucune clé hors celles lues par le serveur', () {
-      final json = Patient.fromJson(_patientJson).toJson();
-
-      // `HealthController.createPatientRecord` lit ces champs ; tout le reste
-      // est de la decoration d'affichage et ne doit pas partir au serveur.
-      expect(
-        json.keys.toSet(),
-        {'id', 'personId', 'familyId', 'bloodType', 'allergies', 'chronicConditions', 'notes'},
+  group('Contrat d\'écriture (corps exacts lus par le serveur)', () {
+    test('PatientRecord.createBody imbrique la personne comme le serveur l\'attend', () {
+      final body = PatientRecord.createBody(
+        personId: 'p-1',
+        groupeSanguin: 'O+',
       );
+
+      // `HealthController.createPatient` désérialise l'entité : la personne
+      // est une association {"person": {"id": …}}, PAS une clé plate.
+      expect(body['person'], {'id': 'p-1'});
+      expect(body.containsKey('personId'), isFalse);
+      expect(body['groupeSanguin'], 'O+');
+      // Aucune clé inventée : les champs optionnels absents ne sont pas envoyés.
+      expect(body.containsKey('allergies'), isFalse);
     });
 
-    test('Consultation.toJson utilise le nom serveur de la date de fin', () {
-      final json = Consultation.fromJson(const {
-        'id': 'x',
-        'patientId': 'y',
-        'consultationDate': '2026-03-04T10:15:00Z',
-        'status': 'COMPLETED',
-      }).toJson();
+    test('MedicalConsultation.createBody envoie les associations obligatoires', () {
+      final body = MedicalConsultation.createBody(
+        patientId: 'pat-1',
+        practitionerId: 'pra-1',
+        consultationDate: '2026-03-04',
+        motif: 'Fièvre',
+      );
 
-      // Le serveur ne lit pas `dateTime` : c'est `consultation_date`.
-      expect(json.containsKey('typeConsultation'), isTrue);
-      expect(json['status'], 'COMPLETED');
-      expect(json.containsKey('dateTime'), isFalse);
+      expect(body['patient'], {'id': 'pat-1'});
+      expect(body['practitioner'], {'id': 'pra-1'});
+      expect(body['consultationDate'], '2026-03-04');
+      expect(body['typeConsultation'], 'CONSULTATION');
+      expect(body['status'], isNull); // porté par la défaut serveur
     });
 
-    test('CampaignParticipant.toJson envoie la clé userId attendue', () {
-      final json = CampaignParticipant.fromJson(const {
-        'id': 'c',
-        'campaignId': 'camp',
-        'userId': 'user-1',
-      }).toJson();
+    test('HealthCampaign.createBody porte les nullable=false obligatoires', () {
+      final body = HealthCampaign.createBody(
+        title: 'Dépistage',
+        startDate: '2026-12-01',
+        lieu: 'Parvis',
+        campaignType: CampaignType.depistage,
+      );
 
-      expect(json['userId'], 'user-1');
-      expect(json.containsKey('campaignId'), isTrue);
+      expect(body['title'], 'Dépistage');
+      expect(body['startDate'], '2026-12-01');
+      expect(body['lieu'], 'Parvis');
+      expect(body['campaignType'], 'DEPISTAGE');
+      // createCampaign force le responsible à l'acteur courant côté serveur :
+      // le corps ne doit PAS envoyer de responsible.
+      expect(body.containsKey('responsible'), isFalse);
+    });
+
+    test('Prescription.createBody imbrique consultation et patient', () {
+      final body = Prescription.createBody(
+        consultationId: 'c-1',
+        patientId: 'p-1',
+        medicament: 'Amoxicilline',
+      );
+
+      expect(body['consultation'], {'id': 'c-1'});
+      expect(body['patient'], {'id': 'p-1'});
+      expect(body['medicament'], 'Amoxicilline');
     });
   });
 }
