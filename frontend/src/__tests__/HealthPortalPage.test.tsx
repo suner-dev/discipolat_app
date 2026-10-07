@@ -38,16 +38,22 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });
 
+// Fixtures = vues aplaties V240 du serveur (HealthService.patientView etc.) :
+// {personId, personName}, {patientId, patientName}, {itemId, itemName},
+// {responsibleName, participantsCount} — plus d'objet embarqué, plus de tenantId.
 const PATIENT = {
-  id: 'p-uuid-1', tenantId: 't-1', groupeSanguin: 'O+', allergies: 'Arachide',
+  id: 'p-uuid-1', personId: 'per-uuid-1', personName: 'Grace Kabila',
+  groupeSanguin: 'O+', allergies: 'Arachide',
   medecinTraitant: 'Dr. Mbeki', poidsKg: 72.5, tailleCm: 175, numeroAssurance: 'NA-9',
 };
 const CONSULTATION = {
-  id: 'c-uuid-1', consultationDate: '2026-10-01', typeConsultation: 'SUIVI',
+  id: 'c-uuid-1', patientId: 'per-uuid-1', patientName: 'Grace Kabila',
+  practitionerId: 'pra-uuid-1', practitionerName: 'Jean Kalala',
+  consultationDate: '2026-10-01', typeConsultation: 'SUIVI',
   motif: 'Contrôle', diagnostic: 'RAS', status: 'COMPLETED',
 };
-const STOCK = { id: 's-uuid-1', lotNumber: 'LOT-42', quantite: 3, seuilAlerte: 10, dateExpiration: '2026-11-30', status: 'LOW' };
-const CAMPAIGN = { id: 'ca-uuid-1', title: 'Campagne rougeole', campaignType: 'VACCINATION', startDate: '2026-11-01', status: 'PLANNED' };
+const STOCK = { id: 's-uuid-1', itemId: 'i-1', itemName: 'Paracétamol', lotNumber: 'LOT-42', quantite: 3, seuilAlerte: 10, dateExpiration: '2026-11-30', status: 'STOCK_FAIBLE' };
+const CAMPAIGN = { id: 'ca-uuid-1', title: 'Campagne rougeole', campaignType: 'VACCINATION', startDate: '2026-11-01', responsibleName: 'Sarah Mbala', participantsCount: 4, status: 'PLANNED' };
 const PAGED = <T,>(content: T[]) => ({ content, page: 0, size: 50, totalElements: content.length, totalPages: 1 });
 
 function renderPage() {
@@ -83,13 +89,26 @@ describe('HealthPortalPage — câblée sur healthService (V235)', () => {
     expect(svc.getHealthReportsStatistics).toHaveBeenCalled();
   });
 
-  it('onglet patients : liste paginée (PageResponse) consommée', async () => {
+  it('onglet patients : liste paginée (PageResponse) consommée, vue aplatie rendue', async () => {
     renderPage();
     await waitFor(() => expect(svc.getDashboardStats).toHaveBeenCalled());
     fireEvent.click(screen.getByRole('button', { name: /^patients$/i }));
     await waitFor(() => {
       expect(svc.getPatients).toHaveBeenCalledWith(expect.objectContaining({ size: 50 }));
       expect(screen.getByText(/Dr\. Mbeki/)).toBeInTheDocument();
+      // personName vient de la vue serveur (plus d'objet `person` embarqué).
+      expect(screen.getByText('Grace Kabila')).toBeInTheDocument();
+    });
+  });
+
+  it('onglet consultations : patientName et practitionerName aplaties rendus', async () => {
+    renderPage();
+    await waitFor(() => expect(svc.getDashboardStats).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /consultations/i }));
+    await waitFor(() => {
+      expect(svc.getConsultations).toHaveBeenCalled();
+      expect(screen.getByText('Grace Kabila')).toBeInTheDocument();
+      expect(screen.getByText(/Jean Kalala/)).toBeInTheDocument();
     });
   });
 
@@ -148,6 +167,9 @@ describe('HealthPortalPage — câblée sur healthService (V235)', () => {
     await waitFor(() => {
       expect(svc.getCampaigns).toHaveBeenCalled();
       expect(screen.getByText('Campagne rougeole')).toBeInTheDocument();
+      // Vue aplatie V240 : responsable et participants viennent de la Map serveur.
+      expect(screen.getByText(/Sarah Mbala/)).toBeInTheDocument();
+      expect(screen.getByText(/4 inscrit/)).toBeInTheDocument();
     });
     const input = screen.getByPlaceholderText(/UUID utilisateur/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'u-uuid-1' } });

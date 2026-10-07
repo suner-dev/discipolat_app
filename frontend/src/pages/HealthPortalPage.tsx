@@ -7,12 +7,15 @@ import { tText } from '@/i18n';
 import * as svc from '@/services/healthService';
 
 /**
- * Portail Santé — consomme le contrat exact V235
+ * Portail Santé — consomme le contrat exact V240
  * (`services/healthService.ts`, monture `/api/v1/health`).
- * Le contrôleur santé accepte des entités Jackson typées : les écritures de
- * cette page n'utilisent QUE les champs scalaires réellement appliqués côté
- * serveur (HealthService.updatePatientRecord L59-73, updateConsultation
- * L88-96, updatePharmacyItem L170-175, updatePharmacyStock L325-334,
+ *
+ * Les endpoints renvoient désormais des vues aplaties ({personId, personName},
+ * {patientId, patientName}, {itemId, itemName}, {responsibleName},
+ * {participantsCount}) : plus d'entités LAZY partiellement sérialisées. Les
+ * écritures de cette page n'utilisent QUE les champs scalaires réellement
+ * appliqués côté serveur (HealthService.updatePatientRecord,
+ * updateConsultation, updatePharmacyItem, updatePharmacyStock,
  * createPharmacyItem / createCampaign — champs d'entité sans association).
  * Pas de formulaire de création de consultation : ses références
  * (`patient`, `practitioner`, nullable=false) sont des associations que ce
@@ -258,6 +261,7 @@ export default function HealthPortalPage() {
               {patients.content.map((p) => (
                 <div key={String(p.id)} className="glass-card p-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   <Users className="w-4 h-4 text-rose-500" />
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{sv(p, 'personName')}</span>
                   <span className="text-gray-500 text-xs">#{String(p.id).slice(0, 8)}</span>
                   <span className="text-gray-700 dark:text-gray-300">{tText('Médecin')} : {sv(p, 'medecinTraitant')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{tText('Poids')} : {sv(p, 'poidsKg')} kg</span>
@@ -303,6 +307,8 @@ export default function HealthPortalPage() {
               {consultations.content.map((c) => (
                 <div key={String(c.id)} className="glass-card p-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   <Stethoscope className="w-4 h-4 text-rose-500" />
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{sv(c, 'patientName')}</span>
+                  <span className="text-gray-500 text-xs">{tText('Praticien')} : {sv(c, 'practitionerName')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{sv(c, 'consultationDate')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{sv(c, 'typeConsultation')}</span>
                   <span className="text-gray-700 dark:text-gray-300">{sv(c, 'motif')}</span>
@@ -352,7 +358,7 @@ export default function HealthPortalPage() {
             <div className="glass-card p-4 mb-4 border border-amber-300">
               <h3 className="text-sm font-semibold text-amber-700 mb-2 inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{tText('Alertes stock bas')}</h3>
               {lowStock.map((s, i) => (
-                <p key={i} className="text-xs text-gray-600">{tText('Lot')} {sv(s, 'lotNumber')} — {sv(s, 'quantite')} / {tText('seuil')} {sv(s, 'seuilAlerte')}</p>
+                <p key={i} className="text-xs text-gray-600">{sv(s, 'itemName')} — {tText('Lot')} {sv(s, 'lotNumber')} — {sv(s, 'quantite')} / {tText('seuil')} {sv(s, 'seuilAlerte')}</p>
               ))}
             </div>
           )}
@@ -360,7 +366,7 @@ export default function HealthPortalPage() {
             <div className="glass-card p-4 mb-4 border border-red-300">
               <h3 className="text-sm font-semibold text-red-700 mb-2 inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{tText('Expirations proches (30 j)')}</h3>
               {expiring.map((s, i) => (
-                <p key={i} className="text-xs text-gray-600">{tText('Lot')} {sv(s, 'lotNumber')} — {tText('expire')} {sv(s, 'dateExpiration')}</p>
+                <p key={i} className="text-xs text-gray-600">{sv(s, 'itemName')} — {tText('Lot')} {sv(s, 'lotNumber')} — {tText('expire')} {sv(s, 'dateExpiration')}</p>
               ))}
             </div>
           )}
@@ -370,7 +376,7 @@ export default function HealthPortalPage() {
             <div className="grid gap-3 md:grid-cols-5">
               <select className="input" value={stockId} onChange={(e) => setStockId(e.target.value)}>
                 <option value="">{tText('Choisir un lot…')}</option>
-                {(stock?.content ?? []).map((s) => <option key={String(s.id)} value={String(s.id)}>{sv(s, 'lotNumber')} ({sv(s, 'quantite')})</option>)}
+                {(stock?.content ?? []).map((s) => <option key={String(s.id)} value={String(s.id)}>{sv(s, 'itemName')} · {sv(s, 'lotNumber')} ({sv(s, 'quantite')})</option>)}
               </select>
               <input type="number" className="input" placeholder={tText('Quantité')} value={stockForm.quantite} onChange={(e) => setStockForm({ ...stockForm, quantite: e.target.value })} />
               <input type="number" className="input" placeholder={tText('Seuil alerte')} value={stockForm.seuilAlerte} onChange={(e) => setStockForm({ ...stockForm, seuilAlerte: e.target.value })} />
@@ -426,6 +432,8 @@ export default function HealthPortalPage() {
                     <span className="text-xs text-gray-500">{sv(c, 'campaignType')}</span>
                     <span className="text-xs text-gray-500">{sv(c, 'startDate')} → {sv(c, 'endDate')}</span>
                     <span className="text-xs text-gray-500">{sv(c, 'lieu')}</span>
+                    <span className="text-xs text-gray-500">{tText('Responsable')} : {sv(c, 'responsibleName')}</span>
+                    <span className="text-xs text-gray-500">{sv(c, 'participantsCount')} {tText('inscrit(s)')}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">{sv(c, 'status')}</span>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">

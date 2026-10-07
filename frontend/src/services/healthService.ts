@@ -1,13 +1,16 @@
 import api from '@/lib/api';
 
 /**
- * Contrat exact du backend V235 — HealthController
+ * Contrat exact du backend V240 — HealthController
  * (backend/.../health/api/HealthController.java), monture {@code /api/v1/health}.
  *
- * Tous les identifiants health sont des UUID côté serveur : typés
- * {@code string}. Les endpoints paginés renvoient un {@link Paged} (shape
- * réelle de {@code PageResponse} : content, page, size, totalElements,
- * totalPages). Aucune interface de domaine inventée : {@link Json}.
+ * Les endpoints à relation renvoient des vues aplaties ({personId, personName},
+ * {patientId, patientName}, {itemId, itemName}, {responsibleName}) — plus
+ * d'entités LAZY partiellement sérialisées. Tous les identifiants health sont
+ * des UUID côté serveur : typés {@code string}. Les endpoints paginés renvoient
+ * un {@link Paged} (shape réelle de {@code PageResponse} : content, page,
+ * size, totalElements, totalPages). Aucune interface de domaine inventée :
+ * {@link Json}.
  */
 export type Json = Record<string, unknown>;
 
