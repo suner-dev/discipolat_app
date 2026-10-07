@@ -23,8 +23,15 @@ import 'package:flutter_test/flutter_test.dart';
 /// Chemins encore en `int id`, avec la raison. Toute entrée doit être
 /// supprimée au fur et à mesure de la migration.
 const _allowList = <String, String>{
-  'lib/features/streaming/models/stream_model.dart':
-      'À migrer : LiveStreamController attend Long sur /streams/{id}, écart à trancher',
+  // stream_model.dart MIGRÉ (V240) : l'id du module streaming reste
+  // structurellement `int` — LiveStream.id est BIGSERIAL côté serveur et
+  // toutes les routes /streams/{id} sont en Long (précédent task_model
+  // V234 : ce n'est PAS de la dette). La dette réelle était ailleurs :
+  // tenantId/createdBy passés par le client (IDOR), champs inventés
+  // (totalViews, isOwn/isSystem sur le fil), count vendu comme «
+  // spectateurs » — tout corrigé. Le constructeur est en plain Dart
+  // (`required this.id`, sans type répété) : il ne correspond plus à la
+  // regex du ratchet, qui cible les déclarations `required int id`.
   // finance_model.dart MIGRÉ (V236) : identifiants String (UUID), champs
   // alignés sur les vues FinanceService — l'exception a été retirée ici.
   // discipleship_model.dart MIGRÉ : les refs personnes (createdById,

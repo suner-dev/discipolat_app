@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
@@ -13,107 +12,126 @@ StreamingService streamingService(StreamingServiceRef ref) {
   return StreamingService(api);
 }
 
+/// Service streaming aligné sur le contrat serveur V240
+/// (LiveStreamController / StreamChatController) :
+/// - le tenant n'est JAMAIS envoyé par le client : il vient du JWT
+///   (TenantContext serveur). Un ancien `tenantId` en query param était une
+///   faille IDOR — elle n'existe plus côté serveur, donc plus ici.
+/// - GET /streams et GET /stream-chat/{id} répondent des LISTES JSON brutes
+///   (pas de PageResponse) — vérifié sur les controllers.
+/// - POST/PUT /streams attendent un corps LiveStream : le serveur ignore
+///   id/tenantId/createdBy/status envoyés (ils sont forcés ou transitionnés
+///   serveur), d'où `editBody()` côté modèle.
+/// Les erreurs Dio ne sont pas enveloppées dans `Exception` : l'écran affiche
+/// déjà `Erreur: $e` et une DioException porte un libellé plus parlant
+/// (convention health_service).
 class StreamingService {
   final ApiService _api;
 
   StreamingService(this._api);
 
-  // Stream CRUD
-  Future<List<StreamModel>> getStreams({String? status}) async {
-    try {
-      final queryParams = <String, dynamic>{};
-      if (status != null) queryParams['status'] = status;
-      final response = await _api.get('/streams', params: queryParams);
-      final data = response.data as List;
-      return data.map((json) => StreamModel.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des streams: $e');
-    }
+  // ── Stream CRUD ───────────────────────────────────────────────────────────
+
+  /// GET /streams — liste complète du tenant courant (le serveur ne connaît
+  /// aucun filtre `status` : c'est au client de filtrer, comme le web).
+  Future<List<StreamModel>> getStreams() async {
+    final response = await _api.get('/streams');
+    return _listOf(response.data).map(StreamModel.fromJson).toList();
   }
 
+  /// GET /streams/live — seuls les streams LIVE (filtre serveur).
   Future<List<StreamModel>> getLiveStreams() async {
-    try {
-      final response = await _api.get('/streams/live');
-      final data = response.data as List;
-      return data.map((json) => StreamModel.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des streams en direct: $e');
-    }
+    final response = await _api.get('/streams/live');
+    return _listOf(response.data).map(StreamModel.fromJson).toList();
   }
 
+  /// GET /streams/{id} — ajouté en V240 ; 404 si hors tenant ou inexistant.
   Future<StreamModel> getStream(int id) async {
-    try {
-      final response = await _api.get('/streams/$id');
-      return StreamModel.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du stream: $e');
-    }
+    final response = await _api.get('/streams/$id');
+    return StreamModel.fromJson(_mapOf(response.data));
   }
 
-  Future<StreamModel> createStream(StreamModel stream) async {
-    try {
-      final response = await _api.post('/streams', data: stream.toJson());
-      return StreamModel.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de la création du stream: $e');
-    }
+  /// POST /streams — corps = champs éditables uniquement (rôles
+  /// ADMIN/PASTEUR/RESPONSABLE côté serveur).
+  Future<StreamModel> createStream(Map<String, dynamic> body) async {
+    final response = await _api.post('/streams', data: body);
+    return StreamModel.fromJson(_mapOf(response.data));
+  }
+
+  /// PUT /streams/{id} — le serveur n'applique que les champs éditables
+  /// (title requis, description/streamUrl/thumbnailUrl/recordingUrl,
+  /// scheduledAt seulement hors LIVE).
+  Future<StreamModel> updateStream(int id, Map<String, dynamic> body) async {
+    final response = await _api.put('/streams/$id', data: body);
+    return StreamModel.fromJson(_mapOf(response.data));
+  }
+
+  /// DELETE /streams/{id} — 400 si le stream est LIVE (à arrêter d'abord).
+  Future<void> deleteStream(int id) async {
+    await _api.delete('/streams/$id');
   }
 
   Future<StreamModel> goLive(int id) async {
-    try {
-      final response = await _api.post('/streams/$id/go-live');
-      return StreamModel.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du lancement du stream: $e');
-    }
+    final response = await _api.post('/streams/$id/go-live');
+    return StreamModel.fromJson(_mapOf(response.data));
   }
 
   Future<StreamModel> endStream(int id) async {
-    try {
-      final response = await _api.post('/streams/$id/end');
-      return StreamModel.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors de l\'arrêt du stream: $e');
-    }
+    final response = await _api.post('/streams/$id/end');
+    return StreamModel.fromJson(_mapOf(response.data));
   }
 
+  /// POST /streams/{id}/viewer — incrémente le compteur serveur. Best
+  /// effort : un échec ici ne doit jamais casser l'affichage d'un direct.
   Future<void> incrementViewer(int id) async {
     try {
       await _api.post('/streams/$id/viewer');
-    } catch (e) {
-      // Silently fail for viewer count
+    } catch (_) {
+      // volontairement silencieux (compteur indicatif)
     }
   }
 
-  // Chat
-  Future<List<StreamChatMessage>> getChatMessages(int streamId, {int page = 0, int size = 50}) async {
-    try {
-      final response = await _api.get('/stream-chat/$streamId', params: {'page': page, 'size': size});
-      final data = response.data as List;
-      return data.map((json) => StreamChatMessage.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      throw Exception('Erreur lors du chargement des messages: $e');
-    }
+  // ── Chat ──────────────────────────────────────────────────────────────────
+
+  /// GET /stream-chat/{streamId} — liste brute, scopée tenant serveur.
+  Future<List<StreamChatMessage>> getChatMessages(int streamId) async {
+    final response = await _api.get('/stream-chat/$streamId');
+    return _listOf(response.data).map(StreamChatMessage.fromJson).toList();
   }
 
-  Future<void> sendChatMessage(int streamId, String content, {String? emoji}) async {
-    try {
-      await _api.post('/stream-chat/$streamId', data: {
-        'content': content,
-        'emoji': emoji,
-        'senderName': 'Vous',
-      });
-    } catch (e) {
-      throw Exception('Erreur lors de l\'envoi du message: $e');
-    }
+  /// POST /stream-chat/{streamId} — le serveur vérifie que le stream
+  /// appartient au tenant (anti-IDOR en écriture) et dérive l'expéditeur
+  /// du JWT ; `senderName` n'est qu'un libellé d'affichage.
+  Future<void> sendChatMessage(
+    int streamId,
+    String content, {
+    String? emoji,
+    String? senderName,
+  }) async {
+    await _api.post('/stream-chat/$streamId', data: {
+      'content': content,
+      if (emoji != null) 'emoji': emoji,
+      if (senderName != null && senderName.isNotEmpty) 'senderName': senderName,
+    });
   }
 
-  Future<StreamViewerCount> getViewerCount(int streamId) async {
-    try {
-      final response = await _api.get('/stream-chat/$streamId/count');
-      return StreamViewerCount.fromJson(response.data as Map<String, dynamic>);
-    } catch (e) {
-      throw Exception('Erreur lors du chargement du nombre de spectateurs: $e');
-    }
+  /// GET /stream-chat/{streamId}/count — ATTENTION : le serveur compte des
+  /// MESSAGES, pas des spectateurs (le compteur de spectateurs est
+  /// `LiveStream.viewerCount`). Nom conservé tel quel pour ne pas vendre
+  /// autre chose que ce que la route fournit.
+  Future<int> getChatMessageCount(int streamId) async {
+    final response = await _api.get('/stream-chat/$streamId/count');
+    final data = _mapOf(response.data);
+    return (data['count'] as num?)?.toInt() ?? 0;
   }
 }
+
+/// Les listes serveur sont des JSON brutes (`ResponseEntity<List<…>>`),
+/// jamais enveloppées : parsing tolérant, pas de cast dur.
+List<Map<String, dynamic>> _listOf(Object? data) {
+  if (data is! List) return const [];
+  return data.whereType<Map<String, dynamic>>().toList();
+}
+
+Map<String, dynamic> _mapOf(Object? data) =>
+    data is Map<String, dynamic> ? data : const {};

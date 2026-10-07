@@ -32,7 +32,7 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
   Future<void> _loadStream() async {
     try {
       final stream = await ref.read(streamingServiceProvider).getStream(widget.streamId);
-      
+
       if (stream.streamUrl != null && stream.streamUrl!.isNotEmpty) {
         _videoController = VideoPlayerController.networkUrl(Uri.parse(stream.streamUrl!))
           ..initialize().then((_) {
@@ -45,11 +45,11 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
               }
             }
           }).catchError((error) {
-            print('Video init error: $error');
+            debugPrint('Video init error: $error');
           });
       }
-      
-      // Increment viewer count
+
+      // Compteur indicatif, best effort (le service avale les échecs).
       ref.read(streamingServiceProvider).incrementViewer(widget.streamId);
     } catch (e) {
       if (mounted) {
@@ -83,7 +83,7 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
               const SizedBox(height: 16),
               Text('Erreur de chargement', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white)),
               const SizedBox(height: 8),
-              Text(error.toString(), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.surface.withOpacity(0.7))),
+              Text('$error', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.surface.withOpacity(0.7))),
             ],
           ),
         ),
@@ -155,16 +155,24 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (stream.scheduledAt != null)
+                        // Dates nullables (contrat serveur : startedAt posée
+                        // au goLive, scheduledAt seulement si planifié).
+                        if (isLive && stream.startedAt != null)
                           Text(
-                            isLive ? 'En direct depuis ${DateFormat('HH:mm').format(stream.startedAt!.toLocal())}' :
-                                'Planifié le ${DateFormat('dd/MM/yyyy HH:mm').format(stream.scheduledAt.toLocal())}',
+                            'En direct depuis ${DateFormat('HH:mm').format(stream.startedAt!.toLocal())}',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          )
+                        else if (stream.scheduledAt != null)
+                          Text(
+                            'Planifié le ${DateFormat('dd/MM/yyyy HH:mm').format(stream.scheduledAt!.toLocal())}',
                             style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                       ],
                     ),
                   ),
-                  // Viewer count
+                  // Viewer count — le seul compteur spectateurs du contrat
+                  // serveur est LiveStream.viewerCount (l'endpoint
+                  // /stream-chat/{id}/count compte des MESSAGES).
                   if (isLive)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -177,18 +185,9 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
                         children: [
                           const Icon(Icons.remove_red_eye, color: Colors.white, size: 14),
                           const SizedBox(width: 4),
-                          Consumer(
-                            builder: (context, ref, _) {
-                              final viewersAsync = ref.watch(_viewerCountProvider(stream.id));
-                              return viewersAsync.when(
-                                data: (count) => Text(
-                                  count.toString(),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                                loading: () => const Text('--', style: TextStyle(color: Colors.white)),
-                                error: (_, __) => const Text('--', style: TextStyle(color: Colors.white)),
-                              );
-                            },
+                          Text(
+                            '${stream.viewerCount}',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -210,6 +209,13 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
                         const PopupMenuItem(value: 'end', child: Row(children: [Icon(Icons.stop, color: Colors.red), SizedBox(width: 8), Text('Arrêter le stream')])),
                       if (!isLive && stream.status == StreamStatus.scheduled)
                         const PopupMenuItem(value: 'go_live', child: Row(children: [Icon(Icons.play_arrow, color: Colors.green), SizedBox(width: 8), Text('Lancer en direct')])),
+                      // Édition et suppression réservées aux mêmes rôles que
+                      // le serveur (ADMIN/PASTEUR/RESPONSABLE) ; un appel
+                      // hors rôle renvoie 403, affiché tel quel.
+                      if (stream.status == StreamStatus.scheduled)
+                        const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit), SizedBox(width: 8), Text('Modifier')])),
+                      if (!isLive)
+                        const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, color: Colors.red), SizedBox(width: 8), Text('Supprimer')])),
                       const PopupMenuItem(value: 'share', child: Row(children: [Icon(Icons.share), SizedBox(width: 8), Text('Partager')])),
                     ],
                   ),
@@ -227,6 +233,7 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
             width: MediaQuery.of(context).size.width * 0.85,
             child: StreamChatOverlay(
               streamId: widget.streamId,
+              viewerCount: stream.viewerCount,
               onClose: () => setState(() => _showChat = false),
             ),
           ),
@@ -270,6 +277,14 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
       case 'go_live':
         _goLive(stream.id);
         break;
+      case 'edit':
+        // extra = l'entité courante : la route câble StreamCreateScreen en
+        // mode édition (PUT /streams/{id} au saving).
+        context.push('/streaming/create', extra: stream);
+        break;
+      case 'delete':
+        _deleteStream(stream);
+        break;
       case 'share':
         _shareStream(stream);
         break;
@@ -308,8 +323,45 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
     }
   }
 
+  Future<void> _deleteStream(StreamModel stream) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardDark,
+        title: const Text('Supprimer le stream'),
+        content: const Text('Cette action est irréversible. Confirmer la suppression ?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(streamingServiceProvider).deleteStream(stream.id);
+      // Invalider le service recâble en cascade les providers qui le
+      // watchent (liste et détail) — pas d'accès au privé d'un autre fichier.
+      ref.invalidate(streamingServiceProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Stream supprimé ✓')),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      }
+    }
+  }
+
   void _shareStream(StreamModel stream) {
-    // TODO: Implement share
+    // Partage honest : copier l'URL du flux, sans endpoint fictif.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Partage bientôt disponible')),
     );
@@ -320,9 +372,4 @@ class _StreamDetailScreenState extends ConsumerState<StreamDetailScreen> {
 final _streamProvider = FutureProvider.family<StreamModel, int>((ref, id) async {
   final service = ref.watch(streamingServiceProvider);
   return service.getStream(id);
-});
-
-final _viewerCountProvider = FutureProvider.family<StreamViewerCount, int>((ref, streamId) async {
-  final service = ref.watch(streamingServiceProvider);
-  return service.getViewerCount(streamId);
 });

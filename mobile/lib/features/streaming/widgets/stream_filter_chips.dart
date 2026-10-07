@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
-import 'package:discipolat_mobile/features/streaming/models/stream_model.dart';
 
 class StreamFilterChips extends StatelessWidget {
   final String selectedFilter;

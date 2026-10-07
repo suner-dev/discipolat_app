@@ -207,6 +207,7 @@ import 'features/tickets/TicketDetailScreen.dart';
 import 'features/streaming/screens/streams_screen.dart';
 import 'features/streaming/screens/stream_detail_screen.dart';
 import 'features/streaming/screens/stream_create_screen.dart';
+import 'features/streaming/models/stream_model.dart';
 import 'presentation/screens/streaming/streaming_chat_screen.dart';
 import 'features/events/screens/events_screen.dart';
 import 'features/events/screens/event_detail_screen.dart';
@@ -2253,7 +2254,10 @@ final appRouter = GoRouter(
     GoRoute(
         path: '/streaming/create',
         name: 'stream-create',
-        builder: (ctx, s) => const StreamCreateScreen()),
+        // extra = StreamModel → mode édition (PUT /streams/{id}) ; null →
+        // création. Câblé en V240 : l'écran de détail pousse cet extra.
+        builder: (ctx, s) => StreamCreateScreen(
+            stream: s.extra is StreamModel ? s.extra as StreamModel : null)),
     GoRoute(
         path: '/streaming/:id/chat',
         name: 'stream-chat',

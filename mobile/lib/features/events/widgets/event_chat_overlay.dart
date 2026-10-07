@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart'
     show StreamChatMessage;
@@ -168,20 +169,12 @@ class _EventChatOverlayState extends ConsumerState<EventChatOverlay> {
   }
 
   Widget _buildMessage(StreamChatMessage msg) {
-    final isOwn = msg.isOwn;
-    final isSystem = msg.isSystem;
-
-    if (isSystem) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            msg.content,
-            style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.5), fontStyle: FontStyle.italic),
-          ),
-        ),
-      );
-    }
+    // Contrat V240 : le serveur ne renvoie ni isOwn ni isSystem sur le fil.
+    // isOwn se dérive localement en comparant senderId (UUID du JWT) à la
+    // session courante ; il n'existe pas de message « système » côté
+    // StreamChatMessage (messageType : TEXT | REACTION seulement).
+    final me = AuthState().userId;
+    final isOwn = me != null && me == msg.senderId;
 
     return Align(
       alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,

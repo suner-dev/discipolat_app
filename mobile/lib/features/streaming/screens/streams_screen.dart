@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart';
@@ -122,7 +121,9 @@ class _StreamsScreenState extends ConsumerState<StreamsScreen> with SingleTicker
               data: (liveStreams) {
                 final liveCount = liveStreams.length;
                 final currentViewers = liveStreams.fold(0, (sum, s) => sum + s.viewerCount);
-                final totalViews = allStreams.fold(0, (sum, s) => sum + s.totalViews);
+                // Le serveur ne connaît pas de « totalViews » : comme le web,
+                // on agrège le compteur de spectateurs des streams.
+                final totalViews = allStreams.fold(0, (sum, s) => sum + s.viewerCount);
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -275,9 +276,29 @@ class _StreamsScreenState extends ConsumerState<StreamsScreen> with SingleTicker
 }
 
 // Providers
+// V240 : le serveur ne prend pas de paramètre `status` sur GET /streams
+// (l'ancien client l'envoyait, il était silencieusement ignoré). Filtrage
+// client honnête — sauf « live », qui a un vrai endpoint serveur scopé.
 final _streamsProvider = FutureProvider.family<List<StreamModel>, String>((ref, filter) async {
   final service = ref.watch(streamingServiceProvider);
-  return service.getStreams(status: filter == 'all' ? null : filter.toUpperCase());
+  if (filter == 'live') {
+    return service.getLiveStreams();
+  }
+  final all = await service.getStreams();
+  if (filter == 'all') return all;
+  // Comme le web : « terminés » regroupe ENDED et CANCELLED.
+  final matches = switch (filter) {
+    'scheduled' => StreamStatus.scheduled,
+    'ended' => null,
+    _ => null,
+  };
+  if (filter == 'ended') {
+    return all.where((s) => s.status == StreamStatus.ended || s.status == StreamStatus.cancelled).toList();
+  }
+  if (matches != null) {
+    return all.where((s) => s.status == matches).toList();
+  }
+  return all;
 });
 
 final _liveStreamsProvider = FutureProvider<List<StreamModel>>((ref) async {

@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart';
 import 'package:discipolat_mobile/features/streaming/services/streaming_service.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
+/// Création/édition d'un stream — contrat V240 :
+/// - POST /streams (création) et PUT /streams/{id} (édition), corps =
+///   `StreamModel.editBody()` : le serveur ignore id/tenant/status envoyés.
+/// - La miniature est une URL saisie : le backend n'expose aucun endpoint
+///   d'upload pour ce module — un « pickers » sans destination aurait été
+///   un mensonge d'UI (l'ancien ImagePicker produisait une fausse URL
+///   picsum.photos).
 class StreamCreateScreen extends ConsumerStatefulWidget {
   final StreamModel? stream;
 
@@ -22,19 +28,22 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _streamUrlController = TextEditingController();
+  final _thumbnailUrlController = TextEditingController();
   DateTime? _scheduledAt;
-  String? _thumbnailUrl;
   bool _isLoading = false;
+
+  bool get _isEditing => widget.stream != null;
 
   @override
   void initState() {
     super.initState();
-    if (widget.stream != null) {
-      _titleController.text = widget.stream!.title;
-      _descriptionController.text = widget.stream!.description ?? '';
-      _streamUrlController.text = widget.stream!.streamUrl ?? '';
-      _scheduledAt = widget.stream!.scheduledAt;
-      _thumbnailUrl = widget.stream!.thumbnailUrl;
+    final existing = widget.stream;
+    if (existing != null) {
+      _titleController.text = existing.title;
+      _descriptionController.text = existing.description ?? '';
+      _streamUrlController.text = existing.streamUrl ?? '';
+      _thumbnailUrlController.text = existing.thumbnailUrl ?? '';
+      _scheduledAt = existing.scheduledAt;
     } else {
       _scheduledAt = DateTime.now().add(const Duration(hours: 1));
     }
@@ -45,17 +54,16 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _streamUrlController.dispose();
+    _thumbnailUrlController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.stream != null;
-
     return Scaffold(
       backgroundColor: AppColors.surfaceDark,
       appBar: AppBar(
-        title: Text(isEditing ? 'Modifier le stream' : 'Nouveau stream'),
+        title: Text(_isEditing ? 'Modifier le stream' : 'Nouveau stream'),
         backgroundColor: AppColors.cardDark,
         elevation: 0,
       ),
@@ -64,8 +72,8 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Thumbnail
-            _buildThumbnailPicker(),
+            // Thumbnail (URL — pas d'endpoint d'upload côté serveur)
+            _buildThumbnailSection(),
             const SizedBox(height: 24),
 
             // Title
@@ -167,8 +175,8 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
               onPressed: _isLoading ? null : _saveStream,
               icon: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Icon(isEditing ? Icons.save_rounded : Icons.add_rounded),
-              label: Text(isEditing ? 'Enregistrer' : 'Créer le stream'),
+                  : Icon(_isEditing ? Icons.save_rounded : Icons.add_rounded),
+              label: Text(_isEditing ? 'Enregistrer' : 'Créer le stream'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -178,7 +186,7 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
             ),
             const SizedBox(height: 16),
 
-            if (isEditing)
+            if (_isEditing)
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _deleteStream,
                 icon: const Icon(Icons.delete_rounded),
@@ -196,44 +204,46 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
     );
   }
 
-  Widget _buildThumbnailPicker() {
-    return GestureDetector(
-      onTap: _pickThumbnail,
-      child: Container(
-        height: 180,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.cardDark,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+  Widget _buildThumbnailSection() {
+    final url = _thumbnailUrlController.text.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          height: 180,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.cardDark,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: url.isEmpty
+              ? _buildPlaceholder()
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                  ),
+                ),
         ),
-        child: _thumbnailUrl != null
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      _thumbnailUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      child: IconButton(
-                        icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 20),
-                        onPressed: _pickThumbnail,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : _buildPlaceholder(),
-      ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _thumbnailUrlController,
+          decoration: InputDecoration(
+            labelText: 'URL de la miniature',
+            hintText: 'https://…/affiche.jpg (1280x720 recommandé)',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: AppColors.cardDark,
+            prefixIcon: const Icon(Icons.image_rounded),
+          ),
+          // Le champ pilote l'aperçu ci-dessus : sans rebuild, la preview
+          // resterait figée.
+          onChanged: (_) => setState(() {}),
+        ),
+      ],
     );
   }
 
@@ -244,7 +254,7 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
         Icon(Icons.image_outlined, size: 48, color: AppColors.primary.withOpacity(0.5)),
         const SizedBox(height: 8),
         Text(
-          'Ajouter une miniature',
+          'Aucune miniature',
           style: TextStyle(color: AppColors.surface.withOpacity(0.7)),
         ),
         const SizedBox(height: 4),
@@ -325,19 +335,6 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
     }
   }
 
-  Future<void> _pickThumbnail() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1280, maxHeight: 720, imageQuality: 85);
-
-    if (image != null) {
-      // TODO: Upload to server and get URL
-      // For now, use a placeholder
-      setState(() {
-        _thumbnailUrl = 'https://picsum.photos/seed/${DateTime.now().millisecondsSinceEpoch}/1280/720';
-      });
-    }
-  }
-
   Future<void> _saveStream() async {
     if (!_formKey.currentState!.validate()) return;
     if (_scheduledAt == null) {
@@ -350,33 +347,30 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final stream = StreamModel(
+      final draft = StreamModel(
         id: widget.stream?.id ?? 0,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
-        status: StreamStatus.scheduled,
         streamUrl: _streamUrlController.text.trim(),
-        thumbnailUrl: _thumbnailUrl,
-        scheduledAt: _scheduledAt!,
-        createdAt: DateTime.now(),
-        viewerCount: 0,
-        totalViews: 0,
+        thumbnailUrl: _thumbnailUrlController.text.trim().isEmpty ? null : _thumbnailUrlController.text.trim(),
+        scheduledAt: _scheduledAt,
       );
+      final body = draft.editBody();
 
-      if (widget.stream != null) {
-        // TODO: Implement update
-        // await ref.read(streamingServiceProvider).updateStream(widget.stream!.id, stream);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Modification bientôt disponible')),
-        );
+      final service = ref.read(streamingServiceProvider);
+      if (_isEditing) {
+        await service.updateStream(widget.stream!.id, body);
       } else {
-        await ref.read(streamingServiceProvider).createStream(stream);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Stream créé avec succès ✓')),
-          );
-          context.pop();
-        }
+        await service.createStream(body);
+      }
+      // Rafraîchir les listes dès que le détail/la liste sera re-watché.
+      ref.invalidate(streamingServiceProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isEditing ? 'Stream mis à jour ✓' : 'Stream créé avec succès ✓')),
+        );
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -390,6 +384,9 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
   }
 
   Future<void> _deleteStream() async {
+    final existing = widget.stream;
+    if (existing == null) return;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -407,14 +404,27 @@ class _StreamCreateScreenState extends ConsumerState<StreamCreateScreen> {
       ),
     );
 
-    if (confirm == true && widget.stream != null) {
-      // TODO: Implement delete
-      // await ref.read(streamingServiceProvider).deleteStream(widget.stream!.id);
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(streamingServiceProvider).deleteStream(existing.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Suppression bientôt disponible')),
+          const SnackBar(content: Text('Stream supprimé ✓')),
+        );
+        // On sort de l'écran d'édition PUIS de l'écran de détail (2 niveaux
+        // mènent vers ce formulaire : liste et détail).
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }

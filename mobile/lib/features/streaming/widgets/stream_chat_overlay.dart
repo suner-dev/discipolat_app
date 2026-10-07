@@ -2,17 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/streaming/models/stream_model.dart';
 import 'package:discipolat_mobile/features/streaming/services/streaming_service.dart';
 
 class StreamChatOverlay extends ConsumerStatefulWidget {
   final int streamId;
+
+  /// Spectateurs : `LiveStream.viewerCount` passé par l'écran détail
+  /// (contrat serveur V240). L'endpoint /stream-chat/{id}/count compte des
+  /// messages, pas des spectateurs — il n'est plus utilisé comme badge ici.
+  final int viewerCount;
   final VoidCallback onClose;
 
   const StreamChatOverlay({
     super.key,
     required this.streamId,
+    required this.viewerCount,
     required this.onClose,
   });
 
@@ -34,7 +41,6 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(_messagesProvider(widget.streamId));
-    final viewersAsync = ref.watch(_viewerCountProvider(widget.streamId));
 
     return Container(
       decoration: BoxDecoration(
@@ -65,8 +71,8 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
-                viewersAsync.when(
-                  data: (count) => Container(
+                if (widget.viewerCount > 0)
+                  Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
@@ -78,15 +84,12 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
                         Icon(Icons.remove_red_eye, size: 12, color: Colors.red),
                         const SizedBox(width: 4),
                         Text(
-                          count.count.toString(),
+                          widget.viewerCount.toString(),
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red),
                         ),
                       ],
                     ),
                   ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
                   onPressed: widget.onClose,
@@ -218,22 +221,16 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
     );
   }
 
-  Widget _buildMessage(StreamChatMessage msg) {
-    final isOwn = msg.isOwn;
-    final isReaction = msg.messageType == 'REACTION';
-    final isSystem = msg.isSystem;
+  // Le serveur ne connaît ni « isSystem » ni « isOwn » sur le fil : isOwn se
+  // dérive en comparant senderId (UUID serveur) à l'utilisateur connecté.
+  bool _isOwn(StreamChatMessage msg) {
+    final me = AuthState().userId;
+    return me != null && msg.senderId != null && msg.senderId == me;
+  }
 
-    if (isSystem) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            msg.content,
-            style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.5), fontStyle: FontStyle.italic),
-          ),
-        ),
-      );
-    }
+  Widget _buildMessage(StreamChatMessage msg) {
+    final isOwn = _isOwn(msg);
+    final isReaction = msg.messageType == 'REACTION';
 
     if (isReaction) {
       return Align(
@@ -312,13 +309,25 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
     );
   }
 
+  // Le nom affiché en séance = celui du compte (JWT), jamais un « Vous »
+  // inventé que le serveur stockerait comme senderName. Si le profil est
+  // incomplet, on laisse le serveur appliquer son défaut « Utilisateur ».
+  String? get _senderName {
+    final auth = AuthState();
+    final name = [auth.firstName, auth.lastName]
+        .where((e) => e != null && e.isNotEmpty)
+        .join(' ');
+    return name.isEmpty ? null : name;
+  }
+
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     _controller.clear();
     try {
-      await ref.read(streamingServiceProvider).sendChatMessage(widget.streamId, text);
+      await ref.read(streamingServiceProvider)
+          .sendChatMessage(widget.streamId, text, senderName: _senderName);
       ref.invalidate(_messagesProvider(widget.streamId));
     } catch (e) {
       if (mounted) {
@@ -329,7 +338,8 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
 
   Future<void> _sendReaction(String emoji) async {
     try {
-      await ref.read(streamingServiceProvider).sendChatMessage(widget.streamId, emoji, emoji: emoji);
+      await ref.read(streamingServiceProvider).sendChatMessage(widget.streamId, emoji,
+          emoji: emoji, senderName: _senderName);
       ref.invalidate(_messagesProvider(widget.streamId));
     } catch (e) {
       if (mounted) {
@@ -343,9 +353,4 @@ class _StreamChatOverlayState extends ConsumerState<StreamChatOverlay> {
 final _messagesProvider = FutureProvider.family<List<StreamChatMessage>, int>((ref, streamId) async {
   final service = ref.watch(streamingServiceProvider);
   return service.getChatMessages(streamId);
-});
-
-final _viewerCountProvider = FutureProvider.family<StreamViewerCount, int>((ref, streamId) async {
-  final service = ref.watch(streamingServiceProvider);
-  return service.getViewerCount(streamId);
 });

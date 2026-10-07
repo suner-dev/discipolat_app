@@ -136,14 +136,15 @@ class StreamCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  // Meta info
+                  // Meta info — scheduledAt/startedAt sont nullables
+                  // (colonne serveur), jamais d'accès forcé.
                   Row(
                     children: [
                       if (stream.scheduledAt != null) ...[
                         Icon(Icons.schedule_rounded, size: 14, color: AppColors.surface.withOpacity(0.7)),
                         const SizedBox(width: 4),
                         Text(
-                          DateFormat('dd/MM/yyyy HH:mm').format(stream.scheduledAt.toLocal()),
+                          DateFormat('dd/MM/yyyy HH:mm').format(stream.scheduledAt!.toLocal()),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.surface.withOpacity(0.7),
                           ),
