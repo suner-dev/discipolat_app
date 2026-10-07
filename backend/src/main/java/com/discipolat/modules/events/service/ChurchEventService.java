@@ -327,6 +327,15 @@ public class ChurchEventService {
         return eventTeamRepository.findByChurchEventId(eventId);
     }
 
+    /** Supprime une équipe d'événement — double scope tenant + événement (anti-IDOR). */
+    @Transactional
+    public void deleteTeam(UUID tenantId, UUID eventId, UUID teamId) {
+        getChurchEvent(tenantId, eventId);
+        EventTeam team = eventTeamRepository.findByTenantIdAndChurchEventIdAndId(tenantId, eventId, teamId)
+                .orElseThrow(() -> new EntityNotFoundException("EventTeam", teamId));
+        eventTeamRepository.delete(team);
+    }
+
     // ========== EVENT TASKS ==========
 
     public EventTask createTask(UUID tenantId, UUID eventId, EventTask task) {

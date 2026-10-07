@@ -2,7 +2,9 @@ package com.discipolat.modules.inventory.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,13 @@ class InventoryServiceTest {
         service = new InventoryService(repository, auditService, propagationPublisher, propagationListener, securityUtils);
         tenantId = UUID.randomUUID();
         itemId = UUID.randomUUID();
+        // findById est désormais scopé tenant (anti-IDOR) : le contexte doit être posé.
+        TenantContext.setTenantId(tenantId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     // ==================== CREATE ====================
@@ -92,7 +101,7 @@ class InventoryServiceTest {
     void findById_ExistingItem_ReturnsItem() {
         InventoryItem item = buildItem("Micro", "TECHNIQUE");
         item.setId(itemId);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
 
         InventoryItem result = service.findById(itemId);
 
@@ -101,7 +110,7 @@ class InventoryServiceTest {
 
     @Test
     void findById_NonExistingItem_ThrowsException() {
-        when(repository.findById(any())).thenReturn(Optional.empty());
+        when(repository.findByTenantIdAndId(any(), any())).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> service.findById(itemId));
     }
@@ -166,7 +175,7 @@ class InventoryServiceTest {
     void update_ExistingItem_UpdatesAllFields() {
         InventoryItem existing = buildItem("Old Name", "MATERIEL");
         existing.setId(itemId);
-        when(repository.findById(itemId)).thenReturn(Optional.of(existing));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem update = buildItem("New Name", "TECHNIQUE");
@@ -194,7 +203,7 @@ class InventoryServiceTest {
 
     @Test
     void update_NonExistingItem_ThrowsException() {
-        when(repository.findById(any())).thenReturn(Optional.empty());
+        when(repository.findByTenantIdAndId(any(), any())).thenReturn(Optional.empty());
         InventoryItem update = buildItem("X", "X");
 
         assertThrows(EntityNotFoundException.class, () -> service.update(itemId, update));
@@ -206,7 +215,7 @@ class InventoryServiceTest {
     void delete_ExistingItem_DeletesAndAudits() {
         InventoryItem item = buildItem("Micro", "TECHNIQUE");
         item.setId(itemId);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         doNothing().when(repository).deleteById(itemId);
 
         service.delete(itemId);
@@ -223,7 +232,7 @@ class InventoryServiceTest {
         item.setId(itemId);
         item.setStatut("DISPONIBLE");
         item.setQuantiteDisponible(3);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UUID memberId = UUID.randomUUID();
@@ -240,7 +249,7 @@ class InventoryServiceTest {
         InventoryItem item = buildItem("Micro", "TECHNIQUE");
         item.setId(itemId);
         item.setQuantiteDisponible(0);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
 
         assertThrows(IllegalStateException.class, () -> service.assign(itemId, UUID.randomUUID()));
     }
@@ -250,7 +259,7 @@ class InventoryServiceTest {
         InventoryItem item = buildItem("Micro", "TECHNIQUE");
         item.setId(itemId);
         item.setQuantiteDisponible(null);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
 
         assertThrows(IllegalStateException.class, () -> service.assign(itemId, UUID.randomUUID()));
     }
@@ -264,7 +273,7 @@ class InventoryServiceTest {
         item.setStatut("AFFECTE");
         item.setAffecteAId(UUID.randomUUID());
         item.setQuantiteDisponible(2);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem result = service.unassign(itemId);
@@ -281,7 +290,7 @@ class InventoryServiceTest {
         item.setId(itemId);
         item.setStatut("AFFECTE");
         item.setQuantiteDisponible(null);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem result = service.unassign(itemId);
@@ -296,7 +305,7 @@ class InventoryServiceTest {
         InventoryItem item = buildItem("Micro", "TECHNIQUE");
         item.setId(itemId);
         item.setStatut("DISPONIBLE");
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem result = service.markMaintenance(itemId);
@@ -373,7 +382,7 @@ class InventoryServiceTest {
         item.setStatut("AFFECTE");
         item.setAffecteAId(UUID.randomUUID());
         item.setQuantiteDisponible(5);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UUID newMember = UUID.randomUUID();
@@ -390,7 +399,7 @@ class InventoryServiceTest {
         item.setStatut("DISPONIBLE");
         item.setAffecteAId(null);
         item.setQuantiteDisponible(5);
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem result = service.unassign(itemId);
@@ -405,7 +414,7 @@ class InventoryServiceTest {
         item.setId(itemId);
         item.setStatut("EN_MAINTENANCE");
         item.setDerniereMaintenance(LocalDateTime.now().minusDays(10));
-        when(repository.findById(itemId)).thenReturn(Optional.of(item));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(item));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem result = service.markMaintenance(itemId);
@@ -456,7 +465,7 @@ class InventoryServiceTest {
     void update_AllFieldsUpdatable() {
         InventoryItem existing = buildItem("Old", "MATERIEL");
         existing.setId(itemId);
-        when(repository.findById(itemId)).thenReturn(Optional.of(existing));
+        when(repository.findByTenantIdAndId(tenantId, itemId)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         InventoryItem update = buildItem("New", "TECHNIQUE");

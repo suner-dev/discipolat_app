@@ -154,6 +154,13 @@ public class ChurchEventController {
         return ResponseEntity.ok(churchEventService.getEventTeams(eventId));
     }
 
+    @DeleteMapping("/{eventId}/teams/{teamId}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable UUID eventId, @PathVariable UUID teamId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        churchEventService.deleteTeam(tenantId, eventId, teamId);
+        return ResponseEntity.noContent().build();
+    }
+
     // ========== TASKS ==========
 
     @PostMapping("/{eventId}/tasks")

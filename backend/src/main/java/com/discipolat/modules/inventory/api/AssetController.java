@@ -126,6 +126,13 @@ public class AssetController {
         return ResponseEntity.ok(checkouts);
     }
 
+    /** Historique des prêts d'un objet donné — scopé tenant (anti-IDOR). */
+    @GetMapping("/{itemId}/checkouts")
+    public ResponseEntity<List<AssetCheckout>> listItemCheckouts(@PathVariable UUID itemId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(checkoutRepository.findByTenantIdAndItemId(tenantId, itemId));
+    }
+
     // ==================== G5.6 — photo de dommage (mobile terrain) ====================
 
     /**

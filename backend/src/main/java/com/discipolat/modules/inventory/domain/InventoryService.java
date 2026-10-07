@@ -4,6 +4,7 @@ import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationListener;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,7 +42,10 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public InventoryItem findById(UUID id) {
-        return repository.findById(id)
+        // Anti-IDOR : la lookup est TOUJOURS scopée sur le tenant courant. Les
+        // appels en écriture (update/delete/assign/unassign/markMaintenance)
+        // passent par cette méthode — ils héritent donc de l'isolation tenant.
+        return repository.findByTenantIdAndId(TenantContext.requireTenantId(), id)
                 .orElseThrow(() -> new EntityNotFoundException("InventoryItem", id));
     }
 
