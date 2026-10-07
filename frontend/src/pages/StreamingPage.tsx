@@ -11,8 +11,9 @@ import EmptyState from '@/components/shared/EmptyState';
 import StreamingChat from '@/pages/StreamingChat';
 
 import { tText } from '@/i18n';
+// V240 : id BIGSERIAL côté serveur (number), plus string.
 interface Stream {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   status: string;
@@ -31,25 +32,37 @@ const STATUS_LABEL: Record<string, string> = {
 export default function StreamingPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const tenantId = Number(localStorage.getItem('tenantId') || localStorage.getItem('orgId') || 0);
   const [filter, setFilter] = useState<'all' | 'live' | 'scheduled' | 'ended'>('all');
   const [showChat, setShowChat] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
   const { data: streams = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['streams', tenantId],
-    queryFn: async () => (await api.get('/streams', { params: { tenantId } })).data as Stream[],
-    enabled: tenantId > 0,
+    queryKey: ['streams'],
+    // V240 : plus de tenantId envoyé par le client (faille IDOR corrigée
+    // serveur) — le tenant est dérivé du JWT, la requête est toujours valide.
+    queryFn: async () => (await api.get('/streams')).data as Stream[],
     retry: false,
   });
 
+  const createMutation = useMutation({
+    mutationFn: async (body: { title: string; description: string; streamUrl: string; scheduledAt: string }) =>
+      (await api.post('/streams', body)).data,
+    onSuccess: () => {
+      toast.success(tText('Stream planifié'));
+      setShowCreate(false);
+      queryClient.invalidateQueries({ queryKey: ['streams'] });
+    },
+    onError: (e: unknown) => toast.error(getErrorMessage(e)),
+  });
+
   const goLiveMutation = useMutation({
-    mutationFn: async (id: string) => (await api.post(`/streams/${id}/go-live`)).data,
+    mutationFn: async (id: number) => (await api.post(`/streams/${id}/go-live`)).data,
     onSuccess: () => { toast.success(tText('Stream lancé en direct')); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
 
   const endMutation = useMutation({
-    mutationFn: async (id: string) => (await api.post(`/streams/${id}/end`)).data,
+    mutationFn: async (id: number) => (await api.post(`/streams/${id}/end`)).data,
     onSuccess: () => { toast.success(tText('Stream terminé')); queryClient.invalidateQueries({ queryKey: ['streams'] }); },
     onError: (e: unknown) => toast.error(getErrorMessage(e)),
   });
@@ -84,12 +97,20 @@ export default function StreamingPage() {
           <button onClick={() => refetch()} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 text-gray-500 text-sm hover:bg-white/10 transition">
             <RefreshCw className="w-4 h-4" /> Actualiser
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition">
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition">
             <Plus className="w-4 h-4" />
             {tText('Nouveau stream')}
           </button>
         </div>
       </div>
+
+      {showCreate && (
+        <CreateStreamModal
+          onClose={() => setShowCreate(false)}
+          onSubmit={(body) => createMutation.mutate(body)}
+          submitting={createMutation.isPending}
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass rounded-2xl p-5 border border-white/20 dark:border-white/[0.06]">
@@ -142,7 +163,7 @@ export default function StreamingPage() {
           <MessageCircle className="w-4 h-4" /> Chat en direct {showChat ? '✓' : ''}
         </button>
       </div>
-      {showChat && <StreamingChat />}
+      {showChat && <StreamingChat streamId={liveStreams[0]?.id} />}
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -167,6 +188,12 @@ export default function StreamingPage() {
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{stream.title}</h3>
                 <p className="text-xs text-gray-500 mt-1 line-clamp-2">{stream.description}</p>
+                {stream.status === 'live' && stream.streamUrl && (
+                  <a href={stream.streamUrl} target="_blank" rel="noopener noreferrer"
+                    className="mt-2 flex items-center gap-1 text-xs text-purple-500 hover:underline">
+                    <Play className="w-3 h-3" /> Regarder le direct
+                  </a>
+                )}
                 <div className="flex items-center justify-between mt-3">
                   {stream.status === 'live' ? (
                     <span className="flex items-center gap-1 text-xs text-red-500"><Users className="w-3 h-3" /> {stream.viewerCount || 0} spectateurs</span>
@@ -198,6 +225,70 @@ export default function StreamingPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * V240 : formulaire de planification. Le tenant et le créateur sont forcés
+ * serveur (JWT) — le body ne porte que les champs éditables.
+ */
+function CreateStreamModal({ onClose, onSubmit, submitting }: {
+  onClose: () => void;
+  onSubmit: (body: { title: string; description: string; streamUrl: string; scheduledAt: string }) => void;
+  submitting: boolean;
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [streamUrl, setStreamUrl] = useState('');
+  const [scheduledAt, setScheduledAt] = useState('');
+
+  const valid = title.trim().length > 0 && streamUrl.trim().length > 0 && scheduledAt.length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="glass rounded-2xl w-full max-w-lg p-6 space-y-4 border border-white/20 dark:border-white/[0.06] bg-white dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Radio className="w-5 h-5 text-purple-500" /> {tText('Nouveau stream')}
+        </h2>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{tText('Titre')} *</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-sm outline-none focus:ring-2 focus:ring-purple-500/20" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{tText('Description')}</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-sm outline-none focus:ring-2 focus:ring-purple-500/20" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">URL du flux (YouTube/Facebook…) *</label>
+          <input value={streamUrl} onChange={(e) => setStreamUrl(e.target.value)} placeholder="https://…"
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-sm outline-none focus:ring-2 focus:ring-purple-500/20" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{tText('Date prévue')} *</label>
+          <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-sm outline-none focus:ring-2 focus:ring-purple-500/20" />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm text-gray-500 hover:bg-white/10">
+            {tText('Annuler')}
+          </button>
+          <button onClick={() => onSubmit({
+              title: title.trim(),
+              description: description.trim(),
+              streamUrl: streamUrl.trim(),
+              // LiveStream.scheduledAt est un LocalDateTime serveur : format ISO local sans fuseau.
+              scheduledAt: scheduledAt.length > 0 ? `${scheduledAt}:00` : '',
+            })}
+            disabled={!valid || submitting}
+            className="px-4 py-2 rounded-xl bg-purple-500 text-white text-sm font-medium hover:bg-purple-600 transition disabled:opacity-50">
+            {submitting ? '…' : tText('Planifier')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
