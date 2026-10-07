@@ -1,6 +1,7 @@
 package com.discipolat.modules.voicenotifications.config;
 
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.common.multitenancy.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
@@ -115,7 +116,30 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             authorizeSubscribe(accessor, message);
         }
 
+        // V240 — propager le TenantContext (ThreadLocal) sur le fil qui traite
+        // la frame. Sans cela, les services appelés depuis un handler STOMP
+        // (ex. StreamChatMessageService.send) ne voient aucun tenant.
+        // La valeur vient de l'attribut de SESSION posé au CONNECT après
+        // validation JWT — pas d'un header de frame, non fiable.
+        if (StompCommand.SEND.equals(accessor.getCommand()) || StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+            Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+            String sessionTenant = sessionAttributes == null ? null : (String) sessionAttributes.get("wsTenantId");
+            if (sessionTenant != null) {
+                try {
+                    TenantContext.setTenantId(UUID.fromString(sessionTenant));
+                } catch (IllegalArgumentException e) {
+                    log.warn("[WebSocket] wsTenantId de session illisible: {}", e.getMessage());
+                }
+            }
+        }
+
         return message;
+    }
+
+    @Override
+    public void afterSendCompletion(Message<?> message, MessageChannel channel, boolean sent, Exception ex) {
+        // ThreadLocal du canal inbound réutilisé par le pool : toujours nettoyer.
+        TenantContext.clear();
     }
 
     /**

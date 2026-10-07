@@ -8,7 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface StreamChatMessageRepository extends JpaRepository<StreamChatMessage, UUID> {
-    List<StreamChatMessage> findByStreamIdOrderByCreatedAtAsc(Long streamId);
     List<StreamChatMessage> findByStreamIdAndTenantIdOrderByCreatedAtAsc(Long streamId, UUID tenantId);
-    long countByStreamId(Long streamId);
+    long countByStreamIdAndTenantId(Long streamId, UUID tenantId);
 }

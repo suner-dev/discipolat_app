@@ -28,11 +28,14 @@ public class LiveStream {
     @Enumerated(EnumType.STRING)
     private StreamStatus status = StreamStatus.SCHEDULED;
 
-    @Column(name = "tenant_id", nullable = false)
-    private Long tenantId;
+    // V240 : association tenant UUID (FK tenants.id). Forcé serveur depuis
+    // TenantContext, jamais depuis le corps/paramètre de la requête.
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private UUID tenantId;
 
-    @Column(name = "created_by", nullable = false)
-    private Long createdBy;
+    // V240 : UUID FK users.id, forcé serveur depuis le JWT à la création.
+    @Column(name = "created_by", updatable = false)
+    private UUID createdBy;
 
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
@@ -74,10 +77,10 @@ public class LiveStream {
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
     public StreamStatus getStatus() { return status; }
     public void setStatus(StreamStatus status) { this.status = status; }
-    public Long getTenantId() { return tenantId; }
-    public void setTenantId(Long tenantId) { this.tenantId = tenantId; }
-    public Long getCreatedBy() { return createdBy; }
-    public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public UUID getCreatedBy() { return createdBy; }
+    public void setCreatedBy(UUID createdBy) { this.createdBy = createdBy; }
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
     public LocalDateTime getStartedAt() { return startedAt; }

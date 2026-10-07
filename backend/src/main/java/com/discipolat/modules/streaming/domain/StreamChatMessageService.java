@@ -1,5 +1,6 @@
 package com.discipolat.modules.streaming.domain;
 
+import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.multitenancy.TenantContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,20 +13,30 @@ import java.util.UUID;
 public class StreamChatMessageService {
 
     private final StreamChatMessageRepository repository;
+    private final LiveStreamRepository liveStreamRepository;
 
-    public StreamChatMessageService(StreamChatMessageRepository repository) {
+    public StreamChatMessageService(StreamChatMessageRepository repository,
+                                    LiveStreamRepository liveStreamRepository) {
         this.repository = repository;
+        this.liveStreamRepository = liveStreamRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<StreamChatMessage> listByStream(Long streamId) {
-        UUID tenantId = TenantContext.getCurrentTenantId();
+        UUID tenantId = TenantContext.requireTenantId();
         return repository.findByStreamIdAndTenantIdOrderByCreatedAtAsc(streamId, tenantId);
     }
 
     public StreamChatMessage send(Long streamId, UUID senderId, String senderName, String content, String emoji) {
+        UUID tenantId = TenantContext.requireTenantId();
+        // Anti-IDOR : interdit d'écrire dans le chat d'un stream qui
+        // n'appartient pas au tenant courant (404, sans fuiter l'existence).
+        liveStreamRepository.findByIdAndTenantId(streamId, tenantId)
+                .orElseThrow(() -> new EntityNotFoundException("LiveStream", "id", String.valueOf(streamId)));
+
         StreamChatMessage msg = new StreamChatMessage();
         msg.setStreamId(streamId);
-        msg.setTenantId(TenantContext.getCurrentTenantId());
+        msg.setTenantId(tenantId);
         msg.setSenderId(senderId);
         msg.setSenderName(senderName);
         msg.setContent(content);
@@ -34,7 +45,9 @@ public class StreamChatMessageService {
         return repository.save(msg);
     }
 
+    @Transactional(readOnly = true)
     public long countByStream(Long streamId) {
-        return repository.countByStreamId(streamId);
+        UUID tenantId = TenantContext.requireTenantId();
+        return repository.countByStreamIdAndTenantId(streamId, tenantId);
     }
 }
