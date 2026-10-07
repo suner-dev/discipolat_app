@@ -15,4 +15,7 @@ public interface FinanceBudgetRepository extends JpaRepository<FinanceBudget, UU
     List<FinanceBudget> findByDeletedFalseAndAnneeOrderByCategorieAsc(Integer annee);
 
     Optional<FinanceBudget> findByDeletedFalseAndAnneeAndCategorie(Integer annee, String categorie);
+
+    /** Chargement par clé ET tenant : findById (identity map) ne passe PAS par le filtre Hibernate. */
+    Optional<FinanceBudget> findByTenantIdAndId(UUID tenantId, UUID id);
 }

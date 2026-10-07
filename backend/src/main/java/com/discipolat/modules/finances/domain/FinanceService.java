@@ -250,6 +250,40 @@ public class FinanceService {
         }).toList();
     }
 
+    /** Détail d'un budget par identifiant, consommation calculée sur les dépenses réelles de l'année. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getBudget(UUID tenantId, UUID id) {
+        // findById ne passe pas par @Filter (chargement par identité) : la
+        // clé est revue avec le tenant, sinon un budget d'un autre tenant
+        // serait lu (IDOR).
+        FinanceBudget b = budgetRepository.findByTenantIdAndId(tenantId, id)
+                .filter(x -> !x.isDeleted())
+                .orElseThrow(() -> new EntityNotFoundException("FinanceBudget", id));
+        LocalDate debut = LocalDate.of(b.getAnnee(), 1, 1);
+        LocalDate fin = LocalDate.of(b.getAnnee(), 12, 31);
+        BigDecimal depense = transactionRepository
+                .findByDeletedFalseAndTypeAndDateTransactionBetween(
+                        FinanceTransaction.TransactionType.DEPENSE, debut, fin)
+                .stream()
+                .filter(t -> b.getCategorie().equals(t.getCategorie()))
+                .map(FinanceTransaction::getMontant)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal pct = b.getMontant().signum() == 0
+                ? BigDecimal.ZERO
+                : depense.multiply(BigDecimal.valueOf(100)).divide(b.getMontant(), 1, RoundingMode.HALF_UP);
+        String statut = pct.compareTo(BigDecimal.valueOf(100)) >= 0 ? "DEPASSE"
+                : pct.compareTo(BigDecimal.valueOf(75)) >= 0 ? "ALERTE" : "OK";
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", b.getId());
+        map.put("categorie", b.getCategorie());
+        map.put("annee", b.getAnnee());
+        map.put("montant", b.getMontant());
+        map.put("depenseReelle", depense);
+        map.put("consommationPct", pct);
+        map.put("statut", statut);
+        return map;
+    }
+
     /** Crée ou met à jour le budget d'une catégorie pour une année (upsert). */
     public Map<String, Object> upsertBudget(FinanceBudgetRequest request) {
         Optional<FinanceBudget> existing = budgetRepository
@@ -290,8 +324,11 @@ public class FinanceService {
         return map;
     }
 
-    public void deleteBudget(UUID id) {
-        FinanceBudget budget = budgetRepository.findById(id)
+    public void deleteBudget(UUID tenantId, UUID id) {
+        // Même règle que getBudget : findById ne passe pas par @Filter ;
+        // sans re-vérification du tenant, un soft delete était possible
+        // sur le budget d'un autre tenant (IDOR en écriture).
+        FinanceBudget budget = budgetRepository.findByTenantIdAndId(tenantId, id)
                 .orElseThrow(() -> new EntityNotFoundException("FinanceBudget", id));
         budget.setDeleted(true);
         // ===== PROPAGATION CENTRALISÉE =====
@@ -650,6 +687,30 @@ public class FinanceService {
             v.put("isActive", m.isActive());
             return v;
         }).toList();
+    }
+
+    /** Ajoute un membre à une tontine (tenant + tontine revérifiés, anti-IDOR). */
+    public Map<String, Object> createTontineMember(UUID tenantId, UUID tontineId, Map<String, Object> body) {
+        tontineRepository.findByTenantIdAndId(tenantId, tontineId)
+                .orElseThrow(() -> new com.discipolat.common.domain.EntityNotFoundException("FinanceTontine", "id", tontineId.toString()));
+        UUID userId = UUID.fromString(String.valueOf(body.get("userId")));
+        int turnOrder = body.get("turnOrder") != null ? Integer.parseInt(String.valueOf(body.get("turnOrder"))) : 0;
+        FinanceTontineMember member = FinanceTontineMember.builder()
+                .tenantId(tenantId)
+                .tontineId(tontineId)
+                .userId(userId)
+                .turnOrder(turnOrder)
+                .isActive(true)
+                .build();
+        FinanceTontineMember saved = tontineMemberRepository.save(member);
+        Map<String, Object> v = new LinkedHashMap<>();
+        v.put("id", saved.getId());
+        v.put("tontineId", saved.getTontineId());
+        v.put("userId", saved.getUserId());
+        v.put("joinedAt", saved.getJoinedAt().toString());
+        v.put("turnOrder", saved.getTurnOrder());
+        v.put("isActive", saved.isActive());
+        return v;
     }
 
     public List<Map<String, Object>> listTontinePayouts(UUID tenantId, UUID tontineId) {

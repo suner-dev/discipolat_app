@@ -86,9 +86,16 @@ public class FinanceController {
         return ResponseEntity.ok(financeService.upsertBudget(request));
     }
 
+    @GetMapping("/budgets/{id}")
+    public ResponseEntity<Map<String, Object>> getBudget(@PathVariable UUID id) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.ok(financeService.getBudget(tenantId, id));
+    }
+
     @DeleteMapping("/budgets/{id}")
     public ResponseEntity<Void> deleteBudget(@PathVariable UUID id) {
-        financeService.deleteBudget(id);
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        financeService.deleteBudget(tenantId, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -199,6 +206,13 @@ public class FinanceController {
     public ResponseEntity<List<Map<String, Object>>> listTontineMembers(@PathVariable UUID tontineId) {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
         return ResponseEntity.ok(financeService.listTontineMembers(tenantId, tontineId));
+    }
+
+    @PostMapping("/tontines/{tontineId}/members")
+    public ResponseEntity<Map<String, Object>> createTontineMember(@PathVariable UUID tontineId,
+                                                                   @RequestBody Map<String, Object> body) {
+        UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
+        return ResponseEntity.status(HttpStatus.CREATED).body(financeService.createTontineMember(tenantId, tontineId, body));
     }
 
     @GetMapping("/tontines/{tontineId}/payouts")
