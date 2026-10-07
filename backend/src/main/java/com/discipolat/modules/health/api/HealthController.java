@@ -15,7 +15,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,43 +31,50 @@ public class HealthController {
     }
 
     // ========== PATIENT RECORDS ==========
+    // Vues aplaties (V240) : les entités portent des @ManyToOne LAZY dont la
+    // sérialisation directe était partielle ou dangereuse ; le contrat client
+    // est désormais {personId, personName, ...}. Les entités restent le type
+    // d'@RequestBody (le mobile envoie `person: {id}`) mais la réponse est
+    // toujours une Map stable.
 
     @GetMapping("/patients")
-    public ResponseEntity<PageResponse<PatientRecord>> getPatients(
+    public ResponseEntity<PageResponse<Map<String, Object>>> getPatients(
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("createdAt").descending());
-        Page<PatientRecord> result = healthService.getPatientRecords(tenantId, pageable);
+        Page<Map<String, Object>> result = healthService.patientViews(tenantId, pageable);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/patients/{id}")
-    public ResponseEntity<PatientRecord> getPatient(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getPatient(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getPatientRecord(tenantId, id));
+        return ResponseEntity.ok(healthService.patientView(tenantId, id));
     }
 
     @PostMapping("/patients")
-    public ResponseEntity<PatientRecord> createPatient(@RequestBody PatientRecord patient) {
+    public ResponseEntity<Map<String, Object>> createPatient(@RequestBody PatientRecord patient) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.createPatientRecord(tenantId, actorId, patient));
+        return ResponseEntity.ok(healthService.patientView(tenantId,
+                healthService.createPatientRecord(tenantId, actorId, patient).getId()));
     }
 
     @PutMapping("/patients/{id}")
-    public ResponseEntity<PatientRecord> updatePatient(@PathVariable UUID id, @RequestBody PatientRecord updates) {
+    public ResponseEntity<Map<String, Object>> updatePatient(@PathVariable UUID id, @RequestBody PatientRecord updates) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.updatePatientRecord(tenantId, actorId, id, updates));
+        healthService.updatePatientRecord(tenantId, actorId, id, updates);
+        return ResponseEntity.ok(healthService.patientView(tenantId, id));
     }
 
     // ========== MEDICAL CONSULTATIONS ==========
 
     @GetMapping("/consultations")
-    public ResponseEntity<PageResponse<MedicalConsultation>> getConsultations(
+    public ResponseEntity<PageResponse<Map<String, Object>>> getConsultations(
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -76,51 +82,54 @@ public class HealthController {
             @RequestParam(defaultValue = "20") int size) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("consultationDate").descending());
-        Page<MedicalConsultation> result = healthService.getConsultations(tenantId, patientId, from, to, pageable);
+        Page<Map<String, Object>> result = healthService.consultationViews(tenantId, patientId, from, to, pageable);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/consultations/{id}")
-    public ResponseEntity<MedicalConsultation> getConsultation(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getConsultation(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getConsultation(tenantId, id));
+        return ResponseEntity.ok(healthService.consultationView(tenantId, id));
     }
 
     @PostMapping("/consultations")
-    public ResponseEntity<MedicalConsultation> createConsultation(@RequestBody MedicalConsultation consultation) {
+    public ResponseEntity<Map<String, Object>> createConsultation(@RequestBody MedicalConsultation consultation) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.createConsultation(tenantId, actorId, consultation));
+        MedicalConsultation saved = healthService.createConsultation(tenantId, actorId, consultation);
+        return ResponseEntity.ok(healthService.consultationView(tenantId, saved.getId()));
     }
 
     // ========== PRESCRIPTIONS ==========
 
     @GetMapping("/prescriptions")
-    public ResponseEntity<PageResponse<Prescription>> getPrescriptions(
+    public ResponseEntity<PageResponse<Map<String, Object>>> getPrescriptions(
             @RequestParam(required = false) UUID patientId,
             @RequestParam(required = false) UUID consultationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("createdAt").descending());
-        Page<Prescription> result = healthService.getPrescriptions(tenantId, patientId, consultationId, pageable);
+        Page<Map<String, Object>> result = healthService.prescriptionViews(tenantId, patientId, consultationId, pageable);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/prescriptions/{id}")
-    public ResponseEntity<Prescription> getPrescription(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getPrescription(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getPrescription(tenantId, id));
+        return ResponseEntity.ok(healthService.prescriptionView(tenantId, id));
     }
 
     @PostMapping("/prescriptions")
-    public ResponseEntity<Prescription> createPrescription(@RequestBody Prescription prescription) {
+    public ResponseEntity<Map<String, Object>> createPrescription(@RequestBody Prescription prescription) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.createPrescription(tenantId, actorId, prescription));
+        Prescription saved = healthService.createPrescription(tenantId, actorId, prescription);
+        return ResponseEntity.ok(healthService.prescriptionView(tenantId, saved.getId()));
     }
 
     // ========== PHARMACY ==========
+    // PharmacyItem n'a aucune relation LAZY : contrat brut conservé.
 
     @GetMapping("/pharmacy/items")
     public ResponseEntity<PageResponse<PharmacyItem>> getPharmacyItems(
@@ -153,60 +162,61 @@ public class HealthController {
     }
 
     @GetMapping("/pharmacy/stock")
-    public ResponseEntity<PageResponse<PharmacyStock>> getPharmacyStock(
+    public ResponseEntity<PageResponse<Map<String, Object>>> getPharmacyStock(
             @RequestParam(required = false) UUID itemId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("dateExpiration"));
-        Page<PharmacyStock> result = healthService.getPharmacyStock(tenantId, itemId, status, pageable);
+        Page<Map<String, Object>> result = healthService.pharmacyStockViews(tenantId, itemId, status, pageable);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/pharmacy/stock/alerts/low")
-    public ResponseEntity<List<PharmacyStock>> getLowStockAlerts() {
+    public ResponseEntity<List<Map<String, Object>>> getLowStockAlerts() {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getLowStockAlerts(tenantId));
+        return ResponseEntity.ok(healthService.lowStockAlertViews(tenantId));
     }
 
     @GetMapping("/pharmacy/stock/alerts/expiring")
-    public ResponseEntity<List<PharmacyStock>> getExpiringSoonAlerts(@RequestParam(defaultValue = "30") int days) {
+    public ResponseEntity<List<Map<String, Object>>> getExpiringSoonAlerts(@RequestParam(defaultValue = "30") int days) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getExpiringSoonAlerts(tenantId, days));
+        return ResponseEntity.ok(healthService.expiringSoonAlertViews(tenantId, days));
     }
 
     @PostMapping("/pharmacy/movements")
-    public ResponseEntity<PharmacyMovement> createMovement(@RequestBody PharmacyMovement movement) {
+    public ResponseEntity<Map<String, Object>> createMovement(@RequestBody PharmacyMovement movement) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.createMovement(tenantId, actorId, movement));
+        return ResponseEntity.ok(healthService.createMovementView(tenantId, actorId, movement));
     }
 
     // ========== HEALTH CAMPAIGNS ==========
 
     @GetMapping("/campaigns")
-    public ResponseEntity<PageResponse<HealthCampaign>> getCampaigns(
+    public ResponseEntity<PageResponse<Map<String, Object>>> getCampaigns(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 20), Sort.by("startDate").descending());
-        Page<HealthCampaign> result = healthService.getCampaigns(tenantId, status, pageable);
+        Page<Map<String, Object>> result = healthService.campaignViews(tenantId, status, pageable);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages()));
     }
 
     @GetMapping("/campaigns/{id}")
-    public ResponseEntity<HealthCampaign> getCampaign(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getCampaign(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getCampaign(tenantId, id));
+        return ResponseEntity.ok(healthService.campaignView(tenantId, id));
     }
 
     @PostMapping("/campaigns")
-    public ResponseEntity<HealthCampaign> createCampaign(@RequestBody HealthCampaign campaign) {
+    public ResponseEntity<Map<String, Object>> createCampaign(@RequestBody HealthCampaign campaign) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.createCampaign(tenantId, actorId, campaign));
+        HealthCampaign saved = healthService.createCampaign(tenantId, actorId, campaign);
+        return ResponseEntity.ok(healthService.campaignView(tenantId, saved.getId()));
     }
 
     // ========== DASHBOARD / STATS ==========
@@ -218,6 +228,8 @@ public class HealthController {
     }
 
     // ========== MEDICATIONS (V235) ==========
+    // HealthMedication/HealthKit/HealthDuty/CampaignParticipant : aucune
+    // relation LAZY, contrat brut conservé (pas de régression).
 
     @GetMapping("/medications")
     public ResponseEntity<List<HealthMedication>> getMedications() {
@@ -279,25 +291,25 @@ public class HealthController {
     // ========== CONSULTATION PRESCRIPTIONS (V235) ==========
 
     @GetMapping("/consultations/{consultationId}/prescriptions")
-    public ResponseEntity<List<Prescription>> getConsultationPrescriptions(@PathVariable UUID consultationId) {
+    public ResponseEntity<List<Map<String, Object>>> getConsultationPrescriptions(@PathVariable UUID consultationId) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getPrescriptions(tenantId, null, consultationId, org.springframework.data.domain.Pageable.unpaged()).getContent());
+        return ResponseEntity.ok(healthService.consultationPrescriptionViews(tenantId, consultationId));
     }
 
     // ========== PHARMACY STOCK DETAIL (V235) ==========
 
     @GetMapping("/pharmacy/stock/{id}")
-    public ResponseEntity<PharmacyStock> getPharmacyStockById(@PathVariable UUID id) {
+    public ResponseEntity<Map<String, Object>> getPharmacyStockById(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getPharmacyStockById(tenantId, id));
+        return ResponseEntity.ok(healthService.pharmacyStockView(tenantId, id));
     }
 
     // ========== PATIENTS BY CONDITION (V235) ==========
 
     @GetMapping("/patients/by-condition")
-    public ResponseEntity<List<PatientRecord>> getPatientsByCondition(@RequestParam String condition) {
+    public ResponseEntity<List<Map<String, Object>>> getPatientsByCondition(@RequestParam String condition) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.getPatientsByCondition(tenantId, condition));
+        return ResponseEntity.ok(healthService.patientViewsByCondition(tenantId, condition));
     }
 
     // ========== MISES À JOUR APPELÉES PAR LE MOBILE (V235) ==========
@@ -305,25 +317,27 @@ public class HealthController {
     /**
      * {@code PUT /health/consultations/{id}} — appelé par
      * {@code HealthService.updateConsultation} du mobile, sans endpoint
-     * correspondant côté serveur : la méthodelevait une 404/405.
+     * correspondant côté serveur à l'origine.
      */
     @PutMapping("/consultations/{id}")
-    public ResponseEntity<MedicalConsultation> updateConsultation(
+    public ResponseEntity<Map<String, Object>> updateConsultation(
             @PathVariable UUID id, @RequestBody MedicalConsultation updates) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
-        return ResponseEntity.ok(healthService.updateConsultation(tenantId, actorId, id, updates));
+        healthService.updateConsultation(tenantId, actorId, id, updates);
+        return ResponseEntity.ok(healthService.consultationView(tenantId, id));
     }
 
     /**
-     * {@code PUT /health/pharmacy/stock/{id}} — également absent du serveur
-     * alors que le mobile le consomme (mise à jour d'un lot de pharmacie).
+     * {@code PUT /health/pharmacy/stock/{id}} — mise à jour d'un lot de
+     * pharmacie consommée par le mobile.
      */
     @PutMapping("/pharmacy/stock/{id}")
-    public ResponseEntity<PharmacyStock> updatePharmacyStock(
+    public ResponseEntity<Map<String, Object>> updatePharmacyStock(
             @PathVariable UUID id, @RequestBody PharmacyStock updates) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(healthService.updatePharmacyStock(tenantId, id, updates));
+        healthService.updatePharmacyStock(tenantId, id, updates);
+        return ResponseEntity.ok(healthService.pharmacyStockView(tenantId, id));
     }
 
     // ========== HEALTH REPORTS STATISTICS (V235) ==========

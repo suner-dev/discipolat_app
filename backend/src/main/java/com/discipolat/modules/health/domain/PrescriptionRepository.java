@@ -18,4 +18,9 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     long countByPatientIdAndTenantId(UUID patientId, UUID tenantId);
 
     long countByTenantIdAndDeletedFalse(UUID tenantId);
+
+    Page<Prescription> findByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
+
+    /** Comptage reel des ordonnances en cours (remplace le placeholder UUID aleatoire). */
+    long countByTenantIdAndStatus(UUID tenantId, Prescription.PrescriptionStatus status);
 }
