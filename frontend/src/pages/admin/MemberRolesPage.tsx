@@ -27,9 +27,12 @@ export default function MemberRolesPage() {
   const assign = useAssignMemberRole(userId ?? null);
   const end = useEndMemberAssignment(userId ?? null);
 
+  // Rôles assignables du tenant — GET /admin/roles (TenantAdminController#listRoles)
+  // renvoie List<Map> : {id, key, label, description, priority, isSystem, permissions}.
+  // audit-routes: /admin/roles
   const rolesQuery = useQuery<RoleRef[]>({
     queryKey: ['tenant', 'roles'],
-    queryFn: async () => (await api.get('/tenant/roles')).data,
+    queryFn: async () => (await api.get('/admin/roles')).data,
   });
 
   const [roleId, setRoleId] = useState('');

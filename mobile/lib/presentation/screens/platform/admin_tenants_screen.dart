@@ -93,6 +93,7 @@ class _AdminTenantsScreenState extends State<AdminTenantsScreen> {
     if (confirmed != true) return;
     if (mounted) setState(() => _saving = true);
     try {
+      // audit-routes: /platform/admin/tenants/{id}/suspend, /platform/admin/tenants/{id}/reactivate, /platform/admin/tenants/{id}/archive
       await _api.post('/platform/admin/tenants/$id/$action');
       await _load();
     } catch (_) {

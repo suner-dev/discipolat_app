@@ -1,278 +1,303 @@
 import 'package:flutter/material.dart';
 
+/// Catégories d'inventaire telles qu'exposées par le serveur
+/// (`InventoryItem.categorie`, colonne `categorie`) : MATERIEL, MOBILIER,
+/// TECHNIQUE, VESTIMENTAIRE, AUTRE. Les membres Dart portent la chaîne exacte
+/// reçue en JSON via [serverValue] ; [fromServer] décode sans crasher une valeur
+/// inconnue (repli sur [AssetType.autre]).
 enum AssetType {
-  equipment,
-  furniture,
-  vehicle,
-  it,
-  audioVisual,
-  musicalInstrument,
-  medical,
-  security,
-  tool,
-  other;
+  materiel('MATERIEL'),
+  mobilier('MOBILIER'),
+  technique('TECHNIQUE'),
+  vestimentaire('VESTIMENTAIRE'),
+  autre('AUTRE');
+
+  final String serverValue;
+  const AssetType(this.serverValue);
+
+  static AssetType fromServer(Object? raw) => AssetType.values.firstWhere(
+        (e) => e.serverValue == raw,
+        orElse: () => AssetType.autre,
+      );
 
   String get displayName {
     switch (this) {
-      case AssetType.equipment: return 'Équipement';
-      case AssetType.furniture: return 'Mobilier';
-      case AssetType.vehicle: return 'Véhicule';
-      case AssetType.it: return 'Informatique';
-      case AssetType.audioVisual: return 'Audio/Visuel';
-      case AssetType.musicalInstrument: return 'Instrument de musique';
-      case AssetType.medical: return 'Médical';
-      case AssetType.security: return 'Sécurité';
-      case AssetType.tool: return 'Outil';
-      case AssetType.other: return 'Autre';
+      case AssetType.materiel: return 'Matériel';
+      case AssetType.mobilier: return 'Mobilier';
+      case AssetType.technique: return 'Technique';
+      case AssetType.vestimentaire: return 'Vestimentaire';
+      case AssetType.autre: return 'Autre';
     }
   }
 
   IconData get icon {
     switch (this) {
-      case AssetType.equipment: return Icons.precision_manufacturing_rounded;
-      case AssetType.furniture: return Icons.chair_rounded;
-      case AssetType.vehicle: return Icons.directions_car_rounded;
-      case AssetType.it: return Icons.computer_rounded;
-      case AssetType.audioVisual: return Icons.tv_rounded;
-      case AssetType.musicalInstrument: return Icons.music_note_rounded;
-      case AssetType.medical: return Icons.medical_services_rounded;
-      case AssetType.security: return Icons.security_rounded;
-      case AssetType.tool: return Icons.build_rounded;
-      case AssetType.other: return Icons.category_rounded;
+      case AssetType.materiel: return Icons.precision_manufacturing_rounded;
+      case AssetType.mobilier: return Icons.chair_rounded;
+      case AssetType.technique: return Icons.computer_rounded;
+      case AssetType.vestimentaire: return Icons.checkroom_rounded;
+      case AssetType.autre: return Icons.category_rounded;
     }
   }
 
   String get color {
     switch (this) {
-      case AssetType.equipment: return '#3B82F6';
-      case AssetType.furniture: return '#8B5CF6';
-      case AssetType.vehicle: return '#EF4444';
-      case AssetType.it: return '#10B981';
-      case AssetType.audioVisual: return '#F59E0B';
-      case AssetType.musicalInstrument: return '#EC4899';
-      case AssetType.medical: return '#06B6D4';
-      case AssetType.security: return '#6366F1';
-      case AssetType.tool: return '#84CC16';
-      case AssetType.other: return '#6B7280';
+      case AssetType.materiel: return '#3B82F6';
+      case AssetType.mobilier: return '#8B5CF6';
+      case AssetType.technique: return '#10B981';
+      case AssetType.vestimentaire: return '#EC4899';
+      case AssetType.autre: return '#6B7280';
     }
   }
 }
 
+/// Statuts d'inventaire tels qu'exposés par le serveur
+/// (`InventoryItem.statut`, colonne `statut`) : DISPONIBLE, AFFECTE,
+/// EN_MAINTENANCE, PERDU, RETIRE. Même décodage tolérant que [AssetType].
 enum AssetStatus {
-  available,
-  inUse,
-  maintenance,
-  repair,
-  retired,
-  lost,
-  stolen,
-  disposed;
+  disponible('DISPONIBLE'),
+  affecte('AFFECTE'),
+  enMaintenance('EN_MAINTENANCE'),
+  perdu('PERDU'),
+  retire('RETIRE');
+
+  final String serverValue;
+  const AssetStatus(this.serverValue);
+
+  static AssetStatus fromServer(Object? raw) => AssetStatus.values.firstWhere(
+        (e) => e.serverValue == raw,
+        orElse: () => AssetStatus.disponible,
+      );
 
   String get displayName {
     switch (this) {
-      case AssetStatus.available: return 'Disponible';
-      case AssetStatus.inUse: return 'En utilisation';
-      case AssetStatus.maintenance: return 'En maintenance';
-      case AssetStatus.repair: return 'En réparation';
-      case AssetStatus.retired: return 'Mis au rebut';
-      case AssetStatus.lost: return 'Perdu';
-      case AssetStatus.stolen: return 'Volé';
-      case AssetStatus.disposed: return 'Éliminé';
+      case AssetStatus.disponible: return 'Disponible';
+      case AssetStatus.affecte: return 'Affecté';
+      case AssetStatus.enMaintenance: return 'En maintenance';
+      case AssetStatus.perdu: return 'Perdu';
+      case AssetStatus.retire: return 'Retiré';
     }
   }
 
   Color get color {
     switch (this) {
-      case AssetStatus.available: return Colors.green;
-      case AssetStatus.inUse: return Colors.blue;
-      case AssetStatus.maintenance: return Colors.orange;
-      case AssetStatus.repair: return Colors.red;
-      case AssetStatus.retired: return Colors.grey;
-      case AssetStatus.lost: return Colors.red;
-      case AssetStatus.stolen: return Colors.red;
-      case AssetStatus.disposed: return Colors.grey;
+      case AssetStatus.disponible: return Colors.green;
+      case AssetStatus.affecte: return Colors.blue;
+      case AssetStatus.enMaintenance: return Colors.orange;
+      case AssetStatus.perdu: return Colors.red;
+      case AssetStatus.retire: return Colors.grey;
     }
   }
 }
 
+/// Vue mobile d'un objet d'inventaire — miroir exact de l'entité serveur
+/// `InventoryItem` renvoyée par `GET /inventory` (Page `<InventoryItem>`,
+/// `.content`) et `GET /inventory/{id}`.
+///
+/// Points vérifiés sur le serveur (pas supposés) :
+/// - `id`/`tenantId`/`departementId`/`affecteAId` sont des **UUID** : le cast
+///   Dart doit rester `String` (un `as int` plantait sur la valeur réelle).
+/// - les champs sont en français (`nom`, `categorie`, `statut`, `lieuStockage`,
+///   `quantiteDisponible`…) et non l'ancien vocabulaire anglais fantôme.
+/// - les dates sont des `LocalDateTime` sérialisées ISO‑8601 (`createdAt`
+///   always, le reste nullable).
 class Asset {
-  final int id;
-  final String name;
+  final String id;
+  final String tenantId;
+  final String nom;
   final String? description;
-  final AssetType type;
-  final AssetStatus status;
-  final String? serialNumber;
-  final String? barcode;
-  final String? qrCode;
-  final String? location;
-  final String? roomName;
-  final String? departmentName;
-  final String? assignedToName;
-  final DateTime? purchaseDate;
+  final AssetType categorie;
+  final AssetStatus statut;
+  final int quantite;
+  final int quantiteDisponible;
+  final double? valeurUnitaire;
+  final String? lieuStockage;
+  final String? numeroSerie;
+  final DateTime? dateAcquisition;
+  final DateTime? derniereMaintenance;
+  final DateTime? prochaineMaintenance;
+  final String? departementId;
+  final String? affecteAId;
+  final double totalMaintenanceCost;
+  final int totalCheckoutCount;
   final double? purchasePrice;
-  final String? currency;
-  final String? supplier;
-  final int? warrantyMonths;
-  final DateTime? warrantyExpiry;
-  final String? model;
-  final String? brand;
-  final String? specifications;
-  final String? photoUrl;
-  final DateTime? lastMaintenanceDate;
-  final DateTime? nextMaintenanceDate;
-  final int maintenanceCount;
-  final double? totalMaintenanceCost;
+  final int? expectedLifespanMonths;
   final String? notes;
+  final String? qrToken;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
-  Asset({
+  const Asset({
     required this.id,
-    required this.name,
+    required this.tenantId,
+    required this.nom,
     this.description,
-    required this.type,
-    required this.status,
-    this.serialNumber,
-    this.barcode,
-    this.qrCode,
-    this.location,
-    this.roomName,
-    this.departmentName,
-    this.assignedToName,
-    this.purchaseDate,
+    required this.categorie,
+    required this.statut,
+    this.quantite = 0,
+    this.quantiteDisponible = 0,
+    this.valeurUnitaire,
+    this.lieuStockage,
+    this.numeroSerie,
+    this.dateAcquisition,
+    this.derniereMaintenance,
+    this.prochaineMaintenance,
+    this.departementId,
+    this.affecteAId,
+    this.totalMaintenanceCost = 0,
+    this.totalCheckoutCount = 0,
     this.purchasePrice,
-    this.currency,
-    this.supplier,
-    this.warrantyMonths,
-    this.warrantyExpiry,
-    this.model,
-    this.brand,
-    this.specifications,
-    this.photoUrl,
-    this.lastMaintenanceDate,
-    this.nextMaintenanceDate,
-    this.maintenanceCount = 0,
-    this.totalMaintenanceCost,
+    this.expectedLifespanMonths,
     this.notes,
+    this.qrToken,
     required this.createdAt,
     this.updatedAt,
   });
 
   factory Asset.fromJson(Map<String, dynamic> json) {
     return Asset(
-      id: json['id'] as int,
-      name: json['name'] as String,
+      id: json['id'].toString(),
+      tenantId: json['tenantId']?.toString() ?? '',
+      nom: (json['nom'] ?? '') as String,
       description: json['description'] as String?,
-      type: AssetType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => AssetType.other,
-      ),
-      status: AssetStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => AssetStatus.available,
-      ),
-      serialNumber: json['serialNumber'] as String?,
-      barcode: json['barcode'] as String?,
-      qrCode: json['qrCode'] as String?,
-      location: json['location'] as String?,
-      roomName: json['roomName'] as String?,
-      departmentName: json['departmentName'] as String?,
-      assignedToName: json['assignedToName'] as String?,
-      purchaseDate: json['purchaseDate'] != null
-          ? DateTime.parse(json['purchaseDate'] as String)
-          : null,
+      categorie: AssetType.fromServer(json['categorie']),
+      statut: AssetStatus.fromServer(json['statut']),
+      quantite: (json['quantite'] as num?)?.toInt() ?? 0,
+      quantiteDisponible: (json['quantiteDisponible'] as num?)?.toInt() ?? 0,
+      valeurUnitaire: (json['valeurUnitaire'] as num?)?.toDouble(),
+      lieuStockage: json['lieuStockage'] as String?,
+      numeroSerie: json['numeroSerie'] as String?,
+      dateAcquisition: _parseDate(json['dateAcquisition']),
+      derniereMaintenance: _parseDate(json['derniereMaintenance']),
+      prochaineMaintenance: _parseDate(json['prochaineMaintenance']),
+      departementId: json['departementId']?.toString(),
+      affecteAId: json['affecteAId']?.toString(),
+      totalMaintenanceCost:
+          (json['totalMaintenanceCost'] as num?)?.toDouble() ?? 0,
+      totalCheckoutCount: (json['totalCheckoutCount'] as num?)?.toInt() ?? 0,
       purchasePrice: (json['purchasePrice'] as num?)?.toDouble(),
-      currency: json['currency'] as String?,
-      supplier: json['supplier'] as String?,
-      warrantyMonths: json['warrantyMonths'] as int?,
-      warrantyExpiry: json['warrantyExpiry'] != null
-          ? DateTime.parse(json['warrantyExpiry'] as String)
-          : null,
-      model: json['model'] as String?,
-      brand: json['brand'] as String?,
-      specifications: json['specifications'] as String?,
-      photoUrl: json['photoUrl'] as String?,
-      lastMaintenanceDate: json['lastMaintenanceDate'] != null
-          ? DateTime.parse(json['lastMaintenanceDate'] as String)
-          : null,
-      nextMaintenanceDate: json['nextMaintenanceDate'] != null
-          ? DateTime.parse(json['nextMaintenanceDate'] as String)
-          : null,
-      maintenanceCount: json['maintenanceCount'] as int? ?? 0,
-      totalMaintenanceCost: (json['totalMaintenanceCost'] as num?)?.toDouble(),
+      expectedLifespanMonths:
+          (json['expectedLifespanMonths'] as num?)?.toInt(),
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      qrToken: json['qrToken'] as String?,
+      createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDate(json['updatedAt']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'tenantId': tenantId,
+      'nom': nom,
       'description': description,
-      'type': type.name,
-      'status': status.name,
-      'serialNumber': serialNumber,
-      'barcode': barcode,
-      'qrCode': qrCode,
-      'location': location,
-      'roomName': roomName,
-      'departmentName': departmentName,
-      'assignedToName': assignedToName,
-      'purchaseDate': purchaseDate?.toIso8601String(),
-      'purchasePrice': purchasePrice,
-      'currency': currency,
-      'supplier': supplier,
-      'warrantyMonths': warrantyMonths,
-      'warrantyExpiry': warrantyExpiry?.toIso8601String(),
-      'model': model,
-      'brand': brand,
-      'specifications': specifications,
-      'photoUrl': photoUrl,
-      'lastMaintenanceDate': lastMaintenanceDate?.toIso8601String(),
-      'nextMaintenanceDate': nextMaintenanceDate?.toIso8601String(),
-      'maintenanceCount': maintenanceCount,
+      'categorie': categorie.serverValue,
+      'statut': statut.serverValue,
+      'quantite': quantite,
+      'quantiteDisponible': quantiteDisponible,
+      'valeurUnitaire': valeurUnitaire,
+      'lieuStockage': lieuStockage,
+      'numeroSerie': numeroSerie,
+      'dateAcquisition': dateAcquisition?.toIso8601String(),
+      'derniereMaintenance': derniereMaintenance?.toIso8601String(),
+      'prochaineMaintenance': prochaineMaintenance?.toIso8601String(),
+      'departementId': departementId,
+      'affecteAId': affecteAId,
       'totalMaintenanceCost': totalMaintenanceCost,
+      'totalCheckoutCount': totalCheckoutCount,
+      'purchasePrice': purchasePrice,
+      'expectedLifespanMonths': expectedLifespanMonths,
       'notes': notes,
+      'qrToken': qrToken,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
-  bool get needsMaintenance => nextMaintenanceDate != null && DateTime.now().isAfter(nextMaintenanceDate!);
-  bool get isUnderWarranty => warrantyExpiry != null && DateTime.now().isBefore(warrantyExpiry!);
-  int get ageInYears => purchaseDate != null ? (DateTime.now().year - purchaseDate!.year) : 0;
+  /// Le serveur expose `prochaineMaintenance` : maintenance « requise » dès que
+  /// la date prévue est dépassée.
+  bool get needsMaintenance =>
+      prochaineMaintenance != null &&
+      DateTime.now().isAfter(prochaineMaintenance!);
+
+  /// Objet réellement empruntable : statut disponible ET stock résiduel > 0.
+  bool get isAvailable =>
+      statut == AssetStatus.disponible && quantiteDisponible > 0;
+
+  /// Corps d'écriture (`POST`/`PUT /inventory`) — le serveur force
+  /// id/tenantId/createdAt et dérive le tenant du JWT : on ne renvoie que les
+  /// champs éditables.
+  Map<String, dynamic> writeBody() => {
+        'nom': nom,
+        'description': description,
+        'categorie': categorie.serverValue,
+        'statut': statut.serverValue,
+        'quantite': quantite,
+        'quantiteDisponible': quantiteDisponible,
+        'valeurUnitaire': valeurUnitaire,
+        'lieuStockage': lieuStockage,
+        'numeroSerie': numeroSerie,
+        'departementId': departementId,
+        'affecteAId': affecteAId,
+        'purchasePrice': purchasePrice,
+        'expectedLifespanMonths': expectedLifespanMonths,
+        'notes': notes,
+      };
 }
 
+/// Parse tolérant une date serveur (`LocalDateTime` ISO‑8601). Renvoie null si
+/// absente ou illisible — jamais de crash sur un champ optionnel.
+DateTime? _parseDate(Object? raw) {
+  if (raw == null) return null;
+  if (raw is DateTime) return raw;
+  return DateTime.tryParse(raw.toString());
+}
+
+/// Types de maintenance serveur (`AssetMaintenance.maintenanceType`) :
+/// PREVENTIVE, CORRECTIVE, INSPECTION, REPAIR, UPGRADE.
 enum MaintenanceType {
-  preventive,
-  corrective,
-  predictive,
-  emergency,
-  calibration,
-  inspection;
+  preventive('PREVENTIVE'),
+  corrective('CORRECTIVE'),
+  inspection('INSPECTION'),
+  repair('REPAIR'),
+  upgrade('UPGRADE');
+
+  final String serverValue;
+  const MaintenanceType(this.serverValue);
+
+  static MaintenanceType fromServer(Object? raw) =>
+      MaintenanceType.values.firstWhere(
+        (e) => e.serverValue == raw,
+        orElse: () => MaintenanceType.corrective,
+      );
 
   String get displayName {
     switch (this) {
       case MaintenanceType.preventive: return 'Préventive';
       case MaintenanceType.corrective: return 'Corrective';
-      case MaintenanceType.predictive: return 'Prédictive';
-      case MaintenanceType.emergency: return 'Urgence';
-      case MaintenanceType.calibration: return 'Calibration';
       case MaintenanceType.inspection: return 'Inspection';
+      case MaintenanceType.repair: return 'Réparation';
+      case MaintenanceType.upgrade: return 'Amélioration';
     }
   }
 }
 
+/// Statuts de maintenance serveur (`AssetMaintenance.status`) :
+/// SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED.
 enum MaintenanceStatus {
-  scheduled,
-  inProgress,
-  completed,
-  cancelled,
-  overdue;
+  scheduled('SCHEDULED'),
+  inProgress('IN_PROGRESS'),
+  completed('COMPLETED'),
+  cancelled('CANCELLED');
+
+  final String serverValue;
+  const MaintenanceStatus(this.serverValue);
+
+  static MaintenanceStatus fromServer(Object? raw) =>
+      MaintenanceStatus.values.firstWhere(
+        (e) => e.serverValue == raw,
+        orElse: () => MaintenanceStatus.scheduled,
+      );
 
   String get displayName {
     switch (this) {
@@ -280,231 +305,219 @@ enum MaintenanceStatus {
       case MaintenanceStatus.inProgress: return 'En cours';
       case MaintenanceStatus.completed: return 'Terminée';
       case MaintenanceStatus.cancelled: return 'Annulée';
-      case MaintenanceStatus.overdue: return 'En retard';
     }
   }
 }
 
+/// Historique de maintenance d'un objet — miroir de l'entité serveur
+/// `AssetMaintenance` renvoyée par `GET /assets/{itemId}/maintenance`.
+/// `id`/`itemId` sont des UUID String ; il n'existe ni `assetName` ni
+/// `updatedAt` côté serveur (le nom de l'objet vient de la fiche `InventoryItem`).
 class AssetMaintenance {
-  final int id;
-  final int assetId;
-  final String assetName;
-  final MaintenanceType type;
+  final String id;
+  final String itemId;
+  final MaintenanceType maintenanceType;
   final MaintenanceStatus status;
+  final String title;
   final String? description;
-  final String? workPerformed;
+  final String? performedBy;
+  final String? vendorName;
+  final String? vendorContact;
   final double? cost;
   final String? currency;
-  final DateTime scheduledDate;
-  final DateTime? completedDate;
-  final int? technicianId;
-  final String? technicianName;
-  final String? partsUsed;
+  final DateTime? scheduledFor;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
+  final DateTime? nextMaintenanceDue;
+  final String? partsReplaced;
   final String? notes;
-  final String? nextMaintenanceNotes;
-  final DateTime? nextMaintenanceDate;
   final DateTime createdAt;
-  final DateTime? updatedAt;
 
-  AssetMaintenance({
+  const AssetMaintenance({
     required this.id,
-    required this.assetId,
-    required this.assetName,
-    required this.type,
+    required this.itemId,
+    required this.maintenanceType,
     required this.status,
+    required this.title,
     this.description,
-    this.workPerformed,
+    this.performedBy,
+    this.vendorName,
+    this.vendorContact,
     this.cost,
     this.currency,
-    required this.scheduledDate,
-    this.completedDate,
-    this.technicianId,
-    this.technicianName,
-    this.partsUsed,
+    this.scheduledFor,
+    this.startedAt,
+    this.completedAt,
+    this.nextMaintenanceDue,
+    this.partsReplaced,
     this.notes,
-    this.nextMaintenanceNotes,
-    this.nextMaintenanceDate,
     required this.createdAt,
-    this.updatedAt,
   });
 
   factory AssetMaintenance.fromJson(Map<String, dynamic> json) {
     return AssetMaintenance(
-      id: json['id'] as int,
-      assetId: json['assetId'] as int,
-      assetName: json['assetName'] as String,
-      type: MaintenanceType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => MaintenanceType.corrective,
-      ),
-      status: MaintenanceStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => MaintenanceStatus.scheduled,
-      ),
+      id: json['id'].toString(),
+      itemId: json['itemId'].toString(),
+      maintenanceType: MaintenanceType.fromServer(json['maintenanceType']),
+      status: MaintenanceStatus.fromServer(json['status']),
+      title: (json['title'] ?? '') as String,
       description: json['description'] as String?,
-      workPerformed: json['workPerformed'] as String?,
+      performedBy: json['performedBy']?.toString(),
+      vendorName: json['vendorName'] as String?,
+      vendorContact: json['vendorContact'] as String?,
       cost: (json['cost'] as num?)?.toDouble(),
       currency: json['currency'] as String?,
-      scheduledDate: DateTime.parse(json['scheduledDate'] as String),
-      completedDate: json['completedDate'] != null
-          ? DateTime.parse(json['completedDate'] as String)
-          : null,
-      technicianId: json['technicianId'] as int?,
-      technicianName: json['technicianName'] as String?,
-      partsUsed: json['partsUsed'] as String?,
+      scheduledFor: _parseDate(json['scheduledFor']),
+      startedAt: _parseDate(json['startedAt']),
+      completedAt: _parseDate(json['completedAt']),
+      nextMaintenanceDue: _parseDate(json['nextMaintenanceDue']),
+      partsReplaced: json['partsReplaced'] as String?,
       notes: json['notes'] as String?,
-      nextMaintenanceNotes: json['nextMaintenanceNotes'] as String?,
-      nextMaintenanceDate: json['nextMaintenanceDate'] != null
-          ? DateTime.parse(json['nextMaintenanceDate'] as String)
-          : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'assetId': assetId,
-      'assetName': assetName,
-      'type': type.name,
-      'status': status.name,
+      'itemId': itemId,
+      'maintenanceType': maintenanceType.serverValue,
+      'status': status.serverValue,
+      'title': title,
       'description': description,
-      'workPerformed': workPerformed,
+      'performedBy': performedBy,
+      'vendorName': vendorName,
+      'vendorContact': vendorContact,
       'cost': cost,
       'currency': currency,
-      'scheduledDate': scheduledDate.toIso8601String(),
-      'completedDate': completedDate?.toIso8601String(),
-      'technicianId': technicianId,
-      'technicianName': technicianName,
-      'partsUsed': partsUsed,
+      'scheduledFor': scheduledFor?.toIso8601String(),
+      'startedAt': startedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'nextMaintenanceDue': nextMaintenanceDue?.toIso8601String(),
+      'partsReplaced': partsReplaced,
       'notes': notes,
-      'nextMaintenanceNotes': nextMaintenanceNotes,
-      'nextMaintenanceDate': nextMaintenanceDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 }
 
+/// Statuts de prêt serveur (`AssetCheckout.status`) :
+/// CHECKED_OUT, RETURNED, OVERDUE, DAMAGED, LOST.
 enum CheckoutStatus {
-  pending,
-  approved,
-  checkedOut,
-  returned,
-  overdue,
-  cancelled;
+  checkedOut('CHECKED_OUT'),
+  returned('RETURNED'),
+  overdue('OVERDUE'),
+  damaged('DAMAGED'),
+  lost('LOST');
+
+  final String serverValue;
+  const CheckoutStatus(this.serverValue);
+
+  static CheckoutStatus fromServer(Object? raw) =>
+      CheckoutStatus.values.firstWhere(
+        (e) => e.serverValue == raw,
+        orElse: () => CheckoutStatus.checkedOut,
+      );
 
   String get displayName {
     switch (this) {
-      case CheckoutStatus.pending: return 'En attente';
-      case CheckoutStatus.approved: return 'Approuvé';
       case CheckoutStatus.checkedOut: return 'Emprunté';
       case CheckoutStatus.returned: return 'Retourné';
       case CheckoutStatus.overdue: return 'En retard';
-      case CheckoutStatus.cancelled: return 'Annulé';
+      case CheckoutStatus.damaged: return 'Endommagé';
+      case CheckoutStatus.lost: return 'Perdu';
     }
   }
 }
 
+/// Prêt d'un objet — miroir de l'entité serveur `AssetCheckout` renvoyée par
+/// `GET /assets/{itemId}/checkouts`. UUID String partout ; les dates serveur
+/// sont `checkedOutAt`/`dueBackAt`/`returnedAt` (et non « checkoutDate »,
+/// `assetName`/`purpose`/`location`/`approvedBy` n'existent pas côté serveur).
 class AssetCheckout {
-  final int id;
-  final int assetId;
-  final String assetName;
-  final int checkedOutById;
-  final String checkedOutByName;
-  final DateTime checkoutDate;
-  final DateTime? expectedReturnDate;
-  final DateTime? actualReturnDate;
+  final String id;
+  final String itemId;
+  final String memberId;
+  final String? spaceId;
+  final String? eventId;
+  final DateTime checkedOutAt;
+  final DateTime? dueBackAt;
+  final DateTime? returnedAt;
   final CheckoutStatus status;
-  final String? purpose;
-  final String? location;
   final String? conditionOnCheckout;
   final String? conditionOnReturn;
+  final String? checkedOutBy;
+  final String? returnedBy;
   final String? notes;
-  final String? approvedBy;
+  final String? damagePhotoPath;
   final DateTime createdAt;
-  final DateTime? updatedAt;
 
-  AssetCheckout({
+  const AssetCheckout({
     required this.id,
-    required this.assetId,
-    required this.assetName,
-    required this.checkedOutById,
-    required this.checkedOutByName,
-    required this.checkoutDate,
-    this.expectedReturnDate,
-    this.actualReturnDate,
+    required this.itemId,
+    required this.memberId,
+    this.spaceId,
+    this.eventId,
+    required this.checkedOutAt,
+    this.dueBackAt,
+    this.returnedAt,
     required this.status,
-    this.purpose,
-    this.location,
     this.conditionOnCheckout,
     this.conditionOnReturn,
+    this.checkedOutBy,
+    this.returnedBy,
     this.notes,
-    this.approvedBy,
+    this.damagePhotoPath,
     required this.createdAt,
-    this.updatedAt,
   });
 
   factory AssetCheckout.fromJson(Map<String, dynamic> json) {
     return AssetCheckout(
-      id: json['id'] as int,
-      assetId: json['assetId'] as int,
-      assetName: json['assetName'] as String,
-      checkedOutById: json['checkedOutById'] as int,
-      checkedOutByName: json['checkedOutByName'] as String,
-      checkoutDate: DateTime.parse(json['checkoutDate'] as String),
-      expectedReturnDate: json['expectedReturnDate'] != null
-          ? DateTime.parse(json['expectedReturnDate'] as String)
-          : null,
-      actualReturnDate: json['actualReturnDate'] != null
-          ? DateTime.parse(json['actualReturnDate'] as String)
-          : null,
-      status: CheckoutStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => CheckoutStatus.pending,
-      ),
-      purpose: json['purpose'] as String?,
-      location: json['location'] as String?,
+      id: json['id'].toString(),
+      itemId: json['itemId'].toString(),
+      memberId: json['memberId'].toString(),
+      spaceId: json['spaceId']?.toString(),
+      eventId: json['eventId']?.toString(),
+      checkedOutAt: _parseDate(json['checkedOutAt']) ?? DateTime.now(),
+      dueBackAt: _parseDate(json['dueBackAt']),
+      returnedAt: _parseDate(json['returnedAt']),
+      status: CheckoutStatus.fromServer(json['status']),
       conditionOnCheckout: json['conditionOnCheckout'] as String?,
       conditionOnReturn: json['conditionOnReturn'] as String?,
+      checkedOutBy: json['checkedOutBy']?.toString(),
+      returnedBy: json['returnedBy']?.toString(),
       notes: json['notes'] as String?,
-      approvedBy: json['approvedBy'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      damagePhotoPath: json['damagePhotoPath'] as String?,
+      createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'assetId': assetId,
-      'assetName': assetName,
-      'checkedOutById': checkedOutById,
-      'checkedOutByName': checkedOutByName,
-      'checkoutDate': checkoutDate.toIso8601String(),
-      'expectedReturnDate': expectedReturnDate?.toIso8601String(),
-      'actualReturnDate': actualReturnDate?.toIso8601String(),
-      'status': status.name,
-      'purpose': purpose,
-      'location': location,
+      'itemId': itemId,
+      'memberId': memberId,
+      'spaceId': spaceId,
+      'eventId': eventId,
+      'checkedOutAt': checkedOutAt.toIso8601String(),
+      'dueBackAt': dueBackAt?.toIso8601String(),
+      'returnedAt': returnedAt?.toIso8601String(),
+      'status': status.serverValue,
       'conditionOnCheckout': conditionOnCheckout,
       'conditionOnReturn': conditionOnReturn,
+      'checkedOutBy': checkedOutBy,
+      'returnedBy': returnedBy,
       'notes': notes,
-      'approvedBy': approvedBy,
+      'damagePhotoPath': damagePhotoPath,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
+  /// En retard = toujours sorti ET date de retour attendue dépassée.
   bool get isOverdue =>
-      expectedReturnDate != null &&
-      DateTime.now().isAfter(expectedReturnDate!) &&
-      status == CheckoutStatus.checkedOut;
+      status == CheckoutStatus.checkedOut &&
+      dueBackAt != null &&
+      DateTime.now().isAfter(dueBackAt!);
 }
 
 enum TransferStatus {

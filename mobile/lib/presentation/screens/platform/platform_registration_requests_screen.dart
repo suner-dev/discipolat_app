@@ -92,6 +92,7 @@ class _PlatformRegistrationRequestsScreenState
     );
     if (reason == null || reason.isEmpty) return;
     try {
+      // audit-routes: /platform/admin/registration-requests/{id}/approve, /platform/admin/registration-requests/{id}/reject
       await _api.post(
         '/platform/admin/registration-requests/${request['id']}/$action',
         data: {'reason': reason},

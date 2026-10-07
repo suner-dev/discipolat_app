@@ -222,6 +222,7 @@ export default function PlatformAdminDashboardPage() {
     setSaving(true);
     setActionError(null);
     try {
+      // audit-routes: /platform/admin/tenants/{id}/suspend, /platform/admin/tenants/{id}/reactivate
       await api.post(`/platform/admin/tenants/${tenant.id}/${action}`);
       await fetchData();
     } catch (e: any) {

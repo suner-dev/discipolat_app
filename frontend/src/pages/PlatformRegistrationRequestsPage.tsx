@@ -54,6 +54,7 @@ export default function PlatformRegistrationRequestsPage() {
   const decide = async (id: string, action: 'approve' | 'reject', reason: string) => {
     setLoading(true);
     try {
+      // audit-routes: /platform/admin/registration-requests/{id}/approve, /platform/admin/registration-requests/{id}/reject
       await api.post(`/platform/admin/registration-requests/${id}/${action}`, { reason });
       setDeciding(null);
       setDecideReason('');

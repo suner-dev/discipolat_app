@@ -18,7 +18,7 @@ class AssetCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  asset.type.icon,
+                  asset.categorie.icon,
                   color: Colors.blue,
                   size: 24,
                 ),
@@ -28,14 +28,14 @@ class AssetCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        asset.name,
+                        asset.nom,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                       Text(
-                        asset.type.displayName,
+                        asset.categorie.displayName,
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 12,
@@ -50,15 +50,15 @@ class AssetCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: asset.status.color.withOpacity(0.2),
+                    color: asset.statut.color.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    asset.status.displayName,
+                    asset.statut.displayName,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: asset.status.color,
+                      color: asset.statut.color,
                     ),
                   ),
                 ),
@@ -67,11 +67,12 @@ class AssetCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                if (asset.location != null) ...[
+                if (asset.lieuStockage != null &&
+                    asset.lieuStockage!.isNotEmpty) ...[
                   const Icon(Icons.location_on, size: 14, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    asset.location!,
+                    asset.lieuStockage!,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 12,
@@ -79,17 +80,19 @@ class AssetCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                 ],
-                if (asset.assignedToName != null) ...[
-                  const Icon(Icons.person, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    asset.assignedToName!,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                // Le serveur n'expose pas de nom d'affectation (seulement
+                // affecteAId en UUID) : on affiche le stock réellement
+                // disponible, information fiable issue d'InventoryItem.
+                Icon(Icons.inventory_2_outlined,
+                    size: 14, color: Colors.grey.shade600),
+                const SizedBox(width: 4),
+                Text(
+                  'Stock dispo : ${asset.quantiteDisponible}',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
                   ),
-                ],
+                ),
               ],
             ),
             const SizedBox(height: 8),

@@ -132,6 +132,7 @@ export default function TenantJoinManagementPage() {
 
   const decideMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: 'approve' | 'reject' }) =>
+      // audit-routes: /tenant/join-requests/{id}/approve, /tenant/join-requests/{id}/reject
       api.post(`/tenant/join-requests/${id}/${action}`),
     onSuccess: (_d, vars) => {
       setNotice(vars.action === 'approve' ? tText('Demande approuvée.') : tText('Demande rejetée.'));

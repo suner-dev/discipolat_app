@@ -36,8 +36,8 @@ interface AdminRequest {
 interface AdminDemoRequest {
   id: string;
   churchName: string;
-  contactName: string;
-  contactEmail: string;
+  fullName: string;
+  email: string;
   status: string;
   createdAt: string;
 }
@@ -103,7 +103,7 @@ export default function AdminRequestsPage() {
 
   const { data: demoRequests = [], isLoading: loadingDemo } = useQuery({
     queryKey: ['admin-demo-requests'],
-    queryFn: async () => (await api.get('/admin-demo-requests')).data as AdminDemoRequest[],
+    queryFn: async () => (await api.get('/admin/demo-requests')).data as AdminDemoRequest[],
     enabled: tab === 'demo',
   });
 
@@ -263,7 +263,7 @@ export default function AdminRequestsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{d.churchName}</span>
                     </div>
-                    <p className="text-xs text-gray-500">{d.contactName} — {d.contactEmail}</p>
+                    <p className="text-xs text-gray-500">{d.fullName} — {d.email}</p>
                     <p className="text-[11px] text-gray-500 mt-1">{new Date(d.createdAt).toLocaleDateString(getI18nLocale())}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[d.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{d.status}</span>

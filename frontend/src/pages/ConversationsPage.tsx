@@ -8,10 +8,9 @@ import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 interface Conversation {
   id: string;
-  participantName: string;
+  otherUserName: string;
   lastMessage?: string;
   unreadCount: number;
-  updatedAt: string;
 }
 
 interface Message {
@@ -28,19 +27,19 @@ export default function ConversationsPage() {
 
   const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['conversations'],
-    queryFn: async () => (await api.get('/conversations')).data as Conversation[],
+    queryFn: async () => (await api.get('/messages/conversations')).data as Conversation[],
   });
 
   const { data: messages = [], isLoading: loadingMessages } = useQuery({
     queryKey: ['conversations', selectedConvo, 'messages'],
-    queryFn: async () => (await api.get(`/conversations/${selectedConvo}/messages`)).data as Message[],
+    queryFn: async () => (await api.get(`/messages/conversations/${selectedConvo}/messages`)).data as Message[],
     enabled: !!selectedConvo,
   });
 
   const sendMutation = useMutation({
     mutationFn: async () => {
       if (!selectedConvo || !newMessage.trim()) return;
-      await api.post(`/conversations/${selectedConvo}/reply`, { content: newMessage });
+      await api.post(`/messages/conversations/${selectedConvo}/messages`, { content: newMessage });
       setNewMessage('');
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['conversations', selectedConvo, 'messages'] }); },
@@ -73,7 +72,7 @@ export default function ConversationsPage() {
                 className={`w-full text-left glass-card p-4 transition ${selectedConvo === c.id ? 'ring-2 ring-primary-500' : 'hover:bg-white/5'}`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-800 dark:text-gray-200">{c.participantName}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{c.otherUserName}</span>
                   {c.unreadCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full bg-primary-500 text-white text-xs">{c.unreadCount}</span>
                   )}

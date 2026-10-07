@@ -137,6 +137,7 @@ export default function ReportsPage() {
 
   const handleExport = async (type: 'maker' | 'family') => {
     try {
+      // audit-routes: /reports/export/maker-weekly, /reports/export/family-weekly
       const response = await api.get(`/reports/export/${type}-weekly`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');

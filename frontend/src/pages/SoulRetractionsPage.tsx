@@ -47,6 +47,7 @@ export default function SoulRetractionsPage() {
 
   const processMutation = useMutation({
     mutationFn: async ({ id, action, commentaire }: { id: string; action: string; commentaire: string }) => {
+      // audit-routes: /souls/retraction-request/{id}/approve, /souls/retraction-request/{id}/reject
       await api.patch(`/souls/retraction-request/${id}/${action}`, { commentaire });
     },
     onSuccess: () => {

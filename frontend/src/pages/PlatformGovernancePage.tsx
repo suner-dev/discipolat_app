@@ -103,6 +103,7 @@ export default function PlatformGovernancePage() {
       if (!statusReason.trim()) {
         throw new Error(tText('Le motif est obligatoire : il est conservé dans l’historique.'));
       }
+      // audit-routes: /platform/tenants/{id}/block, /platform/tenants/{id}/unblock, /platform/tenants/{id}/ban, /platform/tenants/{id}/unban
       return api.post(`/platform/tenants/${id}/${action}`, { reason: statusReason.trim() });
     },
     onSuccess: (_d, vars) => {

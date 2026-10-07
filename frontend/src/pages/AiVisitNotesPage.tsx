@@ -38,8 +38,10 @@ export default function AiVisitNotesPage() {
     queryKey: ['members', 'info'],
     queryFn: async () => {
       try {
-        const res = await api.get('/members/info');
-        return res.data as MemberInfo[];
+        // Le répertoire canonique est /api/v1/people (PageResponse<Person> avec
+        // { id, firstName, lastName }). L'ancien /members/info n'a jamais existé.
+        const res = await api.get('/people', { params: { size: 500 } });
+        return (res.data.content ?? res.data ?? []) as MemberInfo[];
       } catch {
         return [];
       }

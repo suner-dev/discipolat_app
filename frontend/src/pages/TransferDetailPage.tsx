@@ -72,6 +72,7 @@ export default function TransferDetailPage() {
 
   const actionMutation = useMutation({
     mutationFn: async ({ action, body }: { action: string; body?: unknown }) => {
+      // audit-routes: /transfers/{id}/submit, /transfers/{id}/cancel, /transfers/{id}/archive, /transfers/{id}/decide
       await api.post(`/transfers/${id}/${action}`, body ?? {});
     },
     onSuccess: () => {
