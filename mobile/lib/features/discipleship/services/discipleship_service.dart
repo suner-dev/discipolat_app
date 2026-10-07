@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
@@ -13,6 +12,17 @@ DiscipleshipService discipleshipService(DiscipleshipServiceRef ref) {
   return DiscipleshipService(api);
 }
 
+/// Client de /api/v1/discipleship — contrat DiscipleshipController vérifié.
+///
+/// Types d'identifiants (imposés par le serveur, pas par confort) :
+/// - ids structurelles (journey/stage/progress/assignment/meeting/requirement)
+///   = BIGSERIAL → `int` ;
+/// - refs personnes (discipleId/mentorId/verifiedById) = UUID → `String` :
+///   le serveur fait `UUID.fromString(...)`, un int y échouerait.
+///
+/// Les statuts sont envoyés en `wire` (ex. "IN_PROGRESS") : le serveur
+/// normalise en uppercase mais `status.name` Dart ("inProgress") donnerait
+/// "INPROGRESS", une valeur inconnue rejetée 400 par requireEnum.
 class DiscipleshipService {
   final ApiService _api;
 
@@ -83,7 +93,7 @@ class DiscipleshipService {
     int page = 0,
     int size = 20,
     int? journeyId,
-    int? discipleId,
+    String? discipleId,
     ProgressStatus? status,
   }) async {
     try {
@@ -92,7 +102,7 @@ class DiscipleshipService {
         'size': size,
         if (journeyId != null) 'journeyId': journeyId,
         if (discipleId != null) 'discipleId': discipleId,
-        if (status != null) 'status': status.name,
+        if (status != null) 'status': status.wire,
       };
       final response = await _api.get('/discipleship/progress', queryParameters: queryParams);
       final data = response.data as List;
@@ -120,12 +130,13 @@ class DiscipleshipService {
     }
   }
 
-  Future<DiscipleProgress> updateRequirementProgress(int progressId, int requirementId, RequirementStatus status, {String? evidence, String? notes, int? verifiedById}) async {
+  Future<DiscipleProgress> updateRequirementProgress(int progressId, int requirementId, RequirementStatus status, {String? evidence, String? notes, String? verifiedById}) async {
     try {
       final response = await _api.patch('/discipleship/progress/$progressId/requirements/$requirementId', data: {
-        'status': status.name,
+        'status': status.wire,
         if (evidence != null) 'evidence': evidence,
         if (notes != null) 'notes': notes,
+        // Le serveur fait UUID.fromString(String.valueOf(verifiedById)).
         if (verifiedById != null) 'verifiedById': verifiedById,
       });
       return DiscipleProgress.fromJson(response.data as Map<String, dynamic>);
@@ -147,8 +158,8 @@ class DiscipleshipService {
   Future<List<MentorAssignment>> getMentorAssignments({
     int page = 0,
     int size = 20,
-    int? mentorId,
-    int? discipleId,
+    String? mentorId,
+    String? discipleId,
     int? journeyId,
     AssignmentStatus? status,
   }) async {
@@ -159,7 +170,7 @@ class DiscipleshipService {
         if (mentorId != null) 'mentorId': mentorId,
         if (discipleId != null) 'discipleId': discipleId,
         if (journeyId != null) 'journeyId': journeyId,
-        if (status != null) 'status': status.name,
+        if (status != null) 'status': status.wire,
       };
       final response = await _api.get('/discipleship/assignments', queryParameters: queryParams);
       final data = response.data as List;
@@ -188,13 +199,13 @@ class DiscipleshipService {
   }
 
   // Meetings
+  /// Le serveur n'expose que assignmentId / mentorId / status (+ pagination)
+  /// sur GET /meetings : les filtres de dates inventés ont été retirés.
   Future<List<MentorMeeting>> getMeetings({
     int page = 0,
     int size = 20,
     int? assignmentId,
-    int? mentorId,
-    DateTime? fromDate,
-    DateTime? toDate,
+    String? mentorId,
     MeetingStatus? status,
   }) async {
     try {
@@ -203,9 +214,7 @@ class DiscipleshipService {
         'size': size,
         if (assignmentId != null) 'assignmentId': assignmentId,
         if (mentorId != null) 'mentorId': mentorId,
-        if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-        if (toDate != null) 'toDate': toDate.toIso8601String(),
-        if (status != null) 'status': status.name,
+        if (status != null) 'status': status.wire,
       };
       final response = await _api.get('/discipleship/meetings', queryParameters: queryParams);
       final data = response.data as List;
@@ -227,10 +236,10 @@ class DiscipleshipService {
   Future<MentorMeeting> completeMeeting(int id, {String? notes, String? actionItems, String? nextSteps, int? durationMinutes}) async {
     try {
       final response = await _api.post('/discipleship/meetings/$id/complete', data: {
-        'notes': notes,
-        'actionItems': actionItems,
-        'nextSteps': nextSteps,
-        'durationMinutes': durationMinutes,
+        if (notes != null) 'notes': notes,
+        if (actionItems != null) 'actionItems': actionItems,
+        if (nextSteps != null) 'nextSteps': nextSteps,
+        if (durationMinutes != null) 'durationMinutes': durationMinutes,
       });
       return MentorMeeting.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {

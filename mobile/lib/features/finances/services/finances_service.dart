@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
@@ -7,6 +6,10 @@ import 'package:discipolat_mobile/features/finances/models/finance_model.dart';
 
 part 'finances_service.g.dart';
 
+/// Service FINANCES — contrat exact de `FinanceController`
+/// (monture `/api/v1/finances`). Tous les identifiants sont des UUID (`String`).
+/// Les paramètres de requête sont exactement ceux que le contrôleur lit
+/// (type, categorie, debut, fin, annee) — rien d'inventé.
 @riverpod
 FinancesService financesService(FinancesServiceRef ref) {
   final api = ref.watch(apiServiceProvider);
@@ -18,31 +21,22 @@ class FinancesService {
 
   FinancesService(this._api);
 
-  // Transactions
+  static String _day(DateTime d) => d.toIso8601String().substring(0, 10);
+
+  // ---------- Transactions ----------
+
   Future<List<Transaction>> getTransactions({
-    int page = 0,
-    int size = 20,
     TransactionType? type,
-    TransactionCategory? category,
-    TransactionStatus? status,
-    DateTime? fromDate,
-    DateTime? toDate,
-    int? accountId,
-    int? budgetId,
-    String? search,
+    String? categorie,
+    DateTime? debut,
+    DateTime? fin,
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'page': page,
-        'size': size,
-        if (type != null) 'type': type.name,
-        if (category != null) 'category': category.name,
-        if (status != null) 'status': status.name,
-        if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-        if (toDate != null) 'toDate': toDate.toIso8601String(),
-        if (accountId != null) 'accountId': accountId,
-        if (budgetId != null) 'budgetId': budgetId,
-        if (search != null && search.isNotEmpty) 'search': search,
+        if (type != null) 'type': type.wire,
+        if (categorie != null && categorie.isNotEmpty) 'categorie': categorie,
+        if (debut != null) 'debut': _day(debut),
+        if (fin != null) 'fin': _day(fin),
       };
       final response = await _api.get('/finances/transactions', queryParameters: queryParams);
       final data = response.data as List;
@@ -52,7 +46,7 @@ class FinancesService {
     }
   }
 
-  Future<Transaction> getTransaction(int id) async {
+  Future<Transaction> getTransaction(String id) async {
     try {
       final response = await _api.get('/finances/transactions/$id');
       return Transaction.fromJson(response.data as Map<String, dynamic>);
@@ -70,7 +64,7 @@ class FinancesService {
     }
   }
 
-  Future<Transaction> updateTransaction(int id, Transaction transaction) async {
+  Future<Transaction> updateTransaction(String id, Transaction transaction) async {
     try {
       final response = await _api.put('/finances/transactions/$id', data: transaction.toJson());
       return Transaction.fromJson(response.data as Map<String, dynamic>);
@@ -79,7 +73,7 @@ class FinancesService {
     }
   }
 
-  Future<void> deleteTransaction(int id) async {
+  Future<void> deleteTransaction(String id) async {
     try {
       await _api.delete('/finances/transactions/$id');
     } catch (e) {
@@ -87,13 +81,11 @@ class FinancesService {
     }
   }
 
-  // Accounts
-  Future<List<Account>> getAccounts({bool? isActive, AccountType? type}) async {
+  // ---------- Comptes (V236) ----------
+
+  Future<List<Account>> getAccounts() async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (isActive != null) queryParams['isActive'] = isActive.toString();
-      if (type != null) queryParams['type'] = type.name;
-      final response = await _api.get('/finances/accounts', queryParameters: queryParams);
+      final response = await _api.get('/finances/accounts');
       final data = response.data as List;
       return data.map((json) => Account.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -101,7 +93,7 @@ class FinancesService {
     }
   }
 
-  Future<Account> getAccount(int id) async {
+  Future<Account> getAccount(String id) async {
     try {
       final response = await _api.get('/finances/accounts/$id');
       return Account.fromJson(response.data as Map<String, dynamic>);
@@ -119,12 +111,12 @@ class FinancesService {
     }
   }
 
-  // Budgets
-  Future<List<Budget>> getBudgets({bool? isActive, int? departmentId}) async {
+  // ---------- Budgets ----------
+
+  Future<List<Budget>> getBudgets({int? annee}) async {
     try {
       final queryParams = <String, dynamic>{};
-      if (isActive != null) queryParams['isActive'] = isActive.toString();
-      if (departmentId != null) queryParams['departmentId'] = departmentId;
+      if (annee != null) queryParams['annee'] = annee;
       final response = await _api.get('/finances/budgets', queryParameters: queryParams);
       final data = response.data as List;
       return data.map((json) => Budget.fromJson(json as Map<String, dynamic>)).toList();
@@ -133,7 +125,7 @@ class FinancesService {
     }
   }
 
-  Future<Budget> getBudget(int id) async {
+  Future<Budget> getBudget(String id) async {
     try {
       final response = await _api.get('/finances/budgets/$id');
       return Budget.fromJson(response.data as Map<String, dynamic>);
@@ -142,6 +134,7 @@ class FinancesService {
     }
   }
 
+  /// POST /budgets = upsert serveur (annee + categorie + montant).
   Future<Budget> createBudget(Budget budget) async {
     try {
       final response = await _api.post('/finances/budgets', data: budget.toJson());
@@ -151,12 +144,19 @@ class FinancesService {
     }
   }
 
-  // Tontines
-  Future<List<Tontine>> getTontines({TontineStatus? status}) async {
+  Future<void> deleteBudget(String id) async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (status != null) queryParams['status'] = status.name;
-      final response = await _api.get('/finances/tontines', queryParameters: queryParams);
+      await _api.delete('/finances/budgets/$id');
+    } catch (e) {
+      throw Exception('Erreur lors de la suppression: $e');
+    }
+  }
+
+  // ---------- Tontines (V236) ----------
+
+  Future<List<Tontine>> getTontines() async {
+    try {
+      final response = await _api.get('/finances/tontines');
       final data = response.data as List;
       return data.map((json) => Tontine.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -164,7 +164,7 @@ class FinancesService {
     }
   }
 
-  Future<Tontine> getTontine(int id) async {
+  Future<Tontine> getTontine(String id) async {
     try {
       final response = await _api.get('/finances/tontines/$id');
       return Tontine.fromJson(response.data as Map<String, dynamic>);
@@ -182,7 +182,7 @@ class FinancesService {
     }
   }
 
-  Future<List<TontineMember>> getTontineMembers(int tontineId) async {
+  Future<List<TontineMember>> getTontineMembers(String tontineId) async {
     try {
       final response = await _api.get('/finances/tontines/$tontineId/members');
       final data = response.data as List;
@@ -192,7 +192,7 @@ class FinancesService {
     }
   }
 
-  Future<TontineMember> addTontineMember(int tontineId, TontineMember member) async {
+  Future<TontineMember> addTontineMember(String tontineId, TontineMember member) async {
     try {
       final response = await _api.post('/finances/tontines/$tontineId/members', data: member.toJson());
       return TontineMember.fromJson(response.data as Map<String, dynamic>);
@@ -201,7 +201,7 @@ class FinancesService {
     }
   }
 
-  Future<List<TontinePayout>> getTontinePayouts(int tontineId) async {
+  Future<List<TontinePayout>> getTontinePayouts(String tontineId) async {
     try {
       final response = await _api.get('/finances/tontines/$tontineId/payouts');
       final data = response.data as List;
@@ -211,27 +211,11 @@ class FinancesService {
     }
   }
 
-  // Donations
-  Future<List<Donation>> getDonations({
-    int page = 0,
-    int size = 20,
-    DonationStatus? status,
-    DonationSource? source,
-    DateTime? fromDate,
-    DateTime? toDate,
-    String? search,
-  }) async {
+  // ---------- Dons (V236) ----------
+
+  Future<List<Donation>> getDonations() async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'size': size,
-        if (status != null) 'status': status.name,
-        if (source != null) 'source': source.name,
-        if (fromDate != null) 'fromDate': fromDate.toIso8601String(),
-        if (toDate != null) 'toDate': toDate.toIso8601String(),
-        if (search != null && search.isNotEmpty) 'search': search,
-      };
-      final response = await _api.get('/finances/donations', queryParameters: queryParams);
+      final response = await _api.get('/finances/donations');
       final data = response.data as List;
       return data.map((json) => Donation.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -248,25 +232,20 @@ class FinancesService {
     }
   }
 
-  // Reports
-  Future<Map<String, dynamic>> getFinancialSummary({DateTime? fromDate, DateTime? toDate}) async {
+  // ---------- Rapports (V236) ----------
+
+  Future<Map<String, dynamic>> getFinancialSummary() async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (fromDate != null) queryParams['fromDate'] = fromDate.toIso8601String();
-      if (toDate != null) queryParams['toDate'] = toDate.toIso8601String();
-      final response = await _api.get('/finances/reports/summary', queryParameters: queryParams);
+      final response = await _api.get('/finances/reports/summary');
       return response.data as Map<String, dynamic>;
     } catch (e) {
       throw Exception('Erreur lors du chargement du résumé: $e');
     }
   }
 
-  Future<List<Map<String, dynamic>>> getTransactionsByCategory({DateTime? fromDate, DateTime? toDate}) async {
+  Future<List<Map<String, dynamic>>> getTransactionsByCategory() async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (fromDate != null) queryParams['fromDate'] = fromDate.toIso8601String();
-      if (toDate != null) queryParams['toDate'] = toDate.toIso8601String();
-      final response = await _api.get('/finances/reports/by-category', queryParameters: queryParams);
+      final response = await _api.get('/finances/reports/by-category');
       final data = response.data as List;
       return data.map((json) => json as Map<String, dynamic>).toList();
     } catch (e) {
@@ -274,12 +253,9 @@ class FinancesService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getCashFlow({DateTime? fromDate, DateTime? toDate}) async {
+  Future<List<Map<String, dynamic>>> getCashFlow() async {
     try {
-      final queryParams = <String, dynamic>{};
-      if (fromDate != null) queryParams['fromDate'] = fromDate.toIso8601String();
-      if (toDate != null) queryParams['toDate'] = toDate.toIso8601String();
-      final response = await _api.get('/finances/reports/cash-flow', queryParameters: queryParams);
+      final response = await _api.get('/finances/reports/cash-flow');
       final data = response.data as List;
       return data.map((json) => json as Map<String, dynamic>).toList();
     } catch (e) {
@@ -287,8 +263,9 @@ class FinancesService {
     }
   }
 
-  // Reconciliation
-  Future<void> reconcileTransaction(int id) async {
+  // ---------- Rapprochement (V236) ----------
+
+  Future<void> reconcileTransaction(String id) async {
     try {
       await _api.post('/finances/transactions/$id/reconcile');
     } catch (e) {
@@ -303,6 +280,18 @@ class FinancesService {
       return data.map((json) => Transaction.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Erreur lors du chargement: $e');
+    }
+  }
+
+  /// Statistiques annuelles (parMois, recettesParCategorie, depensesParCategorie).
+  Future<Map<String, dynamic>> getStats({int? annee}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (annee != null) queryParams['annee'] = annee;
+      final response = await _api.get('/finances/stats', queryParameters: queryParams);
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Erreur lors du chargement des statistiques: $e');
     }
   }
 }

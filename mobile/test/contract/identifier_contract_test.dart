@@ -27,8 +27,13 @@ const _allowList = <String, String>{
       'À migrer : LiveStreamController attend Long sur /streams/{id}, écart à trancher',
   'lib/features/health/models/health_model.dart':
       'À migrer : module sans contrôleur événements encore — arbitrage préalable requis',
-  'lib/features/finances/models/finance_model.dart': 'À migrer',
-  'lib/features/discipleship/models/discipleship_model.dart': 'À migrer',
+  // finance_model.dart MIGRÉ (V236) : identifiants String (UUID), champs
+  // alignés sur les vues FinanceService — l'exception a été retirée ici.
+  // discipleship_model.dart MIGRÉ : les refs personnes (createdById,
+  // discipleId, mentorId, verifiedById) sont passées en String (UUID serveur
+  // vérifié, le serveur fait UUID.fromString). Les ids structurelles restent
+  // volontairement int : journey/stage/progress/assignment/meeting sont
+  // BIGSERIAL (Long) côté DiscipleshipService — ce n'est pas de la dette.
   'lib/features/tasks/models/task_model.dart':
       'Module orphelin : aucun contrôleur /api/v1/tasks (voir NEED-HELP-TASKS)',
   'lib/features/messages/models/message_model.dart':

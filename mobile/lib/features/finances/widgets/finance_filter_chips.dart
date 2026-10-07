@@ -5,24 +5,24 @@ import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 
 /// Barre de filtres horizontale pour la liste des transactions.
 ///
-/// Trois lignes de puces : type, catégorie et statut.
+/// Deux lignes de puces : type (RECETTE/DEPENSE — seuls types serveur) et
+/// catégorie (texte libre, valeurs proposées depuis les transactions déjà
+/// chargées ; le serveur filtre sur `categorie`).
 class FinanceFilterChips extends StatelessWidget {
   final TransactionType? selectedType;
-  final TransactionCategory? selectedCategory;
-  final TransactionStatus? selectedStatus;
+  final String? selectedCategory;
+  final List<String> availableCategories;
 
   final ValueChanged<TransactionType?> onTypeChanged;
-  final ValueChanged<TransactionCategory?> onCategoryChanged;
-  final ValueChanged<TransactionStatus?> onStatusChanged;
+  final ValueChanged<String?> onCategoryChanged;
 
   const FinanceFilterChips({
     super.key,
     required this.selectedType,
     required this.selectedCategory,
-    required this.selectedStatus,
+    required this.availableCategories,
     required this.onTypeChanged,
     required this.onCategoryChanged,
-    required this.onStatusChanged,
   });
 
   @override
@@ -36,27 +36,18 @@ class FinanceFilterChips extends StatelessWidget {
             values: TransactionType.values,
             selected: selectedType,
             allLabel: 'Tous types',
-            labelOf: _typeLabel,
+            labelOf: (t) => t.label,
             colorOf: _typeColor,
             onChanged: onTypeChanged,
           ),
           const SizedBox(height: 8),
-          _buildRow<TransactionCategory>(
-            values: TransactionCategory.values,
+          _buildRow<String>(
+            values: availableCategories,
             selected: selectedCategory,
             allLabel: 'Toutes catégories',
-            labelOf: (category) => category.displayName,
-            colorOf: _categoryColor,
+            labelOf: (c) => c,
+            colorOf: (_) => AppColors.primary,
             onChanged: onCategoryChanged,
-          ),
-          const SizedBox(height: 8),
-          _buildRow<TransactionStatus>(
-            values: TransactionStatus.values,
-            selected: selectedStatus,
-            allLabel: 'Tous statuts',
-            labelOf: _statusLabel,
-            colorOf: _statusColor,
-            onChanged: onStatusChanged,
           ),
         ],
       ),
@@ -121,95 +112,12 @@ class FinanceFilterChips extends StatelessWidget {
     );
   }
 
-  static String _typeLabel(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return 'Revenu';
-      case TransactionType.expense:
-        return 'Dépense';
-      case TransactionType.transfer:
-        return 'Transfert';
-      case TransactionType.donation:
-        return 'Don';
-      case TransactionType.tontineContribution:
-        return 'Cotisation';
-      case TransactionType.tontinePayout:
-        return 'Versement';
-    }
-  }
-
   static Color _typeColor(TransactionType type) {
     switch (type) {
-      case TransactionType.income:
+      case TransactionType.recette:
         return Colors.green;
-      case TransactionType.expense:
+      case TransactionType.depense:
         return Colors.red;
-      case TransactionType.transfer:
-        return Colors.blue;
-      case TransactionType.donation:
-        return Colors.amber;
-      case TransactionType.tontineContribution:
-        return Colors.purple;
-      case TransactionType.tontinePayout:
-        return Colors.teal;
-    }
-  }
-
-  static Color _categoryColor(TransactionCategory category) {
-    switch (category) {
-      case TransactionCategory.donations:
-      case TransactionCategory.tithes:
-      case TransactionCategory.offerings:
-        return Colors.green;
-      case TransactionCategory.salaries:
-      case TransactionCategory.utilities:
-      case TransactionCategory.maintenance:
-      case TransactionCategory.supplies:
-        return Colors.orange;
-      case TransactionCategory.events:
-      case TransactionCategory.training:
-        return Colors.blue;
-      case TransactionCategory.building:
-        return Colors.brown;
-      case TransactionCategory.missions:
-      case TransactionCategory.benevolence:
-        return Colors.purple;
-      case TransactionCategory.transport:
-        return Colors.cyan;
-      case TransactionCategory.meals:
-        return Colors.pink;
-      case TransactionCategory.other:
-        return Colors.grey;
-    }
-  }
-
-  static String _statusLabel(TransactionStatus status) {
-    switch (status) {
-      case TransactionStatus.pending:
-        return 'En attente';
-      case TransactionStatus.completed:
-        return 'Complétée';
-      case TransactionStatus.failed:
-        return 'Échouée';
-      case TransactionStatus.cancelled:
-        return 'Annulée';
-      case TransactionStatus.refunded:
-        return 'Remboursée';
-    }
-  }
-
-  static Color _statusColor(TransactionStatus status) {
-    switch (status) {
-      case TransactionStatus.pending:
-        return Colors.orange;
-      case TransactionStatus.completed:
-        return Colors.green;
-      case TransactionStatus.failed:
-        return Colors.red;
-      case TransactionStatus.cancelled:
-        return Colors.grey;
-      case TransactionStatus.refunded:
-        return Colors.blue;
     }
   }
 }

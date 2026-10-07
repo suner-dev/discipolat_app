@@ -9,6 +9,9 @@ import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/finances/widgets/transaction_card.dart';
 import 'package:discipolat_mobile/features/finances/widgets/finance_filter_chips.dart';
 
+/// Écran FINANCES — Branché sur `FinancesService`, contrat `FinanceController`
+/// (identifiants UUID, vues serveur uniquement : pas de statut de transaction,
+/// pas de type de compte, pas de solde initial — ces champs n'existent pas).
 class FinancesScreen extends ConsumerStatefulWidget {
   const FinancesScreen({super.key});
 
@@ -18,8 +21,7 @@ class FinancesScreen extends ConsumerStatefulWidget {
 
 class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTickerProviderStateMixin {
   TransactionType? _filterType;
-  TransactionCategory? _filterCategory;
-  TransactionStatus? _filterStatus;
+  String? _filterCategory;
   late TabController _tabController;
 
   @override
@@ -36,11 +38,17 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final transactionsAsync = ref.watch(_transactionsProvider((_filterType, _filterCategory, _filterStatus)));
-    final summaryAsync = ref.watch(_summaryProvider);
+    final transactionsAsync = ref.watch(_transactionsProvider((_filterType, _filterCategory)));
     final accountsAsync = ref.watch(_accountsProvider);
     final budgetsAsync = ref.watch(_budgetsProvider);
     final tontinesAsync = ref.watch(_tontinesProvider);
+
+    // Catégories proposées aux filtres = catégories réellement présentes dans
+    // les transactions chargées (le serveur stocke une catégorie texte libre).
+    final availableCategories = transactionsAsync.maybeWhen(
+      data: (txs) => (txs.map((t) => t.categorie).whereType<String>().toSet().toList())..sort(),
+      orElse: () => <String>[],
+    );
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDark,
@@ -66,7 +74,7 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
             onSelected: (value) => setState(() => _filterType = value),
             itemBuilder: (context) => [
               const PopupMenuItem(value: null, child: Text('Tous types')),
-              ...TransactionType.values.map((t) => PopupMenuItem(value: t, child: Text(t.name))),
+              ...TransactionType.values.map((t) => PopupMenuItem(value: t, child: Text(t.label))),
             ],
           ),
           IconButton(
@@ -85,14 +93,13 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
               FinanceFilterChips(
                 selectedType: _filterType,
                 selectedCategory: _filterCategory,
-                selectedStatus: _filterStatus,
+                availableCategories: availableCategories,
                 onTypeChanged: (t) => setState(() => _filterType = t),
                 onCategoryChanged: (c) => setState(() => _filterCategory = c),
-                onStatusChanged: (s) => setState(() => _filterStatus = s),
               ),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () => ref.refresh(_transactionsProvider((_filterType, _filterCategory, _filterStatus)).future),
+                  onRefresh: () => ref.refresh(_transactionsProvider((_filterType, _filterCategory)).future),
                   child: transactionsAsync.when(
                     data: (transactions) {
                       if (transactions.isEmpty) {
@@ -203,9 +210,11 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
     );
   }
 
+  String _money(num amount) => NumberFormat('#,##0.00', 'fr_FR').format(amount);
+
   Widget _buildAccountCard(Account account) {
-    final typeColor = _getAccountTypeColor(account.type);
     final isPositive = account.balance >= 0;
+    final devise = account.devise ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -219,8 +228,8 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: typeColor.withOpacity(0.2),
-                  child: Icon(_getAccountTypeIcon(account.type), color: typeColor),
+                  backgroundColor: AppColors.primary.withOpacity(0.2),
+                  child: Icon(Icons.account_balance_rounded, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -228,41 +237,38 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        account.name,
+                        account.name ?? 'Compte',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      Text(
-                        account.code,
-                        style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
-                      ),
+                      if (account.bankName != null || account.accountNumber != null)
+                        Text(
+                          [account.bankName, account.accountNumber].whereType<String>().join(' · '),
+                          style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
+                        ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
+                if (!account.isActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'INACTIF',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
+                    ),
                   ),
-                  child: Text(
-                    account.type.name.toUpperCase(),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: typeColor),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              '${NumberFormat.currency(locale: 'fr_FR', symbol: account.currency).format(account.balance.abs())} ${account.currency}',
+              '${_money(account.balance)} $devise',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isPositive ? Colors.green : Colors.red,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Solde initial: ${NumberFormat.currency(locale: 'fr_FR', symbol: account.currency).format(account.initialBalance)} ${account.currency}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.surface.withOpacity(0.7)),
             ),
           ],
         ),
@@ -271,9 +277,13 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
   }
 
   Widget _buildBudgetCard(Budget budget) {
-    final progress = budget.allocatedAmount > 0 ? budget.spentAmount / budget.allocatedAmount : 0.0;
-    final isOverBudget = budget.spentAmount > budget.allocatedAmount;
-    final remaining = budget.allocatedAmount - budget.spentAmount;
+    // Consommation et statut calculés côté serveur (OK / ALERTE / DEPASSE).
+    final progress = budget.consommationPct / 100.0;
+    final statutColor = budget.estDepasse
+        ? Colors.red
+        : budget.estAlerte
+            ? Colors.orange
+            : Colors.green;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -288,23 +298,17 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
               children: [
                 Expanded(
                   child: Text(
-                    budget.name,
+                    budget.categorie ?? 'Budget',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: budget.isActive ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                if (budget.annee != null)
+                  Text(
+                    '${budget.annee}',
+                    style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
                   ),
-                  child: Text(
-                    budget.isActive ? 'Actif' : 'Inactif',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: budget.isActive ? Colors.green : Colors.grey),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -315,32 +319,26 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Alloué: ${NumberFormat.currency(locale: 'fr_FR', symbol: budget.currency).format(budget.allocatedAmount)} ${budget.currency}',
+                        'Prévu: ${_money(budget.montant)}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        'Dépensé: ${NumberFormat.currency(locale: 'fr_FR', symbol: budget.currency).format(budget.spentAmount)} ${budget.currency}',
+                        'Dépensé: ${_money(budget.depenseReelle)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red),
                       ),
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Restant: ${NumberFormat.currency(locale: 'fr_FR', symbol: budget.currency).format(remaining.abs())} ${budget.currency}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: isOverBudget ? Colors.red : Colors.green,
-                      ),
-                    ),
-                    Text(
-                      isOverBudget ? 'DÉPASSÉ' : 'Dans les limites',
-                      style: TextStyle(fontSize: 10, color: isOverBudget ? Colors.red : Colors.green),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statutColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    budget.statut.isEmpty ? 'OK' : budget.statut,
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statutColor),
+                  ),
                 ),
               ],
             ),
@@ -348,23 +346,18 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
             LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               backgroundColor: AppColors.surfaceDark,
-              valueColor: AlwaysStoppedAnimation<Color>(isOverBudget ? Colors.red : AppColors.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(statutColor),
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${DateFormat('dd/MM/yyyy').format(budget.startDate)} - ${DateFormat('dd/MM/yyyy').format(budget.endDate)}',
-                  style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.7)),
-                ),
-                Text(
-                  '${(progress * 100).clamp(0, 999).toStringAsFixed(1)}%',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isOverBudget ? Colors.red : AppColors.primary),
-                ),
-              ],
+            Text(
+              '${budget.consommationPct.toStringAsFixed(1)}%',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: statutColor,
+              ),
             ),
           ],
         ),
@@ -373,7 +366,8 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
   }
 
   Widget _buildTontineCard(Tontine tontine) {
-    final statusColor = _getTontineStatusColor(tontine.status);
+    final statusColor = tontine.isActive ? Colors.green : Colors.grey;
+    final debut = tontine.debut;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -395,18 +389,9 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tontine.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '${tontine.currentMembers}/${tontine.maxMembers} membres',
-                          style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.7)),
-                        ),
-                      ],
+                    child: Text(
+                      tontine.name ?? 'Tontine',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                   Container(
@@ -416,7 +401,7 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      tontine.status.displayName,
+                      tontine.isActive ? 'ACTIVE' : 'INACTIVE',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                     ),
                   ),
@@ -429,17 +414,16 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
               ],
               Row(
                 children: [
-                  _buildInfoChip(Icons.attach_money_rounded, '${NumberFormat.currency(locale: 'fr_FR', symbol: tontine.currency).format(tontine.contributionAmount)} ${tontine.currency}', Colors.green),
+                  _buildInfoChip(Icons.attach_money_rounded, _money(tontine.amountPerTurn), Colors.green),
                   const SizedBox(width: 12),
-                  _buildInfoChip(Icons.calendar_today_rounded, tontine.frequency.displayName, AppColors.primary),
-                  const SizedBox(width: 12),
-                  _buildInfoChip(Icons.people_rounded, '${tontine.currentMembers}/${tontine.maxMembers}', Colors.orange),
+                  if (tontine.frequency != null)
+                    _buildInfoChip(Icons.calendar_today_rounded, tontine.frequency!.label, AppColors.primary),
                 ],
               ),
               const SizedBox(height: 12),
-              if (tontine.startDate != null)
+              if (debut != null)
                 Text(
-                  'Début: ${DateFormat('dd/MM/yyyy').format(tontine.startDate.toLocal())}',
+                  'Début: ${DateFormat('dd/MM/yyyy').format(debut.toLocal())}',
                   style: TextStyle(fontSize: 11, color: AppColors.surface.withOpacity(0.7)),
                 ),
             ],
@@ -484,58 +468,13 @@ class _FinancesScreenState extends ConsumerState<FinancesScreen> with SingleTick
       ),
     );
   }
-
-  Color _getAccountTypeColor(AccountType type) {
-    switch (type) {
-      case AccountType.asset:
-        return Colors.blue;
-      case AccountType.liability:
-        return Colors.red;
-      case AccountType.equity:
-        return Colors.purple;
-      case AccountType.income:
-        return Colors.green;
-      case AccountType.expense:
-        return Colors.orange;
-    }
-  }
-
-  IconData _getAccountTypeIcon(AccountType type) {
-    switch (type) {
-      case AccountType.asset:
-        return Icons.account_balance_rounded;
-      case AccountType.liability:
-        return Icons.credit_card_rounded;
-      case AccountType.equity:
-        return Icons.pie_chart_rounded;
-      case AccountType.income:
-        return Icons.trending_up_rounded;
-      case AccountType.expense:
-        return Icons.trending_down_rounded;
-    }
-  }
-
-  Color _getTontineStatusColor(TontineStatus status) {
-    switch (status) {
-      case TontineStatus.draft:
-        return Colors.grey;
-      case TontineStatus.recruiting:
-        return Colors.blue;
-      case TontineStatus.active:
-        return Colors.green;
-      case TontineStatus.completed:
-        return Colors.purple;
-      case TontineStatus.cancelled:
-        return Colors.red;
-    }
-  }
 }
 
 // Providers
-final _transactionsProvider = FutureProvider.family<List<Transaction>, (TransactionType?, TransactionCategory?, TransactionStatus?)>((ref, params) async {
-  final (type, category, status) = params;
+final _transactionsProvider = FutureProvider.family<List<Transaction>, (TransactionType?, String?)>((ref, params) async {
+  final (type, category) = params;
   final service = ref.watch(financesServiceProvider);
-  return service.getTransactions(type: type, category: category, status: status);
+  return service.getTransactions(type: type, categorie: category);
 });
 
 final _accountsProvider = FutureProvider<List<Account>>((ref) async {
@@ -551,9 +490,4 @@ final _budgetsProvider = FutureProvider<List<Budget>>((ref) async {
 final _tontinesProvider = FutureProvider<List<Tontine>>((ref) async {
   final service = ref.watch(financesServiceProvider);
   return service.getTontines();
-});
-
-final _summaryProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final service = ref.watch(financesServiceProvider);
-  return service.getFinancialSummary();
 });

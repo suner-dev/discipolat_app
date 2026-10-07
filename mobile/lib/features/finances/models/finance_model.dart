@@ -1,399 +1,421 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+// Modèle FINANCES — contrat exact du backend FinanceController
+// (backend/.../finances/api/FinanceController.java, monture /api/v1/finances).
+//
+// Règles suivies ici :
+// - tous les identifiants sont des UUID serveur → typés `String` (plus d'`int`) ;
+// - les champs de chaque classe sont UNIQUEMENT les clés réellement renvoyées
+//   par FinanceService (toMap / vues V236) — rien d'inventé ;
+// - les champs réellement requis côté serveur sont marqués `required` ; les
+//   champs absents de certaines vues (détail, non-rapprochées) sont nullables ;
+// - classes immuables sans génération de code (ni freezed ni .g.dart) :
+//   fromJson/toJson écrits à la main, tolérants (le serveur sérialise
+//   BigDecimal en nombre, LocalDate en « yyyy-MM-dd », Instant en ISO-8601).
 
-part 'finance_model.freezed.dart';
-part 'finance_model.g.dart';
-
-@freezed
-class Transaction with _$Transaction {
-  const factory Transaction({
-    required int id,
-    required String reference,
-    required TransactionType type,
-    required TransactionCategory category,
-    required double amount,
-    required String currency,
-    String? description,
-    required DateTime date,
-    String? paymentMethod,
-    String? paymentReference,
-    required TransactionStatus status,
-    int? accountId,
-    String? accountName,
-    int? budgetId,
-    String? budgetName,
-    int? projectId,
-    String? projectName,
-    int? donorId,
-    String? donorName,
-    bool? isAnonymous,
-    String? receiptUrl,
-    required DateTime createdAt,
-    DateTime? updatedAt,
-    @Default(false) bool isReconciled,
-    DateTime? reconciledAt,
-    int? reconciledBy,
-  }) = _Transaction;
-
-  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
-}
-
-@freezed
-class Account with _$Account {
-  const factory Account({
-    required int id,
-    required String name,
-    required String code,
-    required AccountType type,
-    required String currency,
-    @Default(0.0) double balance,
-    @Default(0.0) double initialBalance,
-    String? description,
-    @Default(true) bool isActive,
-    int? parentId,
-    String? parentName,
-    required DateTime createdAt,
-    DateTime? updatedAt,
-  }) = _Account;
-
-  factory Account.fromJson(Map<String, dynamic> json) => _$AccountFromJson(json);
-}
-
-@freezed
-class Budget with _$Budget {
-  const factory Budget({
-    required int id,
-    required String name,
-    required String code,
-    required double allocatedAmount,
-    @Default(0.0) double spentAmount,
-    required String currency,
-    required DateTime startDate,
-    required DateTime endDate,
-    @Default(true) bool isActive,
-    String? description,
-    int? departmentId,
-    String? departmentName,
-    required DateTime createdAt,
-    DateTime? updatedAt,
-  }) = _Budget;
-
-  factory Budget.fromJson(Map<String, dynamic> json) => _$BudgetFromJson(json);
-}
-
-@freezed
-class Tontine with _$Tontine {
-  const factory Tontine({
-    required int id,
-    required String name,
-    required String description,
-    required double contributionAmount,
-    required TontineFrequency frequency,
-    required int maxMembers,
-    @Default(0) int currentMembers,
-    required DateTime startDate,
-    DateTime? endDate,
-    required TontineStatus status,
-    required String currency,
-    int? managerId,
-    String? managerName,
-    String? payoutMethod,
-    @Default(false) bool isPublic,
-    required DateTime createdAt,
-    DateTime? updatedAt,
-  }) = _Tontine;
-
-  factory Tontine.fromJson(Map<String, dynamic> json) => _$TontineFromJson(json);
-}
-
-@freezed
-class TontineMember with _$TontineMember {
-  const factory TontineMember({
-    required int id,
-    required int tontineId,
-    required int personId,
-    required String personName,
-    required TontineMemberRole role,
-    required TontineMemberStatus status,
-    required int position,
-    DateTime? joinedAt,
-    DateTime? lastPaymentAt,
-    @Default(0.0) double totalContributed,
-    @Default(0) int paymentsMade,
-    @Default(0) int paymentsMissed,
-  }) = _TontineMember;
-
-  factory TontineMember.fromJson(Map<String, dynamic> json) => _$TontineMemberFromJson(json);
-}
-
-@freezed
-class TontinePayout with _$TontinePayout {
-  const factory TontinePayout({
-    required int id,
-    required int tontineId,
-    required int memberId,
-    required String memberName,
-    required double amount,
-    required DateTime scheduledDate,
-    DateTime? paidDate,
-    required TontinePayoutStatus status,
-    String? paymentReference,
-  }) = _TontinePayout;
-
-  factory TontinePayout.fromJson(Map<String, dynamic> json) => _$TontinePayoutFromJson(json);
-}
-
-@freezed
-class Donation with _$Donation {
-  const factory Donation({
-    required int id,
-    required String reference,
-    required double amount,
-    required String currency,
-    String? donorName,
-    String? donorEmail,
-    String? donorPhone,
-    @Default(false) bool isAnonymous,
-    String? message,
-    required DateTime date,
-    required DonationSource source,
-    String? paymentReference,
-    required DonationStatus status,
-    String? campaignId,
-    String? campaignName,
-    DateTime? receiptSentAt,
-    required DateTime createdAt,
-  }) = _Donation;
-
-  factory Donation.fromJson(Map<String, dynamic> json) => _$DonationFromJson(json);
-}
-
+/// Types de transaction — seul ce que connaît le serveur
+/// (FinanceTransaction.TransactionType : RECETTE, DEPENSE).
 enum TransactionType {
-  @JsonValue('INCOME')
-  income,
-  @JsonValue('EXPENSE')
-  expense,
-  @JsonValue('TRANSFER')
-  transfer,
-  @JsonValue('DONATION')
-  donation,
-  @JsonValue('TONTINE_CONTRIBUTION')
-  tontineContribution,
-  @JsonValue('TONTINE_PAYOUT')
-  tontinePayout,
-}
+  recette('RECETTE', 'Recette'),
+  depense('DEPENSE', 'Dépense');
 
-enum TransactionCategory {
-  @JsonValue('DONATIONS')
-  donations,
-  @JsonValue('TITHES')
-  tithes,
-  @JsonValue('OFFERINGS')
-  offerings,
-  @JsonValue('EVENTS')
-  events,
-  @JsonValue('BUILDING')
-  building,
-  @JsonValue('MISSIONS')
-  missions,
-  @JsonValue('BENEVOLENCE')
-  benevolence,
-  @JsonValue('SALARIES')
-  salaries,
-  @JsonValue('UTILITIES')
-  utilities,
-  @JsonValue('MAINTENANCE')
-  maintenance,
-  @JsonValue('SUPPLIES')
-  supplies,
-  @JsonValue('TRANSPORT')
-  transport,
-  @JsonValue('MEALS')
-  meals,
-  @JsonValue('TRAINING')
-  training,
-  @JsonValue('OTHER')
-  other;
+  const TransactionType(this.wire, this.label);
 
-  String get displayName {
-    switch (this) {
-      case TransactionCategory.donations:
-        return 'Dons';
-      case TransactionCategory.tithes:
-        return 'Dîmes';
-      case TransactionCategory.offerings:
-        return 'Offrandes';
-      case TransactionCategory.events:
-        return 'Événements';
-      case TransactionCategory.building:
-        return 'Bâtiment';
-      case TransactionCategory.missions:
-        return 'Missions';
-      case TransactionCategory.benevolence:
-        return 'Bienfaisance';
-      case TransactionCategory.salaries:
-        return 'Salaires';
-      case TransactionCategory.utilities:
-        return 'Services publics';
-      case TransactionCategory.maintenance:
-        return 'Maintenance';
-      case TransactionCategory.supplies:
-        return 'Fournitures';
-      case TransactionCategory.transport:
-        return 'Transport';
-      case TransactionCategory.meals:
-        return 'Repas';
-      case TransactionCategory.training:
-        return 'Formation';
-      case TransactionCategory.other:
-        return 'Autre';
+  /// Valeur envoyue au serveur / reçue de lui.
+  final String wire;
+  final String label;
+
+  static TransactionType? fromWire(String? raw) {
+    if (raw == null) return null;
+    for (final t in values) {
+      if (t.wire == raw.toUpperCase()) return t;
     }
+    return null;
   }
 }
 
-enum TransactionStatus {
-  @JsonValue('PENDING')
-  pending,
-  @JsonValue('COMPLETED')
-  completed,
-  @JsonValue('FAILED')
-  failed,
-  @JsonValue('CANCELLED')
-  cancelled,
-  @JsonValue('REFUNDED')
-  refunded,
-}
-
-enum AccountType {
-  @JsonValue('ASSET')
-  asset,
-  @JsonValue('LIABILITY')
-  liability,
-  @JsonValue('EQUITY')
-  equity,
-  @JsonValue('INCOME')
-  income,
-  @JsonValue('EXPENSE')
-  expense,
-}
-
-enum BudgetStatus {
-  @JsonValue('DRAFT')
-  draft,
-  @JsonValue('ACTIVE')
-  active,
-  @JsonValue('EXHAUSTED')
-  exhausted,
-  @JsonValue('CLOSED')
-  closed,
-}
-
+/// Fréquences de tontine — FinanceTontine.Frequency (WEEKLY, MONTHLY,
+/// QUARTERLY, YEARLY). Le serveur rejette toute autre valeur (requireFrequency).
 enum TontineFrequency {
-  @JsonValue('WEEKLY')
-  weekly,
-  @JsonValue('BIWEEKLY')
-  biweekly,
-  @JsonValue('MONTHLY')
-  monthly,
-  @JsonValue('QUARTERLY')
-  quarterly;
+  weekly('WEEKLY', 'Hebdomadaire'),
+  monthly('MONTHLY', 'Mensuel'),
+  quarterly('QUARTERLY', 'Trimestriel'),
+  yearly('YEARLY', 'Annuel');
 
-  String get displayName {
-    switch (this) {
-      case TontineFrequency.weekly:
-        return 'Hebdomadaire';
-      case TontineFrequency.biweekly:
-        return 'Quinzaine';
-      case TontineFrequency.monthly:
-        return 'Mensuel';
-      case TontineFrequency.quarterly:
-        return 'Trimestriel';
+  const TontineFrequency(this.wire, this.label);
+
+  final String wire;
+  final String label;
+
+  static TontineFrequency? fromWire(String? raw) {
+    if (raw == null) return null;
+    for (final f in values) {
+      if (f.wire == raw.toUpperCase()) return f;
     }
+    return null;
   }
 }
 
-enum TontineStatus {
-  @JsonValue('DRAFT')
-  draft,
-  @JsonValue('RECRUITING')
-  recruiting,
-  @JsonValue('ACTIVE')
-  active,
-  @JsonValue('COMPLETED')
-  completed,
-  @JsonValue('CANCELLED')
-  cancelled;
-
-  String get displayName {
-    switch (this) {
-      case TontineStatus.draft:
-        return 'Brouillon';
-      case TontineStatus.recruiting:
-        return 'Recrutement';
-      case TontineStatus.active:
-        return 'Active';
-      case TontineStatus.completed:
-        return 'Terminée';
-      case TontineStatus.cancelled:
-        return 'Annulée';
-    }
-  }
+/// Normalise une date serveur en instant ISO-8601 complet, exigé par
+/// `Instant.parse` côté FinanceService (donationDate, startDate, endDate).
+String? isoInstant(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  if (raw.contains('T')) return raw;
+  // « yyyy-MM-dd » (10 caractères) → minuit UTC.
+  if (raw.length == 10) return '${raw}T00:00:00Z';
+  return raw;
 }
 
-enum TontineMemberRole {
-  @JsonValue('MANAGER')
-  manager,
-  @JsonValue('SECRETARY')
-  secretary,
-  @JsonValue('TREASURER')
-  treasurer,
-  @JsonValue('MEMBER')
-  member,
+double _d(Object? v) => v is num ? v.toDouble() : double.tryParse('${v ?? ''}') ?? 0;
+int? _i(Object? v) => v is num ? v.toInt() : int.tryParse('${v ?? ''}');
+bool _b(Object? v) => v == true || v == 'true';
+String? _s(Object? v) => v == null ? null : '$v';
+
+/// Transaction — clés de `FinanceService.toMap` (liste, création, mise à jour),
+/// `getTransaction` (sous-ensemble) et `listUnreconciledTransactions` (sous-ensemble).
+class Transaction {
+  const Transaction({
+    required this.id,
+    this.type,
+    this.categorie,
+    required this.montant,
+    this.devise,
+    this.montantMinor,
+    this.tauxVersBase,
+    this.montantBase,
+    this.description = '',
+    this.dateTransaction = '',
+    this.createdAt = '',
+    this.deviseSymbole,
+    this.fuseauHoraire,
+  });
+
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+        id: _s(json['id']) ?? '',
+        type: TransactionType.fromWire(_s(json['type'])),
+        categorie: _s(json['categorie']),
+        montant: _d(json['montant']),
+        devise: _s(json['devise']),
+        montantMinor: json['montantMinor'] is num ? (json['montantMinor'] as num) : null,
+        tauxVersBase: json['tauxVersBase'] == null ? null : _d(json['tauxVersBase']),
+        montantBase: json['montantBase'] == null ? null : _d(json['montantBase']),
+        description: _s(json['description']) ?? '',
+        dateTransaction: _s(json['dateTransaction']) ?? '',
+        createdAt: _s(json['createdAt']) ?? '',
+        deviseSymbole: _s(json['deviseSymbole']),
+        fuseauHoraire: _s(json['fuseauHoraire']),
+      );
+
+  final String id;
+  final TransactionType? type;
+  final String? categorie;
+  final double montant;
+  final String? devise;
+  final num? montantMinor;
+  final double? tauxVersBase;
+  final double? montantBase;
+  final String description;
+
+  /// LocalDate serveur, format brut « yyyy-MM-dd » (peut être '' sur certaines vues).
+  final String dateTransaction;
+  final String createdAt;
+  final String? deviseSymbole;
+  final String? fuseauHoraire;
+
+  DateTime? get date => DateTime.tryParse(dateTransaction);
+  String get symboleOuDevise => deviseSymbole ?? devise ?? '';
+
+  /// Corps de `FinanceTransactionRequest` — uniquement les clés lues par
+  /// FinanceService.createTransaction/updateTransaction.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        if (type != null) 'type': type!.wire,
+        if (categorie != null) 'categorie': categorie,
+        'montant': montant,
+        'description': description,
+        if (dateTransaction.isNotEmpty) 'dateTransaction': dateTransaction,
+      };
+
+  Transaction copyWith({
+    String? id,
+    TransactionType? type,
+    String? categorie,
+    double? montant,
+    String? devise,
+    String? description,
+    String? dateTransaction,
+  }) =>
+      Transaction(
+        id: id ?? this.id,
+        type: type ?? this.type,
+        categorie: categorie ?? this.categorie,
+        montant: montant ?? this.montant,
+        devise: devise ?? this.devise,
+        montantMinor: montantMinor,
+        tauxVersBase: tauxVersBase,
+        montantBase: montantBase,
+        description: description ?? this.description,
+        dateTransaction: dateTransaction ?? this.dateTransaction,
+        createdAt: createdAt,
+        deviseSymbole: deviseSymbole,
+        fuseauHoraire: fuseauHoraire,
+      );
 }
 
-enum TontineMemberStatus {
-  @JsonValue('PENDING')
-  pending,
-  @JsonValue('ACTIVE')
-  active,
-  @JsonValue('SUSPENDED')
-  suspended,
-  @JsonValue('EXCLUDED')
-  excluded,
-  @JsonValue('COMPLETED')
-  completed,
+/// Compte — clés des vues `listAccounts` / `getAccount` / `createAccount`.
+class Account {
+  const Account({
+    required this.id,
+    this.name,
+    this.accountNumber,
+    this.bankName,
+    required this.balance,
+    this.devise,
+    required this.isActive,
+    this.createdAt = '',
+    this.updatedAt,
+  });
+
+  factory Account.fromJson(Map<String, dynamic> json) => Account(
+        id: _s(json['id']) ?? '',
+        name: _s(json['name']),
+        accountNumber: _s(json['accountNumber']),
+        bankName: _s(json['bankName']),
+        balance: _d(json['balance']),
+        devise: _s(json['devise']),
+        isActive: _b(json['isActive']),
+        createdAt: _s(json['createdAt']) ?? '',
+        updatedAt: _s(json['updatedAt']),
+      );
+
+  final String id;
+  final String? name;
+  final String? accountNumber;
+  final String? bankName;
+  final double balance;
+  final String? devise;
+  final bool isActive;
+  final String createdAt;
+  final String? updatedAt;
+
+  /// Corps lu par `FinanceService.createAccount` (clé par clé).
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'name': name,
+        if (accountNumber != null) 'accountNumber': accountNumber,
+        if (bankName != null) 'bankName': bankName,
+        'balance': balance,
+        if (devise != null) 'devise': devise,
+      };
 }
 
-enum TontinePayoutStatus {
-  @JsonValue('PENDING')
-  pending,
-  @JsonValue('SCHEDULED')
-  scheduled,
-  @JsonValue('PAID')
-  paid,
-  @JsonValue('FAILED')
-  failed,
+/// Budget — clés des vues `listBudgets` / `getBudget` (consommation calculée
+/// serveur) et `upsertBudget` (id/categorie/annee/montant).
+class Budget {
+  const Budget({
+    required this.id,
+    this.categorie,
+    this.annee,
+    required this.montant,
+    this.depenseReelle = 0,
+    this.consommationPct = 0,
+    this.statut = '',
+  });
+
+  factory Budget.fromJson(Map<String, dynamic> json) => Budget(
+        id: _s(json['id']) ?? '',
+        categorie: _s(json['categorie']),
+        annee: _i(json['annee']),
+        montant: _d(json['montant']),
+        depenseReelle: _d(json['depenseReelle']),
+        consommationPct: _d(json['consommationPct']),
+        statut: _s(json['statut']) ?? '',
+      );
+
+  final String id;
+  final String? categorie;
+  final int? annee;
+  final double montant;
+  final double depenseReelle;
+  final double consommationPct;
+
+  /// Statut calculé côté serveur : OK | ALERTE | DEPASSE (vides sur la réponse
+  /// d'upsert).
+  final String statut;
+
+  bool get estDepasse => statut == 'DEPASSE';
+  bool get estAlerte => statut == 'ALERTE';
+
+  /// Corps de `FinanceBudgetRequest` — les trois seules clés lues
+  /// (annee(), categorie(), montant()).
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'categorie': categorie,
+        'annee': annee,
+        'montant': montant,
+      };
 }
 
-enum DonationSource {
-  @JsonValue('ONLINE')
-  online,
-  @JsonValue('CASH')
-  cash,
-  @JsonValue('MOBILE_MONEY')
-  mobileMoney,
-  @JsonValue('BANK_TRANSFER')
-  bankTransfer,
-  @JsonValue('CHECK')
-  check,
+/// Tontine — clés des vues `listTontines` / `getTontine` / `createTontine`.
+class Tontine {
+  const Tontine({
+    required this.id,
+    this.name,
+    this.description,
+    required this.amountPerTurn,
+    this.frequency,
+    this.startDate,
+    this.endDate,
+    required this.isActive,
+    this.createdAt = '',
+    this.updatedAt,
+  });
+
+  factory Tontine.fromJson(Map<String, dynamic> json) => Tontine(
+        id: _s(json['id']) ?? '',
+        name: _s(json['name']),
+        description: _s(json['description']),
+        amountPerTurn: _d(json['amountPerTurn']),
+        frequency: TontineFrequency.fromWire(_s(json['frequency'])),
+        startDate: _s(json['startDate']),
+        endDate: _s(json['endDate']),
+        isActive: _b(json['isActive']),
+        createdAt: _s(json['createdAt']) ?? '',
+        updatedAt: _s(json['updatedAt']),
+      );
+
+  final String id;
+  final String? name;
+  final String? description;
+  final double amountPerTurn;
+  final TontineFrequency? frequency;
+
+  /// Instant serveur sérialisé (ISO-8601 avec « T »), conservé brut.
+  final String? startDate;
+  final String? endDate;
+  final bool isActive;
+  final String createdAt;
+  final String? updatedAt;
+
+  DateTime? get debut => DateTime.tryParse(startDate ?? '');
+
+  /// Corps lu par `FinanceService.createTontine` (frequency obligatoire,
+  /// startDate/endDate passés à Instant.parse → ISO complet exigé).
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'name': name,
+        if (description != null) 'description': description,
+        'amountPerTurn': amountPerTurn,
+        if (frequency != null) 'frequency': frequency!.wire,
+        if (startDate != null) 'startDate': isoInstant(startDate),
+        if (endDate != null) 'endDate': isoInstant(endDate),
+      };
 }
 
-enum DonationStatus {
-  @JsonValue('PENDING')
-  pending,
-  @JsonValue('COMPLETED')
-  completed,
-  @JsonValue('FAILED')
-  failed,
-  @JsonValue('REFUNDED')
-  refunded,
+/// Membre de tontine — clés des vues `listTontineMembers` /
+/// `createTontineMember`. Les personnes sont désignées par `userId` UUID.
+class TontineMember {
+  const TontineMember({
+    required this.id,
+    required this.tontineId,
+    required this.userId,
+    this.joinedAt = '',
+    this.turnOrder = 0,
+    required this.isActive,
+  });
+
+  factory TontineMember.fromJson(Map<String, dynamic> json) => TontineMember(
+        id: _s(json['id']) ?? '',
+        tontineId: _s(json['tontineId']) ?? '',
+        userId: _s(json['userId']) ?? '',
+        joinedAt: _s(json['joinedAt']) ?? '',
+        turnOrder: _i(json['turnOrder']) ?? 0,
+        isActive: _b(json['isActive']),
+      );
+
+  final String id;
+  final String tontineId;
+  final String userId;
+  final String joinedAt;
+  final int turnOrder;
+  final bool isActive;
+
+  /// Corps lu par `FinanceService.createTontineMember` : userId (UUID,
+  /// obligatoire) et turnOrder (facultatif).
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'userId': userId,
+        'turnOrder': turnOrder,
+      };
+}
+
+/// Versement de tontine — clés de la vue `listTontinePayouts`.
+class TontinePayout {
+  const TontinePayout({
+    required this.id,
+    required this.tontineId,
+    required this.memberId,
+    required this.amount,
+    this.payoutDate = '',
+    this.turnNumber,
+    this.createdAt = '',
+  });
+
+  factory TontinePayout.fromJson(Map<String, dynamic> json) => TontinePayout(
+        id: _s(json['id']) ?? '',
+        tontineId: _s(json['tontineId']) ?? '',
+        memberId: _s(json['memberId']) ?? '',
+        amount: _d(json['amount']),
+        payoutDate: _s(json['payoutDate']) ?? '',
+        turnNumber: _i(json['turnNumber']),
+        createdAt: _s(json['createdAt']) ?? '',
+      );
+
+  final String id;
+  final String tontineId;
+  final String memberId;
+  final double amount;
+  final String payoutDate;
+  final int? turnNumber;
+  final String createdAt;
+}
+
+/// Don — clés des vues `listDonations` / `createDonation`.
+class Donation {
+  const Donation({
+    required this.id,
+    this.donorName,
+    required this.amount,
+    this.devise,
+    this.donationDate = '',
+    this.purpose,
+    required this.isAnonymous,
+    this.createdAt = '',
+  });
+
+  factory Donation.fromJson(Map<String, dynamic> json) => Donation(
+        id: _s(json['id']) ?? '',
+        donorName: _s(json['donorName']),
+        amount: _d(json['amount']),
+        devise: _s(json['devise']),
+        donationDate: _s(json['donationDate']) ?? '',
+        purpose: _s(json['purpose']),
+        isAnonymous: _b(json['isAnonymous']),
+        createdAt: _s(json['createdAt']) ?? '',
+      );
+
+  final String id;
+  final String? donorName;
+  final double amount;
+  final String? devise;
+
+  /// Instant serveur sérialisé, conservé brut (« amount » est le seul champ
+  /// exigé par createDonation — requireDecimal).
+  final String donationDate;
+  final String? purpose;
+  final bool isAnonymous;
+  final String createdAt;
+
+  /// Corps lu par `FinanceService.createDonation` (donationDate → Instant.parse).
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        if (donorName != null) 'donorName': donorName,
+        'amount': amount,
+        if (devise != null) 'devise': devise,
+        if (donationDate.isNotEmpty) 'donationDate': isoInstant(donationDate),
+        if (purpose != null) 'purpose': purpose,
+        'isAnonymous': isAnonymous,
+      };
 }

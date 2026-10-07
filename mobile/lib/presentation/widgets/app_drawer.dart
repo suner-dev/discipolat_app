@@ -1552,41 +1552,46 @@ class _AppDrawerState extends State<AppDrawer> {
       BuildContext context, IconData icon, String title, String route) {
     final currentLocation = _currentLocation(context);
     final isActive = currentLocation == route;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-      decoration: BoxDecoration(
+    // Flutter ≥3.47 : un DecoratedBox coloré entre le Material et le ListTile
+    // déclenche l'assertion « ListTile background color or ink splashes may be
+    // invisible ». Le fond de la ligne active est donc porté par un Material
+    // dédié (le ListTile peint ses splashes dessus), plus par le Container.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: Material(
+        color:
+            isActive ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        color: isActive ? AppColors.primary.withValues(alpha: 0.1) : null,
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isActive
-                ? AppColors.primary.withValues(alpha: 0.15)
-                : AppColors.primary.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon,
+        child: ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
               color: isActive
-                  ? AppColors.primaryLight
-                  : Colors.white.withValues(alpha: 0.6),
-              size: 20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color:
-                isActive ? Colors.white : Colors.white.withValues(alpha: 0.7),
-            fontSize: 14,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                  ? AppColors.primary.withValues(alpha: 0.15)
+                  : AppColors.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon,
+                color: isActive
+                    ? AppColors.primaryLight
+                    : Colors.white.withValues(alpha: 0.6),
+                size: 20),
           ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color:
+                  isActive ? Colors.white : Colors.white.withValues(alpha: 0.7),
+              fontSize: 14,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onTap: () {
+            Navigator.pop(context);
+            context.go(route);
+          },
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onTap: () {
-          Navigator.pop(context);
-          context.go(route);
-        },
       ),
     );
   }
