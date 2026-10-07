@@ -38,7 +38,6 @@ import 'presentation/screens/asset_field/asset_field_screen.dart';
 import 'presentation/screens/pastoral/pastoral_ministry_screen.dart';
 import 'presentation/screens/admin/admin_field_console_screen.dart';
 import 'presentation/screens/prayers/prayers_list_screen.dart';
-import 'presentation/screens/events/events_list_screen.dart';
 import 'presentation/screens/departments/departments_list_screen.dart';
 import 'presentation/screens/departments/department_detail_screen.dart';
 import 'presentation/screens/departments/department_create_screen.dart';
@@ -86,7 +85,6 @@ import 'presentation/screens/transfers/transfer_admin_screen.dart';
 import 'presentation/screens/platform/platform_modules_screen.dart';
 import 'presentation/screens/platform/platform_menus_screen.dart';
 import 'presentation/screens/platform/platform_pages_screen.dart';
-import 'presentation/screens/finances/finance_screen.dart';
 import 'presentation/screens/communications/communications_screen.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
 import 'presentation/screens/security/security_settings_screen.dart';
@@ -168,7 +166,6 @@ import 'presentation/screens/calendar/calendar_screen.dart';
 import 'presentation/screens/community/community_screen.dart';
 import 'presentation/screens/leave_requests/leave_requests_screen.dart';
 import 'presentation/screens/marketplace/marketplace_screen.dart';
-import 'presentation/screens/streaming/streaming_screen.dart';
 import 'presentation/screens/surveys/surveys_screen.dart';
 import 'presentation/screens/testimonials/testimonials_screen.dart';
 import 'presentation/screens/tickets/tickets_screen.dart';
@@ -185,6 +182,7 @@ import 'features/auth/TwoFactorStatusScreen.dart';
 import 'features/ai/AiHealthScreen.dart';
 import 'features/ai/PredictionsRiskScreen.dart';
 import 'features/tasks/TeamTasksScreen.dart';
+import 'features/tasks/screens/tasks_screen.dart';
 
 // ignore: unused_import
 import 'features/sermons/SermonTranslationsScreen.dart';
@@ -223,7 +221,6 @@ import 'features/rewards/RewardsClaimsScreen.dart';
 import 'features/users/UserRolesScreen.dart';
 import 'features/compliance/ComplianceExportsScreen.dart';
 import 'features/discipleship/DiscipleshipPathsScreen.dart';
-import 'features/conversations/ConversationsScreen.dart';
 import 'features/families/AiChatScreen.dart';
 import 'features/visits/VisitNotesVerifyScreen.dart';
 import 'features/encouragements/EncouragementDetailScreen.dart';
@@ -525,7 +522,10 @@ Map<String, List<String>> _routeRoles = {
     'FAISEUR'
   ],
   '/prayers': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
-  '/events': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  // Doublon '/events' supprimé ici (2026-10-07) : la cartographie était déjà
+  // définie plus bas avec MEMBRE — en Dart la DERNIÈRE clé gagne, la présente
+  // était donc morte tout en masquant un conflit de rôles. Garder une seule
+  // entrée par chemin : les permissions effectives sont inchangées.
   '/alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/smart-alerts': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/bi-dashboard': ['ADMIN', 'PASTEUR'],
@@ -807,7 +807,10 @@ Map<String, List<String>> _routeRoles = {
     'MEMBRE'
   ],
   '/admin': ['ADMIN', 'PASTEUR'],
-  '/finances': ['ADMIN', 'PASTEUR'],
+  // Doublon '/finances' supprimé ici (restriction [ADMIN, PASTEUR] écrasée
+  // plus bas par l'ouverture complète) : la dernière clé gagne en Dart,
+  // l'entrée large est la sémantique effective actuelle — conservée, et une
+  // seule entrée par chemin. À restreindre consciemment si produit le décide.
   '/admin/modules': ['ADMIN'],
   '/admin/menus': ['ADMIN'],
   '/admin/pages': ['ADMIN'],
@@ -2281,15 +2284,16 @@ final appRouter = GoRouter(
         path: '/assets',
         name: 'assets',
         builder: (ctx, s) => const AssetsScreen()),
-    // `/tasks` a été SUPPRIMÉ le 2026-09-29 : cet écran appelait `/tasks`,
-    // `/tasks/$id`, `/tasks/kanban/columns`, `/tasks/templates`… — 11 endpoints
-    // qui N'EXISTENT PAS dans le backend (le seul contrôleur est
-    // TeamTaskController, mappé sur `/api/v1/team-tasks`, avec des UUID et des
-    // PATCH). Le menu comme la web utilisent `/team-tasks`, qui fonctionne.
-    // Le fichier `features/tasks/screens/tasks_screen.dart` est conservé (non
-    // supprimé : il contient des filtres qui pourraient être portés) mais il
-    // n'est plus routable et son bouton « + » pointait sur une route
-    // inexistante. Voir NEED-HELP-TASKS dans reports/plan-2agents/agentB.md.
+    // `/tasks` réactivé : le backend a publié TaskController (V234) sur
+    // exactement le contrat de tasks_service.dart — écran et service ont été
+    // alignés sur les vues serveur réelles (stats {total,done,inProgress,
+    // blocked}, refs personnes en UUID String). La cartographie des rôles
+    // ci-dessus était déjà en place. `/team-tasks` (TeamTaskController) reste
+    // un module DISTINCT et vivant — ne pas confondre les deux.
+    GoRoute(
+        path: '/tasks',
+        name: 'tasks',
+        builder: (ctx, s) => const TasksScreen()),
     GoRoute(
         path: '/discipleship',
         name: 'discipleship',

@@ -16,7 +16,6 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final priorityColor = task.priority.getColor();
     final statusColor = task.status.getColor();
     final isOverdue = task.isOverdue;
 

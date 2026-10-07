@@ -34,8 +34,12 @@ const _allowList = <String, String>{
   // vérifié, le serveur fait UUID.fromString). Les ids structurelles restent
   // volontairement int : journey/stage/progress/assignment/meeting sont
   // BIGSERIAL (Long) côté DiscipleshipService — ce n'est pas de la dette.
-  'lib/features/tasks/models/task_model.dart':
-      'Module orphelin : aucun contrôleur /api/v1/tasks (voir NEED-HELP-TASKS)',
+  // task_model.dart MIGRÉ : le serveur (TaskController V234) génère les ids
+  // structurels en GenerationType.IDENTITY (Long) — `int id` y est ICI le
+  // contrat correct, pas la dette. La dette réelle était ailleurs : les refs
+  // personnes (assignedToId, assignedById, authorId, uploadedById, userId)
+  // sont des UUID serveur → String dans le modèle, et le routeur a récupéré
+  // la route /tasks que cet écran consommait enfin.
   // message_model.dart MIGRÉ : toutes les entités messages sont UUID côté
   // serveur (Conversation/ConversationMessage/GroupConversation,
   // GenerationType.UUID vérifié) → ids et refs personnes (senderId,
