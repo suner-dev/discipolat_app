@@ -84,10 +84,13 @@ class _EnhancedConversationScreenState extends State<EnhancedConversationScreen>
   Future<void> _connectWebSocket() async {
     try {
       final dio = _apiService.dio;
-      final baseUrl = dio.options.baseUrl;
-      final wsUrl = '${baseUrl.replaceFirst('http', 'ws')}/ws';
-      _wsChannel = WebSocketChannel.connect(Uri.parse(wsUrl));
-      _wsChannel!.sink.add('CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\x00');
+      final base = Uri.parse(dio.options.baseUrl);
+      // Broker STOMP sur /ws à la racine (WebSocketConfig), pas sous /api/v1 ;
+      // STOMP 1.1 exige l'en-tête host dans CONNECT.
+      final wsUri =
+          base.replace(scheme: base.scheme == 'https' ? 'wss' : 'ws', path: '/ws');
+      _wsChannel = WebSocketChannel.connect(wsUri);
+      _wsChannel!.sink.add('CONNECT\naccept-version:1.1,1.0\nhost:/ws\nheart-beat:10000,10000\n\n\x00');
       _wsChannel!.stream.listen(
         (data) {
           final frame = data.toString();

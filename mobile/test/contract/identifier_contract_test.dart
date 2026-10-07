@@ -36,8 +36,12 @@ const _allowList = <String, String>{
   // BIGSERIAL (Long) côté DiscipleshipService — ce n'est pas de la dette.
   'lib/features/tasks/models/task_model.dart':
       'Module orphelin : aucun contrôleur /api/v1/tasks (voir NEED-HELP-TASKS)',
-  'lib/features/messages/models/message_model.dart':
-      'senderId/receiverId en int alors que AuthState().userId est un String',
+  // message_model.dart MIGRÉ : toutes les entités messages sont UUID côté
+  // serveur (Conversation/ConversationMessage/GroupConversation,
+  // GenerationType.UUID vérifié) → ids et refs personnes (senderId,
+  // otherUserId…) sont des String ici, comme ConversationResponse/
+  // MessageResponse/GroupConversationResponse. Le service consomme les
+  // endpoints réels /api/v1/messages/** (parity avec MessagesPage.tsx web).
 };
 
 void main() {

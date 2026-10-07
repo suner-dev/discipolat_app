@@ -6,21 +6,72 @@ import 'package:go_router/go_router.dart';
 import 'package:discipolat_mobile/features/messages/models/message_model.dart';
 import 'package:discipolat_mobile/features/messages/services/messages_service.dart';
 import 'package:discipolat_mobile/app.dart';
+import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
+
+/// Liste des conversations — 1:1 (GET /messages/conversations) et groupes
+/// (GET /messages/groups), fusionnées côté client comme le web
+/// (MessagesPage.tsx). Le serveur n'expose ni épinglage, ni mute, ni
+/// archivage, ni suppression de conversation : aucune de ces actions n'est
+/// proposée ici.
+
+/// Vue unifiée d'une ligne de conversation (1:1 ou groupe).
+class _Thread {
+  const _Thread({
+    required this.id,
+    required this.title,
+    required this.kind,
+    this.lastMessage,
+    this.lastMessageAt,
+    this.unreadCount = 0,
+    this.avatarUrl,
+    this.subtitle,
+  });
+
+  final String id;
+  final String title;
+  final ConversationKind kind;
+  final String? lastMessage;
+  final DateTime? lastMessageAt;
+  final int unreadCount;
+  final String? avatarUrl;
+  final String? subtitle;
+
+  factory _Thread.fromDirect(Conversation c) => _Thread(
+        id: c.id,
+        title: c.otherUserName,
+        kind: ConversationKind.direct,
+        lastMessage: c.lastMessage,
+        lastMessageAt: c.lastMessageAt,
+        unreadCount: c.unreadCount,
+      );
+
+  factory _Thread.fromGroup(GroupConversation g) => _Thread(
+        id: g.id,
+        title: g.name,
+        kind: ConversationKind.group,
+        lastMessage: g.lastMessage,
+        lastMessageAt: g.lastMessageAt,
+        unreadCount: g.unreadCount,
+        avatarUrl: g.avatarUrl,
+        subtitle: '${g.memberCount} membres',
+      );
+}
 
 class ConversationsScreen extends ConsumerStatefulWidget {
   const ConversationsScreen({super.key});
 
   @override
-  ConsumerState<ConversationsScreen> createState() => _ConversationsScreenState();
+  ConsumerState<ConversationsScreen> createState() =>
+      _ConversationsScreenState();
 }
 
 class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
-  ConversationType? _filterType;
+  ConversationKind? _filterKind;
 
   @override
   Widget build(BuildContext context) {
-    final conversationsAsync = ref.watch(_conversationsProvider(_filterType));
+    final threadsAsync = ref.watch(_threadsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.surfaceDark,
@@ -29,37 +80,41 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
         backgroundColor: AppColors.cardDark,
         elevation: 0,
         actions: [
-          PopupMenuButton<ConversationType?>(
+          PopupMenuButton<ConversationKind?>(
             icon: const Icon(Icons.filter_list_rounded),
-            onSelected: (value) => setState(() => _filterType = value),
+            onSelected: (value) => setState(() => _filterKind = value),
             itemBuilder: (context) => [
               const PopupMenuItem(value: null, child: Text('Tous')),
-              const PopupMenuItem(value: ConversationType.direct, child: Text('Discussions privées')),
-              const PopupMenuItem(value: ConversationType.group, child: Text('Groupes')),
-              const PopupMenuItem(value: ConversationType.channel, child: Text('Canaux')),
+              const PopupMenuItem(
+                  value: ConversationKind.direct,
+                  child: Text('Discussions privées')),
+              const PopupMenuItem(
+                  value: ConversationKind.group, child: Text('Groupes')),
             ],
           ),
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            onPressed: () => _showNewConversationDialog(),
+            onPressed: _showNewConversationSheet,
             tooltip: 'Nouvelle conversation',
           ),
         ],
       ),
-      body: conversationsAsync.when(
-        data: (conversations) {
-          if (conversations.isEmpty) {
+      body: threadsAsync.when(
+        data: (threads) {
+          final visible = _filterKind == null
+              ? threads
+              : threads.where((t) => t.kind == _filterKind).toList();
+          if (visible.isEmpty) {
             return _buildEmptyState();
           }
           return RefreshIndicator(
-            onRefresh: () => ref.refresh(_conversationsProvider(_filterType).future),
+            onRefresh: () async =>
+                ref.invalidate(_threadsProvider),
             child: ListView.builder(
               padding: const EdgeInsets.all(8),
-              itemCount: conversations.length,
-              itemBuilder: (context, index) {
-                final conv = conversations[index];
-                return _buildConversationTile(conv);
-              },
+              itemCount: visible.length,
+              itemBuilder: (context, index) =>
+                  _buildThreadTile(visible[index]),
             ),
           );
         },
@@ -68,12 +123,13 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline_rounded, size: 64, color: Colors.red),
+              const Icon(Icons.error_outline_rounded,
+                  size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Erreur: $error'),
+              Flexible(child: Text('Erreur: $error')),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: () => ref.refresh(_conversationsProvider(_filterType)),
+                onPressed: () => ref.invalidate(_threadsProvider),
                 icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Réessayer'),
               ),
@@ -89,13 +145,14 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded, size: 64, color: AppColors.surface.withOpacity(0.5)),
+          Icon(Icons.chat_bubble_outline_rounded,
+              size: 64, color: AppColors.surface.withOpacity(0.5)),
           const SizedBox(height: 16),
           Text(
             'Aucune conversation',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.surface.withOpacity(0.7),
-            ),
+                  color: AppColors.surface.withOpacity(0.7),
+                ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -104,7 +161,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: _showNewConversationDialog,
+            onPressed: _showNewConversationSheet,
             icon: const Icon(Icons.add_rounded),
             label: const Text('Nouvelle conversation'),
           ),
@@ -113,129 +170,86 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     );
   }
 
-  Widget _buildConversationTile(Conversation conv) {
-    final hasUnread = conv.unreadCount > 0;
-    final isGroup = conv.type != ConversationType.direct;
+  Widget _buildThreadTile(_Thread thread) {
+    final hasUnread = thread.unreadCount > 0;
+    final isGroup = thread.kind == ConversationKind.group;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       color: AppColors.cardDark,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Stack(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.primary.withOpacity(0.2),
-              backgroundImage: conv.avatarUrl != null ? NetworkImage(conv.avatarUrl!) : null,
-              child: conv.avatarUrl == null
-                  ? Icon(
-                      isGroup ? Icons.group_rounded : Icons.person_rounded,
-                      color: AppColors.primary,
-                    )
-                  : null,
-            ),
-            if (hasUnread)
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                  child: Text(
-                    conv.unreadCount > 9 ? '9+' : conv.unreadCount.toString(),
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            if (conv.isPinned)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: Icon(Icons.push_pin_rounded, size: 14, color: AppColors.primary),
-              ),
-          ],
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: AppColors.primary.withOpacity(0.2),
+          backgroundImage:
+              thread.avatarUrl != null ? NetworkImage(thread.avatarUrl!) : null,
+          child: thread.avatarUrl == null
+              ? Icon(
+                  isGroup ? Icons.group_rounded : Icons.person_rounded,
+                  color: AppColors.primary,
+                )
+              : null,
         ),
         title: Text(
-          conv.title,
+          thread.title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: conv.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          thread.lastMessage ?? thread.subtitle ?? 'Aucun message',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.surface.withOpacity(
+                hasUnread ? 0.8 : 0.5),
+            fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: conv.lastMessage != null
-            ? Row(
-                children: [
-                  if (conv.lastMessage!.type != MessageType.text) ...[
-                    Icon(_getMessageTypeIcon(conv.lastMessage!.type), size: 12, color: AppColors.surface.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                  ],
-                  if (conv.lastMessage!.isSystem)
-                    Text(
-                      conv.lastMessage!.content,
-                      style: TextStyle(fontSize: 12, color: AppColors.surface.withOpacity(0.5), fontStyle: FontStyle.italic),
-                    )
-                  else
-                    Flexible(
-                      child: Text(
-                        _isMine(conv.lastMessage!) ? 'Vous: ${conv.lastMessage!.content}' : '${conv.lastMessage!.senderName}: ${conv.lastMessage!.content}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.surface.withOpacity(0.7),
-                          fontWeight: conv.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-              )
-            : null,
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (conv.updatedAt != null)
+            if (thread.lastMessageAt != null)
               Text(
-                _formatTime(conv.updatedAt!),
-                style: TextStyle(fontSize: 10, color: AppColors.surface.withOpacity(0.5)),
+                _formatTime(thread.lastMessageAt!),
+                style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.surface.withOpacity(0.5)),
               ),
-            if (conv.isMuted)
-              Icon(Icons.notifications_off_rounded, size: 16, color: AppColors.surface.withOpacity(0.5)),
+            if (hasUnread)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                constraints:
+                    const BoxConstraints(minWidth: 18, minHeight: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  thread.unreadCount > 9 ? '9+' : '${thread.unreadCount}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
           ],
         ),
-        onTap: () => context.push('/conversation/${conv.id}'),
-        onLongPress: () => _showConversationOptions(conv),
+        // Routes vivantes : 1:1 → ConversationDetailScreen (presentation),
+        // groupe → EnhancedConversationScreen avec isGroup=1 (app.dart).
+        onTap: () => isGroup
+            ? context.push('/conversation/enhanced/${thread.id}'
+                '?title=${Uri.encodeComponent(thread.title)}&isGroup=1')
+            : context.push('/conversation/${thread.id}'
+                '?title=${Uri.encodeComponent(thread.title)}'),
       ),
     );
-  }
-
-  IconData _getMessageTypeIcon(MessageType type) {
-    switch (type) {
-      case MessageType.image:
-        return Icons.image_rounded;
-      case MessageType.video:
-        return Icons.videocam_rounded;
-      case MessageType.audio:
-        return Icons.mic_rounded;
-      case MessageType.file:
-        return Icons.attach_file_rounded;
-      case MessageType.location:
-        return Icons.location_on_rounded;
-      case MessageType.contact:
-        return Icons.person_rounded;
-      case MessageType.reply:
-        return Icons.reply_rounded;
-      case MessageType.forward:
-        return Icons.forward_rounded;
-      default:
-        return Icons.chat_rounded;
-    }
   }
 
   String _formatTime(DateTime dateTime) {
@@ -249,30 +263,12 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     return DateFormat('dd/MM/yyyy').format(dateTime);
   }
 
-  /// Identifiant de l'utilisateur connecté.
-  ///
-  /// AVANT : `return 1` — un identifiant codé en dur. Conséquence réelle : tout
-  /// utilisateur autre que l'utilisateur n°1 voyait « Vous: » sur les messages
-  /// des autres, et le premier message du dernier message affiché lui était
-  /// attribué. Ce n'est pas un TODO cosmétique, c'est un bug d'affichage visible.
-  ///
-  /// `Message.senderId` est un `int` alors que `AuthState().userId` est un
-  /// `String` : la comparaison se fait donc sur la forme textuelle. Comparer
-  /// directement les deux types rendrait l'égalité toujours fausse (et
-  /// l'analyseur le signale : `unrelated_type_equality_checks`).
-  String? _currentUserId() => AuthState().userId;
-
-  bool _isMine(Message message) {
-    final me = _currentUserId();
-    if (me == null || me.isEmpty) return false;
-    return message.senderId.toString() == me;
-  }
-
-  void _showNewConversationDialog() {
+  void _showNewConversationSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.cardDark,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -286,13 +282,14 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: AppColors.primary,
-                child: const Icon(Icons.person_add_rounded, color: Colors.white),
+                child:
+                    const Icon(Icons.person_add_rounded, color: Colors.white),
               ),
               title: const Text('Discussion privée'),
               subtitle: const Text('Discuter avec une personne'),
               onTap: () {
                 Navigator.pop(context);
-                context.push('/messages/new-direct');
+                _showUserPicker();
               },
             ),
             ListTile(
@@ -304,19 +301,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
               subtitle: const Text('Créer un groupe de discussion'),
               onTap: () {
                 Navigator.pop(context);
-                context.push('/messages/new-group');
-              },
-            ),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppColors.accent,
-                child: const Icon(Icons.campaign_rounded, color: Colors.white),
-              ),
-              title: const Text('Canal'),
-              subtitle: const Text('Créer un canal de diffusion'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/messages/new-channel');
+                _showCreateGroupDialog();
               },
             ),
           ],
@@ -325,69 +310,72 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     );
   }
 
-  void _showConversationOptions(Conversation conv) {
+  /// Choix d'un utilisateur puis POST /messages/conversations {otherUserId}.
+  void _showUserPicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.cardDark,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(conv.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined, color: AppColors.primary),
-            title: Text(conv.isPinned ? 'Désépingler' : 'Épingler'),
-            onTap: () {
-              ref.read(messagesServiceProvider).updateConversation(conv.id, isPinned: !conv.isPinned);
-              Navigator.pop(context);
-            },
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) => _UserPickerSheet(
+        onPicked: (userId, name) async {
+          Navigator.pop(sheetContext);
+          try {
+            final conv = await ref
+                .read(messagesServiceProvider)
+                .startConversation(userId);
+            // Après l'await : uniquement le contexte de l'État, gardé par
+            // sa propre vérification mounted (la feuille est déjà fermée).
+            if (!mounted) return;
+            ref.invalidate(_threadsProvider);
+            context.push('/conversation/${conv.id}'
+                '?title=${Uri.encodeComponent(name)}');
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur: $e')));
+          }
+        },
+      ),
+    );
+  }
+
+  /// Création d'un groupe — corps exact CreateGroupRequest ; le serveur
+  /// ajoute automatiquement le créateur comme ADMIN.
+  void _showCreateGroupDialog() {
+    final nameCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.cardDark,
+        title: const Text('Nouveau groupe'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          maxLength: 100,
+          decoration: const InputDecoration(labelText: 'Nom du groupe'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annuler'),
           ),
-          ListTile(
-            leading: Icon(conv.isMuted ? Icons.notifications_off_rounded : Icons.notifications_none_rounded, color: Colors.orange),
-            title: Text(conv.isMuted ? 'Activer notifications' : 'Couper notifications'),
-            onTap: () {
-              ref.read(messagesServiceProvider).updateConversation(conv.id, isMuted: !conv.isMuted);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(conv.isArchived ? Icons.unarchive_rounded : Icons.archive_rounded, color: AppColors.surface.withOpacity(0.7)),
-            title: Text(conv.isArchived ? 'Désarchiver' : 'Archiver'),
-            onTap: () {
-              ref.read(messagesServiceProvider).updateConversation(conv.id, isArchived: !conv.isArchived);
-              Navigator.pop(context);
-            },
-          ),
-          if (conv.type == ConversationType.group)
-            ListTile(
-              leading: Icon(Icons.group_add_rounded, color: AppColors.success),
-              title: const Text('Gérer les membres'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/conversation/${conv.id}/participants');
-              },
-            ),
-          ListTile(
-            leading: Icon(Icons.delete_rounded, color: Colors.red),
-            title: const Text('Supprimer', style: TextStyle(color: Colors.red)),
-            onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: AppColors.cardDark,
-                  title: const Text('Supprimer la conversation'),
-                  content: const Text('Cette action est irréversible. Confirmer la suppression ?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-                    FilledButton(onPressed: () => Navigator.pop(context, true), style: FilledButton.styleFrom(backgroundColor: Colors.red), child: const Text('Supprimer')),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await ref.read(messagesServiceProvider).deleteConversation(conv.id);
-                ref.invalidate(_conversationsProvider(_filterType));
+          FilledButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              Navigator.pop(dialogContext);
+              try {
+                await ref.read(messagesServiceProvider).createGroup(name: name);
+                ref.invalidate(_threadsProvider);
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text('Erreur: $e')));
               }
-              Navigator.pop(context);
             },
+            child: const Text('Créer'),
           ),
         ],
       ),
@@ -395,8 +383,136 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   }
 }
 
-// Providers
-final _conversationsProvider = FutureProvider.family<List<Conversation>, ConversationType?>((ref, type) async {
+/// Sélecteur d'utilisateur — mêmes champs que la feuille existante du
+/// chemin vivant (GET /users : id UUID, prenom, nom).
+class _UserPickerSheet extends StatefulWidget {
+  final void Function(String userId, String name) onPicked;
+
+  const _UserPickerSheet({required this.onPicked});
+
+  @override
+  State<_UserPickerSheet> createState() => _UserPickerSheetState();
+}
+
+class _UserPickerSheetState extends State<_UserPickerSheet> {
+  final _api = ApiService();
+  List<dynamic> _users = [];
+  bool _isLoading = true;
+  String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final res = await _api.get('/users', params: {'size': 200});
+      final data = res.data;
+      if (data is Map && data['content'] is List) {
+        _users = data['content'] as List;
+      } else if (data is List) {
+        _users = data;
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Impossible de charger les utilisateurs')));
+      }
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final me = AuthState().userId;
+    final filtered = _users.where((u) {
+      final id = u['id']?.toString() ?? '';
+      if (id.isEmpty || id == me) return false;
+      if (_search.isEmpty) return true;
+      final name = '${u['prenom'] ?? ''} ${u['nom'] ?? ''}'
+          .toLowerCase();
+      return name.contains(_search.toLowerCase());
+    }).toList();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('Nouvelle discussion privée',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              decoration: const InputDecoration(
+                hintText: 'Rechercher un utilisateur...',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    controller: scrollCtrl,
+                    itemCount: filtered.length,
+                    itemBuilder: (ctx, index) {
+                      final user = filtered[index] as Map<String, dynamic>;
+                      final name =
+                          '${user['prenom'] ?? ''} ${user['nom'] ?? ''}'.trim();
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              AppColors.primary.withOpacity(0.2),
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                        title: Text(name,
+                            style: const TextStyle(color: Colors.white)),
+                        onTap: () => widget
+                            .onPicked(user['id'].toString(), name),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Conversations 1:1 + groupes, triés par activité récente (nulls first,
+/// comme le serveur pour son propre tri).
+final _threadsProvider = FutureProvider<List<_Thread>>((ref) async {
   final service = ref.watch(messagesServiceProvider);
-  return service.getConversations(type: type?.name);
+  // Deux requêtes indépendantes lancées en parallèle puis attendues —
+  // Future.wait sur des types différents perd l'inférence.
+  final directsFuture = service.getConversations();
+  final groupsFuture = service.getGroups();
+  final directs = await directsFuture;
+  final groups = await groupsFuture;
+  final threads = <_Thread>[
+    ...directs.map(_Thread.fromDirect),
+    ...groups.map(_Thread.fromGroup),
+  ]..sort((a, b) {
+      final at = a.lastMessageAt;
+      final bt = b.lastMessageAt;
+      if (at == null && bt == null) return 0;
+      if (at == null) return 1;
+      if (bt == null) return -1;
+      return bt.compareTo(at);
+    });
+  return threads;
 });

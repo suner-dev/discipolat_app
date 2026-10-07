@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+import '../../../app.dart';
 import '../../../data/services/api_service.dart';
 import 'conversation_detail_screen.dart';
 
@@ -121,10 +122,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       itemCount: _conversations.length,
                       itemBuilder: (context, index) {
                         final conv = _conversations[index] as Map<String, dynamic>;
-                        final title = conv['nom'] ?? conv['title'] ?? 'Conversation';
-                        final lastMsg = conv['dernierMessage'] ?? conv['lastMessage'] ?? '';
-                        final unread = conv['nonLus'] ?? conv['unread'] ?? 0;
-                        final isGroup = conv['type'] == 'GROUPE' || conv['isGroup'] == true;
+                        // Champs réels de ConversationResponse (id,
+                        // otherUserName, lastMessage, unreadCount,
+                        // lastMessageAt) — les clés françaises inventées ne
+                        // correspondaient à aucune vue serveur.
+                        final title = (conv['otherUserName'] ?? 'Conversation').toString();
+                        final lastMsg = (conv['lastMessage'] ?? '').toString();
+                        final unread = (conv['unreadCount'] as num?)?.toInt() ?? 0;
+                        final lastAt = _parseDate(conv['lastMessageAt']);
                         return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                           decoration: BoxDecoration(
@@ -136,10 +141,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                             leading: CircleAvatar(
                               radius: 22,
-                              backgroundColor: isGroup ? Colors.blue.withValues(alpha: 0.2) : Colors.teal.withValues(alpha: 0.2),
+                              backgroundColor: Colors.teal.withValues(alpha: 0.2),
                               child: Text(
                                 _initials(title),
-                                style: TextStyle(color: isGroup ? Colors.blue : Colors.teal, fontWeight: FontWeight.bold, fontSize: 14),
+                                style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
                             title: Row(
@@ -154,9 +159,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                     ),
                                   ),
                                 ),
-                                if (conv['dateDernierMessage'] != null)
+                                if (lastAt != null)
                                   Text(
-                                    conv['dateDernierMessage'].toString().substring(0, 16).replaceAll('T', ' ').substring(11, 16),
+                                    _time(lastAt),
                                     style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10),
                                   ),
                               ],
@@ -186,6 +191,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
             ),
     );
   }
+
+  /// lastMessageAt : LocalDateTime serveur (ISO sans offset).
+  static DateTime? _parseDate(Object? v) =>
+      v == null ? null : DateTime.tryParse(v.toString());
+
+  static String _time(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   static String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -236,7 +248,8 @@ class _NewConversationSheetState extends State<_NewConversationSheet> {
       final name = '${user['prenom'] ?? ''} ${user['nom'] ?? ''}'.trim();
       if (userId.isEmpty) return;
       final res = await widget.apiService.post('/messages/conversations', data: {
-        'participantIds': [userId],
+        // Contrat StartConversationRequest : @NotNull otherUserId (UUID).
+        'otherUserId': userId,
       });
       final convId = (res.data is Map) ? res.data['id']?.toString() ?? '' : '';
       if (convId.isNotEmpty) {
@@ -252,7 +265,12 @@ class _NewConversationSheetState extends State<_NewConversationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Le serveur refuse une conversation avec soi-même (BadRequest) :
+    // l'utilisateur connecté est exclu de la liste.
+    final me = AuthState().userId;
     final filtered = _users.where((u) {
+      final id = u['id']?.toString() ?? '';
+      if (id.isEmpty || id == me) return false;
       if (_search.isEmpty) return true;
       final name = '${u['prenom'] ?? ''} ${u['nom'] ?? ''}'.toLowerCase();
       return name.contains(_search.toLowerCase());

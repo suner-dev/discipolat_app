@@ -22,14 +22,17 @@ class WebSocketService {
 
     try {
       final apiService = ApiService();
-      final baseUrl = apiService.dio.options.baseUrl;
-      final wsUrl = '${baseUrl.replaceFirst('http', 'ws')}/ws';
+      final base = Uri.parse(apiService.dio.options.baseUrl);
+      // Le broker STOMP est enregistré sur /ws à la racine (WebSocketConfig),
+      // pas sous /api/v1.
+      final wsUri =
+          base.replace(scheme: base.scheme == 'https' ? 'wss' : 'ws', path: '/ws');
 
-      _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+      _channel = WebSocketChannel.connect(wsUri);
 
-      // Send STOMP CONNECT frame
+      // Send STOMP CONNECT frame — STOMP 1.1 exige l'en-tête host.
       _channel!.sink.add(
-          'CONNECT\naccept-version:1.1,1.0\nheart-beat:10000,10000\n\n\x00');
+          'CONNECT\naccept-version:1.1,1.0\nhost:/ws\nheart-beat:10000,10000\n\n\x00');
 
       _channel!.stream.listen(
         (data) {

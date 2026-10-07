@@ -218,8 +218,6 @@ import 'features/health/screens/health_screen.dart';
 import 'features/assets/screens/assets_screen.dart';
 import 'features/discipleship/screens/discipleship_screen.dart';
 import 'features/messages/screens/conversations_screen.dart' as msg_conv;
-import 'features/messages/screens/conversation_detail_screen.dart'
-    as msg_feature;
 import 'features/testimonies/TestimonyDetailScreen.dart';
 import 'features/rewards/RewardsClaimsScreen.dart';
 import 'features/users/UserRolesScreen.dart';
