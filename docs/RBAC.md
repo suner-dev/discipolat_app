@@ -273,6 +273,51 @@ tests. Un compte d'une autre église est **invisible** (`EntityNotFoundException
 l'application entière de démarrer. Verrouillé par
 `TenantFilterDefArchitectureTest`.
 
+
+---
+
+### 4.12 Backends des services mobiles V233 (A discipleship · B tasks · C health/finances)
+
+Contrat figé par les `*_service.dart` mobiles ; **aucune nouvelle permission
+au catalogue** — ces contrôleurs suivent le modèle `@PreAuthorize` par route
+(R5 : lecture `isAuthenticated()`, écriture restreinte). Le tenant vient
+exclusivement de `TenantContext` ; tout objet chargé par `id` est revérifié
+contre le tenant (404, jamais 403, sur cross-tenant). Routes documentées
+également dans [WEB_MOBILE_PARITY.md](WEB_MOBILE_PARITY.md).
+
+**A · Discipleship — `@RequestMapping("/api/v1/discipleship")`**
+
+| Famille de route | Garde |
+|---|---|
+| Lecture : `GET /journeys`, `/journeys/{id}`, `/journeys/{journeyId}/stages`, `/stages/{id}`, `/progress`, `/progress/{id}`, `/assignments`, `/meetings`, `/reports/{journeyId}`, `/reports/{journeyId}/top-mentors` | `isAuthenticated()` |
+| Écriture : `POST /journeys`, `POST /stages`, `POST /progress`, `POST /assignments`, `POST /assignments/{id}/end`, `POST /meetings`, `POST /meetings/{id}/complete`, `POST /progress/{progressId}/stages/{stageId}/complete`, `PATCH /progress/{progressId}/requirements/{requirementId}` | `hasAnyRole('ADMIN', 'PASTEUR')` |
+
+**B · Tasks — `@RequestMapping("/api/v1/tasks")`**
+
+| Famille de route | Garde |
+|---|---|
+| Lecture : `GET /`, `/{id}`, `/{taskId}/{subtasks,attachments,comments,dependencies,time-entries,time-total}`, `/kanban/columns`, `/templates`, `/reports/*`, `/overdue` | `isAuthenticated()` |
+| Écriture opérationnelle : `POST /`, `PUT /{id}`, `PATCH /{id}/status`, `POST /{parentTaskId}/subtasks`, `POST /{taskId}/comments`, time-entries `start`/`stop` | `hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')` |
+| Délégué restreint : `PATCH /{id}/assign`, `DELETE /attachments/{id}`, `DELETE /comments/{id}`, `POST/DELETE /dependencies`, `PUT /kanban/columns/{id}`, `POST /{taskId}/reorder`, `POST /templates/{templateId}/create` | `hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')` |
+| Suppression d'une tâche : `DELETE /{id}` (soft-delete) | `hasAnyRole('ADMIN', 'PASTEUR')` |
+
+**C · Health-complément — `@RequestMapping("/api/v1/health")`**
+
+Garde **au niveau classe** : `hasAnyRole('HEALTH_STAFF', 'HEALTH_LEAD', 'ADMIN', 'PASTEUR')`
+s'applique à toutes les routes, y compris les ajouts V235 (`/medications`,
+`/kits`, `/duties`, `/campaigns/{id}/participants`, `/campaigns/{id}/register`,
+`/consultations/{id}/prescriptions`, `/pharmacy/stock/{id}`, `/patients/by-condition`,
+`/reports/statistics`). Les rôles `HEALTH_STAFF` / `HEALTH_LEAD` doivent donc
+être provisionnés dans le catalogue de rôles du tenant (seed `TenantService`),
+faute de quoi seuls `ADMIN`/`PASTEUR` accèdent au module.
+
+**C · Finances-reconcile — `@RequestMapping("/api/v1/finances")`**
+
+| Famille de route | Garde |
+|---|---|
+| Base (classe) : transactions, budgets, `/accounts`, `/donations`, `/tontines*`, `/reports/{summary,by-category,cash-flow}` | `hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')` |
+| Rapprochement bancaire : `/reconciliation/{import,auto,unmatched,match,ledger}` et `POST /transactions/{id}/reconcile` | `hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')` |
+
 ## 5. Scope Resolution Algorithm
 
 ```java
