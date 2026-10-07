@@ -280,6 +280,10 @@ const DiscipleshipPathsPage = lazy(() => import('@/pages/DiscipleshipPathsPage')
 const FamilyResourcesDetailPage = lazy(() => import('@/pages/FamilyResourcesDetailPage'));
 const GeofencingPage = lazy(() => import('@/pages/GeofencingPage'));
 const ReferralsStatusPage = lazy(() => import('@/pages/ReferralsStatusPage'));
+const DiscipleshipPage = lazy(() => import('@/pages/DiscipleshipPage'));
+const TasksBoardPage = lazy(() => import('@/pages/TasksBoardPage'));
+const HealthPortalPage = lazy(() => import('@/pages/HealthPortalPage'));
+const FinanceModulesPage = lazy(() => import('@/pages/FinanceModulesPage'));
 
 /** Fallback de chargement des routes (squelette léger, cohérent avec le thème). */
 function RouteFallback() {
@@ -1173,6 +1177,13 @@ export default function App() {
           <Route path="/family-resources/:id" element={<ProtectedRoute><FamilyResourcesDetailPage /></ProtectedRoute>} />
           <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><GeofencingPage /></ProtectedRoute>} />
           <Route path="/referrals/status" element={<ProtectedRoute><ReferralsStatusPage /></ProtectedRoute>} />
+          {/* V233-V236 — pages web branchées sur les contrats services
+              (discipleship/tasks/health/finances). Les écritures restent
+              gardées par rôle côté serveur (403 → toast). */}
+          <Route path="/discipleship" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPage /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><TasksBoardPage /></ProtectedRoute>} />
+          <Route path="/health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD']}><HealthPortalPage /></ProtectedRoute>} />
+          <Route path="/finance-modules" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><FinanceModulesPage /></ProtectedRoute>} />
         </Route>
 
         {/* ==================================================================

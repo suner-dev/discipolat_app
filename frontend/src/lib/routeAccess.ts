@@ -218,6 +218,11 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/courses': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/equipment': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
   '/budgets': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  // V233-V236 — pages web des contrats services (mêmes gardes que App.tsx).
+  '/discipleship': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
+  '/health': ['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD'],
+  '/finance-modules': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
 };
 
 function splitSegments(path: string): string[] {
