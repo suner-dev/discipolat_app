@@ -25,11 +25,6 @@ import 'package:flutter_test/flutter_test.dart';
 const _allowList = <String, String>{
   'lib/features/streaming/models/stream_model.dart':
       'À migrer : LiveStreamController attend Long sur /streams/{id}, écart à trancher',
-  // health_model.dart MIGRÉ (V240) : ids et refs personnes sont des String
-  // (UUID serveur, GenerationType.UUID vérifié) ; le modèle épouse les vues
-  // aplaties du HealthService (personName, patientName, itemName,
-  // responsibleName, participantsCount) et le service parse PageResponse.
-  // Les freezed `.freezed.dart`/`.g.dart` orphelins ont été supprimés.
   // finance_model.dart MIGRÉ (V236) : identifiants String (UUID), champs
   // alignés sur les vues FinanceService — l'exception a été retirée ici.
   // discipleship_model.dart MIGRÉ : les refs personnes (createdById,
@@ -49,6 +44,20 @@ const _allowList = <String, String>{
   // otherUserId…) sont des String ici, comme ConversationResponse/
   // MessageResponse/GroupConversationResponse. Le service consomme les
   // endpoints réels /api/v1/messages/** (parity avec MessagesPage.tsx web).
+  // health_model.dart MIGRÉ : les 11 entités du module santé (PatientRecord,
+  // MedicalConsultation, Prescription, PharmacyItem, PharmacyStock,
+  // HealthCampaign, HealthMedication, HealthKit, HealthDuty,
+  // CampaignParticipant, Family) sont toutes `GenerationType.UUID` côté
+  // serveur (vérifié sur les classes ET sur les migrations V141/V235).
+  // Le modèle déclarait `required int id` sur les dix d'entre elles :
+  // `(json['id'] as num).toInt()` levait un TypeError sur la chaîne UUID
+  // renvoyée par le serveur, ce qui cassait l'écran Santé dès le premier
+  // chargement. Les classes sont désormais en Dart simple, sans freezed
+  // (un .freezed.dart périmé compilait avec l'ancien contrat en silence).
+  // Reste hors périmètre : la dette « modèle serveur sans contrepartie »
+  // (MedicalKit.items, StaffDuty.startTime/endTime, Account.code,
+  // Budget.startDate, Tontine.maxMembers) — arbitrage produit, cf.
+  // docs/SPEC_BACKEND_SERVICES_MOBILES_V233.md §7.3.
 };
 
 void main() {
