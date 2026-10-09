@@ -1,5 +1,7 @@
-# Pipeline GitLab CI — SOURCE DE VÉRITÉ depuis la bascule (ADR-001, arbitrage humain du
-# 2026-10-09 : GitLab devient la référence, GitHub reste en miroir le temps de la transition).
+# Pipeline GitLab CI — future SOURCE DE VÉRITÉ (ADR-001, arbitrage humain du 2026-10-09).
+# Sens du miroir pendant la transition : on pousse TOUJOURS sur GitHub (lui seul déclenche Render
+# aujourd'hui), et GitHub réplique vers GitLab (scripts/gitlab-mirror.sh). L'inversion n'a lieu
+# qu'après 2 semaines sans incident de pipeline GitLab (GITLAB-BOOTSTRAP.md §4, ADR-008 §3.3).
 #
 # Traduction fidèle de `.github/workflows/ci.yml` (gate bloquante) ET de
 # `.github/workflows/security.yml` (scans). Chaque job porte le nom de son équivalent GitHub
@@ -166,6 +168,13 @@ deploy:render:
   stage: deploy
   image: curlimages/curl:latest
   needs: [ docker:backend ]
+  # L'enregistrement du déploiement (qui, quand, quelle SHA, réussi/échoué) est la matière première
+  # des SLO, du rollback racontable et des métriques DORA. Sans `environment`, GitLab exécute le job
+  # mais ne sait pas qu'il a déployé. Le nom `production` est protégé par défaut côté GitLab : si un
+  # premier push échoue ici, c'est un réglage d'protected environment, pas un défaut de code.
+  environment:
+    name: production
+    url: https://discipolat-beta-api.onrender.com
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   script:
@@ -257,6 +266,68 @@ security:owasp-backend:
     when: always
     expire_in: 14 days
     paths: [ backend/target/dependency-check-report.html ]
+
+# ------------------------------------------------------------------------ SBOM par release (ADR-008 §4)
+# Data room automatique : chaque release porte sa liste de composants. Fait ICI à la main (et non
+# par `template: Security/SBOM`) parce que le template natif exige un palier Premium/Ultimate : la
+# preuve ne doit pas dépendre du niveau d'abonnement.
+# NON BLOQUANT au départ : la génération résout les dépendances depuis le réseau, un échec de
+# résolution n'est pas un défaut de code. À rendre bloquant dès le premier vert observé en pipeline
+# (modifier `allow_failure` en une ligne) — c'est le seul changement de porte prévu ici.
+sbom:release:
+  stage: security
+  image: maven:3.9-eclipse-temurin-21
+  needs: []
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "main"
+    - when: manual
+      allow_failure: true
+  cache:
+    key: m2-$CI_COMMIT_REF_SLUG
+    paths: [ .m2/repository ]
+  script:
+    # Version épinglée exprès : un SBOM régénéré six mois plus tard doit donner la même liste.
+    # --package-lock-only (et non --ignore-scripts, qui n'existe plus dans cyclonedx-npm v6) :
+    # le SBOM se construit depuis le verrou, donc sans évaluer un arbre installé.
+    - cd backend && mvn -B -DskipTests -Dmaven.repo.local="$CI_PROJECT_DIR/.m2/repository"
+        org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+        -DoutputFormat=json -DoutputName=bom
+    - cd .. && cp "$(find backend/target -name 'bom*.json' | head -1)" sbom-backend.json
+    - cd frontend && npm ci --ignore-scripts
+    - npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
+    - cd .. && ls -l sbom-backend.json sbom-frontend.json
+    # Prouvé localement le 2026-10-09 (même commande, même version) : backend 244 composants,
+    # frontend 407 composants, CycloneDX 1.6, BUILD SUCCESS en 28 s cote Maven.
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [ sbom-backend.json, sbom-frontend.json ]
+
+# ------------------------------------------------------------------- Scan de l'image produite (ADR-008 §4)
+# Le build pousse une image, personne ne la regardait : c'est la surface réellement exposée.
+# NON BLOQUANT au départ, pour la même raison que le SBOM (liste de CVE sans ligne de base =
+# rouge que l'on apprend à ignorer). La porte future : `--exit-code 1 --severity CRITICAL` une fois
+# la liste connue et les suppressions écrites.
+scan:image:
+  stage: report            # le scan consomme l'image produite par `docker:backend` (stage `build`) :
+                           # placer le job dans un stage POSTÉRIEUR rend la dépendance vraie sans
+                           # s'en remettre à la sémantique DAG inter-stages, que je n'ai pas vérifiée
+                           # en pipeline réel
+  image: aquasec/trivy:0.75.0
+  needs: [ docker:backend ]
+  allow_failure: true
+  variables:
+    TRIVY_USERNAME: gitlab-ci-token
+    TRIVY_PASSWORD: $CI_JOB_TOKEN
+    TRIVY_CACHE_DIR: /tmp/trivy-cache
+    TRIVY_SEVERITY: CRITICAL,HIGH
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
+  script:
+    - trivy image --format table "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
 
 # ------------------------------------------------------------------ E2E et charge (manuels, actifs)
 e2e:playwright:
