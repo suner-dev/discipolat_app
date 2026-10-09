@@ -30,7 +30,7 @@ while [ $# -gt 0 ]; do
     --out) OUT="$2"; shift 2 ;;
     --include-tests) INCLUDE_TESTS=1; shift ;;
     --strict) STRICT=1; shift ;;
-    -h|--help) sed -n '2,15p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,16p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "option inconnue : $1" >&2; exit 2 ;;
   esac
 done
@@ -67,7 +67,7 @@ printf '%s\n' "Rapport de taille — seuil $SEUIL lignes, top $TOP par pile" \
 for pile in "${PILES[@]}"; do
   set -- $pile
   dossier="$1"; shift; globs=("$@")
-  [ -d "$RACINE/$dossier" ] || { printf '%s\n' "== $dossier : absent, ignoré" "" >> "$tmp"; continue; }
+  [ -d "$dossier" ] || { printf '%s\n' "== $dossier : absent, ignoré" "" >> "$tmp"; continue; }
 
   find_args=(-type f)
   for g in "${globs[@]}"; do find_args+=(-name "$g"); done
@@ -77,7 +77,7 @@ for pile in "${PILES[@]}"; do
     -not -name '*.g.dart' -not -name '*.freezed.dart' -not -name '*.gr.dart')
 
   # `wc -l` en lot, puis on garde ce qui dépasse le seuil. Aucun fichier n'est modifié.
-  corps="$(find "$RACINE/$dossier" "${find_args[@]}" -print0 \
+  corps="$(find "$dossier" "${find_args[@]}" -print0 \
     | xargs -0 -r wc -l 2>/dev/null \
     | awk -v s="$SEUIL" '$1 > s && $2 != "total" {print $1 "\t" $2}' \
     | sort -rn || true)"
