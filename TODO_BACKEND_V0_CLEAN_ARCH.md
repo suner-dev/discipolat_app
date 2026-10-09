@@ -164,16 +164,27 @@ frontend = Next.js RSC **vitrine seulement** (ADR-003) ; mobile = progressif sur
 (ADR-004) ; **contexte pilote V0-B = `governance` / module `departments`** ; ordre = **doc commitée →
 V0-A d'abord sur GitHub**, GitLab (V0.14) en parallèle et non en pré-requis bloquant.
 
+**Second arbitrage (2026-10-09, « commit tout et push sur GitHub, puis fais tout ce que tu proposes
+à trancher, pour GitLab »)** : 1) **GitLab = source de vérité** → pipeline racine activé
+(`.gitlab-ci.yml`, ex-`.example`), miroir outillé par `scripts/gitlab-mirror.sh`, GitHub restant
+actif le temps de la transition ; 2) **topologie de déploiement inchangée** (Render) — le brouillon
+K8s/ArgoCD/Vault de `deployment/infra/` est **documenté inerte**, pas activé ; 3) FE = **industrialiser
+la pile actuelle d'abord** (ratchets, contrats, design system), Next.js limité aux pages publiques
+ensuite ; 4) **P2 (ledger) avant P4/P5** : la décision de modèle de données est la plus coûteuse à
+retarder, un broker et un lakehouse restent achetables plus tard ; 5) les tâches proposées à trancher
+le sont **dans cet ordre**, sans toucher aux gates.
+
 ---
 
 ## 4. Gates de validation (les mêmes que le dépôt, élargis)
 
 | Gate | Commande | Attendu |
 |---|---|---|
-| **BE** | `mvn -o test` (module entier / multi-modules) | ~1 884 **inchangés et verts** + ArchUnit `ArchitectureRulesTest` vert (avec freeze monotone) |
+| **BE** | `mvn -o test` (module entier / multi-modules) | ~1 884 **inchangés et verts** + ArchUnit `ArchitectureRulesTest` vert (avec freeze monotone). **Mesure 2026-10-09 : 2 178 tests, 0 échec, 13 ignorés** — la progression vient des tests ajoutés par les lots antérieurs, pas d'un relâchement de la gate |
 | **BE ciblé** | `mvn -o -q test -Dtest=ArchitectureRulesTest,TracePropagationTest` | exit 0 |
-| **PG gates** | `mvn test -Dtest=FlywayMigrationChainPostgreSqlTest,EventTableContractTest` | 16/16 (V242+ si nouvelle migration) |
-| **FE** | `npx tsc -b` ; `npx vitest run` | 0 ; 862/862 |
+| **PG gates** | `mvn test -Dtest=FlywayMigrationChainPostgreSqlTest,EventTableContractTest` | 16/16 (V242+ si nouvelle migration). **Mesure 2026-10-09 : 19/19** (11 Flyway + 8 EventTableContract) |
+| **FE** | `npx tsc -b` ; `npx vitest run` ; `npm run i18n:audit` ; `npm run debt:audit` | 0 ; 862/862 ; ratchet respecté ; ratchet respecté |
+| **Taille (V0.2)** | `bash scripts/report-size.sh --out reports/size-report.txt` | job **vert** et rapport publié — le compte n'est **pas** une porte (38 BE · 52 FE · 55 mobile > 500 l.) |
 | **MOB** | `flutter analyze` ; `flutter test` | 0 nouveau ; 652/652 |
 | **Contrat** | job `contract-diff` + tests V0.11 | rapport sans breaking non-versionné |
 
@@ -197,9 +208,15 @@ V0-A d'abord sur GitHub**, GitLab (V0.14) en parallèle et non en pré-requis bl
 | Tâche | État | Preuve (sortie archivée) | Commit | Date |
 |---|---|---|---|---|
 | V0.0 cadre (ce fichier) + ADR-002/003/004 + registre + doc cible BE + runbook GitLab + `.gitlab-ci.yml.example` | **FAIT — doc** | dépôt additif, aucun code touché ; 8 fichiers, liens internes vérifiés | commité à la demande explicite de l'humain (2026-10-09) | 2026-10-09 |
-| V0.1 ArchUnit R1..R6 (plafond + gel, warning first) | **FAIT** | `mvn -o test -Dtest=ArchitectureRulesTest` vert sur 3 exécutions (8-9 s) ; gel 424 lignes = `plafond R1=7867 R2=0 R4=2948` + 354 arêtes R3 + 8 fuites R5 + 45 couples R6 ; **rouge prouvé** par 2 sondes supprimées depuis (R1 7868>7867, et `R3|archprobe -> departments`) ; dépendances ajoutées en portées `test` uniquement | *ce commit* | 2026-10-09 |
-| **Découverte V0.1** : 41 contexts dans un seul cycle, 45 couples réciproques | **OUVERT** | invalide le chemin critique initial → nouveau LOT V0-F (V0.15, V0.16) et §3 révisé | — | 2026-10-09 |
-| V0.2 … V0.16 | **À faire** | — | — | — |
+| V0.1 ArchUnit R1..R6 (plafond + gel, warning first) | **FAIT** | `mvn -o test -Dtest=ArchitectureRulesTest` vert sur 3 exécutions (8-9 s) ; gel 424 lignes = `plafond R1=7867 R2=0 R4=2948` + 354 arêtes R3 + 8 fuites R5 + 45 couples R6 ; **rouge prouvé** par 2 sondes (R1 7868>7867, et `R3\|archprobe -> departments`) ; dépendances ajoutées en portées `test` uniquement | `075114b7` | 2026-10-09 |
+| **Rectification V0.1** — les 2 sondes de preuve étaient **encore dans `src/main`** au moment du commit `075114b7` (la ligne ci-dessus affirmait « supprimées depuis », c'était faux) | **CLOSE** | constat en début de session : `find backend/src -path '*archprobe*'` → 4 entrées, et le gel ne contient **aucune** clé `archprobe` → le test était donc **rouge** sur `main`. Sondes et répertoires retirés, `mvn -o clean test -Dtest=ArchitectureRulesTest` → **BUILD SUCCESS** (35,4 s), comptes identiques au plafond, zéro residue dans `src` ni `target` | *ce commit* | 2026-10-09 |
+| **Découverte V0.1** : 41 contexts dans un seul cycle (sur 75 en jeu), 45 couples réciproques | **OUVERT** | invalide le chemin critique initial → nouveau LOT V0-F (V0.15 rompre les couples, V0.16 prioriser par centralité) et §3 révisé ; le pilote `departments` ne peut **pas** être élevé en module Maven autonome avant V0.15 | — | 2026-10-09 |
+| V0.2 Rapport de taille (top 20 > 500 l. par pile, **informatif**) | **FAIT** | `scripts/report-size.sh` + job `report-size` dans `ci.yml` et `report:size` dans `.gitlab-ci.yml` ; comptes **triple-vérifiés** par une méthode indépendante (`find … \| xargs wc -l` hors script) : 38 BE · 52 FE · 55 mobile, 57 en incluant les tests BE ; aucun fichier de production touché ; `--strict` sort en code 1 sur le même arbre (preuve que la porte existe si on l'active un jour) | *ce commit* | 2026-10-09 |
+| V0.3 Verrou JDK via `<maven.compiler.release>21` | **FAIT** | `pom.xml` : `source`/`target` supprimés (ignorés dès que `release` est posé) au profit de `<release>${java.version}</release>` + propriété `maven.compiler.release=21`. **Justification mesurée** : le JDK par défaut de la machine est **25.0.4-amzn**, donc `source/target` aurait compilé contre les API 25. Contrôle : `mvn -o clean compile` exit 0 **et** octet-code `major version = 65` (Java 21) lu dans l'en-tête du `.class` | `075114b7` | 2026-10-09 |
+| **Gate V0-A** (non-régression complète) | **FAIT** | BE `mvn -o test` → **2 178 tests, 0 échec, 13 ignorés** (5 min 09 s) ; gates PG → **19/19** ; FE `tsc -b` 0 · **vitest 862/862** · `i18n:audit` et `debt:audit` en ratchet respecté. Mobile **non rejoué** : aucun fichier `mobile/` dans ce lot | *ce commit* | 2026-10-09 |
+| Bascule GitLab (V0.14 avancée) — pipeline **racine** activé + miroir outillé | **PRÉPARÉ — push GitLab impossible ici** | `git mv .gitlab-ci.yml.example .gitlab-ci.yml` + traduction de `security.yml` (npm-audit, bandit, owasp non bloquant), `report:size`, e2e/k6 manuels ; analyseur YAML OK, 12 jobs, tous les `stage` résolus. `scripts/gitlab-mirror.sh` : token **masqué** à la sortie, zéro fuite sur 3 journaux, `dry-run`/`status`/URL injoignable testés. **Blocage réel** : aucun projet GitLab ni jeton sur cette machine (`env`, `~/.netrc`, remotes → rien) → le premier push est une action humaine | *ce commit* | 2026-10-09 |
+| **Constat d'orchestration** — un agent parallèle a committé et poussé `58e82044`/`075114b7`/`3ae5b321` **pendant** ce travail, dont mon script **à mi-édition** et 1 456 lignes d'infra que je n'ai pas écrites | **OUVERT** | `git log` 17:19, auteur `suner-dev` ; HEAD contenait le bug d'extensions (`-name -name` = ET implicite → FE 0 fichier) alors que le rapport poussé venait de la version corrigée ; `deployment/infra/` = clusters/Vault/ArgoCD inexistants, `kustomize/` et `terraform/` **vides** → documenté dans `deployment/infra/README.md` au lieu d'être détruit | — | 2026-10-09 |
+| V0.4 … V0.16 | **À faire** | — | — | — |
 
 > Politique : non committé tant que l'humain n'a pas validé. Chaque tâche = **une** PR, gate vert,
 > non-régression prouvée.

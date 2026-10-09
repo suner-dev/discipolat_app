@@ -1,6 +1,9 @@
 # ADR-001 — Séparer les dépôts et migrer vers GitLab
 
-> **Statut** : proposé, en attente de décision de l'orchestrateur humain.
+> **Statut** : **Accepté (humain 2026-10-09)** — monorepo **intact** (pas de split), GitLab retenu
+> comme **source de vérité**, GitHub en miroir pendant la transition. Le pipeline racine
+> `.gitlab-ci.yml` est activé (ex-`.gitlab-ci.yml.example`) ; le **premier push GitLab reste à faire**
+> faute de projet et de jeton (voir GITLAB-BOOTSTRAP.md §3).
 > **Date** : 2026-09-29. **Mesures** : exécutées sur `main` @ `72ec85d5`, 2 730 fichiers versionnés,
 > 469 commits depuis le 2026-07-29, pack git 59 Mo.
 > **Question** : « un dépôt backend, un dépôt frontend, un dépôt mobile, et tout déplacer sur GitLab ».
@@ -155,14 +158,19 @@ git remote add mobile git@gitlab.com:.../discipolat-mobile.git && git push mobil
 
 ---
 
-## 7. CE QU'IL FAUT TRANCHER (et que je ne peux pas décider à votre place)
+## 7. CE QU'IL FAUT TRANCHER — **tranché par l'humain le 2026-10-09**
 
-1. **Pourquoi GitLab ?** (hébergement UE / exigence client / CI minutes / eller lagrede dollares) —
-   cela ne change pas l'architecture, mais cela décide si l'on migre avant ou après le split.
-2. **Y a-t-il des équipes ou des clients distincts ?** Si non, le split n'a pas de justification
-   fonctionnelle et je le déconseille.
-3. **Y a-t-il une release dans les 6-8 semaines ?** Si oui : migrer sur GitLab (Option 1), et ne
-   toucher à rien d'autre. Le split et la refonte du frontend attendront.
+1. **Pourquoi GitLab ?** Réponse retenue : GitLab devient la **source de vérité** de la livraison
+   (pipeline unique, environnements, traçabilité MR → suite → artefacts de preuve). Ce n'est **pas**
+   un prérequis de l'architecture : la bascule se fait **en parallèle** de V0. La raison commerciale
+   précise (hébergement UE, exigence client, coût des minutes CI) reste à expliciter si un acquéreur
+   la demande — l'ADR ne porte que la décision technique.
+2. **Y a-t-il des équipes ou des clients distincts ?** **Non** à ce jour → le split des dépôts est
+   **formellement écarté** (Option 2 : monorepo + `rules:changes:`).
+3. **Y a-t-il une release dans les 6-8 semaines ?** **Oui** (Render, en continu) → donc migration en
+   **miroir** d'abord, et **aucun** changement de topologie de déploiement dans le même mouvement.
+   Pour cette raison précise, le `.gitlab-ci.yml` de `deployment/infra/` (K8s/ArgoCD/Vault) reste
+   **inerte** : voir [deployment/infra/README.md](../../deployment/infra/README.md).
 
 ---
 
