@@ -79,6 +79,12 @@ Les templates **Premium** (SAST, Dependency-Scanning, SBOM géré, DORA) restent
 palier requis écrit en face** : si un palier payant est souscrit, l'activation est un décommentage,
 pas une réécriture.
 
+**Le même SBOM tourne dès aujourd'hui sur GitHub** (job `sbom` de `.github/workflows/ci.yml`, mêmes
+versions épinglées, `continue-on-error: true`, artefacts 30 j). Raison : GitHub est la plateforme qui
+**déclenche Render en ce moment** — attendre la bascule pour commencer à accumuler les preuves
+**coûterait** six semaines de data room. Rien d'existant n'est modifié : le job n'est dans le `needs:` de
+personne, il ne peut donc ni bloquer un déploiement ni changer une porte.
+
 ## 5. Ce qui est volontairement **non** traduit
 
 | Workflow GitHub | Pourquoi |

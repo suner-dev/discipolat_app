@@ -192,6 +192,61 @@ jobs:
           path: reports/size-report.txt
           retention-days: 30
 
+  # SBOM par production (ADR-008 §4). GitHub est la plateforme qui tourne AUJOURD'HUI : la preuve
+  # de due-diligence doit commencer maintenant, pas au jour de la bascule GitLab. Mêmes versions
+  # épinglées que .gitlab-ci.yml (job `sbom:release`), rejouées localement le 2026-10-09 : 244
+  # composants backend, 407 composants frontend.
+  # continue-on-error : la génération résout les dépendances depuis le réseau ; un échec de
+  # résolution n'est pas un défaut de code. À passer en bloquant après le premier vert observé.
+  sbom:
+    name: SBOM (CycloneDX, due-diligence)
+    runs-on: ubuntu-latest
+    needs: []
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: SBOM backend
+        run: |
+          cd backend
+          mvn -B -DskipTests org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom \
+            -DoutputFormat=json -DoutputName=bom
+          cd ..
+          cp "$(find backend/target -name 'bom*.json' | head -1)" sbom-backend.json
+      - name: SBOM frontend
+        run: |
+          cd frontend
+          npm ci --ignore-scripts
+          # --package-lock-only : l'option --ignore-scripts de cyclonedx-npm n'existe plus en v6
+          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
+      - name: Résumé
+        run: |
+          {
+            echo "| SBOM | composants |"; echo "|---|---|"
+            for f in sbom-backend.json sbom-frontend.json; do
+              n=$(python3 -c "import json;print(len(json.load(open('$f')).get('components',[])))" 2>/dev/null || echo '?')
+              echo "| $f | $n |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.run_id }}
+          path: |
+            sbom-backend.json
+            sbom-frontend.json
+          retention-days: 30
+
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest
