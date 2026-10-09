@@ -168,7 +168,16 @@ class _SoulsListScreenState extends State<SoulsListScreen> {
                       return GlassCard(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(12),
-                        onTap: () => context.go('/souls/${soul.id}'),
+                        // LOT 4 §GLISE-D'ABORD (T4.1, D6/R6) — `go` → `push`.
+                        // Une âme est un ENFANT de la liste. `go()` écrasait la
+                        // pile : `canPop()` retombait à false, donc ni flèche de
+                        // retour dans l'`AppBar`, ni `DetailBackButton` popping,
+                        // ni geste matériel Android. `push()` garde la liste sous
+                        // la fiche → le retour ramène à la liste. Conversion
+                        // STRICTEMENT locale au tap : le lien profond `/souls/:id`
+                        // (servi par le routeur en `go`) et la barre de navigation
+                        // basse (classée ENTREE_ESPACE en T4.0) restent inchangés.
+                        onTap: () => context.push('/souls/${soul.id}'),
                         child: Row(
                           children: [
                             GradientAvatar(

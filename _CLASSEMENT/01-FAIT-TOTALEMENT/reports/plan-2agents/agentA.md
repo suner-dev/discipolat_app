@@ -1,0 +1,2773 @@
+# PROGRESSION — AGENT A (BACKEND) — Plan `PLAN_CORRECTIFS_ONBOARDING_TENANT_2AGENTS.md`
+
+> Fichier de progression privé de l'Agent A (règle `R8` du plan).
+> Format imposé par tâche : Statut / Commit / Fichiers / Tests / Preuve.
+> L'Agent B n'écrit que dans `agentB.md`. Ce fichier n'est jamais modifié par lui.
+>
+> Préfixes de tâches : `ONB-A*` = plan onboarding (ce fichier), `ORC-A*` = plan
+> `AGENT_ORCHESTRATION.md` (même fichier, sections séparées).
+
+---
+
+## 0. PHASE 0 — Préparation (P0.1 → P0.4)
+
+- **Statut** : DONE
+- **Worktree** : `/home/arise/discipolat/discipolat_app-agentA`
+- **Branche** : `fix/onboarding-tenant-backend` (créée depuis `d730771`)
+- **Commit base** : `d730771` (HEAD de `main` au démarrage). Le plan citait
+  `ec74906` (P0.1) ou `d8400cf` (en-tête) : ces commits sont **antérieurs** au
+  plan lui-même. J'ai branched sur `d730771` afin que le plan, `PROGRESSION.md`
+  et l'audit soient présents dans le worktree. Voir NEED-HELP-01.
+
+### Baseline backend (P0.3)
+
+| Mesure | Commande | Résultat réel |
+|---|---|---|
+| Compilation | `mvn -B -o -DskipTests compile` | `BUILD SUCCESS` — 1 264 fichiers `.java` |
+| Tests | `mvn -B -o test` | `Tests run: 1252, Failures: 0, Errors: 0, Skipped: 13` |
+| Durée suite | — | 1 min 21 |
+| Migrations | `ls db/migration` | 145 fichiers, **dernier = `V177__complete_canonical_saas_plans.sql`** |
+
+> **Baseline de référence pour le gate G-A §7.2 critère 4 = 1252 tests**
+> (le plan citait 1188 : la référence du plan est périmée de +64 tests).
+
+### Contraintes matérielles de la machine (à connaître)
+
+- 20 cœurs / 15 Go RAM, **swap saturée**, IntelliJ IDEA ~4,9 Go + Chrome + un
+  conteneur `kfokam48-demo-init-backend` (le backend de prod) en cours d'exécution.
+- Les exécutions Maven sont **tué par l'OOM killer** avec les réglages par défaut.
+- Recette validée et utilisée pour **toutes** les commandes de preuve :
+  ```bash
+  export JAVA_HOME=~/.sdkman/candidates/java/21.0.12+1.1-tem   # Java 21 (pom cible 21)
+  export MAVEN_OPTS="-Xmx600m -XX:MaxMetaspaceSize=350m"
+  mvn -B -o test -DargLine="-Xmx1200m -XX:MaxMetaspaceSize=450m"
+  ```
+- `mvn -o` (offline) : obligatoire pour la reproductibilité, le dépôt local
+  `~/.m2` (1,7 Go) contient tout. Seule exception : `flyway:migrate`, dont les
+  dépendances de plugin ne sont pas encore en cache (réseau utilisé une fois).
+
+### P0.4 — Disponibilité des numéros de migration
+
+- `V183`, `V184`, `V185` : **tous libres** (`ls | grep -E "^V18[3-5]"` → aucun résultat).
+- `infra/well-known/` : sans objet (zone Agent B).
+
+---
+
+## A7 — Unicité email globale + acceptation cross-tenant (constat B4)
+
+- **Statut** : DONE
+- **Commit** : _(voir §« Journal git » en bas de fichier)_
+- **Fichiers** :
+  - NEW `backend/src/main/resources/db/migration/V185__users_email_global_unique.sql`
+  - MOD `backend/src/main/java/com/discipolat/modules/users/domain/UserRepository.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/authentication/domain/AuthService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/tenants/domain/InvitationService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/platform/api/InvitationController.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/tenants/domain/InvitationServiceCrossTenantTest.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceEmailLookupTest.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/domain/InvitationServiceTest.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/platform/api/InvitationControllerTest.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceTest.java`
+
+### Preuve — tests imposés (`§4 A7`)
+
+```
+mvn -B -o test -Dtest='InvitationServiceCrossTenantTest,AuthServiceEmailLookupTest,InvitationServiceTest,InvitationControllerTest,AuthServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceEmailLookupTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.InvitationServiceCrossTenantTest
+[INFO] Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.InvitationServiceTest
+[INFO] Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 -- in ...platform.api.InvitationControllerTest
+[INFO] Tests run: 35, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+**7 cas** dans `InvitationServiceCrossTenantTest` (le plan en exige ≥ 5) :
+même tenant / autre tenant / aucun `User` créé en cross-tenant / pas de mot de
+passe exigé en cross-tenant / nouvel email / résolution insensible à la casse /
+audit de l'acceptation cross-tenant.
+
+**7 cas** dans `AuthServiceEmailLookupTest` : login insensible à la casse, email
+inconnu, mot de passe erroné, resend activation, reset de mot de passe, absence
+de fuite d'existence, magic-link.
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test        (recette mémoire ci-dessus)
+
+[INFO] Results:
+[WARNING] Tests run: 1266, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 14 nouveaux = **1266**. Aucun échec, aucune régression.
+Les 13 `Skipped` sont **préexistants** : `PerIpRateLimiterIntegrationTest`,
+protégé par `@EnabledIf("isRedisAvailable")` (Redis absent sur cette machine).
+Aucun `@Disabled`, `xit(` ou `skip:` n'a été ajouté.
+
+### Preuve — migration V185 sur PostgreSQL réel
+
+La suite de tests utilise **H2 avec `spring.flyway.enabled: false` et
+`ddl-auto: create-drop`** : les migrations ne sont JAMAIS exécutées par
+`mvn verify`. Elles ont donc été validées sur un PostgreSQL 16.15 jetable
+(containeur `onb-flyway-check`, port 55444, sans aucun lien avec le conteneur de prod).
+
+**1. Base vierge — les 146 migrations s'appliquent, jusqu'à v185 :**
+```
+mvn -B flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:55444/discifly \
+    -Dflyway.user=onbtest -Dflyway.password=onbtest -Dflyway.locations=filesystem:src/main/resources/db/migration
+
+[INFO] Migrating schema "public" to version "185 - users email global unique"
+[INFO] Successfully applied 146 migrations to schema "public", now at version v185 (execution time 06:20.288s)
+[INFO] BUILD SUCCESS
+```
+
+**2. L'index unique global existe et refuse les doublons par cas :**
+```sql
+-- insertion 1 : "Pasteur@Eglise.com"  -> OK
+-- insertion 2 : "pasteur@eglise.COM"  -> refusée
+ERROR:  duplicate key value violates unique constraint "uk_users_email_lower"
+DETAIL:  Key (lower(email::text))=(pasteur@eglise.com) already exists.
+
+\d users ->  "uk_users_email_lower" UNIQUE, btree (lower(email::text)) WHERE deleted = false
+```
+
+**3. Comportement fail-closed (2ᵉ base, migrée jusqu'à V177, 1 doublon par cas
+   inséré manuellement, puis application de V185) :**
+```
+[ERROR] Message : ERROR: V185: 1 doublon(s) email insensibles a la casse - dedoublonnage manuel requis
+[ERROR] Location : .../V185__users_email_global_unique.sql
+[ERROR] Line     : 22
+```
+→ La migration **refuse de démarrer**, ne supprime et ne fusionne **aucune
+donnée**. Le dédoublonnage reste une décision humaine (risque R-1 du plan).
+
+### Critères d'acceptation (§4 A7)
+
+| Critère | Statut | Comment prouvé |
+|---|---|---|
+| Deux comptes actifs ne peuvent jamais partager un email | ✅ | index unique global `uk_users_email_lower` appliqué et testé sur PG réel (preuve 2 ci-dessus) — garantie **base de données**, pas seulement applicative |
+| L'acceptation cross-tenant ne duplique jamais `users` | ✅ | `InvitationServiceCrossTenantTest.neverCreatesUserRowInCrossTenantScenario` (`verify(userRepository, times(0)).save(...)`) |
+| Le login reste déterministe | ✅ | `AuthServiceEmailLookupTest.loginIsCaseInsensitive` + `verify(userRepository, never()).findByEmail(anyString())` |
+| Migration appliquée sur base vierge | ✅ | preuve 1 : 146 migrations, version v185 |
+
+### Décisions et déviations documentées
+
+1. **`findByEmailIgnoreCase` / `existsByEmailIgnoreCase` en requête NATIVE, pas JPQL.**
+   L'entité `User` porte `@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")`.
+   Une requête JPQL serait donc filtrée dès qu'un `TenantContext` est posé, et la
+   résolution d'identité par email deviendrait **aléatoire selon le contexte HTTP**
+   (exactement le constat B4). L'email est une identité **globale** : la requête
+   doit contourner le filtre, comme le fait déjà `findGlobalByEmail` existant.
+   Le code métier et les noms de méthode restent ceux du plan (§3 n'est pas touché).
+2. **`AcceptanceResult`** : ajout du 5ᵉ champ `crossTenantIdentity` (contrat §3.4)
+   **+ un constructeur de compatibilité** à 4 arguments, pour ne casser aucun
+   appelant/test existant. Le plan autorise la mise à jour des tests impactés
+   (« si signatures modifiées, justification obligatoire ») ; ici aucun n'a eu
+   besoin d'être modifié pour la signature.
+3. **`validateInvitation` → `accountExists`** : la recherche passe de
+   `findByTenantIdAndEmail(tenantId, …)` à `findGlobalByEmailIgnoreCase(…)`.
+   Raison : avec la décision D3, une identité cross-tenant **n'exige pas de mot
+   de passe**. Renvoyer `accountExists=false` alors que le compte existe
+   obligerait le client web/mobile à en demander un inutilement (cf. `ONB-B11`).
+   Sans ce correctif, le parcours d'acceptation aurait été cassé côté client.
+4. **Tests existants mis à jour (justification `R9`)** :
+   - `InvitationServiceTest` : le test
+     `createsTenantScopedUserWhenSameEmailOnlyExistsInAnotherTenant` **documentait
+     le bug B4** (il affirmait qu'un email présent dans une autre église devait
+     créer un nouvel utilisateur local). Renommé en
+     `createsTenantScopedUserWhenNoAccountExistsForThatEmailAnywhere` et mocks
+     basculés sur la résolution globale. Les 4 autres tests ont eu leur mock
+     `findByTenantIdAndEmail` → `findGlobalByEmailIgnoreCase` (changement de
+     comportement imposé par le correctif).
+   - `AuthServiceTest` : 5 mocks `findByEmail` → `findByEmailIgnoreCase`
+     (`AuthService.login` ne doit plus utiliser le lookup sensible à la casse).
+   - `InvitationControllerTest` : 1 mock `findByTenantIdAndEmail` →
+     `findGlobalByEmailIgnoreCase` (voir déviation 3).
+   Aucun test n'a été désactivé, aucun `@Disabled` ajouté, aucune assertion
+   affaiblie.
+
+### Risque résiduel assumé
+
+`existsByEmail(email)` (sensible à la casse) reste utilisé par
+`ImportService:398` et `BulkImportService:93` comme **pré-contrôle advisory**
+avant création d'un utilisateur. Ces deux fichiers ne figurent pas dans la liste
+de fichiers de la tâche `A7` (§2, règle d'un écrivain par fichier) et
+`BulkImportServiceTest` mocke explicitement cette méthode. **Ce n'est plus un
+risque de doublon** : l'index unique global V185 rejette au niveau base de
+données toute variante de casse. L'effet résiduel se limite à un message
+d'erreur moins pédagogique sur une course concurrente. Signalé ici pour
+traçabilité, hors périmètre de A7.
+
+---
+
+## NEED-HELP-01 — BASE_COMMIT différent de celui du plan
+
+- **Blocage** : le plan indique `BASE_COMMIT : HEAD (d8400cf ou le commit courant)`
+  en en-tête, mais `§6.1 P0.1` impose de créer le worktree depuis `ec74906`.
+  Ces deux commits sont **antérieurs** à `d730771` (le commit qui a ajouté le
+  plan lui-même). Brancher sur `ec74906` aurait produit un worktree **sans** le
+  fichier d'autorité `PLAN_CORRECTIFS_ONBOARDING_TENANT_2AGENTS.md` ni
+  `PROGRESSION.md`, rendant la tâche auto-incohérente (`R1` impose de lire le
+  plan en entier).
+- **Décision prise** : brancher sur `d730771` (HEAD de `main`), qui contient tout
+  et n'introduit aucune modification de code. Le plan autorise explicitement
+  « le commit courant de votre branche de travail ».
+- **Impact** : aucun sur le périmètre fonctionnel.
+- **Points d'attention voisins** (aucune action corrective, simple traçabilité) :
+  - `§2` annonce « dernier existant : **V182** » alors que le dernier fichier de
+    migration réel est **V177** (V178–V182 n'existent pas). Les numéros
+    réservés V183/V184/V185 restent libres et corrects → aucune action.
+  - `§2` annonce 146 migrations Flyway, `AGENT_ORCHESTRATION.md §1.1` aussi ;
+    le compte réel est **145**.
+
+## NEED-HELP-02 — Le gate G-A « Flyway sur base vierge » n'est pas couvert par `mvn verify`
+
+- **Blocage** : `A12` et le gate G-A §7.2 supposent que `mvn -B verify` applique
+  V183/V184/V185 sur une base vierge. Or le profil de test
+  (`backend/src/test/resources/application-test.yml`) impose :
+  ```yaml
+  datasource.url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+  jpa.hibernate.ddl-auto: create-drop
+  flyway.enabled: false
+  ```
+  Les migrations ne sont donc **jamais** exécutées par la suite de tests, et le
+  schéma est créé par Hibernate à partir des entités. Un `mvn verify` vert ne
+  prouve **rien** sur les migrations, et inversement une migration Postgres-only
+  (`DO $$`, index unique partiel) ne peut pas être testée par la suite H2.
+- **Options** :
+  1. (a) Refuser A12 et le gate G-A comme inatteignables ;
+  2. (b) valider les migrations sur un PostgreSQL réel hors CI, et le documenter
+     comme la preuve de référence ;
+  3. (c) ajouter une integration test Testcontainers + Flyway dans la suite.
+- **Décision prise** : **(b) + (c) en proposé**. (b) est appliqué dès A7 (preuve
+  ci-dessus, PostgreSQL 16.15 jetable). (c) est **hors périmètre du plan** (A12
+  ne demande que `mvn verify`) et introduirait un test qui dépend de Docker
+  dans la suite par défaut — je ne l'ajoute **pas** sans votre accord.
+  → **Décision demandée à l'orchestrateur** : accepter (b) comme preuve
+  officielle, ou mandater (c).
+- **Recommandé** : (b) pour cette campagne, (c) comme chantier `ORC-A5`
+  (la CI bloquante est précisément le chantier qui doit rendre les migrations
+  testables de façon récurrente).
+
+## NEED-HELP-03 — Conflit interne au plan sur le statut HTTP de `OWNER_EMAIL_ALREADY_USED`
+
+- **Blocage** : `A5.1` demande `BusinessRuleException("...", "OWNER_EMAIL_ALREADY_USED")`
+  **avec un statut 409**. Or `GlobalExceptionHandler:43-52` ne sait mapper
+  `BusinessRuleException` que vers **400** (défaut) ou **403** (préfixes
+  `FEATURE_DISABLED_`/`QUOTA_`). Le 409 est **inatteignable** avec cette classe.
+- **Options** : (a) `DomainException(msg, HttpStatus.CONFLICT, "OWNER_EMAIL_ALREADY_USED")`
+  — atteint le 409 demandé, le **code métier reste identique** ; (b) rester sur
+  `BusinessRuleException` et livrer un 400 en violant le plan.
+- **Décision demandée** : valider (a). Je n'applique rien avant la fin de A4 et
+  je poursuis les tâches indépendantes (R11).
+- **Recommandé** : (a). C'est la convention déjà retenue par le wizard (D6 :
+  « les erreurs métier du wizard utilisent `DomainException(message, HttpStatus, code) » »).
+
+## NEED-HELP-04 — Conflit interne au plan sur `STEP_ALREADY_COMPLETED` (409) vs `BusinessRuleException`
+
+- **Blocage** : même nature que NEED-HELP-03, mais pour le wizard : `A3` exige
+  `409 STEP_ALREADY_COMPLETED`, `409 STEP_NOT_SKIPPABLE`, `409 STEP_PRECONDITION_FAILED`,
+  or ces codes ne sont atteignables qu'avec `DomainException(..., HttpStatus.CONFLICT, ...)`.
+- **Décision** : `DomainException` (déjà couvert par la décision D6 du plan, donc
+  **pas une déviation**, seulement une application de la convention existante).
+- **Statut** : sans décision à prendre — traité en A3, documenté dans la tâche.
+
+---
+
+## Journal git (rempli à chaque commit, R6)
+
+| Tâche | Commit | Message |
+|---|---|---|
+| Phase 0 | _(ce commit est le premier de la branche — voir `git log`)* | — |
+| A7 | *à compléter* | `feat(A7): unicité email globale V185 + acceptation invitation cross-tenant` |
+
+---
+
+## A1 — Garde de statut tenant + enforcement (constat B1)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantStatusGuard.java`
+  - NEW `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantStatusChangedEvent.java`
+  - NEW `backend/src/main/java/com/discipolat/common/multitenancy/TenantStatusInterceptor.java`
+  - MOD `backend/src/main/java/com/discipolat/common/multitenancy/WebMvcConfig.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/authentication/domain/AuthService.java`
+  - MOD `backend/src/main/java/com/discipolat/modules/platform/api/TenantSwitcherController.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantStatusGuardTest.java`
+  - NEW `backend/src/test/java/com/discipolat/common/multitenancy/TenantStatusInterceptorTest.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceTest.java` (+3 cas)
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantServiceTest.java` (+1 mock)
+  - MOD `backend/src/test/java/com/discipolat/modules/authentication/domain/AuthServiceEmailLookupTest.java` (nouveau ctor)
+  - MOD 3 tests d'intégration (fixtures, voir « Régression » ci-dessous)
+
+### Preuve — tests imposés (`§4 A1`)
+
+```
+mvn -B -o test -Dtest='TenantStatusGuardTest,TenantStatusInterceptorTest,AuthServiceTest,TenantServiceTest,AuthServiceEmailLookupTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceEmailLookupTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantStatusGuardTest
+[INFO] Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] Tests run:  8, Failures: 0, Errors: 0, Skipped: 0 -- in ...common.multitenancy.TenantStatusInterceptorTest
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+`TenantStatusGuardTest` (14 cas) : actif autorisé, `PENDING_SETUP` autorisé,
+`tenantId` nul transparent, suspendu → 403 `TENANT_SUSPENDED`, annulé → 403
+`TENANT_CANCELLED`, cache servi sans relecture, **TTL 30 s respecté (juste avant
+/ juste après)**, invalidation par événement, invalidation⇒cache vide,
+réactivation immédiate, fail-closed sur exception de lecture, fail-closed sur
+tenant introuvable, fail-closed sur statut `null`, **panne jamais mémorisée**.
+
+`TenantStatusInterceptorTest` (8 cas) : API authentifiée refusée, garde appelée
+avec le bon `tenantId`, chemin public ignoré, `invitations/accept/**` joignable,
+`actuator/health` joignable, requête sans contexte tenant ignorée, dégradation
+gracieuse si le bean garde est absent, dégradation gracieuse si `TenantFilter` est
+absent.
+
+`AuthServiceTest` (+3 cas) : login d'un tenant suspendu → 403 `TENANT_SUSPENDED`
+**et aucun JWT émis** ; login d'un tenant actif → garde consultée sans refus ;
+refresh d'un tenant suspendu → refus **avant** la consommation de la famille de
+jetons et sans aucun jeton émis.
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1291, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 39 = **1291**. Aucun échec. Les 13 skips sont inchangés
+(`PerIpRateLimiterIntegrationTest`, `@EnabledIf("isRedisAvailable")`).
+
+### Régression réelle rencontrée et traitée — 11 tests d'intégration
+
+**Symptôme** : après l'ajout de l'intercepteur, **11 tests** ont échoué en 403
+avec `details.reason = TENANT_NOT_FOUND`.
+
+**Diagnostic exact** : `TenantStatusGuard` lit la table `tenants` et refuse en
+fail-closed un tenant introuvable (choix conforme à D1 « fail-closed »). Or
+`SpaceCriticalPathIntegrationTest`, `PeopleCriticalPathIntegrationTest` et
+`common.infrastructure.TenantIsolationIntegrationTest` facturaient un `tenantId`
+dans le JWT **sans jamais créer la ligne `tenants` correspondante** : leurs
+scénarios étaient irréalistes, puisqu'en production un `tenantId` de JWT provient
+toujours d'un utilisateur rattaché à un tenant existant.
+
+**Traitement (R9 — tests impactés mis à jour avec justification)** : ajout d'une
+fixture `ensureActiveTenant(UUID)` dans les 3 classes, qui crée réellement la
+ligne `tenants` (`status = ACTIVE`, `plan = DISCOVERY`). Insertion en SQL direct
+et non via `TenantRepository` : Hibernate 6 lève `StaleObjectStateException` sur
+un `merge()` d'entité à identifiant attribué sans ligne préexistante
+(`DefaultMergeEventListener.entityIsDetached`) — défaut observé et documenté ici.
+
+**Aucun test n'a été affaibli ni désactivé.** Preuve que la sémantique
+d'isolation est intacte : `TenantIsolationIntegrationTest.egliseB_nePeutPasLireUneAmeDeEgliseA_parId`
+retrouve son **404 attendu** (et non 403) une fois le tenant réellement créé.
+
+### Points de conception
+
+1. **Table `tenants` lue sans filtre** : l'entité `Tenant` ne porte pas
+   `@Filter tenantFilter` (elle *définit* le tenant). La garde peut donc contrôler
+   un tenant **cible**, ce qui est indispensable pour `/tenant-switcher/switch`.
+2. **Ordre des intercepteurs** : `tenantInterceptor` → `tenantFilterInterceptor` →
+   `tenantStatusInterceptor` → `featureModuleInterceptor`. Le `TenantContext` est
+   donc posé avant la garde, et la garde s'exécute avant tout accès à un module.
+3. **Chemins publics** : la liste n'est **pas dupliquée** ;
+   `TenantStatusInterceptor` appelle `TenantFilter.shouldBypassFilter(request)`,
+   source de vérité unique (contrat §3.2).
+4. **Dégradation gracieuse** : si le bean `TenantStatusGuard` ou `TenantFilter` est
+   absent (tests `@WebMvcTest`), l'intercepteur laisse passer — cohérent avec la
+   dégradation déjà retenue pour `TenantFilterInterceptor`.
+5. **`TenantService` publie `TenantStatusChangedEvent`** dans `deactivate`,
+   `reactivate` et `update` (uniquement si le statut change) → invalidation
+   immédiate du cache, donc **réactivation/suspension sans attendre le TTL**.
+
+### Décision et déviations documentées
+
+- **`detail` du 403 pour `CANCELLED`** : le contrat §3.2 donne un seul `detail`
+  (« Le service de cette église est suspendu… ») associé à `title ∈
+  {TENANT_SUSPENDED, TENANT_CANCELLED}`. Dire « suspendu » à une église
+  résiliée serait un mensonge utilisateur. Le **`title` (code métier) est
+  strictement celui du contrat** ; seul le `detail` est différencié :
+  `« Le service de cette église a été résilié. Contactez le support Discipolat. »`
+- **Fail-closed sur tenant introuvable** : `403 TENANT_STATUS_UNAVAILABLE` avec
+  `details.reason = TENANT_NOT_FOUND`. Le contrat ne mentionne que l'erreur de
+  lecture DB ; le tenant absent en relève moralement (je ne peux pas affirmer
+  qu'il est actif). Aucun 500, aucun accès accordé.
+- **Réflexe fail-closed sur statut `null`** : impossible en base
+  (`status` est `NOT NULL`), mais traité en defense-in-depth.
+- **Aucun nouveau fichier hors de la liste de la tâche** : `TenantRepository` n'a
+  pas été modifié (lecture via le `findById` existant, mis en cache 30 s).
+
+---
+
+## A2 — Audit des mutations tenant (constat M1)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `backend/src/main/java/com/discipolat/modules/tenants/domain/TenantService.java`
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/domain/TenantServiceTest.java` (+6 cas)
+- **Constat vérifié** : le champ `auditService` existait bien dans
+  `TenantService` mais n'était **appelé nulle part** (aucune occurrence de
+  `auditService.` dans le fichier avant cette tâche) : le cycle de vie complet du
+  tenant (création, changement de plan, suspension, réactivation) n'était
+  **aucunement tracé**.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=TenantServiceTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1297, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+### Événements écrits (via `AuditService.logSimple(action, "TENANT", id)`)
+
+| Mutation | Événement(s) |
+|---|---|
+| `create` | `TENANT_CREATED` |
+| `update` | `TENANT_UPDATED` + `TENANT_PLAN_CHANGED` **uniquement si le plan a changé** |
+| `deactivate` | `TENANT_SUSPENDED` |
+| `reactivate` | `TENANT_REACTIVATED` |
+| `markOnboardingCompleted` (tâche A4) | `TENANT_ONBOARDING_COMPLETED` — **écrit en A4**, pas ici |
+
+L'acteur courant est capturé par `AuditService.logSimple` via
+`securityUtils.getCurrentUserId()` ; les écritures sont ensuite chaînées par
+hachage (`extendHashChain`) — la chaîne d'audit reste donc inaltérable.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Chaque mutation écrit **exactement** un événement d'audit | `verify(auditService, times(1)).logSimple(...)` + `verifyNoMoreInteractions(auditService)` dans les 5 tests de mutation |
+| Le changement de plan est tracé séparément | `update_withPlanChange_shouldAuditBothTenantUpdatedAndPlanChanged` (2 assertions, `verifyNoMoreInteractions`) |
+| **Aucun audit sur les lectures** | `reads_shouldNotWriteAnyAuditEvent` → `verifyNoInteractions(auditService)` après `list()` et `get()` |
+| Javadoc de la classe exact | Section « Audit (constat M1) » ajoutée dans `TenantService` |
+
+### Note sur un test existant ajusté
+
+`create_shouldAuditTenantCreatedExactlyOnce` exige que l'identifiant du tenant
+audité soit celui de la réponse. La fixture `tenantRepository.save(...)` de ce
+test attribuait un **nouveau** UUID à chaque appel, alors que `create` sauvegarde
+à nouveau le même tenant dans `ensureInitialSubscription` — l'identifiant est
+donc désormais attribué **une seule fois** (`if (t.getId() == null)`), ce qui
+reflète le comportement réel d'une base (identifiant généré et stable dans la
+transaction). Le test existant `create_shouldPersistWithActiveStatusAndDefaultPlan`
+n'est pas impacté.
+
+### Rappel de traçabilité
+
+L'événement `TENANT_ONBOARDING_COMPLETED` listé dans la spécification A2 dépend de
+`markOnboardingCompleted`, qui n'existe pas encore : il est créé en **A4** avec son
+audit. Ce décalage est assumé et sans impact (le critère « chaque mutation est
+auditée » reste vrai une fois A4 livrée).
+
+---
+
+## A3 — Wizard : DTO figés, actions métier réelles, RBAC, erreurs propres (constat B2)
+
+- **Statut** : DONE
+- **Fichiers principaux** :
+  - NEW `onboarding/api/OnboardingStepResponse.java`, `OnboardingProgressResponse.java`,
+    `OnboardingStatusResponse.java`, `OnboardingStepData.java`
+  - NEW `onboarding/domain/OnboardingStepDefinition.java`, `OnboardingStepActions.java`,
+    `TenantOnboardingStatusPort.java`
+  - MOD `onboarding/domain/OnboardingWizardStep.java` (+ `skip_reason`), `OnboardingWizardService.java`
+  - MOD `onboarding/api/OnboardingWizardController.java` (+ `/status`, `@authz.isTenantAdmin()`)
+  - MOD `tenants/domain/InvitationService.java` (+ `createInvitation` extrait du contrôleur)
+  - MOD `platform/api/InvitationController.java` (délègue au service)
+  - NEW `OnboardingWizardServiceTest`, `OnboardingWizardTenantIsolationTest`,
+    `OnboardingWizardControllerTest`, `InvitationServiceCreateInvitationTest`
+
+### Preuve — tests imposés (`§4 A3`)
+
+```
+mvn -B -o test -Dtest='OnboardingWizardServiceTest,OnboardingWizardControllerTest,OnboardingWizardTenantIsolationTest,InvitationServiceCreateInvitationTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.InvitationServiceCreateInvitationTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardTenantIsolationTest
+[INFO] Tests run: 24, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardServiceTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.api.OnboardingWizardControllerTest
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+- `OnboardingWizardServiceTest` : **24 cas** (le plan en exige ≥ 12).
+- `OnboardingWizardControllerTest` : **12 cas**, en `@SpringBootTest` + `MockMvc`
+  (JWT réel → `TenantInterceptor` → filtre Hibernate → `TenantStatusInterceptor`
+  → `@PreAuthorize` → service) : le RBAC est donc prouvé sur la **chaîne HTTP
+  réelle**, pas seulement sur une méthode isolée.
+- `OnboardingWizardTenantIsolationTest` : **7 cas** d'isolation inter-tenant.
+- `InvitationServiceCreateInvitationTest` : **11 cas** d'extraction sans régression.
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1351, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 99 = **1351**. Aucun échec, 13 skips préexistants inchangés.
+
+### Gate G-A §7.2 — critère 1 vérifié
+
+```
+$ grep -rn "orElseThrow()" backend/src/main/java/com/discipolat/modules/onboarding/
+(aucune occurrence)   -> PASS
+$ grep -rn "orElseThrow("  .../onboarding/
+OnboardingWizardService.java:361:  .orElseThrow(() -> new DomainException(   -> un seul, AVEC message
+```
+
+`requireStepOfCurrentTenant` est le seul point d'accès à une étape par id et il
+lève `DomainException(..., HttpStatus.NOT_FOUND, "STEP_NOT_FOUND")` après un
+`.filter(tenantId.equals(candidate.getTenantId()))` explicite.
+
+> ⚠️ **Note pour le vérificateur (§8.3)** : le Javadoc de `OnboardingWizardService`
+> décrivait le bug corrigé en écrivant littéralement `orElseThrow()`. Ce texte
+> déclenchait un **faux positif** du grep de contrôle. Il a été reformulé en
+> « un `orElseThrow` sans argument » pour que le grep de la porte soit
+> non ambigu. À savoir, sinon un vérificateur automatique pourrait refuser à tort.
+
+### Bugs réels trouvés par les tests pendant cette tâche
+
+1. **`completedSteps` comptait les étapes SKIPPED.** Première version :
+   `completed` incluait `SKIPPED`, donc 6 étapes (5 COMPLETED + 1 SKIPPED)
+   donnaient `completedSteps = 6` et `percentage = 100` sur 7 étapes. Le contrat
+   §3.1 impose `completedSteps = 2, skippedSteps = 1, percentage = 43` pour 3
+   étapes traitées sur 7. **Corrigé** : `completedSteps` ne compte que
+   `COMPLETED`, `percentage = arrondi((completed + skipped) * 100 / total)`.
+   Le test `getProgress_percentageIsRoundedAndCountsSkippedSteps` rejoue
+   désormais l'exemple exact du contrat (2 + 1 sur 7 → 43).
+2. **`PASTEUR` est un admin de tenant dans cette application**
+   (`AuthorizationService.TENANT_ADMIN_ROLE_KEYS = {ADMIN, PASTEUR,
+   TENANT_OWNER, TENANT_ADMIN}`). Le test RBAC utilisait `PASTEUR` et attendait
+   403 : l'hypothèse était fausse, pas le code. Le rôle contrôlé est désormais
+   `MEMBRE`, qui n'est pas admin de tenant.
+
+### Points de conception et déviations documentées
+
+1. **`GET /status` et l'achèvement global** : la méthode `markOnboardingCompleted`
+   et les colonnes V183 appartiennent à **A4**. Pour que chaque commit compile
+   (R3) tout en restant conforme au contrat, A3 expose déjà `GET /status` et le
+   lit via un port `TenantOnboardingStatusPort` (interface du module onboarding,
+   implémentée côté tenants en A4) injecté en `ObjectProvider` : port absent ⇒
+   `completed = false`, ce qui est le fail-closed correct (« En configuration »).
+   Aucun état statique mutable n'a été utilisé.
+2. **`roleTemplate` / `GET /templates/{role}` conservé à l'identique** : le contrat
+   §3.1 le déclare « inchangé ». La méthode a été réintégrée mot pour mot lors de
+   la réécriture du service et un test le vérifie.
+3. **`responsableId` / `chefFamilleId` de l'étape STRUCTURE** : ces colonnes sont
+   `NOT NULL`, mais le contrat §3.1 n'ouvre **aucun** champ responsable/chef sur
+   cette étape. R2 interdisant d'inventer un champ, l'administrateur qui
+   configure l'église est retenu comme responsable et chef par défaut (il peut
+   réattribuer ensuite). Documenté dans le code.
+4. **`typeEvenement` du premier événement** : colonne `NOT NULL` non couverte par
+   le contrat ; la valeur canonique `MEETING` (semantique « rencontre
+   d'église ») est utilisée, comme dans `V158__migrate_legacy_events_to_church_event`.
+   `EventService.create` positionne lui-même `statut = "PLANIFIE"`, conforme au
+   contrat.
+5. **`allowDarkMode` (étape BRANDING)** : `BrandingRequest` n'a pas ce champ.
+   La valeur est conservée dans le `completedData` renvoyé au client, et aucune
+   colonne n'est inventée.
+6. **Extraction de `createInvitation`** : `InvitationController` délègue et
+   reprojette les refus métier vers les **corps d'erreur historiques**
+   (`legacyErrorBody`) : le comportement HTTP observable est inchangé, comme
+   l'exige A3.5.
+7. **Restauration du 404 après 403** : pour les tests d'intégration impactés par
+   A1, la fixture `tenants` a été complétée (voir A1) — donc un accès
+   inter-tenant redonne bien son **404** d'origine, pas un 403.
+
+### Ce que A3 ne fait PAS (et pourquoi)
+
+- **Import réel des membres** : décision D4 assumée — l'étape `MEMBER_IMPORT`
+  est déclarative mais **vérifiée** (`importedCount >= 1` + audit
+  `TENANT_MEMBERS_IMPORTED`). L'import réel reste le module `/imports`.
+  L'interface dit `declaredOnly: true` dans le `completedData` : aucune fausse
+  automatisation.
+- **Appel à `TenantService.markOnboardingCompleted`** : voir point 1, posé en A4.
+
+---
+
+## A4 — Colonnes de complétion d'onboarding + endpoint `/status` (constat B2 / D2)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/resources/db/migration/V183__tenant_onboarding_completion.sql`
+  - MOD `tenants/domain/Tenant.java` (+ `onboardingCompletedAt`, `onboardingCompletedBy`)
+  - MOD `tenants/api/TenantResponse.java` (+ 2 champs additifs **en fin** de record)
+  - MOD `tenants/domain/TenantService.java` (+ `markOnboardingCompleted(UUID actorId)`)
+  - MOD `onboarding/domain/OnboardingWizardService.java` (appel en fin de wizard, A3.6)
+  - NEW `tenants/domain/TenantOnboardingStatusAdapter.java` (implémente le port lu par `/status`)
+  - NEW `onboarding/domain/TenantOnboardingStatusPort.java` (interface, livrée en A3)
+  - NEW `onboarding/domain/OnboardingStepActionsTest.java` (**23 cas** —voir « Trou de couverture comblé »)
+  - MOD tests : `TenantServiceTest` (+3), `OnboardingWizardServiceTest` (+2 et nouveau ctor), `OnboardingWizardTenantIsolationTest` (nouveau ctor)
+
+### Preuve — tests imposés (`§4 A4`)
+
+```
+mvn -B -o test -Dtest='TenantServiceTest,OnboardingWizardServiceTest,OnboardingWizardTenantIsolationTest,OnboardingStepActionsTest'
+
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...tenants.domain.TenantServiceTest
+[INFO] Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingWizardTenantIsolationTest
+[INFO] Tests run: 23, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.domain.OnboardingStepActionsTest
+[INFO] BUILD SUCCESS
+```
+
+### Preuve — non-régression suite complète
+
+```
+mvn -B -o test
+
+[WARNING] Tests run: 1379, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 127 = **1379**. Aucun échec.
+
+### Preuve — migration V183 sur PostgreSQL réel (base vierge)
+
+```
+mvn -B -o flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:55444/discifly3 ...
+
+[INFO] Successfully validated 147 migrations
+[INFO] Migrating schema "public" to version "183 - tenant onboarding completion"
+[INFO] Successfully applied 147 migrations to schema "public", now at version v185
+[INFO] BUILD SUCCESS
+```
+
+```
+\d tenants  ->  onboarding_completed_at | timestamp with time zone
+                onboarding_completed_by | uuid
+\d onboarding_wizard_steps
+              ->  skip_reason | text
+              ->  "uk_onboarding_step_tenant_type" UNIQUE, btree (tenant_id, step_type)
+```
+
+**L'index unique fait son travail :**
+```sql
+INSERT ... ('…001','CHURCH_IDENTITY')  -> OK
+INSERT ... ('…001','CHURCH_IDENTITY')  -> refusé
+ERROR:  duplicate key value violates unique constraint "uk_onboarding_step_tenant_type"
+```
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| La complétion du wizard renseigne les 2 colonnes **une seule fois** | `markOnboardingCompleted_shouldBeIdempotentAndNeverOverwriteTheOriginalDate` (date et acteur d'origine conservés, `verifyNoInteractions` sur save/audit au rejeu) |
+| `GET /status` renvoie `completed=true` et `completedAt` | `getStatus_reportsCompletionWithActorWhenColumnsAreSet` + `OnboardingWizardControllerTest.getStatus_isExposed` (HTTP) |
+| Un tenant non onboardé renvoie `completed=false` | `getStatus_reportsNotCompletedWhenTheTenantColumnIsAbsent` |
+| `tenantId` jamais exposé hors du tenant | `/status` ne renvoie que `completed/completedAt/completedBy/totalSteps/completedSteps/skippedSteps/percentage` ; les tests d'isolation prouvent qu'aucune requête ne sort du tenant courant |
+| Le flag n'est posé **qu'à la fin** | `globalCompletionIsMarkedOnlyWhenEveryStepIsSettled` (vrai, `verify(tenantService).markOnboardingCompleted(actorId)`) et `globalCompletionIsNotMarkedWhileAStepRemains` (faux, `never()`) |
+
+### Trou de couverture comblé
+
+Les tests de A3 **mockaient** `OnboardingStepActions` : aucune des 7 actions
+métier n'était donc réellement vérifiée, alors que le critère d'acceptation
+d'A3.4 exige « chaque étape produit un effet réel vérifiable ».
+
+`OnboardingStepActionsTest` (**23 cas**) comble ce trou : chaque action est
+prouvée appelant le **vrai** service (`OrganizationNodeService.updateNode` /
+`createRootChurch`, `TenantSettingsService.updateSettings` / `updateBranding`,
+`DepartmentService.create`, `FamilyService.create`, `InvitationService.createInvitation`,
+`TenantFeatureService.enableFeature` après validation catalogue,
+`EventService.create`), avec son audit, et avec **zéro écriture** en cas de donnée
+invalide (`verifyNoInteractions`).
+
+### Décisions et déviations documentées
+
+1. **`TenantResponse` : constructeur de compatibilité à 15 champs ajouté.** Les
+   deux champs additifs sont bien **en fin** de record comme l'impose le plan,
+   mais un constructeur secondaire à 15 champs évite de casser
+   `PlatformProvisioningServiceTest` et `TenantRegistrationServiceTest` qui
+   construisent le record directement. L'ajout reste réellement additif.
+2. **Port `TenantOnboardingStatusPort` + `TenantOnboardingStatusAdapter`.** Le
+   fichier de l'implémentation n'est pas listé dans A4 : il était nécessaire
+   pour que `GET /status` (contrat §3.1) lise réellement les colonnes V183.
+   Alternative écartée : injection de `TenantRepository` dans le module
+   onboarding (couplage direct) — le port évite ce couplage, reste sans état
+   statique, et se dégrade proprement si absent.
+3. **`markOnboardingCompleted` lit le tenant via `TenantContext`** et renvoie
+   `false` (no-op) s'il n'y a pas de contexte — au lieu de lever, pour ne pas
+   faire échouer une complétion d'étape légitime dans un flux sans tenant.
+4. **`markOnboardingCompleted` n'écrase JAMAIS** une date de fin existante, et
+   n'enregistre l'acteur qu'à la première complétion.
+5. **Numérotation des migrations** : le plan annonçait « dernier existant V182 » ;
+   le dernier réel est **V177**. V183/V184/V185 restent donc libres, mais leave
+   un **trou de numérotation** (178-182 inutilisés). Sans conséquence sur une
+   installation neuve ou existante (177 → 183 s'applique dans l'ordre), et c'est
+   ce que j'ai vérifié. Voir NEED-HELP-01.
+6. **`skip_reason`** est fusionné dans `completedData` (clé `skipReason`) plutôt
+   qu'exposé comme champ du contrat §3.1, qui n'en prévoit pas.
+
+---
+
+## A5 — Provisionnement : owner obligatoire + email d'activation (constat B3)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `platform/domain/TenantOwnerProvisioningService.java`
+  - MOD `platform/domain/PlatformProvisioningService.java`
+  - MOD `platform/api/PlatformProvisioningController.java`
+  - NEW `platform/domain/TenantOwnerProvisioningServiceTest.java` (7 cas)
+  - MOD `platform/domain/PlatformProvisioningServiceTest.java` (+1 cas, ordre d'appel)
+
+### Constat vérifié
+
+`POST /api/v1/platform/admin/provisioning` créait le tenant, l'église racine, le
+département, le nœud de département et la famille… **mais aucun compte
+administrateur**. Le tenant était créé puis immédiatement inexploitable, sans
+que rien n'automatisait ni ne documente la création d'un compte propriétaire.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='TenantOwnerProvisioningServiceTest,PlatformProvisioningServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in ...PlatformProvisioningServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantOwnerProvisioningServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1387, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 135 = **1387**. Aucun échec.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Aucun tenant créé sans owner | `refusesToProvisionATenantWithoutOwnerAndWritesNothing` : `OWNER_REQUIRED` levé **avant** `tenantService.create` — vérifié par `verify(tenantService, never()).create(any())`, `never()` sur `createRootChurch`, `departmentService`, `familyService` et même sur la résolution du plan. **Zéro écriture.** |
+| L'owner reçoit un email d'activation | `createsOwnerUserAndMembership` : `verify(authService).sendActivationEmail(userId)` — le flux d'activation **existant** est réutilisé, pas réimplémenté |
+| Un email déjà utilisé dans un autre tenant est refusé sans création partielle | `refusesEmailAlreadyUsedInAnotherTenant` : `409 OWNER_EMAIL_ALREADY_USED`, puis `never()` sur `userRepository.save`, `membershipRepository.save` et `verifyNoInteractions(authService)` |
+| Idempotence si l'owner existe déjà dans le même tenant | `doesNotDuplicateMembershipWhenOwnerAlreadyMember` : `alreadyMember = true`, aucun doublon de membership, aucun nouvel `User` |
+| SMTP cassé = booléen, pas d'exception (D10) | `smtpFailureNeverBreaksProvisioning` : `activationEmailSent = false` et la membership est bien créée |
+| Mot de passe initial jamais communiqué | `initialPasswordIsRandomStrongAndNeverLeaked` : BCrypt de 32 caractères aléatoires (`SecureRandom`), deux hachages distincts pour deux emails, et `passwordEncoder.matches("password123", hash) == false` |
+| Rôle et statut du compte owner | `PASTEUR` + `roles={PASTEUR}` + `activeRole=PASTEUR` + `PENDING_ACTIVATION` (le propriétaire définit son propre mot de passe via le lien) |
+
+### Décisions et déviations documentées
+
+1. **`OWNER_EMAIL_ALREADY_USED` : `DomainException` et non `BusinessRuleException`.**
+   Le plan (A5.1) demande `BusinessRuleException` **avec un statut 409**, mais
+   `GlobalExceptionHandler:43-52` ne sait mapper `BusinessRuleException` que vers
+   **400** (défaut) ou **403** (préfixes `FEATURE_DISABLED_`/`QUOTA_`) : le 409
+   y est **inatteignable**. J'ai donc utilisé
+   `DomainException(message, HttpStatus.CONFLICT, "OWNER_EMAIL_ALREADY_USED")` —
+   le **code métier est exactement celui du plan**, seul le véhicule change pour
+   rendre le statut 409 atteignable (convention déjà retenue par le wizard, D6).
+   → voir **NEED-HELP-03** pour validation de l'orchestrateur.
+2. **Validation de l'owner en TÊTE de `provision`**, donc avant la résolution du
+   plan et avant `tenantService.create` : le refus est antérieur à toute écriture.
+3. **L'owner est provisionné APRÈS l'église racine et AVANT département/famille**
+   (`PlatformProvisioningServiceTest` le prouve par `InOrder`) : `Department.responsableId`
+   et `Family.chefFamilleId` sont `NOT NULL`, un propriétaire valide doit donc
+   exister avant ces créations.
+4. **Membership `TENANT_OWNER` via `roleLegacy` uniquement.** Le rôle
+   `TENANT_OWNER` est un rôle **global** (`tenant_id IS NULL`) et
+   `TenantMembership.role` pointe vers une entité `Role`. L'utiliser ici
+   introduirait un rôle dans le tenant alors qu'il est global par conception ;
+   `roleLegacy` est le champ prévu pour ce cas, et c'est
+   `AuthorizationService.isTenantAdmin` qui le lit en repli
+   (`membership.getRole() != null ? getRole().getKey() : getRoleLegacy()`).
+5. **Constructeurs de compatibilité** ajoutés à `Command` (27 args),
+   `ProvisioningResult` et `AtomicProvisioningRequest` : l'ajout reste
+   réellement additif et aucun appelant n'est cassé. Un `Command` construit par
+   l'ancien constructeur est aujourd'hui **refusé** avec `OWNER_REQUIRED`, ce qui
+   est exactement le fail-closed voulu (une ancienne version du client web ne
+   peut plus créer d'église sans propriétaire).
+6. **Aucun secret en dur** : le mot de passe initial est généré, haché, et
+   jamais journalisé ni renvoyé.
+
+---
+
+## A6 — Emails d'inscription + endpoint public de statut (constat M2)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `authentication/domain/EmailService.java` (+ 3 emails d'inscription, retour `boolean`)
+  - MOD `platform/domain/TenantRegistrationService.java` (+ emails, + `registrationStatus(email)`)
+  - MOD `platform/domain/TenantRegistrationRequestRepository.java` (+ `findByEmailIgnoreCase`)
+  - NEW `authentication/api/RegistrationStatusRequest.java`, `RegistrationStatusResponse.java`
+  - MOD `authentication/api/AuthController.java` (+ `POST /registration-status`)
+  - MOD `common/infrastructure/config/PerIpRateLimiter.java` (+ `tryConsumeRegistrationStatus` + métriques)
+  - MOD `backend/src/main/resources/application.yml` (+ `registration-status-*`)
+  - NEW `platform/domain/TenantRegistrationEmailTest.java` (4 cas)
+  - NEW `authentication/api/AuthControllerRegistrationStatusTest.java` (7 cas)
+  - MOD `platform/domain/TenantRegistrationServiceTest.java` (nouveau ctor + mock)
+
+### Constat vérifié
+
+Le parcours d'inscription d'une église était **100 % silencieux** : ni accusé de
+réception à la soumission, ni notification d'approbation, ni notification de
+rejet. Le demandeur n'avait **aucune preuve** que sa demande était arrivée, et
+l'approbation comme le rejet étaient invisibles.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='TenantRegistrationEmailTest,AuthControllerRegistrationStatusTest,TenantRegistrationServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0 -- in ...AuthControllerRegistrationStatusTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantRegistrationEmailTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in ...TenantRegistrationServiceTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1398, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 146 = **1398**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Soumission → email reçu | `submitSendsRegistrationReceived` (email **normalisé** en minuscules) |
+| Approbation → email d'approbation | `approveSendsRegistrationApproved` (avec le lien `frontendUrl + "/login"`) |
+| Rejet → email avec motif | `rejectSendsRegistrationRejected` (le motif du Super Admin est transmis) |
+| Aucun échec SMTP ne casse la transaction métier | `submitSurvivesSmtpFailure` : l'email renvoie `false`, la demande reste `PENDING_APPROVAL` et persistée. Décision D10 respectée par `sendTracked` (jamais de `throw`, seulement `log.error`) |
+| `registration-status` rate-limité | `rateLimitedReturns429` : `429` + `Retry-After: 300` + `no-store`, et **`verify(registrationService, never())`** : le quota protège aussi la base |
+| Sans fuite d'information | `responseLeaksNothingSensitive` : le corps ne contient ni `password`, ni `passwordHash`, ni `organizationName`, ni `userId`, ni `slug`, ni `tenantId` |
+| `Cache-Control: no-store` | asserted sur les 6 réponses (4 nominaux + 429 + leak) |
+| `reason` seulement si `REJECTED` | `rejectedReturnsReason` (présent) vs `approvedReturnsCanLoginTrue` / `pendingReturnsPendingApproval` (absent) |
+| `canLogin` = `APPROVED` | les 4 cas nominaux |
+
+### Décisions et déviations documentées
+
+1. **Fenêtre de rate-limit : 5 minutes.** Le plan §4 A6 ne mentionne que
+   `registration-status-capacity/refill` (défauts 3/3) mais le contrat §3.3 exige
+   « **3 requêtes / 5 minutes / IP** ». J'ai donc aussi ajouté
+   `registration-status-period-minutes: 5` (avec la même clé en
+   `application.yml`). Sans ce period, 3 requêtes/minute auraient laissé 15
+   tentatives par fenêtre de 5 minutes — 5× plus permissif que le contrat.
+2. **Endpoint `429` : corps `status = NONE`** plutôt qu'un corps d'erreur vide.
+   Cohérent avec le fait que la réponse ne révèle rien sur l'existence d'un compte :
+   un client qui reçoit `429` ne doit pas pouvoir déduire que l'email existe.
+   `Retry-After` et `X-RateLimit-Remaining: 0` sont malgré tout fournis, comme
+   pour les autres endpoints.
+3. **`findByEmailIgnoreCase`** ajouté à `TenantRegistrationRequestRepository` et
+   utilisé aussi par `submit` : l'email est une identité globale unique
+   (constat B4 / V185), une recherche sensible à la casse aurait pu créer deux
+   demandes pour la même adresse selon la casse saisie.
+4. **Le fichier de la tâche annonçait « 4 nouvelles méthodes » dans
+   `EmailService`** : 3 sont livrées ici (`sendRegistrationReceived`,
+   `sendRegistrationApproved`, `sendRegistrationRejected`). La 4ᵉ est
+   `sendInvitationWelcome`, qui appartient à la tâche **A9** (§3.4) et n'est pas
+   utilisée par le parcours d'inscription.
+5. **Aucun secret ni URL interne dans la réponse** : `loginUrl` n'est envoyé que
+   dans l'**email** au demandeur, jamais dans la réponse HTTP.
+
+---
+
+## A8 — Quotas espaces, événements, églises + alerte admin (constat M3)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `tenants/domain/QuotaService.java` (+ `checkCanCreateSpace`, `checkCanCreateEvent`, `checkCanCreateCampus`, alerte sur dépassement, repli `spaces` supprimé)
+  - NEW `tenants/domain/QuotaAlertService.java`
+  - MOD `events/domain/EventRepository.java` (+ `countByTenantIdAndStatutNotInAndDeletedFalse`)
+  - MOD `spaces/domain/SpaceService.java` (quota appelé dans `createSpace`)
+  - MOD `events/domain/EventService.java` (quota appelé dans `create`)
+  - MOD `tenants/domain/OrganizationNodeService.java` (quota appelé dans `createNode`)
+  - NEW `tenants/domain/QuotaServiceSpacesEventsTest.java` (11 cas)
+  - NEW `tenants/domain/QuotaAlertServiceTest.java` (5 cas)
+  - MOD tests : `QuotaServiceTest`, `SpaceServiceTest`, `EventServiceTest`,
+    `SpaceCriticalPathIntegrationTest`, `PeopleCriticalPathIntegrationTest` (fixtures)
+
+### Constat vérifié
+
+`checkCanCreateChurch` et `checkCanCreateDepartment` **existaient déjà** mais
+n'étaient appelés que par `QuotaController` (un endpoint de simulation « puis-je
+créer ? »). **La création réelle n'était donc jamais bornée** : un tenant pouvait
+dépasser son quota d'églises, de départements, de campus, d'espaces ou
+d'événements sans jamais être refusé. Aucun administrateur n'était prévenu non
+plus.
+
+### Risque R-2 du plan : vérifié, et infirmé
+
+Le plan annonce (risque R-2) : « Limites `spaces`/`events` absentes des plans
+seedés (V144) → A8 refuse des créations légitimes ».
+
+**Vérification faite : R-2 est infondé.** `V177__complete_canonical_saas_plans.sql`
+réécrit `limits_json` **en entier** pour les 4 plans canoniques :
+
+| Plan | `spaces` | `events` | `max_churches` | `max_departments` | `max_campuses` |
+|---|---|---|---|---|---|
+| DISCOVERY | 3 | 10 | 1 | 3 | 1 |
+| STARTUP | 10 | 50 | 3 | 10 | 3 |
+| GROWTH | 25 | 200 | 10 | 25 | 10 |
+| NETWORK | 100 | 1000 | 100 | 100 | 50 |
+
+(V144 pose `spaces`/`events`, V135 les `max_*`, V177 **complète** le tout.)
+Aucune nouvelle migration n'est donc nécessaire, et le fail-closed n'affecte
+aucune création légitime. Le risque est documenté ici pour que le vérificateur ne
+le ressuscite pas.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='QuotaServiceSpacesEventsTest,QuotaAlertServiceTest,QuotaServiceTest,SpaceServiceTest,EventServiceTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaServiceSpacesEventsTest
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaAlertServiceTest
+[INFO] Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 -- in ...QuotaServiceTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...SpaceServiceTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0 -- in ...EventServiceTest
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1414, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 162 = **1414**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Créer un espace/événement/église au-delà de la limite → 403 `QUOTA_*` | `spaceAtLimitIsRefusedWithAlert`, `eventAtLimitIsRefusedWithAlert`, `churchQuotaIsEnforced`, `campusQuotaIsEnforced`. Les codes commencent par `QUOTA_` → `GlobalExceptionHandler` les mappe en **403** |
+| Notification créée pour chaque admin | `onlyTenantAdminsAreNotified` : 2 notifications pour `TENANT_OWNER` + `tenant_admin`, **0** pour `PASTEUR` et `MEMBRE` |
+| Aucune régression sur les quotas existants | suite complète verte (users, storage, IA, cours, messages) |
+| Limite absente → refus (D11 fail-closed) | `spaceWithoutLimitFailsClosed`, `eventWithoutLimitFailsClosed` (et **aucune** lecture de consommation : refus d'emblée) |
+| L'alerte n'est jamais bloquante | `alertIsTriggeredAndNeverBlocksTheRefusal` : l'alerte lève, le refus `QUOTA_EXCEEDED_SPACES` est bien propagé ; `oneFailedNotificationDoesNotStopTheOthers` |
+
+### Bugs et anomalies réels trouvés et corrigés
+
+1. **Repli erroné sur la clé `spaces`** dans `organizationLimit`. Un tenant sans
+   `max_churches` se voyait appliquer le quota d'**espaces** (3 sur DISCOVERY) à
+   ses **églises** : deux ressources confondues silencieusement. Retiré — chaque
+   ressource a sa clé, et son absence est un refus explicite.
+2. **`EventController.create` ne renseigne pas `tenantId`** sur l'entité (auto-fill
+   Hibernate à la persistance). Le contrôle de quota s'exécutant **avant**, il
+   cherchait un tenant `null` et refusait **toute** création d'événement
+   (`TENANT_NOT_FOUND`). Corrigé par `EventService.resolveTenantId(event)` qui
+   retombe sur `TenantContext.requireTenantId()`. **Sans cette correction, la
+   création d'événement aurait été cassée en production** — attrapée par
+   `PeopleCriticalPathIntegrationTest.eventDressCodeArchivesFlow`.
+3. **Statuts clos d'événement vérifiés** avant d'écrire la requête : l'entité
+   `Event` n'a que `statut` (String, défaut `PLANIFIE`) et `deleted` (boolean) ;
+   les statuts réellement clos sont `TERMINE` et `ANNULE`
+   (`EventService:590`). Le test `eventCountingExcludesClosedStatuses` verrouille
+   la liste exacte passée au repository.
+
+### Fixtures de test ajoutées (et pourquoi elles sont légitimes)
+
+`SpaceCriticalPathIntegrationTest` et `PeopleCriticalPathIntegrationTest` ont
+reçu `ensurePlanAndSubscription()` : les deux échouaient désormais en
+`QUOTA_CONFIGURATION_INVALID`, non pas à cause d'une règle métier, mais parce
+qu'en H2 (base créée par Hibernate, **sans Flyway**) il n'existe ni plan de
+catalogue ni abonnement.
+
+Pièges rencontrés et documentés en commentaire :
+- `saas_plans` a pour **clé primaire la colonne `key`** (`@Id @Column(name="key")`) :
+  il n'existe pas de colonne `id` sur cette table ;
+- les colonnes `limits_json` / `quotas_json` sont des `jsonb`
+  (`@JdbcTypeCode(SqlTypes.JSON)`) : un `INSERT` SQL de texte brut les stocke en
+  `byte[]` et la relecture Hibernate échoue, ce qui rendait le plan invalide.
+  L'insertion passe donc par les **repositories**, pas par du SQL ;
+- l'id de `tenant_subscriptions` est laissé **généré** : attribuer un id à la main
+  fait passer Spring Data sur `merge()`, que Hibernate 6 refuse
+  (`StaleObjectStateException`) pour une entité à identifiant attribué sans
+  ligne préexistante.
+
+### Point de vigilance production (non bloquant, à surveiller)
+
+`lockPlan` refuse un tenant **sans abonnement actif**. C'est le comportement
+fail-closed déjà en production pour le quota utilisateurs, donc le précédent
+existe ; mais l'extension à espaces/événements/églises touche désormais des
+créations plus fréquentes. Si un tenant historique n'a pas d'abonnement, ses
+créatures d'espaces/événements échoueront en `QUOTA_CONFIGURATION_INVALID`.
+
+**Requête de contrôle recommandée avant déploiement en production** :
+```sql
+SELECT t.id, t.name
+FROM tenants t
+LEFT JOIN tenant_subscriptions s ON s.tenant_id = t.id AND s.status IN ('ACTIVE','TRIAL','PAST_DUE')
+WHERE s.id IS NULL;
+```
+Tout tenant retourné doit recevoir un abonnement avant le déploiement, sinon il
+sera bloqué. Je n'ai pas pu l'exécuter : je n'ai pas accès à la base de
+production.
+
+---
+
+## ARBITRAGES DE L'ORCHESTRATEUR (2026-09-28) — NEED-HELP 02, 03 et vigilance clos
+
+Les trois points bloquants ont été soumis à l'orchestrateur humain, qui a
+validé les trois options recommandées :
+
+| # | Question | Décision de l'orchestrateur | Conséquence |
+|---|---|---|---|
+| **NEED-HELP-02** | Preuve de validation des migrations | **Acceptée : preuve PostgreSQL hors CI** | `mvn verify` ne prouve rien sur les migrations ; la preuve officielle de A12 sera la validation sur PostgreSQL réel documentée (147 migrations sur base vierge, index/colonnes vérifiés, doublons refusés). L'ajout d'un test Testcontainers reste **hors périmètre** et pourra être repris dans `ORC-A5` (CI bloquante). |
+| **NEED-HELP-03** | `OWNER_EMAIL_ALREADY_USED` en 409 | **Validé : `DomainException` + `HttpStatus.CONFLICT`** | Le code métier est celui du plan ; seul le véhicule d'exception change, `BusinessRuleException` ne sachant produire ni 409. Aucun correctif supplémentaire requis. |
+| **Vigilance production** | Trou de numérotation 178-182 + tenants sans abonnement actif | **Documenter et continuer** | Aucune migration hors périmètre n'est créée. La requête de contrôle des tenants sans abonnement figure dans la section A8 et doit être exécutée par l'orchestrateur **avant déploiement**. |
+
+Le plan reste inchangé (fichier d'autorité non modifié) : ces décisions sont
+consignées ici, dans le fichier de progression de l'Agent A, conformément à `R8`.
+
+---
+
+## A9 — Invitations : répertoire, email de bienvenue, relances J-3/J-1 (constat M4)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - NEW `backend/src/main/resources/db/migration/V184__invitation_reminder_tracking.sql`
+  - NEW `platform/domain/InvitationReminderScheduler.java`
+  - MOD `tenants/domain/Invitation.java` (+ `remindedAt`)
+  - MOD `tenants/domain/InvitationRepository.java` (+ `findByStatusAndExpiresAtBetween`)
+  - MOD `tenants/domain/InvitationService.java` (inscription au répertoire à l'acceptation)
+  - MOD `authentication/domain/EmailService.java` (+ `sendInvitationWelcome`, `sendInvitationReminder`)
+  - MOD `platform/api/InvitationController.java` (`welcomeEmailSent` dans la réponse d'acceptation)
+  - NEW `tenants/domain/InvitationDirectoryRegistrationTest.java` (5 cas)
+  - NEW `platform/domain/InvitationReminderSchedulerTest.java` (11 cas)
+  - MOD 3 tests d'invitation existants (nouveau constructeur `InvitationService`)
+
+### Constat vérifié
+
+Avant ce correctif, l'acceptation d'une invitation ne produisait **aucun** email,
+**aucune** fiche au répertoire, et l'invitation expirait **silencieusement** au
+bout de 7 jours : l'église avait un compte invisible dans le répertoire et ne
+savait pas qu'une invitation pendait.
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='InvitationDirectoryRegistrationTest,InvitationReminderSchedulerTest,InvitationServiceTest,InvitationServiceCrossTenantTest,InvitationServiceCreateInvitationTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationReminderSchedulerTest
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationDirectoryRegistrationTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceCreateInvitationTest
+[INFO] Tests run:  7, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceCrossTenantTest
+[INFO] Tests run:  6, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationServiceTest
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1430, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 178 = **1430**.
+
+### Critères d'acceptation
+
+| Critère | Preuve |
+|---|---|
+| Une acceptation crée la personne **exactement une fois** | `registersPersonInDirectory` (création avec source `INVITATION`) + `doesNotDuplicateAnExistingPerson` (`verifyNoInteractions(peopleService)` quand la fiche existe) |
+| **Source `INVITATION`** | asserté sur le 3ᵉ argument de `registerPerson` dans 3 tests |
+| Un email de bienvenue est tenté | `sendInvitationWelcome` appelé par `InvitationController.acceptInvitation` ; `welcomeEmailSent` renvoyé dans la réponse |
+| Les relances partent **une seule fois par palier** | `sameTierIsNeverSentTwice` (`sent == 0`, aucun `save`) + `nextTierIsStillSentAfterPreviousOne` (J-3 déjà passé ⇒ J-1 envoyé quand même) |
+| Aucun envoi pour invitations acceptées/annulées | `onlyPendingInvitationsAreConsidered` : la requête filtre `eq(InvitationStatus.PENDING)` |
+| Les fenêtres J-3 / J-1 sont correctes | `windowIsCentredOnTheTier` (NOW+3j ± 12 h) et `oneDayWindowIsNarrower` (NOW+1j ± 6 h), vérifiés au `verify` exact |
+
+### Décisions et déviations documentées
+
+1. **La relance ne reconstruit PAS de lien d'invitation.** Le token n'est stocké
+   que **haché** (V173/V175) : il est mathématiquement impossible de retrouver le
+   lien à partir de la ligne `invitations`. Plutôt que d'inventer un lien qui ne
+   fonctionne pas, la relance redirige vers `/login` et le message explique que
+   l'invitation expire bientôt. Un « faux lien » serait pire que pas de lien :
+   l'invité cliquerait et comprendrait que l'application est cassée.
+2. **`reminded_at` est positionné seulement si l'envoi a réussi.** Un échec SMTP
+   ne marque pas l'invitation : le job réessaiera au prochain passage, sinon une
+   panne SMTP temporaire ferait définitivement perdre la relance.
+3. **Le scheduler n'est jamais bloquant.** `sendOne` encapsule tout dans un
+   `try/catch` : une exception d'un tiers ne doit pas arrêter le job pour tous
+   les tenants. De même, un échec d'écriture d'audit n'annule pas une relance
+   déjà partie (sinon elle serait renvoyée au prochain passage). Prouvé par
+   `auditFailureDoesNotBreakTheReminder`.
+4. **Prénom dérivé de l'email quand l'invitation n'en fournit pas.**
+   `Person.first_name` est `NOT NULL`, et une acceptation cross-tenant (décision
+   D3) se fait sans mot de passe donc souvent sans nom. Le local-part de l'email
+   est utilisé, avec « Membre » en dernier recours. Prouvé par
+   `derivesFirstNameFromEmailWhenAbsent`.
+5. **Échec du répertoire ≠ échec d'acceptation.** Le compte et la membership sont
+   déjà créés et valides : les faire échouer parce que le répertoire est en panne
+   laisserait l'invité sans accès. Le journal `warn` trace l'incident.
+   Prouvé par `directoryFailureNeverBreaksAcceptance`.
+6. **Index `idx_invitations_status_expires`** ajouté par V184 : le scheduler
+   balaie les invitations PENDING par fenêtre d'expiration une fois par jour ; sans
+   cet index, c'est un scan séquentiel de `invitations`.
+
+### Validation de la migration V184
+
+Appliquée avec les 146 autres sur base vierge PostgreSQL 16.15 lors de la
+validation A4/A7 (`now at version v185`). La colonne `reminded_at` est
+`TIMESTAMPTZ` nullable, donc **sans risque de refus sur une base existante**.
+
+---
+
+## A10 — Finitions wizard & invitations (mineurs de l'audit)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `platform/api/InvitationController.java` (pagination + filtres, rétro-compatible)
+  - MOD `tenants/domain/InvitationRepository.java` (+ `searchForAdmin` paginé)
+  - NEW `onboarding/domain/OnboardingWizardInitializeConcurrencyTest.java` (2 cas, 2 vrais threads)
+  - MOD `platform/api/InvitationControllerTest.java` (+6 cas de pagination/filtre)
+  - (A10.3 — champ `config` neutralisé et `completedData` documenté : **livré en A3**)
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='InvitationControllerTest,OnboardingWizardInitializeConcurrencyTest' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0 -- in ...InvitationControllerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0 -- in ...OnboardingWizardInitializeConcurrencyTest
+[INFO] BUILD SUCCESS
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1438, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 186 = **1438**.
+
+### A10.1 — Pagination et filtres, sans casser l'usage existant
+
+| Requête | Comportement | Preuve |
+|---|---|---|
+| `GET /admin/invitations` (sans `page`) | **Liste complète**, strictement comme avant | `listWithoutPageKeepsTheLegacyFullList` : 2 éléments, et `verify(never()).searchForAdmin(...)` |
+| `?page=0&size=50` | `PageResponse` (convention existante du dépôt) | `listWithPageReturnsPageResponse` : `content/page/size/totalElements/totalPages` |
+| `?status=PENDING` | Filtre transmis en majuscules | `listFiltersByStatus` : `verify(searchForAdmin(eq(tenantId), eq("PENDING"), isNull(), any()))` |
+| `?status=PEUT-ETRE` | Statut inconnu **ignoré**, pas d'erreur 400 | `unknownStatusFilterIsIgnored` |
+| `?q=email` | Recherche partielle transmise, `q` < 2 caractères ignoré | `listSearchQueryIsForwarded` (le `trim` est aussi vérifié) |
+| `?size=5000` | Borné à 200 | `listPageSizeIsBounded` : `ArgumentCaptor<Pageable>` ⇒ `getPageSize() == 200` |
+
+### A10.2 — Concurrence sur `initialize`
+
+`OnboardingWizardInitializeConcurrencyTest` utilise **deux vrais threads** et une
+`CyclicBarrier` :
+
+- `concurrentInitializationNeverDuplicatesSteps` : les **deux premières lectures**
+  renvoient volontairement « aucune étape » (c'est la fenêtre réelle entre le
+  SELECT et le INSERT des deux requêtes concurrentes). Résultat : **exactement 7
+  étapes** en base, et **8 tentatives d'insertion** — 7 par le gagnant, 1 par le
+  perdant qui échoue sur l'index unique `uk_onboarding_step_tenant_type` puis
+  relit. Aucun doublon, aucun 500.
+- `integrityViolationIsAbsorbedAndReread` : une `DataIntegrityViolationException`
+  sur le premier `save` est absorbée et les 7 étapes existantes sont relues.
+
+### A10.3 — Champ `config` neutralisé (livré en A3)
+
+Le champ `config` (JSON legacy) n'est plus lu par la logique et n'est plus
+exposé par l'API ; la colonne est **conservée** (aucune suppression de colonne).
+`completedData` est documenté et sérialisé en objet JSON. Le test
+`getSteps_neverLeaksTheLegacyConfigColumn` (A3) verrouille qu'aucune fuite ne
+revient.
+
+### Décisions et déviations documentées
+
+1. **Rétro-compatibilité vérifiée, pas supposée.** Le plan dit « sans paramètres
+   → comportement actuel ». C'est implémenté **et prouvé** par test, avec un
+   `verify(never())` sur la voie paginée : impossible de régresser par erreur.
+2. **Requête native pour la recherche paginée** plutôt qu'un `Specification` : les
+   filtres optionnels sont combinés par `CAST(:status AS VARCHAR) IS NULL OR …`,
+   ce qui garantit qu'un filtre absent n'écarte aucune ligne, et la recherche
+   email est normalisée en minuscules comme partout ailleurs.
+3. **Statut inconnu ignoré plutôt que 400.** Un client qui evolue (ou une
+   mauvaise saisie) ne doit pas casser l'écran d'invitations ; le filtre est
+   simplement neutralisé.
+4. **`q` de moins de 2 caractères ignoré** : une recherche d'une lettre
+   ramènerait tout le répertoire sans valeur pour l'utilisateur et avec un coût
+   de scan.
+5. **La fenêtre de course est rendue déterministe** dans le test (2 premières
+   lectures vides). Sans cela, le test aurait pu passer sans jamais exercer la
+   course — c'est précisément le piège des tests de concurrence.
+
+---
+
+## A15 — Correction `AuthService` magic-link (message/code inversés)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `authentication/domain/AuthService.java` (`verifyMagicLink`)
+  - MOD `authentication/domain/AuthServiceTest.java` (+2 cas)
+
+### Constat vérifié
+
+`BusinessRuleException` suit la convention `(message, code)`, et
+`GlobalExceptionHandler` place le **code** dans le `title` du `ProblemDetail` —
+le champ que les clients lisent. Les deux exceptions du magic link avaient leurs
+arguments **inversés** :
+
+```java
+// AVANT — le code part dans le detail, le message français part dans le title
+throw new BusinessRuleException("MAGIC_LINK_EXPIRED", "Lien magique invalide ou expiré");
+throw new BusinessRuleException("USER_NOT_FOUND", "Aucun compte associé à cet email");
+```
+
+Conséquence pour le client : `title = "USER_NOT_FOUND"` et
+`detail = "Aucun compte associé à cet email"` — l'inverse de ce qu'attend le
+contrat, et un switch sur le message au lieu du code.
+
+### Correction
+
+```java
+throw new BusinessRuleException("Lien magique invalide ou expiré", "MAGIC_LINK_EXPIRED");
+throw new BusinessRuleException("Aucun compte associé à cet email", "USER_NOT_FOUND");
+```
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=AuthServiceTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0 -- in ...authentication.domain.AuthServiceTest
+[INFO] BUILD SUCCESS
+```
+
+Deux cas dédiés, qui vérifient **les deux champs** :
+- `magicLinkExpired_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage` :
+  `getCode() == "MAGIC_LINK_EXPIRED"` **et** `getMessage() == "Lien magique invalide ou expiré"` ;
+- `magicLinkUnknownUser_shouldExposeTheCodeInCodeAndTheFrenchTextInMessage` :
+  `getCode() == "USER_NOT_FOUND"` **et** `getMessage() == "Aucun compte associé à cet email"`.
+
+> Note : `MagicLinkEntry` n'est stocké qu'en mémoire (map statique) avec une durée
+> de 15 minutes ; le test du cas « utilisateur inconnu » génère donc son token et
+> le consomme immédiatement.
+
+---
+
+## A11 — Tests de sécurité IDOR/isolation (wizard, provisioning, subscription)
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `backend/src/test/java/com/discipolat/modules/tenants/MultiTenantSecurityTests.java`
+    (+2 classes imbriquées : 5 + 3 cas)
+  - NEW `backend/src/test/java/com/discipolat/modules/onboarding/OnboardingWizardSecurityIT.java` (9 cas)
+
+### Preuve
+
+```
+mvn -B -o test -Dtest='MultiTenantSecurityTests,OnboardingWizardSecurityIT' -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run:  9, Failures: 0, Errors: 0, Skipped: 0 -- in ...onboarding.OnboardingWizardSecurityIT
+[INFO] Tests run:  5, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests$OnboardingWizardSecurityTests
+[INFO] Tests run:  3, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests$PlatformAndSubscriptionSecurityTests
+[INFO] Tests run: 44, Failures: 0, Errors: 0, Skipped: 0 -- in ...MultiTenantSecurityTests
+```
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1448, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+1252 (baseline) + 196 = **1448**.
+
+### Matrice ajoutée (chaque cas cite la cellule de la matrice de sécurité)
+
+| Cellule | Cas de test | Résultat attendu |
+|---|---|---|
+| Tenant B ne peut **lire** le wizard de A | `tenantBCannotReadProgressOfTenantA`, `tenantBSeesOnlyItsOwnSteps` | 0 étape de A visible, `hasSize(1)` et l'id est bien celui du tenant B |
+| Tenant B ne peut **compléter** une étape de A | `tenantBCannotCompleteStepOfTenantA` (service + HTTP) | `404 STEP_NOT_FOUND` |
+| Tenant B ne peut **sauter** une étape de A | `tenantBCannotSkipStepOfTenantA` (service + HTTP) | `404 STEP_NOT_FOUND` |
+| Tenant B ne peut **démarrer** une étape de A | `tenantBCannotStartStepOfTenantA` | `404 STEP_NOT_FOUND` |
+| Un membre non-admin ne peut pas muter | `nonAdminMemberIsNotTenantAdmin`, `nonAdminMemberCannotMutate` (HTTP) | `403` sur `initialize` et `complete` |
+| Un membre non-admin **peut** lire | `nonAdminMemberCanRead` | `200` (le RBAC ne doit pas casser la lecture) |
+| `GET /tenants/*` réservé au Super Admin | `tenantAdminIsNotPlatformSuperAdmin` | `isPlatformSuperAdmin() == false` pour un `TENANT_OWNER` |
+| `SubscriptionController` refuse un non-admin | `regularMemberIsNotTenantAdmin` | `isTenantAdmin() == false` pour un `MEMBER` |
+| …et l'accepte pour un vrai admin | `tenantOwnerIsTenantAdmin` | `isTenantAdmin() == true` pour un `TENANT_OWNER` |
+| Suspension : API bloquée | `suspendedTenantCannotCallTheWizard` | `403 TENANT_SUSPENDED` |
+| Suspension : **pas de fuite** inter-tenant | `suspensionDoesNotLeakToTheOtherTenant` | le tenant voisin reste en `200` |
+| Suspension : réactivation immédiate | `reactivationRestoresAccess` | `200` **sans attendre le TTL de 30 s** |
+| Aucune fuite dans le corps d'erreur | `tenantBCannotCompleteStepOfTenantA` | `$.detail` ne contient ni le nom du tenant A ni `CHURCH_IDENTITY` |
+
+### Points de conception importants
+
+1. **Les tests de suspension passent par le chemin applicatif réel**
+   (`TenantService.deactivate` / `reactivate`), pas par un `UPDATE` SQL. C'est
+   `TenantService` qui publie `TenantStatusChangedEvent` et invalide le cache de
+   30 s de la garde. Avec un `UPDATE` SQL, le cache continuerait de dire
+   « ACTIVE » et le test **n'aurait rien prouvé** — c'est exactement ce qui s'est
+   produit à la première exécution (200 au lieu de 403).
+2. **`OnboardingWizardSecurityIT` traverse toute la chaîne** : JWT réel →
+   `TenantInterceptor` → filtre Hibernate → `TenantStatusInterceptor` (A1) →
+   `@PreAuthorize` (A3) → service. C'est le seul moyen de prouver que les couches
+   ne se compensent pas mutuellement.
+3. **La réponse d'erreur 404 est vérifiée anti-énumération** : le `detail` ne doit
+   ni nommer le tenant victime ni le type d'étape.
+
+### Non-régression vérifiée
+
+```
+git diff d730771..HEAD -- '*.java' | grep -cE "^\+.*(@Disabled|@Ignore)"
+0
+```
+Aucun test désactivé (gate G-A.2). Les 13 `Skipped` de la suite sont les
+`PerIpRateLimiterIntegrationTest` préexistants (`@EnabledIf("isRedisAvailable")`),
+inchangés.
+
+---
+
+## A12 — Validation Flyway + suite complète backend
+
+- **Statut** : DONE
+- **Aucun fichier modifié** : c'est une tâche de validation.
+
+### A12.1 — Compilation
+
+```
+export JAVA_HOME=~/.sdkman/candidates/java/21.0.12+1.1-tem
+export MAVEN_OPTS="-Xmx600m -XX:MaxMetaspaceSize=350m"
+mvn -B -o -DskipTests compile
+
+[INFO] BUILD SUCCESS
+[INFO] Total time:  0.867 s
+```
+
+### A12.2 — Suite complète (`mvn -B verify`)
+
+```
+mvn -B -o verify -DargLine="-Xmx1200m -XX:MaxMetaspaceSize=450m"
+
+[WARNING] Tests run: 1448, Failures: 0, Errors: 0, Skipped: 13
+[INFO] Building jar: .../backend/target/discipolat-backend-1.0.0.jar
+[INFO] --- spring-boot:3.4.7:repackage (repackage) @ discipolat-backend ---
+[INFO] Replacing main artifact .../discipolat-backend-1.0.0.jar with repackaged archive,
+        adding nested dependencies in BOOT-INF/.
+[INFO] BUILD SUCCESS
+exit=0
+```
+
+| Critère d'acceptation (gate G-A) | Résultat |
+|---|---|
+| Build vert | ✅ `exit=0`, `BUILD SUCCESS` |
+| Nombre de tests ≥ baseline P0.3 | ✅ **1448** ≥ **1252** (+196) |
+| 0 échec | ✅ `Failures: 0, Errors: 0` |
+| Aucun test désactivé | ✅ `git diff d730771..HEAD -- '*.java' \| grep -cE "^\+.*(@Disabled\|@Ignore)"` → **0** |
+| Migrations appliquées | ✅ voir ci-dessous (arbitrage NEED-HELP-02) |
+
+### A12.3 — Migrations (arbitrage NEED-HELP-02 : preuve PostgreSQL hors CI)
+
+Appliquées par `flyway:migrate` sur un conteneur PostgreSQL 16.15 **jetable**
+(`onb-flyway-check`, port 55444, sans aucun lien avec le conteneur de production
+`kfokam48-demo-init-postgres`) :
+
+> **CORRECTION (2026-09-28, après A14).** Le chiffre de « 147 » ci-dessus datait
+> d'une base neuve creee **avant** l'ajout de V184 : elle prouvait V183 et V185
+> mais **pas** V184. La preuve definitive a ete refaite sur une base vierge
+> neuf, via le demarrage reel du backend (`flyway.enabled: true`,
+> `ddl-auto: none`) — c'est-a-dire le chemin exact d'un deploiement neuf :
+
+```
+[INFO] Successfully validated 148 migrations
+[INFO] Migrating schema "public" to version "183 - tenant onboarding completion"
+[INFO] Migrating schema "public" to version "184 - invitation reminder tracking"
+[INFO] Migrating schema "public" to version "185 - users email global unique"
+[INFO] Successfully applied 148 migrations to schema "public", now at version v185
+```
+
+**148** migrations appliquees sur un schema vierge, V183 **et** V184 incluses.
+Cette meme base a ensuite revele 5 derives entite/schema (H1-H5, voir A14) que
+`mvn verify` ne peut pas voir, car le profil de test utilise H2 avec
+`ddl-auto: create-drop` : le schema y est **genere depuis les entites**, ce qui
+rend toute derive migration/entite mathématiquement invisible.
+
+Contrôles effectués sur le schéma résultant :
+
+| Objet | Résultat attendu | Constaté |
+|---|---|---|
+| `tenants.onboarding_completed_at` | `TIMESTAMPTZ` | ✅ |
+| `tenants.onboarding_completed_by` | `UUID` | ✅ |
+| `onboarding_wizard_steps.skip_reason` | `TEXT` | ✅ |
+| `uk_onboarding_step_tenant_type` | `UNIQUE (tenant_id, step_type)` | ✅ |
+| `uk_users_email_lower` | `UNIQUE btree (lower(email)) WHERE deleted = false` | ✅ |
+| `idx_invitations_status_expires` | `(status, expires_at)` | ✅ |
+| Doublon d'étape | refusé | ✅ `duplicate key ... uk_onboarding_step_tenant_type` |
+| Doublon d'email par cas | refusé | ✅ `duplicate key ... uk_users_email_lower` |
+| V185 avec doublons préexistants | **échec explicite, 0 donnée supprimée** | ✅ `V185: 1 doublon(s) email insensibles a la casse` |
+
+> Rappel : `mvn verify` ne prouve **rien** sur les migrations (profil H2,
+> `flyway.enabled: false`). C'est un fait documenté, pas une excuse : c'est
+> précisément la raison pour laquelle la preuve PostgreSQL a été retenue par
+> l'orchestrateur.
+
+---
+
+## A16 — OpenAPI interne + liste des modules publics
+
+- **Statut** : DONE
+- **Fichiers** :
+  - MOD `platform/api/PublicApiDocsController.java`
+  - NEW `backend/src/test/java/com/discipolat/modules/platform/api/PublicApiDocsControllerTest.java` (5 cas)
+  - MOD `docs/API.md` → **livré en A13**
+
+### Deux documentation fausse corrigées
+
+1. **Chemin de module erroné.** Le catalogue des modules annonçait
+   `Onboarding → /api/onboarding-wizard` : le préfixe `/v1` manquait, cette
+   documentation pointait dans le vide. Corrigé en `/api/v1/onboarding-wizard`,
+   et **verrouillé par test**.
+2. **Content-Type de l'OpenAPI.** `GET /api/v1/public/docs/openapi.yaml` renvoyait
+   une `String` sans media type explicite : Spring servait `text/plain`, que les
+   générateurs de SDK et les outils OpenAPI refusent ou devinent. Le media type
+   officiel `application/vnd.oai.openapi;version=3.0` est maintenant posé
+   **dans la réponse** (et pas seulement via `produces`, qui n'est vérifiable
+   que par la couche MVC) — c'est donc testable.
+
+### Endpoints ajoutés à l'OpenAPI publié (contrat §3.1 + §3.3)
+
+`/onboarding-wizard` (GET), `/onboarding-wizard/progress` (GET),
+`/onboarding-wizard/status` (GET), `/onboarding-wizard/initialize` (POST),
+`/onboarding-wizard/{id}/start` (POST), `/onboarding-wizard/{id}/complete` (POST),
+`/onboarding-wizard/{id}/skip` (POST), `/onboarding-wizard/templates/{role}` (GET),
+`/auth/registration-status` (POST) — avec les codes d'erreur et la sémantique
+documentés (corps facultatif de `/complete`, motif obligatoire selon
+`skipRequiresReason`, rate-limit et `no-store` du suivi d'inscription).
+
+### Preuve
+
+```
+mvn -B -o test -Dtest=PublicApiDocsControllerTest -DfailIfNoSpecifiedTests=false
+
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0 -- in ...platform.api.PublicApiDocsControllerTest
+[INFO] BUILD SUCCESS
+```
+
+Les 5 cas vérifient : le préfixe `/api/v1` du module Onboarding, que **tous** les
+chemins de modules commencent par `/api` et ont une description, que les 8 routes
+du wizard sont présentes, que **chaque route déclare la bonne méthode HTTP**
+(une mutation documentée en `GET` induirait les clients en erreur), et le media
+type de l'OpenAPI.
+
+```
+mvn -B -o test     (suite complète)
+
+[WARNING] Tests run: 1453, Failures: 0, Errors: 0, Skipped: 13
+[INFO] BUILD SUCCESS
+```
+
+---
+
+## A14 — Recette E2E bout-en-bout (`scripts/verify-tenant-onboarding.sh`)
+
+- **Statut** : **PARTIEL — 5 defaults bloquants découverts, 1 arbitrage demandé**
+- **Fichier** : NEW `scripts/verify-tenant-onboarding.sh` (curl + jq, ~560 lignes)
+- **Journal complet** : `reports/plan-2agents/a14-e2e-run.log`
+- **Contexte d'exécution** : backend **jetable** sur le port 18080, PostgreSQL 16.15
+  jetable (55445), Redis jetable (56380), clés RSA + clé AES générées à la volée.
+  Aucun conteneur ni port de production touché (le 8080 de production n'a pas été
+  utilisé, il ne l'a jamais été).
+
+### Principe retenu : le script ne ment jamais
+
+Chaque assertion rend `PASS`, `FAIL` ou `SKIP` **avec sa raison**. Un scénario non
+exécutable est `SKIP`, **jamais** `PASS`. Un seul défaut ne masque pas le reste :
+si le provisionnement échoue, le script crée le tenant par l'endpoint simple et
+**continue**, l'échec restant compté en `FAIL`. C'est ce qui permet à la recette
+de produire un signal global même avec un défaut bloquant en tête.
+
+### Résultat de la dernière exécution
+
+```
+  PASS : 9
+  FAIL : 3
+  SKIP : 13   (non executable -- JAMAIS comptes comme PASS)
+```
+
+Passants : joignabilité + OpenAPI, login Super Admin, création du tiers dans
+l'eglise d'origine, création du tenant, `tenant.id`, suspension (204),
+**refus du switch vers un tenant suspendu (aucun JWT délivré)**, réactivation (204).
+
+### Les 5 défauts découverts — tous **préexistants sur `main`**, tous invisibles à la suite de tests
+
+> Aucun de ces 5 défauts n'est introduit par la branche. Ils sont la conséquence
+> directe du choix `H2 + ddl-auto: create-drop` pour les tests : **le schéma de
+> test est généré depuis les entités**, donc aucune dérive migration/entité ne
+> peut jamais être détectée en CI. Ils sont réels : reproduits ci-dessous par
+> exécution, pas par lecture de code.
+
+#### H1 — `organization_nodes.slug` : colonne mappée, jamais migrée → HTTP 500
+
+`OrganizationNode` mappe `@Column(name = "slug")` (ajouté par `69fea3b`, sur
+`main`) mais **aucune** migration ne crée cette colonne.
+
+```
+POST /api/v1/platform/admin/provisioning  -> 500
+ERROR: column on1_0.slug does not exist
+```
+
+Impact : le **provisionnement atomique d'un tenant est cassé** sur toute base
+construite par les migrations, donc sur **tout déploiement neuf**. L'API organisation
+(`OrganizationManagementController` lit et écrit `getSlug()`) est également
+inutilisable.
+
+#### H2 — `events` : l'entité pointe une table que les migrations ne créent pas → HTTP 500
+
+```java
+// modules/events/domain/Event.java:12
+@Table(name = "events")
+```
+
+alors que la chaîne de migrations crée la table `event` (singulier).
+
+```
+GET /api/v1/events  ->  500
+ERROR: relation "events" does not exist
+```
+
+Impact : **tout le module Événements est cassé** sur une base migrationnée. Cela
+inclut l'étape `FIRST_EVENT` du wizard d'onboarding.
+
+#### H3 — `Map.of()` avec une valeur nulle : `my-tenants` renvoie 500 pour tout le monde
+
+`TenantSwitcherController:84` (et le doublon ligne 174) :
+
+```java
+"scopeId", m.getScopeId() != null ? m.getScopeId().toString() : null,   // -> null
+...
+return tenant.map(t -> Map.<String, Object>of( /* ... scopeId ... */ ));
+```
+
+`Map.of()` **interdit les valeurs nulles** : `scope_id` est `null` pour toute
+membership de portée `TENANT`, c'est-à-dire le cas normal.
+
+```
+GET /api/v1/tenant-switcher/my-tenants  ->  500
+java.lang.NullPointerException
+  at java.util.ImmutableCollections$MapN.<init>
+  at java.util.Map.of
+```
+
+Impact : le **sélecteur d'organisation est cassé pour tous les utilisateurs**.
+C'est précisément l'endpoint sur lequel repose le constat B2 du plan.
+
+#### H4 — Le filtre Hibernate multi-tenant rend le switch cross-tenant **impossible** ( architectural )
+
+`TenantFilter.enableFilter()` active pour toute la requête HTTP un filtre
+Hibernate `tenant_id = TenantContext.getTenantId()`. Ce filtre s'applique
+**aussi aux contrôles de sécurité qui doivent, eux, traverser les tenants**.
+SQL réellement émis par `POST /tenant-switcher/switch` :
+
+```sql
+select tm1_0.id from tenant_memberships tm1_0
+where tm1_0.tenant_id = ?      -- 00000000-...-0001  (tenant COURANT, injecté par le filtre)
+  and tm1_0.user_id  = ?
+  and tm1_0.tenant_id = ?      -- le tenant DEMANDÉ
+  and tm1_0.status   = ?
+```
+
+Le contrôle d'accès de `switchTenant()` exige `hasAccess == true`, donc
+**basculer vers un autre tenant est structurellement impossible** : la requête
+peut seulement retourner `true` si le tenant demandé est *déjà* le tenant courant.
+
+```
+POST /api/v1/tenant-switcher/switch (autre tenant)  ->  403 "Accès non autorisé à ce tenant"
+```
+
+Impact : le scénario **B2 du plan (« un utilisateur inscrit dans deux églises
+choisit son organisation ») n'est pas delivered** — le mécanisme est présent dans
+le code mais inopérant. C'est un défaut **d'architecture**, pas une ligne à
+corriger : il faut un chemin de lecture explicitement cross-tenant
+(désactivation ciblée du filtre, ou repository dédié), avec une garantie de
+ne pas ouvrir une fuite de données.
+
+#### H5 — Corps JSON malformé ou absent : 500 au lieu de 400, sur **tous** les endpoints
+
+`GlobalExceptionHandler` ne gère pas `HttpMessageNotReadableException` : elle
+tombe dans le `@ExceptionHandler(Exception.class)` générique.
+
+```
+POST /api/v1/users        (rôle invalide)  ->  500
+POST /api/v1/platform/admin/provisioning (corps absent) -> 500
+```
+
+Impact : une simple erreur client devient une erreur serveur, ce qui **pollue la
+supervision** (faux 5xx, alarmes) et masque la vraie cause. Correctif trivial
+(une méthode de handler) et sans risque.
+
+### Ce que la recette a prouvé malgré les blocages
+
+Le scénario B1 (suspension) est **validé de bout en bout** : le `switch` vers un
+tenant suspendu est refusé et **aucun JWT n'est délivré** (contrôle placé avant
+le changement de contexte et avant toute génération de jeton), puis la
+réactivation rétablit l'accès. C'est le comportement attendu du plan.
+
+### Arbitrage demandé (bloquant pour A14)
+
+A14 exige un parcours vert de bout en bout. Il est **impossible** tant que H1, H2,
+H3 et H4 subsistent : le wizard ne peut ni écrire l'église racine (H1), ni créer
+le premier événement (H2), et l obtains d'un jeton sur le tenant de recette
+échoue (H4). Trois voies possibles — **décision de l'orchestrateur requise** :
+
+1. **V186/V187** : migrations correctives minimales (`slug` + table `events`),
+   puis correctifs H3 et H5, et traitement explicite de H4. Rend A14 vert mais
+   touche au schéma de production au prochain déploiement.
+2. **A14 livré en l'état** : le script est un livrable complet et défendable ; il
+   documente 5 défauts reproductibles. Le parcours vert est reporté après
+   correction du schéma.
+3. **Feuille de route dédiée** pour H1–H5 (ils dépassent le périmètre des 16
+   tâches : H4 est un correctif d'architecture, pas un patch).
+
+Aucun de ces défauts n'a été corrigé dans cette branche : la correction
+dépasse le mandat d'A14 et engage le schéma de production.
+
+---
+
+## H1–H8 — Dérives entité/schéma : correctifs appliqués et validés
+
+Branche dédiée : **`fix/schema-drift-h1-h5`** (jamais fusionnée dans `main` : le
+socle A1–A16, lui, y est fusionné et disponible au frontend et au mobile).
+
+Chaque correctif ci-dessous a été validé **par exécution réelle** contre une pile
+jetable (PostgreSQL 16.15 migré, Redis, clés générées), pas seulement par la
+suite de tests. La suite complète passe de 1453 à **1468 tests** (+15 de
+régression), 0 échec.
+
+| Constat | Correction | Preuve |
+|---|---|---|
+| H1 | `V186__organization_nodes_slug.sql` | V186 appliquée automatiquement, `slug VARCHAR(100)` présent |
+| H3 | `MembershipView` + `OrganizationNodeService` | `my-tenants` et création d'église racine ne lèvent plus de NPE |
+| H5 / H5b | 2 handlers dans `GlobalExceptionHandler` | corps malformé → **400**, `Accept` non négociable → **406** (mesuré) |
+| H7 | surcharges `…Name` dans 2 repositories | compteurs organisations et utilisateurs fonctionnels |
+| H4 | `CrossTenantReadScope` | code écrit + 5 tests ; **validation E2E en cours** |
+
+### H1 — colonne mappée jamais migrée
+
+`OrganizationNode` mappe `slug` (ajouté par `69fea3b`, sur `main`) mais aucune
+migration ne la créait. `V186` l'ajoute de façon idempotente et nullable, avec un
+index `(tenant_id, slug)`. La correction est côté **schéma** et non côté entité :
+retirer le champ casserait l'API organisations et son client.
+
+### H3 — `Map.of()` et les valeurs nulles
+
+Deux manifestations du même piège, toutes deux bloquantes :
+
+- `TenantSwitcherController` construisait la réponse avec `Map.of(...)` alors que
+  `scope_id` est `null` pour toute membership de portée `TENANT` — le cas normal.
+  `GET /tenant-switcher/my-tenants` répondait 500 **pour tout le monde**.
+  Le mapping est extrait dans `MembershipView`, fonction pure testable, qui
+  accepte les valeurs nulles. Au passage, le rôle retombe sur la colonne `role`
+  quand la FK `role_id` n'est pas résolue : `UNKNOWN` doit signifier
+  « réellement inconnu », pas « donnée présente mais non lue ».
+- `OrganizationNodeService.createNode` faisait de même avec `parentId`, qui est
+  `null` pour toute **église racine** : la création d'une première église — donc
+  le provisionnement atomique et l'étape `CHURCH_IDENTITY` — levait une NPE.
+
+### H5 / H5b — une requête client fautive ne doit pas répondre 5xx
+
+`HttpMessageNotReadableException` et `HttpMediaTypeNotAcceptableException`
+n'étaient pas gérées et tombaient dans le handler générique : 500 au lieu de 400
+et 406. Le détail renvoyé est un texte fixe, le message de Jackson (qui contient
+les noms de classes Java) n'est pas divulgué.
+
+### H7 — un enum dans une requête native est lié par son ordinal
+
+`@Enumerated(STRING)` ne s'applique pas aux requêtes `nativeQuery`. Les
+compteurs d'organisations (`countByTenantIdAndType`) et d'utilisateurs
+(`countByTenantIdAndStatut`) comparaient donc un `varchar` à un `smallint` :
+`operator does not exist: character varying = smallint`.
+
+Impact mesuré : **les deux tableaux de bord principaux** (Super Admin et admin
+tenant) et **tous les quotas A8** (églises, départements, campus) renvoyaient 500.
+C'est le travail A8 qui était cassé, invisible parce que les tests mockent les
+repositories.
+
+La correction passe par des méthodes `…Name(String)` et des surcharges `default`
+gardant l'API en enum : les ~25 appelants ne changent pas.
+
+### H4 — le filtre multi-tenant rendait la bascule cross-tenant impossible
+
+`TenantFilter` active pour chaque requête HTTP un filtre Hibernate
+`tenant_id = :tenantId`, qui s'applique aussi au contrôle d'accès de
+`switchTenant()`. Le SQL portait les deux prédicats (`tenant_id = tenant courant`
+ET `tenant_id = tenant demandé`) : la bascule vers une autre église était
+structurellement impossible, donc **B2 n'était pas delivered**.
+
+`CrossTenantReadScope` suspend le filtre le temps d'un bloc de lecture borné aux
+memberships de l'utilisateur authentifié, et le rétablit dans un `finally` — donc
+aussi après une exception. 5 tests verrouillent ce contrat, dont un qui échouerait
+si le rétablissement disparaissait. **La validation de bout en bout sur le
+sélecteur d'organisation reste à faire.**
+
+### Constats H2 et H8 — ouverts, décision requise
+
+Ces deux-là ne sont pas des correctifs, et relèvent du même thème : **des modules
+entiers sont écrits contre un schéma que la chaîne de migrations ne produit
+pas.** Aucun des deux n'est trivial.
+
+- **H2 — module Événements.** L'entité `Event` pointe `@Table(name = "events")` et
+  mappe un schéma **français** (`titre`, `date_debut`, `lieu`, `statut`,
+  `organisateur_id`, `nb_inscrits`, `compte_rendu`). La chaîne de migrations ne
+  crée que `event`, au schéma **anglais** (`title`, `start_at`, `organizer_id`,
+  `status`). Les requêtes natives de `LoadPredictionService`.tables ont le même
+  problème (`FROM events … date_debut … deleted`). La table `events` n'a jamais
+  existé : ce n'est pas un renommage, c'est un **port de module**.
+- **H8 — `organization_nodes.path` est un `ltree`.** L'entité déclare
+  `@Column(columnDefinition = "ltree")` sur un champ `String`, et la couche
+  applicative manipule ce chemin comme une chaîne séparée par des points
+  (`LIKE CONCAT(parent.path, '%')`). L'insertion échoue :
+  `column "path" is of type ltree but expression is of type character varying`.
+  C'est ce qui bloque encore le provisionnement atomique, donc la recette.
+
+**Voix possibles, arbitrage demandé :**
+
+1. **Aligner la base sur le code** (V187 : `path` en `varchar`, et une table
+   `events` conforme au schéma français attendu par le code) — rapide, mais
+   introduit une table `events` parallèle du vrai module `event`, donc deux
+   sources de vérité sur les événements.
+2. **Aligner le code sur la base** — porter `Event` et `LoadPredictionService`
+   vers le schéma `event`, et `path` vers `ltree`. C'est le travail correct, mais
+   c'est un refonte de module, hors périmètre d'A14.
+3. **Traiter H8 dans cette branche** (petit et isolé : une migration de type) et
+   **documenter H2 comme chantier séparé** — le gain rapide honnête.
+
+Aucun des deux n'a été corrigé ici : les deux engagent des choix d'architecture.
+## A13 — Documentation véridique
+
+- **Statut** : DONE
+- **Fichiers** : `docs/TENANT_ONBOARDING.md` (réécrit intégralement), `docs/API.md`,
+  `docs/security/SECURITY_MATRIX.md`, `docs/MULTI_TENANT_ARCHITECTURE.md`,
+  `docs/ADMINISTRATION_MODEL.md`, `docs/ORGANIZATION_HIERARCHY.md`,
+  `docs/TENANT_SECURITY.md`, `docs/RBAC.md`, `reports/GO_NO_GO_REPORT.md`,
+  `SUPER_ADMIN_AUDIT.md`
+
+### Ce qui a été supprimé : des affirmations fausses
+
+| Affirmation | Réalité |
+|---|---|
+| `Status: ✅ PRODUCTION READY` (6 fichiers) | non prouvé, et **contredit** par 5 défauts bloquants |
+| routes `/onboarding/1-profile` … `/onboarding/6-*` | inexistantes : un contrôleur unique, 7 étapes |
+| `PUT /api/tenants/{id}` | il manque `/v1` : c'est `PUT /api/v1/tenants/{id}` |
+| `PUT /api/tenants/{id}/branding` | inexistant : c'est `PUT /api/v1/admin/branding` |
+| `/api/org/campus`, `/api/org/units` | inexistants : `/api/v1/org/tree`, `/api/v1/admin/org/nodes` |
+| « §44-45 : 320/320 cellules prouvées » | **4 méthodes de test citées n'existaient pas** |
+| « §50-51 : POST /api/org/campus + wizard 6 étapes » | parcours inexistant |
+| « §52 : cycle complet avec email réel, sans preuve » | l'identité cross-tenant n'existait pas |
+
+### Les 4 citations de test inventées, trouvées et remplacées
+
+`docs/security/SECURITY_MATRIX.md` citait `souls_isolated`,
+`member_cannot_access_tenant_admin_endpoints`,
+`invitationAccept_massAssignment_roleIgnored` et
+`member_cannot_read_pastoral_notes` : **aucune n'existe dans le code**. Deux
+cellules sont désormais déclarées « non couvertes par un test » plutôt que prétendre
+le contraire — c'est le principe de la tâche (« aucune affirmation non prouvée »).
+
+### Contrôles automatiques exécutés
+
+Deux vérifications par script, parce que la vérification manuelle est précisément
+ce qui avait laissé passer les fausses routes :
+
+```
+# 1) chaque TestClass#methode citee existe-t-il vraiment ?
+citations verifiees : 14  invalides : 0 []
+
+# 2) chaque route citee dans TENANT_ONBOARDING existe-t-elle dans un controleur ?
+routes reelles extraites des controleurs : 747
+routes citees : 13  |  verifiees : 9  |  a verifier : 0
+```
+
+Les 4 routes restantes sont citées **comme n'existant pas**, ce qui est le but de
+la section « Écarts corrigés ».
+
+### Contenu neuf
+
+- **`docs/TENANT_ONBOARDING.md`** : réécrit. Le flux réel (provisionnement atomique
+  → activation → 7 étapes → `completed`), le contrat §3.1 champ par champ, les 5
+  erreurs nommées, les **vraies** API, la section mobile avec deep links fournis
+  par l'Agent B, et une section « Écarts connus » de 6 lignes.
+- **`docs/API.md`** : ajout de 4 sections (wizard, inscription, invitations,
+  quotas) avec le comportement réel, dont le piège `/quotas/check/{resource}` qui
+  répond **toujours 200** et porte le dépassement dans le corps.
+- **`SECURITY_MATRIX.md`** : section « Onboarding d'un tenant » avec 14 cellules
+  adossées aux tests de A11 (`OnboardingWizardSecurityIT`), plus la limite H4.
+- **`GO_NO_GO_REPORT.md`** : section de correction §50-51 / §52 / §44-45, avec
+  pour chacune « ce qui était affirmé / ce qui a été constaté / qui corrige /
+  la preuve / le résiduel ».
+- **`SUPER_ADMIN_AUDIT.md`** : réserves vérifiées sur 5 lignes du tableau de ✅.
+- **`docs/ETAT_AVANCEMENT_CHURCH_OS.md`** : **supprimé en amont** par `ab1b7a14`
+  (nettoyage de 52 documents périmés). Ressusciter annulerait un choix délibéré ;
+  la section de correction est portée par GO_NO_GO_REPORT, TENANT_ONBOARDING § 5-6
+  et SUPER_ADMIN_AUDIT. Le fait est consigné dans GO_NO_GO_REPORT.
+
+### Deltas doc de l'Agent B consignés (§4 de TENANT_ONBOARDING)
+
+Deep links `https://app.discipolat.com/accept-invitation?token=<32hex>` et
+`discipolat://…`, fichiers `.well-known/assetlinks.json` et
+`apple-app-site-association`, écrans `mobile/lib/presentation/screens/onboarding/`,
+`…/invitations/accept_invitation_screen.dart`,
+`…/tenant/tenant_onboarding_screen.dart`.
+
+**Limite consignée** : la publication des `.well-known` et l'Associated Domains ne
+relèvent pas du code ; sans eux `autoVerify` échoue silencieusement et Android
+ouvre le navigateur. E2E-11 reste donc recette manuelle.
+
+---
+
+## H8, V178 et `role_id` — trois blocages de plus, levés
+
+En.Base mergees (RDD + onboarding), la recette E2E a fait remonter **trois**
+constats supplementaires. Les trois sont corriges et valides en execution reelle.
+
+### H8 — `organization_nodes.path` : `ltree` en base, `String` dans l'entite
+
+Toute ecriture echouait : `column "path" is of type ltree but expression is of
+type character varying`. Le module Organisation etait donc inoperable, et avec lui
+le provisionnement et l'etape CHURCH_IDENTITY du wizard.
+
+**Aucune requete n'utilisait d'operateur `ltree`** (`<@`, `@>`, `~`) : la
+hierarchie est parcourtue par `LIKE CONCAT(parent.path, '%')`. Le type `ltree` etait
+donc un heritage d'un modele jamais realise.
+
+`V187` convertit la colonne en `text` (sans perte, `USING path::text`), supprime
+l'index GIST ltree et le recree en `varchar_pattern_ops`, qui sert exactement les
+requetes de prefixe utilisees. Le `columnDefinition` de l'entite est aligne pour
+qu'une future generation de schema ne reinroduise pas l'incoherence.
+
+### V178 — la chaine de migrations ne pouvait PAS construire une base neuve
+
+Constat le plus grave de la serie. `V178__superadmin_dashboard_indexes.sql` (apportee
+par la branche RGPD) indexait **7 tables qui n'existent pas** : `events`,
+`financial_transactions` (x2), `reports`, `whatsapp_templates`, `whatsapp_contacts`,
+`prophetic_journal`. Consequence : `flyway migrate` **echouait** sur une base
+vierge, donc **aucun deploiement neuf n'etait possible**, et pas seulement
+l'onboarding.
+
+Noms reels, verifies contre le schema construit par V1..V177 :
+
+| Cite (inexistant) | Reel |
+|---|---|
+| `events(tenant_id, status, deleted)` | `event(tenant_id, status)` + `deleted_at IS NULL` |
+| `financial_transactions` (x2) | `finance_transactions` (`transaction_date` -> `date_transaction`) |
+| `reports(tenant_id, status)` | `maker_reports(tenant_id)` |
+| `whatsapp_templates` | `whatsapp_configs` |
+| `whatsapp_contacts` | `whatsapp_messages` |
+| `prophetic_journal` | `prayer_journal_entries` |
+
+Verification automatique apres correction : **25 references, 0 probleme**.
+
+Les 10 dernieres migrations (V178 a V187) s'appliquent maintenant sur une base
+vierge, et la chaine va jusqu'a **v187**.
+
+### `role_id` NOT NULL — un bug de A5, dans MON code
+
+`TenantOwnerProvisioningService` (A5) construisait la membership du proprietaire
+avec **seulement** `roleLegacy("TENANT_OWNER")`, sans la cle etrangere `role_id` qui
+est `NOT NULL` en base :
+
+```
+ERROR: null value in column "role_id" of relation "tenant_memberships" violates not-null constraint
+```
+
+Le role est desormais resolu par sa cle — la cle est une donnee de la base, pas
+une chaine codee en dur — et l'absence du role produit un `OWNER_ROLE_MISSING`
+explicite au lieu d'une violation de contrainte.
+
+**Pourquoi les tests ne l'avaient pas vu** : le repository est mocke, donc aucune
+contrainte `NOT NULL` n'est appliquee. Ce bug ne pouvait etre trouve que par
+execution sur une base reelle — c'est exactement ce que fait la recette E2E, et
+c'est la justification de sa valeur.
+
+### Etat verifie
+
+- Suite complete : **1469 tests**, 0 echec, 13 skips preexistants.
+- Base vierge : **v187**, migrations V1..V187 appliquees sans erreur.
+- Provisionnement : le 500 est devenu un **404** « OrganizationNode not found ».
+
+### Ce qui reste, et pourquoi
+
+Le provisionnement echoue désormais sur la **lecture** du nœud qu'il vient de
+creer. Cause de la meme famille que **H4** : le filtre Hibernate `tenant_id` reste
+cale sur le tenant précédent pendant que le service bascule `TenantContext` sur le
+nouveau tenant, si bien que le nœud cree n'est pas visible a la requete suivante.
+
+C'est un **defaut d'architecture transversal** — tout le cycle de provisionnement
+écrit puis relit dans un contexte de tenant qui vient de changer. Il touche H4 et
+le provisionnement, etcalls donc un unique chantier plutôt que deux correctifs
+distincts. Il n'est pas traité ici : cela sort du cadre d'une correction ponctuelle
+et exige de décider où passe la frontière entre « contexte de tenant » et
+« opération cross-tenant ».
+
+### Piège rencontré, documenté pour l'avenir
+
+Un `git checkout` de branche **sans** `mvn clean` laisse les migrations compilees de
+la branche précédente dans `target/classes` : Flyway les voit alors dans le
+classpath et echoue en `Validate failed: Detected resolved migration not applied`
+(V178 a V182 « presentes » sans l'avoir ete). Toujours construire avec `clean`
+quand on change de branche contenant des migrations.
+
+---
+
+## H4 (suite) — le provisionnement atomique fonctionne enfin, de bout en bout
+
+Trois correctifs successifs, tous validés **par exécution** sur base vierge.
+
+### 1. Le filtre multi-tenant ne suivait pas le changement de contexte
+
+Le filtre Hibernate est positionné une fois par requête HTTP, sur le tenant du
+**début** de la requête. Le provisionnement crée un tenant puis travaille « dans »
+ce tenant : les lignes qu'il venait d'écrire étaient invisibles à la lecture
+suivante, d'où le **404 « OrganizationNode not found »** sur l'église qu'il venait
+de créer.
+
+`CrossTenantScopeAccess` (ex-`CrossTenantReadScope`, renommé car il sert aussi aux
+écritures) expose une seconde entrée, `callForTenantSwitch(...)`, utilisée par le
+provisionnement. Elle porte l'avertissement de sécurité le plus explicite du
+mécanisme, parce que c'est le point le plus sensible.
+
+Le filtrage Hibernate est suspendu sur **exactement** ce bloc, et rétabli en sortie.
+
+### 2. Un NPE latent dans le contrôleur de provisionnement
+
+`PlatformProvisioningController` lisait `department.getTenantId()` et
+`family.getTenantId()`. Ces entités ne portent **pas** `tenant_id` en mémoire : il
+est posé à l'écriture. Le contrôleur levait donc un `NullPointerException` sur
+**tout** provisionnement réussi — un bug qui n'avait jamais été atteint, parce que
+les 500 et 404 l_MASKaient tous les deux.
+
+Le tenant provisionné étant par ailleurs connu à cet endroit, on utilise son id.
+
+### 3. Un test qui aurait dû le voir ne le voyait pas
+
+Dans `PlatformProvisioningServiceTest`, le nouveau paramètre `crossTenant` est un
+mock. Un mock qui ne délègue pas ferait **passer le test sans exécuter le code
+réel** — c'est-à-dire un test qui ne prouve plus rien. Le test force donc le scope
+à déléguer, comme le fait la production. Cettereflection a été appliquée partout
+où un mock remplace un point d'entrée de sécurité.
+
+### Résultat mesuré
+
+```
+  PASS : 14
+  FAIL : 1
+  SKIP : 11
+```
+
+Le **provisionnement atomique répond 201** et renvoie bien `tenant.id`,
+`owner.userId`, `owner.activationEmailSent = true`, avec département et famille
+créés dans la même transaction. C'était le constat B3 du plan, et il est
+désormais prouvé sur une base réelle et non sur un mock.
+
+### Ce qui reste bloqué, et pourquoi c'est honnête
+
+**Un seul** point échoue : obtenir un jeton sur le tenant de recette.
+
+```
+POST /api/v1/tenant-switcher/switch   ->  500
+IllegalStateException: Utilisateur introuvable
+```
+
+Même famille que H4, un cran plus loin : le contrôle d'accès est désormais correct
+(le filtre est suspendu et la vérification de membership passe), mais la lecture de
+l'utilisateur qui suit s'exécute **après** le changement de `TenantContext`, donc
+encore sous le filtre du tenant précédent. La même question architecturale — où
+passe la frontière entre contexte de tenant et opération cross-tenant — revient
+donc sur chaque étape du switch.
+
+Les 11 scénarios restants sont `SKIP`, jamais `PASS` : ils ne sont pas exécutés,
+et le script ne les compte pas comme réussis. C'est exactement pour cela que le
+script distingue les trois états.
+
+### Deux contraintes de données découvertes au passage
+
+- `families.nom` porte une contrainte **UNIQUE globale** : deux églises ne peuvent
+  pas avoir une famille du même nom. C'est un défaut de modèle (l'unicité devrait
+  être `(tenant_id, nom)`), non corrigé ici, mais signalé.
+- `departments` / `families` receiving leur `tenant_id` par un mécanisme d'écriture
+  et non par l'entité : toute lecture de `getTenantId()` sur une entité fraîchement
+  créée renvoie `null` en mémoire. Source du NPE ci-dessus.
+
+---
+
+## Constat architectural majeur : `users.tenant_id` (tenant d'origine) vs tenant d'action
+
+La recette E2E a mis au jour un defaut de **coherence du modele multi-tenant** qui
+n'est pas corrige ici car il engage l'isolation des donnees.
+
+### Le symptome
+
+Quand un Super Admin (dont `users.tenant_id` = tenant `default`) agit dans un
+autre tenant (via une membership), le wizard utilise `securityUtils.getCurrentUserId()`
+comme `responsableId` (etape STRUCTURE). Cet id est ensuite resolu par
+`TenantAwareSimpleJpaRepository.findById()`, qui filtre sur
+`tenant_id = TenantContext.getTenantId()` = **le tenant d'action**. Comme
+l'utilisateur n'appartient pas a ce tenant par sa colonne `users.tenant_id`,
+la resolution echoue :
+
+```
+POST /onboarding-wizard/{id}/complete   (STRUCTURE)
+-> 404 User not found with id: 4334b638-...   (le Super Admin)
+```
+
+### Pourquoi c'est un vrai defaut, pas un bug de test
+
+Le modele reel est : `users.tenant_id` = tenant d'**origine** (NOT NULL, un seul
+par utilisateur), et `tenant_memberships` = les tenants d'**action** (plusieurs).
+Un utilisateur multi-tenant est donc legitement dans plusieurs tenants, mais sa
+colonne `users.tenant_id` n'en contient qu'un.
+
+Des que le modele prevoit le multi-tenant (B2 du plan : "un utilisateur inscrit
+dans deux eglises choisit son organisation"), `findById` sur `users` filtre par la
+mauvaise colonne. Le Super Admin, l'Impersonation, et tout utilisateur multi-eglises
+sont concernes.
+
+### Les trois voies possibles (decision requise)
+
+1. **`findById` sur `users` doitembership-scoped** : remplacer le predicat
+   `tenant_id = ?` par un `EXISTS (SELECT 1 FROM tenant_memberships ...)`.
+   Correct, mais touche **toutes** les lectures d'utilisateurs (impacts large).
+
+2. **Les etapes du wizard ne doivent pas utiliser `currentActor()` comme
+   `responsableId`** : le responsable doit etre un utilisateur **de ce tenant**
+   (par exemple l'owner provisionne). Cible le symptome, pas la cause.
+
+3. **Le fixture de recette est-il representative ?** : dans un flux reel, c'est
+   l'**owner du tenant** qui configure son eglise, pas le Super Admin. Mon E2E
+   utilise le Super Admin par.fixture, ce qui declenche le cas multi-tenant. Un
+   parcours reel declenche-t-il le bug ? **Oui**, des qu'un Super Admin configure
+   une eglise pour un tiers, ou qu'un owner d'une eglise A configure l'eglise B.
+
+**Recommandation** : la voie 1 est la seule qui corrige la cause, mais elle doit
+etreguida par une revue d'isolation complete (elle modifie le predicat de TOUTES les
+lectures d'utilisateurs). La voie 2 est un contournement cible mais laisse le defaut
+sous-jacent.
+
+### Etat de la recette a ce stade
+
+- **16/16 + A13** livres et pousses sur `main`.
+- **H1, H3, H4, H5, H7, H8, V178, `role_id`** corriges et valides sur base reelle.
+- Recette E2E : **38 PASS, 11 FAIL, 5 SKIP** (le parcours de provisioning et de
+  lecture du wizard est vert ; les echecs restants sont concentrates sur
+  STRUCTURE/roles/quotas, lies a ce defaut multi-tenant et a l'incoherence de la
+  fixture de recette).
+- **1469 tests** verts.
+
+---
+
+## Chantier systémique : la famille `Map.of` / NPE (29 sites corrigés + garde-fou)
+
+Conformément à la décision de l'orchestrateur, la famille de défauts est traitée
+comme **un seul chantier cohérent** plutôt que comme une série de correctifs
+ponctuels — c'est exactement ce qui manquait, puisque la découverte un par un
+avait consommé des heures.
+
+### Le correctif systémique : `Payloads` + un test qui interdit la récurrence
+
+`com.discipolat.common.domain.Payloads` construit des charges utiles tolérantes au
+`null` (ordre des clés conservé, nombre impair d'arguments refusé).
+
+`NoNullUnsafeMapLiteralTest` verrouille le résultat avec **deux règles** :
+
+| Règle | Détection | Statut |
+|---|---|---|
+| **R1** — `Map.of` contenant un ternaire produisant `null` | NPE **garantie**, sans faux positif possible | **0 site** — porte stricte |
+| **R2** — `Map.of` en position de charge utile d'audit | heuristique (dépend de la position) | **122 sites** — crémaillère |
+
+R1 est une porte dure. R2 est une **crémaillère** et non une porte : le reliquat
+(122 sites sur une soixanteaine de fichiers) est trop large pour être exigé
+immédiatement, et exiger l'exigence_complete ferait échouer le test en
+permanence — donc l'équipe l'ignorerait, et il perdrait tout pouvoir de signal.
+Le plafond ne peut que **décroître**, et le test affiche la liste complète des
+sites restants, donc le reliquat reste visible et actionnable.
+
+### Les 29 sites corrigés
+
+Deux vagues parallèles sur des fichiers **disjoints**, puis intégration et
+validation séquentielles. Les vagues ont été conduites par des agents dédiés ; ils
+ont **contesté deux de mes hypothèses**, ce qui a évité deux erreurs :
+
+- le chemin de `SuperAdminSaasPlanController` que j'avais donné était faux
+  (`modules/admin/api/`, pas `modules/platform/api/`) ;
+- j'avais supposé `OrganizationNodeService.moveNode` encore à migrer : il l'était
+  déjà, et l'agent l'a correctement laissé intact.
+
+Wave A (12 sites) : `RealTimeService` ×5 (ces NPE **avaient la capacité d'abandonner
+tout un lot de l'outbox**), `SocialAuthController` ×2 (l'exception était avalée en
+« 400 échec d'authentification » — un bug d'authentification trompeur pour le
+support), `ChurchEventService`, `PeopleService`, `TransferWorkflowService`,
+`AiFamilyCohesionService` (NPE avalée en silence → omission de données).
+
+Wave B (17 sites) : `EntityPropagationPublisher` ×2 (`unassign` d'inventaire passait
+`newOwnerId = null` **littéralement** : NPE à 100 % des appels, dans une
+transaction → rollback de la restitution de quantité), `TenantMembershipService` ×3
+et `RoleManagementService` ×2 (**chemins de contrôle d'accès** : création et
+révocation de membership), `OrganizationHierarchyService` ×3,
+`SubscriptionService` (dont un `Map` imbriqué de 10 paires que j'avais omis),
+`TenantSettingsService` (**24 clés** — je comptais 22 : l'agent a vérifié),
+`TenantSwitcherController`, `TenantAdminController` ×2, `SuperAdminSaasPlanController`,
+`ObjectiveService`, `UserController`.
+
+### Impact repaired, par gravité
+
+- **Rollbacks d'écriture** : 9 sites (memberships, rôles, structure d'organisation,
+  inventaire, âmes).
+- **Contrôle d'accès** : `RoleManagementService:288` échouait à **chaque appel** de
+  portée `TENANT` (`scopeId == null`), donc la création de membership par
+  l'affectation de rôle était cassée en toutes circonstances.
+- **Site public** : `TenantSettingsService` alimente `GET /branding/public`,
+  **non authentifié**, avec 24 valeurs toutes nulles pour un tenant qui n'a pas
+  personnalisé son identité visuelle. Le site public d'une église était en 500.
+- **Outbox** : 5 sites qui peuvent faire abandonner un lot entier d'évènements.
+- **Authentification** : 2 sites dont l'erreur est masquée en « échec de connexion ».
+
+### Sites hors périmètre, signalés par les agents (non corrigés)
+
+`RoleManagementService:147`, `TenantSettingsService:139,177`,
+`TenantAdminController:262`, `EntityPropagationPublisher:94`,
+`UserController:159,170,186`, plus les positions d'audit restantes comptées par la
+crémaillère. Ils rejoignent le reliquat R2 et sont donc **visibles et suivis**, pas
+perdus de vue.
+
+### Validation
+
+**1473 tests verts** (1469 + 4 garde-fous), 0 échec, 13 skips préexistants.
+
+---
+
+## Phase C — `users.tenant_id` vs tenant d'action, et rôles globaux invisibles
+
+Deux defects de la meme famille « le filtre multi-tenant masque ce qu'il ne
+devrait pas », tous deux **bloquants**, tous deux invisibles a la suite de tests.
+
+### C1 — Un utilisateur multi-tenant était introuvable (résolu)
+
+`users.tenant_id` est le tenant d'**origine** (une valeur, NOT NULL) ;
+`TenantContext` est le tenant d'**action**. `TenantAwareSimpleJpaRepository.findById`
+ajoute `AND tenant_id = TenantContext`. Dès qu'un utilisateur appartient à deux
+églises — ce que le modèle prévoit explicitement, constat B2 — cette lecture est
+fausse par construction.
+
+Symptôme mesuré : l'étape STRUCTURE du wizard répondait
+`404 User not found with id: …` sur l'utilisateur qui configurait l'église.
+
+`UserRepository.findByIdWithActiveMembershipInTenant(id, tenantId)` applique le
+prédicat **correct** : une membership ACTIVE dans le tenant demandé. Cette méthode
+**n'affaiblit pas l'isolation** — elle ne peut pas servir à lire un utilisateur
+d'une église dont on n'est pas membre ; elle remplace un prédicat faux par un
+prédicat juste. Branchée sur `FamilyService` (chef de famille) et
+`DepartmentService` (responsable), qui comparaient jusqu'ici le tenant d'origine
+au tenant d'action.
+
+### C2 — Les rôles globaux étaient invisibles : impossible d'inviter qui que ce soit (résolu)
+
+**Le défaut le plus grave de la série.**
+
+Tous les rôles sont **globaux** : `DataInitializer` les crée avec
+`tenant_id = NULL` (`PLATFORM_SUPER_ADMIN`, `TENANT_ADMIN`, `MEMBRE`, `PASTEUR`…).
+Or le filtre de l'entité `Role` était `tenant_id = :tenantId` : il masquait donc
+**la totalité** des rôles.
+
+```
+POST /api/v1/admin/invitations
+-> 400 INVITATION_ROLE_INVALID  (« Rôle invalide: TENANT_ADMIN »)
+```
+
+Autrement dit, **aucune invitation ne pouvait être créée, nulle part** — ni par le
+wizard, ni par l'endpoint dédié. L'entité `Permission`, qui porte le même schéma
+global, était touchée de la même façon ; corrigée avec le même prédicat.
+
+Nouveau prédicat : `(tenant_id = :tenantId OR tenant_id IS NULL)`. Il reste
+strictement borné : un tenant voit ses propres rôles **et** les rôles globaux,
+jamais ceux d'un autre tenant.
+
+Vérification : `Role` et `Permission` sont les **seules** entités portant un
+`@Filter` dont la colonne `tenant_id` est nullable en base — donc les seules
+concernées. Contrôle fait par requête sur `information_schema`, pas par intuition.
+
+### État de la recette
+
+`42 PASS, 10 FAIL, 7 SKIP` (contre 14 PASS au début de cette phase).
+
+Les 10 échecs restants sont **identifiés et documentés** :
+
+| Échec | Cause | Nature |
+|---|---|---|
+| E2E-4a, 5b1, 5b2 | la recette sonde des données invalides sur des étapes **hors ordre**, donc reçoit `409 STEP_ORDER_VIOLATION` avant d'atteindre la validation | **bug de la recette** |
+| E2E-6 FIRST_EVENT, 7b, 7c, 7e | le module Événements pointe une table `events` qui n'a jamais été créée (constat **H2**) | **défaut connu, non traité** |
+| E2E-9a | la fixture accorde au Super Admin une membership `TENANT_ADMIN`, mais `hasAnyRole` teste le rôle du **JWT** — le Super Admin n'est donc pas autorisé, ce qui est le comportement RBAC attendu | **limite de la fixture** |
+| E2E-10b, E2E-11 | sondes IDOR et quota dépendantes du jeton inter-tenant ci-dessus | **conséquence de la fixture** |
+
+Aucune de ces lignes n'est un défaut de production non identifié : ce sont soit
+des erreurs de la recette, soit le constat H2 déjà documenté.
+
+---
+
+# PARTIE 2 — Plan `AGENT_ORCHESTRATION.md` (prompts A0 → A6)
+
+> Même format imposé : Statut / Commit / Fichiers / Tests / Preuve.
+> **Branche réellement utilisée** : `fix/schema-drift-h1-h5` (le worktree
+> `discipolat_app-agentA` portait déjà les travaux ONB-A1→A16 et H1–H8 non
+> fusionnés ; repartir de `feat/platform-monde` vierge aurait violé la règle 1
+> « NE SUPPRIMER RIEN »). La branche `feat/platform-monde` du plan est donc
+> l'objet de la PR qui fusionnera ce travail, pas un point de départ.
+> Migrations Flyway de cette campagne : **V190 et V191, additives uniquement**
+> (aucune migration destructive, aucun `DROP`, aucune migration existante modifiée).
+
+## ORC-A0 — Amorçage et vérification de l'état réel
+
+- **Statut** : DONE (avec une déviation de commit, documentée ci-dessous)
+- **Point 3 du prompt (état réel de M1 M2 M3 M7)** : établi par `grep`/`glob` le
+  2026-09-27 (tableau §1.3 de `AGENT_ORCHESTRATION.md`), **re-vérifié par grep le
+  2026-09-29** avant chaque cochage de la matrice §1.4 — rien coché sans preuve.
+- **Point 4 (suite complète exécutée, résultat réel)** : baseline mesurée en
+  Phase 0 (1 252 tests) ; résultat final de la campagne → § « Clôture » en bas.
+- **Déviation documentée** : le prompt A0 prescrivait un commit dédié
+  `docs(platform): etat reel verifie des manques M1-M3 M7 (rapport perime)`.
+  Le rapport de constats a été intégré dans `AGENT_ORCHESTRATION.md` §1.1–§1.4
+  et part avec le commit de clôture de la campagne (les mises à jour §1.2/§1.3
+  étaient indissociables des preuves livrées par A1–A6). Traçabilité préservée :
+  chaque constat Mx renvoie à son commit de fermeture dans la matrice.
+
+## ORC-A1 — M1 : envoi push FCM réel + M3 : câblage outbox
+
+- **Statut** : DONE
+- **Commit** : `edd76954` — `feat(A1,A2,A4): push FCM reel + module Backup + config honnete IA/STT (+125 tests)` (46 fichiers, +5 660 / −6). A1, A2 et A4 sont livrés ensemble dans ce commit ; les +125 tests couvrent les trois prompts.
+- **Fichiers principaux** (`modules/notifications/domain/`) :
+  - NEW `PushGateway.java` (interface unique `send(List<String>, PushMessage) : PushResult`), `FirebaseAdminPushGateway.java` (`com.google.firebase.messaging.FirebaseMessaging`), `NoOpPushGateway.java` (conditionné par propriété), `PushGatewayConfiguration.java`, `PushProperties.java`, `PushMessage.java`, `PushResult.java`, `PushNotificationService.java`
+  - MOD `backend/pom.xml` : dépendance `com.google.firebase:firebase-admin` (version non gérée par Spring Boot → figée explicitement, commentaire dans le pom)
+  - MOD `modules/core/service/OutboxConsumers.java` (:184, :192) — le `// TODO: Déléguer à NotificationService` (constat M3, ligne 141 de l'original) est **remplacé** par : `notificationService.create(...)` (in-app) **puis** `pushNotificationService.pushToUser(...)` (respect des préférences de canaux)
+- **Honnêteté fonctionnelle** : endpoint `GET /api/v1/notifications/push-status` (`PushTokenController:89`) — le client voit si FCM est réellement configuré ; sans `FCM_TOKEN`, `NoOpPushGateway` et **rien n'est présenté comme envoyé** alors que ce n'est pas parti.
+- **Preuve — tests** (dans les +125) : `NotificationPreferencePushTest`, `OutboxNotifyPushTest`, `PushGatewaySelectionTest`, `PushTokenCleanupTest` — sélection de gateway, respect des préférences, nettoyage des tokens morts, câblage outbox→notification→push.
+- **Note de périmètre M3** : deux `// TODO` **distincts** subsistent dans `OutboxConsumers` (lignes 285 et 290, délégations vers `FinanceService` et `AnalyticsService`). Le constat M3 ne visait que la délégation notifications ; les deux autres sont hors périmètre et **ne sont pas présentés comme faits**.
+
+## ORC-A2 — M2 : module Backup/Restore Java
+
+- **Statut** : DONE
+- **Commit** : `edd76954` (idem A1, livraison groupée)
+- **Fichiers** (`modules/backup/`, nouveau module complet) :
+  - `api/` : `BackupController.java`, `BackupResponse.java`, `BackupVerificationResponse.java` — dont `POST /backups/{id}/verify` que le cahier de charge annonçait
+  - `domain/` : `BackupService.java`, `BackupServiceImpl.java`, `BackupArchive.java`, `BackupDescriptor.java`, `BackupResult.java`, `BackupStatus.java`, `VerificationResult.java`
+  - `infrastructure/` : `BackupDescriptorRepository.java`, `JdbcBackupDescriptorRepository.java`, `BackupStorageService.java`
+- **Règle 1 respectée** : les scripts shell `scripts/backup*.sh` / `restore.sh` **existent toujours et ne sont pas remplacés** — le module ajoute la couche applicative (descripteurs en base, vérification, isolation par tenant) par-dessus, conformément au §1.5.
+- **Preuve — tests** : `BackupServiceTest`, `IsolationBackupCurrencyTest` (le backup d'un tenant ne peut pas toucher/voir un autre tenant ni imposer sa devise).
+
+## ORC-A4 — M5, M6 : durcissement configuration honnête (STT / Ollama / IA)
+
+- **Statut** : DONE
+- **Commits** : `edd76954` (posée initiale) + `049edede` — `config(A4-suite): timeout reellement applique, config-summary {key,enabled,configured}, etat push honnete` (14 fichiers, +558 / −47)
+- **Fichiers** :
+  - MOD `backend/src/main/resources/application.yml` : clé de config STT/Whisper (le constat M5 — absence totale — est levé), `OLLAMA_URL` sans repli silencieux trompeur (M6), timeout **réellement appliqué** aux clients HTTP sortants (corrigé en `049edede` : un timeout déclaré mais non branché sur le client eût été un mensonge de configuration)
+  - `AiConfigurationStartupAudit` + endpoint config-summary : chaque capacité IA exposée `{key, enabled, configured}` — si non configuré, réponse `503 AI_NOT_CONFIGURED` et **aucun repli bas de gamme présenté comme de l'IA** (règle 7 : aucun mock en production)
+- **Preuve — tests** (dans les +125 et la suite) : `ConfigSummaryTest` (181 lignes), `AiFallbackTest` (69 lignes), `OllamaHealthTest`, `OllamaPropertiesTest`, `AiConfigurationPropertiesBindingTest`, `AiAssistantServiceTest`
+
+## ORC-A3 — M7 + M8 + M9 : échelle mondiale et paiements universels
+
+- **Statut** : DONE
+- **Commit** : `4840ee0d` — `feat(scale): fondations mondiale — payout providers ISO-4217, devises auditables, sharding abstraction, partitionnement (M7 M8 M9)` (39 fichiers, +3 051 / −43)
+- **M8/M9 — abstraction payout (13 fichiers nouveaux dans `modules/payments/payout/`)** :
+  - Interface `PayoutProvider.java` + `PayoutProviderRegistry.java` + `PayoutConfiguration.java` + `PayoutProvidersProperties.java` + `PayoutRequest/PayoutResult/PayoutStatus/PayoutCrypto`
+  - Implémentations : `StripePayoutProvider`, `PayPalPayoutProvider`, `SepaDirectDebitProvider`, `BankTransferProvider`, `MobileMoneyPayoutAdapter` (l'existant MTN/Orange/M-Pesa est **adapté, pas supprimé**) — Europe/Amérique/SEPA/carte/virement couverts ; tout provider est pluggable via config (clé manquante = provider désactivé honnêtement, jamais simulé)
+- **M9 — devises ISO-4217** : `modules/currency/domain/Iso4217CurrencyValidator.java` (120 l.) + `CurrencyService` validé ; `PlatformCurrenciesController` (référentiel consultable) ; migrations **additives** `V190__multi_devises_iso4217_et_mentions_recu.sql` (mentions légales/fiscales du reçu configurables par tenant — exigence §2.1 « Fiscalité ») ; `TaxReceiptService` et `FinanceService`/`FinanceTransaction` multi-devises
+- **M7 — fondations sharding (Niveau 1-2 de §2.3)** : abstraction `common/scaling/TenantDataSource.java` + `ShardRouting.java` + `SingleDatabaseTenantDataSource.java` (implémentation actuelle mono-DB, point d'extension documenté vers le routage par shard sans refactoring des appels) ; `V191__index_composes_tables_chaudes.sql` + `scripts/partition-hot-tables.sql` (partitionnement des tables chaudes) ; `docs/SCALING.md`
+- **Neutralité géographique (§2.1)** : grep systématique des ancrages XOF/Afrique dans le code de plateforme → valeurs par défaut neutralisées, tout redevient paramétrable par tenant ; glossaire tenant (dictionnaire de termes) étendu via `DictionaryService`/`DictionaryEntryRepository` (termes « âme/faiseur/pasteur » remplaçables par tenant, jamais codés en dur)
+- **Les 4 tests obligatoires du prompt** : `CurrencyValidationTest` (172 l.), `PayoutProviderRegistryTest`, `ShardingRoutingTest` (173 l.), `IsolationBackupCurrencyTest` (244 l.) — plus `FinanceServiceTest` mis à jour sans affaiblissement
+
+## ORC-A5 — CI/CD bloquante : E2E, charge, sécurité, isolation bout-en-bout
+
+- **Statut** : DONE
+- **Commit** : `f33ebd06` — `ci: e2e + charge + securite + isolation multi-tenant bout-en-bout bloquantes (ferme M10 M11 M13)` (14 fichiers, +942 / −16)
+- **⚠️ Déclaration d'honnêteté (obligatoire)** : GitHub Actions **ne peut pas s'exécuter sur cette machine**. Les workflows sont validés par (1) **relecture** ligne à ligne, (2) parsing `yaml.safe_load` des 8 fichiers, (3) **simulation locale de tout ce qui est simulant** (voir « Validations réellement exécutées » ci-dessous). Aucun workflow n'a prétendu « vert en CI » ; le premier run sur GitHub reste à observer par l'orchestrateur.
+- **Fichiers** :
+  - NEW `.github/workflows/security.yml` — gitleaks (historique complet `fetch-depth: 0` ; vérifié : aucun secret dans l'histoire git, `keys/` ne contient que `.gitkeep` tracked), `dependency-review-action@v4` sur PR (bloquant high), `npm audit --audit-level=high` (lockfile, sans install → pas d'exécution de scripts arbitraires), Bandit sur `scripts/` + `performance-tests/` (rapport complet dans le résumé de job, **porte bloquante limitée aux HIGH** — les Medium ne sont pas encore triés, c'est écrit dans le fichier), OWASP dependency-check en `continue-on-error` avec la raison assumée (taux de requêtes NVD en free-tier) + rapport HTML en artifact
+  - NEW `.github/workflows/e2e.yml` + scaffold `e2/` (package.json, package-lock.json @playwright/test 1.63.0, playwright.config.ts, specs/README.md) — **détection automatique de specs** : 0 spec = notice « mode attente » et job vert ; dès qu'Agent B pousse un `*.spec.ts`, le job devient réellement bloquant (npm ci → install chromium → playwright test → artifacts rapport+vidéo/trace)
+  - NEW `.github/workflows/perf.yml` + `performance-tests/k6-ci-gate.js` — déclencheurs : tag `v*`, planning hebdo sam 04:00, dispatch manuel ; **la porte exigée est appliquée deux fois** : seuils k6 `p(95)<2000` + `http_req_failed rate<0.05` (exit 99 propagé via `set -o pipefail`), puis un pas de gating séparé relit `k6-summary.json` ; `k6-summary.json` + `k6-run.log` conservés 30 j en artifact (exigence « tracé ») ; preflight explicite : sans `secrets.PERF_JWT_TOKEN` le job échoue **en disant pourquoi** (le scénario authentifie réellement). Le `k6-load-test.js` d'origine n'est **pas affaibli** (il garde ses seuils stricts p95<500 pour les campagnes manuelles) — la CI passe par un wrapper qui exporte le même scénario.
+  - MOD `.github/workflows/ci.yml` — artifacts de rapports de tests : surefire XML (backend), **junit XML vitest** (`--reporter=junit --outputFile.junit=…`), `json:flutter-test-report.json` (`flutter test --file-reporter`) ; les deux options CLI ont été **vérifiées empiriquement**, pas supposées
+  - FIX `.github/workflows/ci-cd.yml` — le fichier était du **YAML invalide** (indentations cassées à 5 steps) : réparé + clés de test générées + OWASP en coordonnées complètes `org.owasp:dependency-check-maven:check` (le préfixe de plugin seul ne résoudrait pas hors ligne) avec `failBuildOnCVSS=9`
+  - NEW `backend/.dependency-check-suppressions.xml` — fichier référencé par le workflow mais absent ; référence délibérément vide (une suppression modèle qui ne peut matcher aucune package URL ; la règle d'or est écrite dans le fichier : toute suppression réelle exige notes/version/portée de revue/date d'expiration)
+  - NEW `backend/src/test/java/com/discipolat/security/TenantModuleIsolationEndToEndHttpTest.java` — **exigence n°1 « risque juridique »** : 10 tests sur 9 modules, vraie chaîne HTTP (JWT RSA réel → TenantInterceptor → filtre Hibernate → contrôleur), lecture croisée + **usurpation d'en-tête tenant** : chaque tentative inter-tenant doit finir 404/403, jamais une fuite
+- **Validations réellement exécutées localement** :
+  ```
+  python3 -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]"   → 8/8 OK
+  # porte P95 de perf.yml : le script python a été EXTRACTÉ du YAML et testé sur des summaries synthétiques :
+  p95=1500 → exit 0 ; p95=2500 → exit 1 ; summary absent → exit 1
+  npx vitest run --reporter=junit …            → junit.xml réellement produit (vitest 5.0.2)
+  flutter test --help                          → --file-reporter <reporter>:<filepath> confirmé
+  find e2/specs -name '*.spec.ts' | wc -l      → 0 (mode attente correct)
+  mvn -B -o test -Dtest=TenantModuleIsolationEndToEndHttpTest
+    → Tests run: 10, Failures: 0, Errors: 0 (22,85 s) — relancé avant commit
+  ```
+
+## ORC-A6 — Documentation professionnelle véridique
+
+- **Statut** : DONE
+- **Commit** : `826016a8` — `docs: README, API, deployment, runbook professionnels et veridiques` (8 fichiers, +3 216 / −152)
+- **Règle maîtresse appliquée** : « ne promets dans la doc que ce que le code fait VRAIMENT » — chaque affirmation a une ancre grep ; trois pièges tendus par le prompt ont été évités en vérifiant d'abord :
+  1. **chemin springdoc** : `application.yml → springdoc.api-docs.path = /api-docs` (PAS `/v3/api-docs`) → le script de génération utilise le chemin réel et SecurityConfig (api-docs public seulement en dev/docker) est cité ;
+  2. **comptes de démo** : la table du README reprend les **jeux de rôles réellement injectés par `DataInitializer`** (dont le multi-rôle `paul@…`), pas ceux supposés ; mot de passe commun `password123`, seedé uniquement hors production (`demoOrBeta && seedDemoAccounts`) ;
+  3. **secrets obligatoires** : `JWT` (paire) et `ENCRYPTION_AES_KEY` (base64 → exactement 32 octets, `CryptoService` **jette à la construction**) sont documentés « refusé au démarrage » — vérifié en **démarrant réellement l'application** pour générer la doc.
+- **Fichiers** :
+  - NEW `scripts/generate-api-docs.sh` (exécutable) — GET `/api-docs` → `docs/openapi.json` + générateur Markdown intégré (fuites de tableaux échappées, compteurs réels)
+  - NEW `docs/openapi.json` (740 K) et `docs/API.md` — **générés depuis une instance réellement démarrée** : 1 251 chemins, 1 553 opérations, 216 tags, 2 861 lignes ; les 1 553 lignes de tableau validées structurellement (`awk`), échantillon vérifié à la main (auth-controller, tenant-controller)
+  - REWRITTEN `README.md` (~135 l.) — positionnement, preuve d'isolation citée, 6 langues, architecture ASCII, stack, prérequis avec colonne « Vérifié par », deux chemin de démarrage local, table de ports réelle (docker-compose : web 3000, API 8081→8080, pg 5433, mailhog 8026, nginx 8086, grafana 3001, prometheus 9090), comptes de démo véridiques, variables d'env obligatoire/optionnel, « Architecture mondiale » → `docs/SCALING.md`
+  - MOD `docs/DEPLOYMENT.md` — §6 reconstruit en **une seule table avec colonne « Obligatoire »** (source de vérité : `render.yaml` + `docker-compose.yml` + code) ; correction d'un **conseil dangereux** en §10 (« drop flyway_schema_history ») → renvoi aux nouvelles règles §12 (Flyway additif ; `mvn verify` ne valide JAMAIS les migrations — H2 `flyway.enabled:false`, fait déjà documenté en NEED-HELP-02) ; §13 rotation des clés JWT (recette `setup-keys.sh`, `base64 -w0`, piège Render `sync:false`, effet de déconnexion globale, `TokenRevocationService`) ; §14 plan de rollback (images GHCR taguées `:${github.sha}`, rollback code-avant-schéma, restauration backup, gestion compromission JWT/AES — un AES compromis **ne se re-chiffre pas tout seul**)
+  - MOD `docs/RUNBOOK.md` v1.1 — §2 table symptôme→diagnostic→résolution couvrant **les 6 incidents imposés** + 2 bonus (rotation 401 massifs, webhooks ignorés) ; ligne Redis : comportement **fail-open vérifié dans le code** (`PerIpRateLimiter` catch → `RateLimitResult.allowed(999)` + warn — Redis en panne = API debout sans throttling, documenté tel quel, pas embelli)
+  - FIX `render.yaml` — était du **YAML invalide** (2 indentations `value:` cassées, ligne 136) alors que c'est la « source de vérité » déclarée de DEPLOYMENT.md : réparé, validé (4 services, 2 db, 1 redis)
+  - MOD `AGENT_ORCHESTRATION.md` §1.2 — table « Complété depuis — livré par A1–A6 » avec preuves grep (exigence du prompt A6 point 5)
+
+## Clôture campagne ORC — suite complète finale
+
+- **Statut** : DONE — exécutée sur l'arbre final (après A0→A6 et les mises à jour §1.1–§1.4) :
+  ```
+  bash scripts/mvn-local.sh verify -DargLine="-Xmx1200m -XX:MaxMetaspaceSize=450m"
+
+  [WARNING] Tests run: 1660, Failures: 0, Errors: 0, Skipped: 13
+  [INFO] BUILD SUCCESS
+  [INFO] Total time:  01:37 min
+  EXIT=0
+  ```
+  1 252 (baseline Phase 0) → **1 660** (+408 sur les deux campagnes, aucune
+  régression, aucun test désactivé). Les 13 `Skipped` sont les cas préexistants
+  `@EnabledIf("isRedisAvailable")` — Redis n'est pas installé sur cette machine,
+  ils s'exécutent normalement en CI (ci.yml).
+- **Gate règle 4 (« rien ne part sans build vert »)** : ✅ satisfait pour toute
+  la campagne — chaque prompt A1–A6 a été commité sur une suite verte, et la
+  suite finale est verte à 1 660.
+- **Rappel d'honnêteté (A5)** : la validation des workflows GitHub n'a pu se
+  faire que par relecture + simulations locales (détail ci-dessus section
+  ORC-A5) ; le premier passage en CI réelle reste à confirmer par
+  l'orchestrateur sur GitHub.
+
+
+---
+
+## Phase 5.5 (reprise) — replay de la recette sur stack jetable PostgreSQL réel
+
+- **Statut** : **DONE — recette verte : 56 PASS / 0 FAIL / 3 SKIP justifiés, exit 0**
+- **Stack jetable** : backend 18080 (`/tmp/launch-e2e-stack.sh`, jar 1.0.0),
+  PostgreSQL 16 Testcontainers 55445 (`onb-e2e-postgres`), Redis 56380
+  (`onb-e2e-redis`). Base **remise à zéro** avant le premier boot (DROP/CREATE
+  `discipolat`) — chaîne V1→V192 appliquée fraîche : 160 migrations, Started
+  27,8 s ; puis V193 et V194 appliqués **incrémentalement** sur la base à V192
+  (0,188 s / 0,018 s) — chemin de déploiement réel prouvé, pas seulement
+  fresh-install.
+- **Progression honnête des replays** (logs archivés,
+  `reports/plan-2agents/evidence-5.5-replay/`) :
+
+  | Run | PASS | FAIL | SKIP | Ce que l'état prouvait |
+  |---|---|---|---|---|
+  | run1 | 4 | 3 | 9 | dérive dictionnaires V193 trouvée (500 second tenant) |
+  | run2 | 46 | 6 | 6 | 4 bugs de recette corrigés PASSent ; dérive `events` V194 trouvée (500 FIRST_EVENT, `relation "events" does not exist`) |
+  | run3 | 47 | 4 | 7 | V194 appliqué ; CHECK `events_type_evenement_check` violée par « MEETING » |
+  | run4 | 51 | 0 | 7 | `DEFAULT_EVENT_TYPE` → « REUNION » (vocabulaire legacy, cf. V158) |
+  | run5 | 53 | 0 | 5 | bugs recette n°7a/7b corrigés (chemins 404 inexistants) |
+  | run6 | 54 | 0 | 4 | bug n°8 corrigé (`.details.primaryColor`) ; E2E-2b/2c encore SKIP (bug n°9 en attente) |
+  | run7 | **56** | **0** | **3** | bug n°9 corrigé (`used`/`expires_at`, pas `consumed_at`) ; SKIPs restants justifiés ci-dessous |
+
+- **Défauts de production trouvés GRÂCE à la recette PG** (jamais visibles sous
+  H2 `flyway.enabled:false` + `ddl-auto:create-drop`) :
+  1. **V193** — `uq_dict_code` UNIQUE(dict_key, code) **mondial** (V42) contre
+     une table par tenant depuis V70 + `DictionaryService.seedForTenant` :
+     création du **second tenant** toujours 500 en réel. Preuve rouge/verte du
+     gate : sans V193, `duplicate key … "uq_dict_code" (EVENT_TYPE, SORTIE)` ;
+     avec, 5/5 vert.
+  2. **V194** — V158 a renommé `events`→`legacy_events` sans remapper l'entité
+     `Event` (`@Table("events")`) : toute la surface legacy `/api/v1/events` +
+     FIRST_EVENT 500 en réel. Résolution : le schéma rejoint le contrat du code
+     (renommage inverse + index), fail-closed si coexistence des deux tables.
+     Première tentative (entité → `legacy_events`) **abandonnée** : 9 échecs +
+     10 erreurs dans la suite (contrat `events` universel) — décision documentée.
+  3. **Vocabulaire du wizard** — `OnboardingStepActions.DEFAULT_EVENT_TYPE`
+     portait « MEETING » (ChurchOS) alors que l'action crée un `Event` legacy
+     (CHECK V42 français) ; corrigé en « REUNION » — l'équivalence est le propre
+     mapping de V158 (`WHEN type_evenement='REUNION' THEN 'MEETING'`).
+- **Gate Flyway/Testcontainers étendu à 5 tests** (dont preuve rouge
+  discriminante : retirer V193 ou V194 de `target/classes` **et** des sources
+  fait échouer le test avec l'erreur PostgreSQL exacte) :
+  `Tests run: 5, Failures: 0 … Time elapsed: 36.90 s`, BUILD SUCCESS, exit 0
+  (extrait archivé). Le scan systématique entités→schéma (267 entités @Table vs
+  tables information_schema) a sa propre preuve rouge : `Expecting empty but
+  was: ["Event → events"]`.
+- **Suite backend complète après corrections** : `Tests run: 1671, Failures: 0,
+  Errors: 0, Skipped: 13`, exit 0 (13 skips = `@EnabledIf(isRedisAvailable)`
+  du profile test + skips Docker préexistants, inchangés depuis la baseline).
+- **9 bugs de recette corrigés dans le script** (en-tête du script, n°1–9) —
+  tous « bugs d'ordre/lecture », aucun défaut production déguisé ; les chemins
+  404 (n°7) et colonnes inventées (n°9) ont été **vérifiés contre le serveur
+  réel et `\d` de PG avant correction**.
+- **3 SKIP finaux, justifiés, jamais comptés PASS** :
+  - E2E-9 : limite fixture D5 (garde `hasAnyRole` = rôle du JWT ; login/switch
+    ne délivrent que les 6 rôles globaux) → NEED-HELP D5-bis.
+  - E2E-10b : `uk_tenant_membership_user_tenant` empêche la fixture d'ajouter
+    un second rôle là où une membership existe → garde 403 avant lookup ;
+    isolation réellement prouvée par E2E-10c (PASS).
+  - E2E-11 quota space : ressource non exposée par l'endpoint de quota (A8).
+- **Effets de bord de recette** : 3 erreurs `EmailService … localhost:1025`
+  (SMTP absent, attendu — D10), logs backend archivé `backend-run4.log`.
+
+---
+
+# PHASE 2 (reprise) — Blocs NEED-HELP, décisions D1→D6
+
+Rappel règle R7 : ces points engagent l'architecture ou le schéma de production
+et relèvent d'une **décision humaine**. Ils ne sont pas improvisés. Ce qui suit
+reflète l'état **après** le travail §5.5 (V193/V194/REUNION), en distinguant ce
+que la recette sur PostgreSQL réel a **débloqué** de ce qui **reste** à arbitrer.
+Chaque affirmation est prouvée par commande sur la stack jetable PG 16 (§5.5).
+
+### NEED-HELP — D1 (constat H2, module Événements)
+
+- **Ce que §5.5 a résolu** : V194 rétablit la table physique `events` que V158
+  avait renommée `legacy_events` sans remapper l'entité `Event`. Résultat mesuré :
+  `FIRST_EVENT` du wizard et `/api/v1/events` ne répondent plus 500 « relation
+  "events" does not exist » ; E2E-6 FIRST_EVENT **PASS**, chaîne E2E-7 **PASS**.
+- **Ce qui RESTE bloquant (décision humaine)** : le port réel du module n'est pas
+  fait. Deux sources de vérité coexistent — `events` (legacy, schéma FR : `titre`,
+  `date_debut`, `lieu`, `statut`, CHECK V42 sur 13 types français) et `event`
+  (Church OS, V158, mappée par `ChurchEvent`, schéma EN). L'entité legacy et le
+  module Church OS ne sont pas réconciliés.
+- **Défaut prouvé, hors du chemin de recette, NON corrigé (R12 + D1)** :
+  `LoadPredictionService` (:31/:34/:48/:50) porte une requête native
+  `SELECT date(debut) … FROM events … GROUP BY date(debut)` — **la colonne
+  `debut` n'existe pas** (le bon nom est `date_debut`, correctement employé au
+  WHERE). Preuve : `psql -c "SELECT date(debut) FROM events …"` →
+  `ERROR: column "debut" does not exist`. Cet endpoint n'a **aucun test** (la
+  suite 1671 est verte sans le couvrir) et n'est pas appelés par la recette. Le
+  corriger = « Voie 2 : porter le code sur la base », explicitement hors périmètre
+  initial. **Arbitrage demandé** : Voie 1 (aligner la base, crée deux sources — à
+  refuser), Voie 2 (porter `Event`+`LoadPredictionService` vers `event` — le
+  travail correct, chantier séparé), Voie 3 (traiter H2 comme chantier documenté).
+- **Statut** : PARTIEL — dérivé bloquant wizard résolu ; port du module et
+  requête morte `LoadPredictionService` = BLOCKED sur décision D1.
+
+### NEED-HELP — D2 (`users.tenant_id` d'origine vs tenant d'action)
+
+- Constat : la garde de bascule lit l'utilisateur **avant** de changer
+  `TenantContext` (`TenantSwitcherController` :213-220, commentaire H4 2ᵉ cran) —
+  symptôme évité. La **cause** (prédicat `findById` scopé tenant sur
+  `TenantAwareSimpleJpaRepository`) n'est pas traitée : toute lecture
+  d'utilisateur hors du tenant d'origine reste dépendante d'un appel `crossTenantRead`.
+- Arbitrage (Voie 1 membership-scoped `findById`, revue d'isolation complète ;
+  Voie 2 faire que le wizard n'utilise plus `currentActor()` comme `responsableId`
+  — le chemin est bien **actif** : `applyStructure` pose `.responsableId(actorId)`
+  avec `actorId = currentActor()` (OnboardingStepActions :264/:275) ; Voie 3
+  fixture owner). Aucune voie prise sans revue humaine. **Statut : BLOCKED (D2).**
+
+### NEED-HELP — D3 (validation bout-en-bout du sélecteur cross-tenant)
+
+- Preuves §5.5 : `POST /tenant-switcher/switch` fonctionne et ne livre **pas** de
+  JWT à un tenant suspendu (E2E-8c PASS), le tenant réactivé redevient basculable
+  (E2E-8f PASS), un jeton B ne voit **aucune** étape de A (E2E-10c PASS), et le
+  Super Admin bascule sur un autre tenant (E2E-10a PASS). Le 500 « Utilisateur
+  introuvable » initial n'est **plus** reproduit : la lecture pré-bascule (H4 2ᵉ
+  cran) le prévient.
+- **Reste** : le scénario **B2 du plan** (« un membre de deux églises choisit son
+  organisation ») validé **bout-en-bout par un vrai utilisateur non-Super-Admin**
+  n'a pas de fixture légale dans la recette (le login d'un owner fraichement
+  provisionné exige son mot de passe aléatoire jamais communiqué, et `activate`
+  ne prend qu'un token — cf. E2E-2b SKIP). D3 est donc **partiellement** prouvé
+  (par bascule Super Admin + isolation), pas par le flux membre réel.
+- **Arbitrage demandé** : valider B2 par un compte membre réel de deux tenants
+  (choix de fixture représentative — relève de D2 Voie 3). **Statut : PARTIEL.**
+
+### NEED-HELP — D4 (`families.nom` UNIQUE mondial — défaut multi-tenant confirmé)
+
+- **Prouvé sur PG réel §5.5** : `uk_families_nom` est `UNIQUE (nom)` **sans scope
+  tenant**. Insertion de `DupProbe Family` dans le tenant A = `INSERT 0 1` ; la
+  **même** famille dans un **autre** tenant B → `ERROR: duplicate key …
+  "uk_families_nom"`. Deux églises ne peuvent donc pas avoir une famille du même
+  nom — exactement la classe du défaut dictionnaires corrigé par V193.
+- Non corrigé ici car **D4 est une décision humaine** (migration + backfill +
+  arbitrage de la clé cible `(tenant_id, nom)`). La recette ne le 500-pas car elle
+  utilise des noms à suffixe slug distincts (commentaire script :467) — donc le
+  défaut est **masqué, pas absent**.
+- **Résolution proposée pour validation** : même patron que V193
+  (`DROP uk_families_nom` + `CREATE UNIQUE INDEX … (tenant_id, nom)`), sans perte
+  de données (contrainte mondiale plus stricte ⇒ a fortiori pas de doublon par
+  tenant). **Statut : BLOCKED (décision D4).**
+
+### NEED-HELP — D5 / D5-bis (`E2E-9a`, sondes IDOR/quota — limite de fixture, PAS un défaut)
+
+- D5 : `hasAnyRole` évalue le **rôle du JWT** ; `login`/`switch` ne délivrent que
+  les 6 rôles globaux de l'enum `UserRole` — aucune fixture légale ne place
+  `TENANT_ADMIN`/`TENANT_OWNER` dans ce claim. E2E-9 → SKIP honnête (pré-sonde
+  bug n°4) ; E2E-10b → SKIP (bug n°6 : `uk_tenant_membership_user_tenant` empêche
+  un second rôle là où une membership existe, donc 403 avant lookup). L'isolation
+  réelle est prouvée par E2E-10c (PASS). **La fixture est à corriger, pas le RBAC.**
+- **D5-bis (question ouverte)** : la garde `POST /api/v1/admin/invitations`
+  (`hasAnyRole('TENANT_OWNER','TENANT_ADMIN')` sur le rôle JWT) devrait-elle
+  basculer sur `@authz.isTenantAdmin()` (lecture des memberships DB à la requête),
+  comme le wizard et les quotas ? C'est cohérent mais engage le RBAC → arbitrage
+  humain. **Statut : limite documentée, aucune correction improvisée.**
+
+### NEED-HELP — D6 (actions ops hors périmètre code)
+
+- Publication `/.well-known/assetlinks.json` et `apple-app-site-association` sur
+  `app.discipolat.com` (sinon Android ouvre le navigateur au lieu de l'app) ;
+  `usesCleartextTraffic="true"` dans `AndroidManifest.xml` (risque sécurité, hors
+  B8). Ni l'un ni l'autre ne se corrige « en douce » depuis le backend.
+  **Statut : BLOCKED — campagne ops dédiée.**
+
+### Notes d'exploitation à valider par l'orchestrateur (hors tâches D1–D6)
+
+- **§5.8 / dérive de push** : la consigne de reprise est « **ni push ni tag** ».
+  Cette campagne s'y conforme — les 3 commits §5.5 (`ed599fb0` V193, `fc90282e`
+  V194, `08dd12ff` recette+preuves) sont **locaux**. **MAIS** la branche
+  `fix/schema-drift-h1-h5` avait été poussée sur `origin` jusqu'à `a9eed1d7` par
+  une campagne antérieure (38 commits d'avance non-poussés depuis). Cette divergence
+  doit être connue de l'humain : un futur push exposerait à la fois `a9eed1d7` et
+  le travail ici local. **Aucune action de push prise.**
+- **Ordre de déploiement V192/V194 (fail-closed)** : V194 lève une exception si
+  `events` **et** `legacy_events` coexistent (signature d'un environnement ayant
+  tourné en `ddl-auto:update` après V158) ou si aucune des deux n'existe. Sur une
+  base propre migrée V1→V193 (comme le prouve le gate), V194 s'applique sans
+  risque ; sur un environnement ayant eu `ddl-auto:update`, il **échoue
+  volontairement** et demande une réconciliation manuelle. À mentionner au runbook.
+
+---
+
+# PHASE 6 (reprise) — Checklist finale d'acceptation (plan §11)
+
+Verdict **honnête**, critère par critère — un point non entièrement vert n'est pas
+coché « fait », il est qualifié avec sa preuve ou son NEED-HELP.
+
+- [x] **Gate G-A (5 critères) PASS** — voir `VERIFICATION.md` §1. 0 `orElseThrow()`
+      nu dans `onboarding/**` ; 0 test désactivé (les 13 skips sont
+      `@EnabledIf(isRedisAvailable)` préexistants) ; 0 migration existante modifiée,
+      numéros libres (V193/V194) ; suite 1671 ≥ baseline ; preuves dans ce fichier.
+- [x] **Gate G-B (7 critères) PASS** — `VERIFICATION.md` §2, **provenance assumée** :
+      mesures Agent B sur l'arbre fusionné, non contredites par un delta §5.5
+      strictement backend (aucun `frontend/**`/`mobile/**` touché).
+- [~] **Contrat §3 endpoint par endpoint, 3 faces (backend=web=mobile)** : face
+      **backend** vérifiée par E2E-3c « contrat 3.1 complet » (PASS) + E2E-3d
+      (entité brute non exposée). Faces web/mobile = tâches B (agentB.md). **Pas de
+      3ᵉ face re-vérifiée par Agent A** → non coché entièrement.
+- [~] **E2E-1 → E2E-10 PASS ; E2E-11/12 recette manuelle** : E2E-1→8 **tous PASS**,
+      E2E-10 PASS (10a/10c, isolation), E2E-11 PASS (user/church/department/course).
+      **E2E-9 et E2E-10b = SKIP** (limites de fixture D5/D5-bis), jamais PASS déguisé
+      → la formulation « E2E-1→10 tous PASS » n'est **pas** atteinte sans l'arbitrage
+      D5-bis ; c'est documenté, pas maquillé. E2E-12 = hors recette backend (clients).
+- [x] **Aucune tâche IN_PROGRESS/BLOCKED sans bloc NEED-HELP** — D1→D6 + D5-bis +
+      notes d'exploitation (§5.8, ordre V194, LoadPredictionService) : § PHASE 2.
+- [x] **Migrations : que des ajouts ≥ V190, aucune existante modifiée** —
+      `git diff --name-status 72ec85d5..HEAD -- db/migration` : 0 M ; reprise =
+      V193 + V194 uniquement.
+- [x] **Aucun push, aucun tag, main intacte** — main à `72ec85d5` ; HEAD = 40 commits
+      locaux au-dessus d'origin ; les 2 tags présents datent de 2026-09-14/22
+      (préexistants, non créés ici). **Rappel de dérive** : `origin/…` contient déjà
+      `a9eed1d7` d'une campagne antérieure — signalé, aucune action.
+- [x] **Plus aucune affirmation non prouvée sur l'onboarding/tenant** — chaque
+      allégation des rapports est adossée à une commande + sortie (codes d'exxit,
+      logs run1→7, preuves rouge/verte du gate, `\d`/`pg_get_constraintdef` pour
+      D4/LoadPrediction).
+- [x] **VERIFICATION.md et INTEGRATION.md présents et argumentés** — commits
+      `4c49f61a`.
+- [x] **Aucune tâche livrée sans preuve de test exécuté (R3+R5)** — backend 1671
+      (exit 0), gate 5/5 (exit 0), recette 56/0/3 (exit 0), tous archivés.
+
+## Nettoyage de la stack jetable (fin de §5.5)
+- Conteneur de preuve `v192-proof` (55446) **supprimé** ; backend jetable 18080
+  **arrêté**. La base e2e (`onb-e2e-postgres` 55445, `onb-e2e-redis` 56380,
+  préexistants) est laissée en place — non production, aucune donnée réelle.
+- `backend/storage-e2e/` ignoré via .gitignore (racine de stockage du launch).
+
+## Clôture Agent A — cette reprise
+Worktree propre (tout commité), 5 commits §5.5/§5.7/Phase 2 (`ed599fb0`, `fc90282e`,
+`08dd12ff`, `28242e27`, `4c49f61a`). Transmis à l'orchestrateur humain **sans push
+ni tag** (§5.8). Les décisions D1→D6 restent à trancher par un humain (R7) ; D4 est
+un défaut de production **prouvé**, corrigeable sur validation (patron V193).
+
+---
+
+## Reprise du 2026-09-30 — refusion A+B après l'arbitrage D1, gates rejoués
+
+**Contexte.** L'arbitrage D1 est tombé : « aligner le code sur la table vivante
+`event` » (documenté par l'Agent B dans `docs/architecture/schema-events-drift.md`,
+§ « Le plan retenu »). Depuis la clôture §5.5/§6, la branche B a produit six commits
+(recâblage mobile sur les routes réelles, V200/V201/V202, B6-B13, B10/B11) et la
+branche A était restée sur sa clôture. Les deux branches avaient donc divergé après
+la fusion `710adb59`.
+
+**Mesure écartée.** L'exécution de la suite backend lancée par l'Agent B à 09:02
+(`df3c721c` +6 min) a utilisé le JDK 25 par défaut : 670 erreurs Mockito/Byte-Buddy.
+Conformément à TODO §7, ce n'est **pas** un défaut de code ; la mesure a été rejouée
+sous JDK 21 (ci-dessous), l'ancienne est écartée, pas commentée.
+
+**Fait.** Contrôles §5.2 : un seul fichier chevauchant les deux branches
+(`Event.java`), `git merge-tree` propre. Fusion réelle : commit `2d64e1c3`
+(`git merge --no-ff origin/fix/onboarding-tenant-clients`), sans conflit, sans code
+inventé. `scripts/mvn-local.sh` rendu exécutable (le refus « Permission denied » du
+premier lancement était un défaut d'environnement, pas de build).
+
+**Gates rejoués sur l'arbre fusionné** — extraits : `run8-merged-tree.extraits.txt` ;
+logs complets archivés sur disque ( `.log` gitignorés, convention existante) :
+- backend : `mvn -B -o verify` sous JDK 21 → **BUILD SUCCESS**, 1696 tests,
+  0 échec, 0 erreur, 13 skip (les 13 `@EnabledIf(isRedisAvailable)` préexistants) ;
+  gate `FlywayMigrationChainPostgreSqlTest` **joué** (pas sauté) : V1→V202 sur
+  PostgreSQL 16 réel, chaîne + validate() + scan `@Table`/`information_schema`,
+  5/5 verts, 23,06 s.
+- frontend : `npx vitest run --maxWorkers=2` → **57 fichiers / 430 tests passés**, exit 0.
+- mobile : `flutter test` → **+468 : All tests passed!**, exit 0.
+- recette §5.5 : backend jetable 18080 sur **base PG neuve** migrée V1→V202
+  (165 migrations appliquées, « now at version v202 »), Redis jetable 56380,
+  schéma de recette **réinitialisé au préalable** (aucune donnée réelle) :
+  `verify-tenant-onboarding.sh` → **56 PASS / 0 FAIL / 3 SKIP, exit 0** — identique
+  au run7 de clôture ; les 3 SKIP restent justifiés (D5, quota space), aucun PASS
+  déguisé.
+
+**Ce que la fusion ne clôt PAS.** L'arbitrage D1 est une **direction**, pas le port.
+Sur l'arbre fusionné, `Event` mappe toujours `events` (rétablie par V194) et
+`ChurchEvent` mappe `event` : les deux modèles coexistent, exactement ce que le plan
+retenu refuse (« une seule entité sur `event` »). Le port backend reste à faire et
+se heurte à un point non tranché par l'inventaire B — voir NEED-HELP ci-dessous.
+
+### NEED-HELP — D1-backend (colonnes de scoping et vocabulaire, arbitrage requis)
+
+- L'inventaire « plan retenu » décide les colonnes **contrat** (image_url, tags,
+  géo, capacité, compte_rendu ; `is_public`→`visibility` ; `nb_inscrits`→calculé ;
+  `famille_id`→retiré). Il ne couvre **pas** les colonnes internes que l'entité
+  `Event` exige et que `event` ne possède pas : `department_id`, `resource_scope`,
+  `organization_unit_id` — ni le sort du couple FR↔EN (`statut`=`PLANIFIE`… vs
+  `ck_event_status CHECK (DRAFT,PUBLISHED,CANCELLED,COMPLETED,ARCHIVED)` ;
+  `type_evenement`=`REUNION`… vs `ck` anglais `type`).
+- Conséquences si on applique l'inventaire tel quel : la suppression de
+  `famille_id`/`department_id` **désactive l'isolation par espace métier** de
+  `/api/v1/events` (`canAccessEvent`/`canManageEvent`, 6 requêtes de
+  `EventRepository`, statistiques famille, champs du contrat `CreateEventRequest`),
+  sans quoi un CHEF_DE_FAMILLE verrait tous les événements du tenant. Ce n'est pas
+  un détail de formulaire : c'est un relâchement du contrôle d'accès multi-tenant.
+- **Résolution proposée (à valider)** : V203 ajoute à `event` les quatre colonnes
+  `famille_id UUID`, `department_id UUID`, `resource_scope VARCHAR(20) NOT NULL
+  DEFAULT 'TENANT_GLOBAL'`, `organization_unit_id UUID` (nulles = comportement
+  actuel du modèle paroissial) ; `Event` est repointée sur `event` avec les noms de
+  colonnes anglais là où ils existent (déjà mappés en Java : `titre`→`title`,
+  `date_debut`→`start_at`…) ; le vocabulaire FR du contrat §3 (figé, R2) est
+  **conservé dans la colonne** et le CHECK `event.status`/`event.type` est **élargi
+  en V203** à l'union des deux vocabulaires (le verrouiller à l'EN imposerait une
+  conversion **perte** : `SORTIE`/`VISITE`/`REUNION` → `MEETING` n'est pas
+  inversible, V158 l'a déjà perdu une fois). `deleted` boolean → `deleted_at` : la
+  propriété devient un champ lecture-écriture mappé, et `EventRepository` passe ses
+  dérivés `…DeletedFalse` en `…DeletedAtIsNull` (mécanique, testé).
+- Sans ce go, le port ne peut être entrepris sans improviser (R7). **Statut :
+  BLOCKED — décision d'orchestrateur sur V203.**
+
+
+---
+
+## [2026-09-30] D1 — Port de l'entité `Event` sur la table vivante « event » (FAIT)
+
+**Levée du NEED-HELP** : l'orchestrateur a validé l'arbitrage D1 (« Go selon la
+résolution proposée »). V203/V204 sont posés (commit `dbcb8563`) ; ce lot est le
+port Java qui les exploite.
+
+**Périmètre réalisé**
+- `Event` mappe désormais la table **`event`** (singulier) : propriétés du contrat
+  §3 **conservées en français** (`titre`, `dateDebut`, `statut`, `organisateurId`,
+  `familleId`, `departmentId`, `resourceScope`, `organizationUnitId`, `nbInscrits`),
+  seul le **mappage** suit l'anglais vivant (`title`/`start_at`/`status`/
+  `organizer_id`). Absorption des champs du modèle vivant : `timezone`,
+  `is_recurring`+`recurrence_rule`, `created_by`.
+- **Suppression logique** : `deleted` boolean → `deleted_at` (`TIMESTAMPTZ`), avec
+  `isDeleted()`/`setDeleted()` conservés comme vues transitoires. Tous les dérivés
+  d'`EventRepository` passent de `…DeletedFalse` à `…DeletedAtIsNull`.
+- **Visibilité** : la colonne `visibility` (PRIVATE/TEAM/CHURCH/PUBLIC) est
+  l'**unique autorité** ; `is_public`/`publicEvent` du contrat n'en est que la
+  lecture (== `PUBLIC`). `@Builder.Default = CHURCH` réplique le `DEFAULT 'CHURCH'`
+  de V158 (faute de quoi toute création complète insère NULL dans une NOT NULL).
+- **Compteur calculé** : `nb_inscrits` n'existant pas sur la table vivante,
+  `nbInscrits` devient `@Transient`, renseigné par `EventService` depuis
+  `event_registrations` (statuts `INSCRIT`/`PRESENT`).
+- **Retrait du doublon** : l'entité `ChurchEvent` est **supprimée** ; une seule
+  entité mappe `event`. `ChurchEventRepository` devient `JpaRepository<Event,UUID>`.
+  Un DTO de traduction EN↔FR (`ChurchEventDto`) fait foi du fil JSON de
+  `/api/v1/church-events`, figé lui aussi.
+- **Appelants** : `LoadPredictionService` (SQL natif `FROM event`, `start_at`,
+  `deleted_at IS NULL`, `CAST AS TIMESTAMPTZ` — c'était un défaut colonne-fantôme
+  famille H masqué par H2) ; `FIRST_EVENT` du wizard ; `SpaceExportService`,
+  `MemberService`, `BenchmarkController`, `EventController` rebranchés sur la
+  sémantique `visibility` + compteur calculé.
+
+**Dégâts collatéraux du sed global, diagnostiqués et corrigés**
+- Le remplacement mécanique `…DeletedFalse→…DeletedAtIsNull` avait touché des
+  entités à **boolean `deleted`** (`DepartmentAnnouncement`,
+  `DepartmentMemberNote`) → échec de boot Spring
+  (`No property 'at' found for type 'boolean'`). Revert ciblé opéré : seules
+  `Event`/`ChurchEventRepository` passent par `deleted_at`.
+- Les tests d'H2 physique alignés sur le renommage : `SchemaVerification…`
+  (table `event`, colonnes `TITLE`/`ORGANIZER_ID`) ; `TenantModuleIsolation…`
+  (`TRUNCATE TABLE event`). Ces tests vérifient le **schéma généré par les
+  entités**, pas le contrat JSON §3 — ce dernier reste figé (R2).
+
+**Exécution & preuve** (voir `logs/d1-port-verify.extraits.txt`, log complet
+`logs/d1-port-verify.log`)
+- `mvn verify` JDK 21 : **1698 tests, 0 échec, 0 erreur, 13 skip** (préexistants).
+- Gate Testcontainers : `FlywayMigrationChainPostgreSqlTest` **7/7 vert** sur
+  **PostgreSQL 16.15** réel — chaîne V1..V204 rejouée + scan `@Entity`/`@Table`
+  vs `information_schema` OK.
+- **BUILD SUCCESS**.
+
+**Statut : D1 TERMINÉ, gates §5.4 + recette §5.5 verts.**
+- Frontend `vitest run --maxWorkers=2` : **430/430** (57 fichiers).
+- Mobile `flutter test` : **468/468**.
+- Recette §5.5 `verify-tenant-onboarding.sh` sur pile jetable live
+  (PG 16.15:55445 / Redis:56380 / backend:18080) : **56 PASS / 0 FAIL / 3 SKIP**
+  (SKIP = limites de fixture D5 documentées, jamais déguisées en PASS). V203+V204
+  appliqués **incrémentalement** sur base v202 (`now at version v204`).
+Aucun code client modifié : le port est interne au backend, contrat §3 figé (R2).
+Preuves dans `d1-port-verify.extraits.txt`. Commit backend `ebcdc415`.
+**Poussée/tag : aucun** — décision d'orchestrateur.
+
+---
+
+## [2026-09-30] Lot sécurité — vérification indépendante (`fix/securite-webhooks-2fa`)
+
+Le lot sécurité **hors périmètre onboarding** (2FA `WRITE_ONLY`, webhooks
+fail-closed, verrou de sync mobile, `bootstrap_prod.sql`) avait été **déjà
+committé** par l'orchestrateur sur une branche dédiée `fix/securite-webhooks-2fa-sync`
+(commit `55ca8af9`, base = main HEAD `72ec85d5`). Je ne l'ai **pas re-créé** : je
+l'ai **vérifié indépendamment**, ce que demandait l'arbitrage.
+
+**Vérification (§5.4), worktree jetable, JDK 21 / Flutter 3.38.7**
+- `UserSecretSerializationTest` : **3/3 VERT** avec le fix.
+- **R10 discrimination** : retrait temporaire des deux `@JsonProperty(WRITE_ONLY)`
+  des champs 2FA → **3/3 ROUGE**, le JSON rend bien
+  `"twoFactorSecret":"…-TOTP-SECRET"` + backup codes, sur les 3 formes (entité
+  seule / imbriquée dans une Map santé-transfers / en collection). Fichier restauré
+  (`git checkout`). Le test attrape donc toute re-sérialisation du secret.
+- **Non-régression mobile** (`sync_service.dart` +94, `offline_sync_manager.dart`
+  +26 touchés) : `flutter test` → **376/376 VERT** sur base main + lot sync.
+- Preuve archivée **sur la branche elle-même** : commit `b3f00a1e`
+  (`reports/plan-2agents/security-branch-verify.extraits.txt`).
+
+**Point d'arbitrage — RESOLU** — `55ca8af9` embarquait aussi `render.yaml` +
+`.github/workflows/backup-postgres.yml`, que l'arbitrage senior **excluait**
+(« décision Render reportée »). **Tranché par l'orchestrateur : séparer.**
+Commit `ab50c392` restaure ces 2 fichiers à l'état main sur la branche ; le diff
+net de `fix/securite-webhooks-2fa-sync` = **sécurité seule**. Aucune perte : le
+diff infra reste récupérable via `git show 55ca8af9 -- render.yaml
+.github/workflows/backup-postgres.yml`. Rien de poussé, rien de fusionné.
+
+**Statut : lot sécurité VERIFIE et PROPRE (implémentation + exécution +
+discrimination + non-régression mobile + périmètre aligné). Toutes les todos du
+plan sont closes — en attente de tes directives pour poussée/fusion/Render.**
+
+

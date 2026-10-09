@@ -25,23 +25,6 @@
 
 ---
 
-## 0.0bis Cycle — « église d'abord », landing par église, retour partout (clos le 09/10/2026)
-
-> Plan : `TODO_EGLISE_DABORD_MARQUE_RETOUR.md` (v2, **ajouts sans rupture**, règles A1→A8, décisions D1→D6).
-> Journal détaillé tâche par tâche en §8 du plan. Politique : **non committé**, gates revérifiés sur l'arbre intégré.
-
-| Tâche | Statut | Preuve |
-|---|---|---|
-| T1.1→T1.7 picker église (web + mobile + contrat) | `DONE` | BE `PublicChurchesSuggestExistsTest` 10 ; FE `ChurchPicker`+i18n 16 ; contrat web↔mobile↔serveur 12 |
-| T2.1→T2.6 landing `/e/:slug` + admin + DB (web + mobile) | `DONE` | `V241` additive (`landing_enabled` défaut `false`) ; `PublicChurchesLandingTest` 5 (404 indistinguable, `X-Robots-Tag`) ; `ChurchLandingPage` 7 + `TenantAdminBrandingPublicPage` 8 ; mobile `church_landing_screen_test` 11 |
-| T3.0→T3.4 retour web (AuthLayout + vitrine + fil d'Ariane) | `DONE` | `navigationBack` 31 ; `authZoneBackNavigation` 6 ; `PublicBreadcrumbs` 14 ; `publicNavI18n` 6 ; **A1** : 41 doublons journalisés, 0 suppression |
-| T4.0→T4.4 retour mobile (`go`→`push` mesuré) | `DONE_WITH_GAPS` | inventaire **143** classé (`.e2e-tmp/t40_go_calls.txt`) ; 2 conversions cas d'école + `list_detail_navigation_stack_test` 4 ; **résidu assumé** : 37 `SOUS_ECRAN` = backlog écran-par-écran (D6/Annexe C #7) |
-| T5.1→T5.2 recette bout-en-bout + docs | `DONE` | gates §7 rejoués verts (BE `10+5` exit0 · FE `tsc -b` 0 + vitest **862/862** · MOB `flutter analyze` 0 + `flutter test` **652/652**) |
-
-**Non-régression** : R1 (adhésion ≠ auto-déclarée), R5 (retour centralisé `MainLayout` intact), R7 (4 URLs profondes produisent le parcours d'avant) — verrouillés par tests. **Dark launch** : `landing_enabled=false` partout, picker jamais obligatoire (A2/A7).
-
----
-
 ## 0. CONVENTIONS
 
 ### 0.1 Statuts (utiliser exactement ces libellés)
@@ -243,25 +226,7 @@ _Aucune._
 
 ### 4.1 Journal des tâches
 
-> **Chantier hors plans `ONB-*`/`ORC-*`** : `TODO_EGLISE_DABORD_MARQUE_RETOUR.md` (« église d'abord »,
-> fullstack web+mobile+BE, additifs uniquement). Détail complet en §8 du plan.
-
-```
-Statut  : DONE (T1→T3, T5) / DONE_WITH_GAPS (T4 : 2 conversions faites, 37 = backlog écran-par-écran)
-Commit  : non committé (politique : l'humain valide)
-Fichiers: FE pages/auth/{ChurchPicker,church_landing,PublicBreadcrumbs}, layouts/AuthLayout, navigation/back.ts,
-          i18n 6 locales, App.tsx (/e/:slug) ; BE PublicChurchesController (+/suggest,/exists,{slug}),
-          TenantSettings (+landing_enabled/landing_sections), V241 ; MOB church_picker.dart,
-          church_landing_screen.dart, app.dart (/e/:slug + _publicRoutePrefixes), souls_list/departments_list
-          (go→push), register_screen (picker conditionnel), 6 .arb
-Tests   : mvn -o -q test -Dtest=PublicChurchesSuggestExistsTest,PublicChurchesLandingTest → 10/10 + 5/5, exit 0
-          npx tsc -b → exit 0 ; npx vitest run (suite COMPLÈTE) → 862/862, 106 fichiers, exit 0
-          flutter analyze → 0 nouveau ; flutter test (suite COMPLÈTE) → 652/652, exit 0
-Preuve  : « Tests run: 10, Failures: 0, Errors: 0 » + « Tests run: 5, Failures: 0, Errors: 0 » (BE) ;
-          vitest « Test Files 106 passed (106) / Tests 862 passed (862) » ; flutter « All tests passed!» (+652)
-Gaps    : T4 — 37 `SOUS_ECRAN` non convertis VOLONTAIREMENT (D6/R6/Annexe C #7 : un commit + un widget
-          test par écran, jamais de conversion en rafale). gate Flyway V241 sur PG réel à la recette.
-```
+_Aucune tâche démarrée._
 
 ### 4.2 Blocages ouverts (NEED-HELP)
 

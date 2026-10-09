@@ -6,14 +6,20 @@ import '../../../data/services/api_service.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class DepartmentsListScreen extends StatefulWidget {
-  const DepartmentsListScreen({super.key});
+  // LOT 4 §GLISE-D'ABORD (T4.2) — injection facultative, par défaut `null` : le
+  // comportement des appelants existants `const DepartmentsListScreen()` est
+  // STRICTEMENT identique (A1). Le paramètre n'existe que pour rendre la
+  // conversion `go`→`push` testable (widget test de pile de navigation, D6).
+  const DepartmentsListScreen({super.key, this.apiService});
+
+  final ApiService? apiService;
 
   @override
   State<DepartmentsListScreen> createState() => _DepartmentsListScreenState();
 }
 
 class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<dynamic> _departments = [];
   List<dynamic> _users = [];
   bool _isLoading = true;
@@ -217,7 +223,13 @@ class _DepartmentsListScreenState extends State<DepartmentsListScreen> {
                       return GlassCard(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
-                        onTap: () => context.go('/departments/${dept['id']}'),
+                        // LOT 4 §GLISE-D'ABORD (T4.2, D6/R6) — `go` → `push`.
+                        // Un département est un ENFANT de la liste : `push()`
+                        // garde la liste sous la fiche pour que le retour (flèche
+                        // `AppBar`, `DetailBackButton` filet déjà posé sur la
+                        // fiche, geste Android) ramène à la liste. Le lien profond
+                        // `/departments/:id` (go) n'est pas touché.
+                        onTap: () => context.push('/departments/${dept['id']}'),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

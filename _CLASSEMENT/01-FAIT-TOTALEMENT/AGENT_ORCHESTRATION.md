@@ -1,0 +1,1163 @@
+# ORCHESTRATION AGENTS — DISCIPOLAT
+
+> **Document de pilotage pour agents autonomes.** Tout agent (humain ou IA) doit lire
+> ce fichier AVANT de commencer, puis le mettre à jour après chaque tâche.
+> **Règle absolue : NE SUPPRIMER AUCUN CODE/FONCTIONNALITÉ EXISTANTE.**
+> Améliorer, réparer, compléter — jamais dégrader.
+
+---
+
+## 0. MISSION
+
+> ### ⚠️ COORDINATION AVEC UN PLAN EXISTANT
+>
+> Un plan antérieur existe : **`PLAN_CORRECTIFS_ONBOARDING_TENANT_2AGENTS.md`**
+> (périmètre : correctifs onboarding + gestion tenant, **32 tâches** : `A1..A16` et `B1..B13`).
+>
+> ⚠️ **La version 1.0 de cette section était fausse sur trois points (corrigé le 2026-09-28) :**
+> 1. « 13 tâches `A1..A13` » → le plan en compte **16 côté backend** (`A1` à `A16`) et **13 côté clients** (`B1` à `B13`).
+> 2. « mêmes branches (`fix/onboarding-tenant-*`) » → **ce fichier (§4.2) prescrit `feat/platform-monde` / `feat/clients-monde`**. Deux noms différents pour la même branche : la fusion se serait faite sur une branche inexistante. **Règle :** le plan le plus récent fait foi pour ses branches ; ce fichier n'emploie `feat/*` que pour SA propre campagne, exécutée **après** clôture du plan onboarding.
+> 3. « mêmes worktrees » → **seul `discipolat_app-agentA` existe** ; `discipolat_app-agentB` n'est pas créé à ce jour.
+>
+> **Règle de coexistence** : un agent qui exécute un plan NE DOIT PAS
+> exécuter les tâches de l'autre plan tant que le premier n'est pas
+> terminé et mergé. Sinon : conflits de merge sur `SecurityConfig`,
+> `application.yml`, `frontend/src/App.tsx`, `docker-compose.yml`.
+>
+> **Conflits de propriété réels** : `docs/**` est attribué à l'Agent B par ce fichier (§4.1) mais à l'Agent A par le plan onboarding (§2) ; `infra/**` est attribué en bloc à l'Agent A par ce fichier alors que le plan donne `infra/well-known/**` à l'Agent B. **Pendant le plan onboarding, le tableau du plan (§2) fait foi.**
+>
+> **Ordre recommandé** : terminer d'abord
+> `PLAN_CORRECTIFS_ONBOARDING_TENANT_2AGENTS.md` (il corrige des bugs
+> fonctionnels), puis enchaîner sur ce fichier (il débloque le
+> commercial et l'échelle mondiale).
+>
+> Ce fichier est **complémentaire**, pas concurrent.
+
+Amener Discipolat au niveau **production mondiale** :
+- **Couverture planétaire** : aucune logique métier codée en dur pour l'Afrique
+  ou le français. Support natif de toutes les régions, langues, cultes, monnaies, réglements.
+- **Échelle industrielle** : capable d'héberger **plusieurs millions de tenants**
+  (organisations) représentant **plusieurs centaines de millions d'églises/sites**.
+- **Qualité professionnelle** : sécurité, observabilité, i18n, tests, documentation.
+
+---
+
+## 1. ÉTAT RÉEL MESURÉ (2026-09-27) — NE PAS SE FIER AUX ANCIENS RAPPORTS
+
+> ⚠️ **Les rapports `reports/COMMERCIALIZATION_AUDIT.md` (22/08/2026),
+> `IMPLEMENTATION_STATUS.md` (31/08/2026) et `CAHIER_DE_CHARGE.md` sont PÉRIMÉS.**
+> Les deux premiers ont été supprimés du dépôt le 28/09 (ménage documentaire,
+> accessibles via `git log`).
+> Ils listent comme "manquants" des éléments qui existent déjà. Vérifier par
+> `grep`/`glob` AVANT de conclure quoi que ce soit.
+
+### 1.1 Métriques réelles (mesurées, pas estimées)
+
+> **Remesuré le 2026-09-30** (arbre d'intégration `feat/integration-1-2-3`, après
+> fusion agentA + item 1 + item 2) avec
+> `find` + `wc -l` — méthode : LOC main = `backend/src/main`, `frontend/src`
+> hors `*.test.*`/`*.spec.*`, `mobile/lib` ; LOC tests = `backend/src/test`,
+> tests frontend, `mobile/test` + `mobile/integration_test`.
+
+| Composant | Fichiers | LOC main | LOC tests |
+|-----------|----------|----------|-----------|
+| Backend (Spring Boot 3.4.7 / Java 21) | 1 545 `.java` (1 356 main + 189 test) | 125 379 | 40 414 |
+| Frontend (React 19 / Vite / TS strict) | 435 `.ts`/`.tsx` (378 main + 57 test) | 110 419 | 10 046 |
+| Mobile (Flutter 3 / Riverpod / Drift) | 496 `.dart` (397 lib + 99 test) | 139 363 | 11 124 |
+| Migrations Flyway | 168 `V*.sql` (dernière = `V205`) | — | — |
+| **TOTAL** | **~2 650** | **~375 200** | **~61 600** |
+
+### 1.2 Ce qui est DÉJÀ FAIT (ne pas refaire)
+
+| Domaine | Preuve dans le code |
+|---------|--------------------|
+| i18n 6 langues (FR/EN/PT/ES/SW/AR) | `frontend/src/i18n/{fr,en,pt,es,sw,ar}.ts` |
+| i18n mobile 6 langues | `mobile/lib/l10n/intl_{fr,en,pt,es,sw,ar}.arb` |
+| Magic Link | `SocialAuthController.java:135,162` |
+| Google OAuth (id_token) | `SocialAuthController.java:202` |
+| Rate limiting login (Bucket4j + Redis) | `PerIpRateLimiter.java`, `RedisRateLimiterConfig.java` |
+| Rate limit sur 8 endpoints auth | `AuthController.java:42,62,92,121,148,174,187,200` |
+| Onboarding wizard **7** étapes | `OnboardingWizardStep.StepType` (7 valeurs), `OnboardingWizardService.DEFAULT_STEPS` (7), `OnboardingWizardPage.tsx` |
+| PWA (manifest + service worker) | `frontend/public/manifest.json`, `frontend/public/sw.js` |
+| Rôles + RBAC + 2FA TOTP | `SecurityConfig.java`, `TwoFactorServiceTest.java` |
+| Isolation multi-tenant | `TenantContext`, filtre Hibernate, `MultiTenantSecurityTests.java` |
+| Push token FCM (enregistrement) | `PushTokenController.java` |
+| CI/CD + infra | `render.yaml`, `docker-compose.yml`, `.github/workflows/` |
+| Monitoring | `infra/monitoring/prometheus.yml`, `grafana-cache-dashboard.json` |
+
+**Complété depuis — livré par les prompts A1–A6 (Agent A, branche de travail,
+preuves vérifiables par grep) :**
+
+| Domaine | Preuve dans le code |
+|---------|--------------------|
+| Envoi push FCM réel († M1) | `modules/notifications/domain/FirebaseAdminPushGateway.java` (`com.google.firebase.messaging.FirebaseMessaging`), endpoint `GET /api/v1/notifications/push-status` (`PushTokenController:89`) |
+| Module Backup Java († M2) | `backend/src/main/java/com/discipolat/modules/backup/` + `BackupServiceTest`, `IsolationBackupCurrencyTest` |
+| Devises ISO-4217 + abstraction payout († M8 M9) | `modules/currency/domain/Iso4217CurrencyValidator`, `modules/payments/payout/PayoutProviderRegistry` + `CurrencyValidationTest`, `PayoutProviderRegistryTest` |
+| Fondations sharding/partitionnement († M7) | `common/scaling/ShardRouting`, `SingleDatabaseTenantDataSource` + `ShardingRoutingTest`, [docs/SCALING.md](docs/SCALING.md) |
+| Notifications câblées dans l'outbox († M3) | `modules/core/service/OutboxConsumers.java:184,192` — délègue à `NotificationService.create(...)` (in-app) puis `PushNotificationService.pushToUser(...)` ; l'ancien `// TODO` n'existe plus |
+| Isolation cross-tenant bout-en-bout HTTP († M13) | `backend/src/test/java/com/discipolat/security/TenantModuleIsolationEndToEndHttpTest.java` (10 tests, 9 modules + usurpation d'en-tête) |
+| CI bloquante sécurité/charge/e2e († M10 M11) | `.github/workflows/security.yml`, `perf.yml` (porte k6 P95 > 2 s → échec), `e2e.yml` + scaffold `e2/` ; `ci.yml` upload les rapports de tests en artifacts |
+| Config STT + Ollama fail-closed († M5 M6) | audits `AiConfigurationStartupAudit` (503 `AI_NOT_CONFIGURED`, aucun repli présenté comme IA) |
+| Documentation professionnelle (A6) | `README.md` réécrit, `docs/API.md` + `docs/openapi.json` (générés par `scripts/generate-api-docs.sh`, chemin springdoc vérifié `/api-docs`), `docs/DEPLOYMENT.md` §6-§14 (secrets obligatoires/optionnels, Flyway, rotation JWT, rollback), `docs/RUNBOOK.md` §2 (incidents symptôme→diagnostic→résolution) |
+
+### 1.3 VRAIS MANQUES (vérifiés par grep le 2026-09-27)
+
+| # | Manque | Preuve de l'absence | Sévérité |
+|---|--------|---------------------|----------|
+| M1 | **Envoi push FCM réel** — seul `PushTokenController` (enregistrement token) existe. Aucun `FirebaseMessaging` / `sendEach` / `sendMulticast` dans tout le backend. Le mobile a `firebase_messaging` mais **ne reçoit jamais rien**. | `grep -r "FirebaseMessaging\|sendEach\|sendMulticast" backend/` → 0 résultat | 🔴 P0 |
+| M2 | **Module Backup Java absent** — aucun `backend/.../modules/backup/`. Le cahier de charge annonce `POST /backups/{id}/verify`. Seuls des scripts shell (`scripts/backup.sh`) existent. | `glob backend/**/modules/backup/**` → 0 fichier | 🔴 P0 |
+| M3 | **Notifications non câblées dans l'outbox** | `OutboxConsumers.java:141` → `// TODO: Déléguer à NotificationService` | 🔴 P0 |
+| M4 | **i18n : traductions incomplètes et de mauvaise qualité.** Le 6 jeux de clés ne sont **pas alignés** entre eux, et `sw`/`ar` contiennent massivement des valeurs identiques au français. Mesuré le 2026-09-28 : `fr` = 2571 clés (référence) ; `en` = −1/+13 ; `pt` = +58 ; `es` = +142 ; `sw` = +142 **et 728 valeurs strictement identiques au FR** ; `ar` = +186 **et 721 valeurs identiques au FR**. | Comparaison programmatique des 6 dictionnaires contre `fr.ts` (`REVERSE_FR`, `src/i18n/index.tsx:57`) | 🟠 P1 |
+| M5 | **Config STT/Whisper absente de `application.yml`** — `IMPLEMENTATION_STATUS.md` (depuis supprimé, voir `git log`) documentait `app.speech.api-url/api-key/model` mais la config n'existe pas. | `grep -i speech backend/src/main/resources/application.yml` → 0 résultat (revérifié 2026-09-28) | 🟠 P1 |
+| M6 | **Ollama codé en dur sur localhost** | `application.yml:178` → `${OLLAMA_URL:http://localhost:11434}` (ligne 190 citée en v1.0 : décalage) | 🟡 P2 |
+| M7 | **Échelle : sharding / partitionnement absent** — mono-PostgreSQL. Objectif 10⁶-10⁸ tenants non atteignable. | `docker-compose.yml` = 1 service `db` | 🔴 P0 (bloquant commercial) |
+| M8 | **Fournisseurs de paiement hors Afrique absents** — `modules/payments/domain/` ne contient que `MtnMomoProvider`, `OrangeMoneyProvider`, `MpesaProvider` (via `MobileMoneyProvider` + `MobileMoneyProviderRegistry`). Aucun `StripePayoutProvider`, `PayPalPayoutProvider`, SEPA ni virement. ⚠️ **La preuve de la version 1.0 était fausse** : elle affirmait « grep stripe/paypal/sepa sur le backend → 0 résultat », or `SaasPlan` et `TenantSubscription` portent les colonnes `stripe_price_id_monthly` / `stripe_price_id_yearly` (simple stockage d'identifiants). **Le constat reste vrai ; c'est l'intégration Stripe qui manque, pas le mot.** | `ls backend/src/main/java/com/discipolat/modules/payments/domain/` → 3 providers Mobile Money ; `grep -n stripe SaasPlan.java` → colonnes de prix uniquement | 🔴 P0 (bloquant mondial) |
+| M9 | **Réglements non universels** — l'abstraction existe **déjà** (`MobileMoneyProvider` + `MobileMoneyProviderRegistry`) mais ne couvre que le Mobile Money africain ; la logique de don/transaction reste liée à XOF et à des pays africains. | `MobileMoneyProviderRegistry.java`, `PaymentProviderProperties.java` | 🔴 P0 |
+| M10 | **Aucun test E2E navigateur en CI** — `puppeteer-core` est bien présent, mais **dans `frontend/package.json` (devDependency)**, utilisé par un unique script (`scripts/e2e-browser-fiche.js`). Ce n'est ni une suite ni un blocage de CI. | `frontend/package.json` → `puppeteer-core`, pas de `playwright` ; `.github/workflows/` sans étape E2E | 🟠 P1 |
+| M11 | **Aucun test de charge exécuté en CI** — `performance-tests/` existe (`k6-load-test.js`, `run-performance-tests.sh`) mais n'est appelé par aucun workflow. | `.github/workflows/` sans k6 (revérifié 2026-09-28) | 🟠 P1 |
+| M12 | **Écrans Flutter > 1000 lignes** — dette de maintenabilité. Mesuré 2026-09-28 : **5 fichiers** dépassent 1000 lignes dans `lib/presentation/` (`department_management_screen.dart` 1441, `app_drawer.dart` 1377, `department_member_dossier_screen.dart` 1360, `department_tools_screen.dart` 1336, `department_detail_screen.dart` 1326). À exclure : les fichiers **générés** (`*.g.dart`, `*.freezed.dart`, `app_localizations.dart` 9846 lignes) qui ne sont pas de la dette maîtrale. | `find lib/presentation -name "*.dart" \| xargs wc -l \| sort -rn` | 🟡 P2 |
+| M13 | **Aucun test d'isolation inter-tenant sur le flux complet HTTP** — tests unitaires seulement, pas de test bout-en-bout cross-tenant. | `TenantIsolationIntegrationTest.java` existe (couverture réelle) mais à étendre | 🟠 P1 |
+
+**Statut de résolution (Agent A — vérifié le 2026-09-29, commits poussés sur la branche de travail)** : M1 M2 M3 M5 M6 → fermés par `edd76954` (A1/A2/A4, + suite `049edede`) ; M7 M8 M9 → fermés par `4840ee0d` (A3) ; M10 M11 M13 (côté A) → fermés par `f33ebd06` (A5). Restent ouverts côté Agent B : **M4** (B1) et **M12** (B4) ; M13 côté B (specs Playwright mobile/web dans `e2/specs/`) reste à l'initiative B4 — le CI `e2e.yml` les exécute automatiquement dès qu'elles existent.
+
+### 1.4 MATRICE DE COUVERTURE — à vérifier avant de déclarer quoi que ce soit "terminé"
+
+Chaque constat DOIT être traité par un prompt nommé. Si tu ajoutes un constat,
+ajoute sa ligne ici. Si une tâche est faite, coche la colonne **Fait**.
+
+| Constat | Prompt | Agent | Sév. | Fait |
+|---------|--------|-------|------|------|
+| M1 push FCM | **A1** | A | 🔴 P0 | ☑ `edd76954` |
+| M2 module Backup | **A2** | A | 🔴 P0 | ☑ `edd76954` |
+| M3 outbox notifications | **A1** | A | 🔴 P0 | ☑ `edd76954` |
+| M4 i18n qualité | **B1** | B | 🟠 P1 | ☐ (Agent B) |
+| M5 config STT | **A4** | A | 🟠 P1 | ☑ `edd76954` + `049edede` |
+| M6 Ollama fail-closed | **A4** | A | 🟡 P2 | ☑ `edd76954` + `049edede` |
+| M7 sharding | **A3** (partie 2) | A | 🔴 P0 | ☑ `4840ee0d` (fondations niveau 1-2) |
+| M8 paiements universels | **A3** (partie 1) | A | 🔴 P0 | ☑ `4840ee0d` |
+| M9 devises ISO-4217 | **A3** (partie 1+3) | A | 🔴 P0 | ☑ `4840ee0d` |
+| M10 E2E navigateur | **A5** | A | 🟠 P1 | ☑ `f33ebd06` (`e2e.yml` + scaffold `e2/`) |
+| M11 tests de charge | **A5** | A | 🟠 P1 | ☑ `f33ebd06` (`perf.yml`, porte P95 > 2 s) |
+| M12 écrans Flutter >1000 l. | **B4** | B | 🟡 P2 | ☐ (Agent B) |
+| M13 isolation cross-tenant | **A5** + **B4** | A+B | 🟠 P1 | ☑ A : `f33ebd06` (10 tests HTTP) — ☐ B : specs `e2/` |
+
+> Cocher « Fait » exige une preuve vérifiable : chaque ☑ ci-dessus renvoie au
+> commit et à la ligne §1.2 « Complété depuis » correspondante (grep).
+
+**Vérification rapide** (à relancer après toute édition de ce fichier) :
+`Select-String AGENT_ORCHESTRATION.md -Pattern "\bM1\b|\bM2\b|..." `
+Chaque code doit apparaître au moins 3 fois : tableau des manques,
+intitulé du prompt, message de commit. Un code qui n'apparaît qu'une seule
+fois est un constat orphelin.
+
+> **Historique de ce contrôle** : au premier passage, **M12 n'apparaissait
+> qu'une fois** (tableau seul) — aucun prompt ne le référençait, alors que
+> le travail était bien décrit dans B4. Le lien manquant a été ajouté et B4
+> porte désormais « traite le constat M12 » + une étape 0 de mesure.
+> Ce contrôle a détecté un vrai trou de traçabilité : il en détectera
+> d'autres.
+
+### 1.5 Ce qui n'est PAS un manque (ne pas refaire)
+
+Pour éviter qu'un agent futur ne « corrige » quelque chose de déjà fait :
+
+- **Sharding already prepared** : `RedisCacheConfig`, `TenantAwareRedisManager`
+  et `TenantFileIsolationConfigTest` montrent que l'isolation fichier par
+  tenant a déjà été travaillée — M7 concerne l'échelle DB, pas l'isolation.
+- **`Application` de contrôleur** : `@PreAuthorize` est déjà présent sur
+  l'ensemble des endpoints authentifiés (cf. historique `Etat_fonctionnalité.md` §P0, supprimé — vérifier par grep).
+- **SSE** : le backend publie bien des événements (SSE + STOMP + WebSocket).
+  Ce qui manque est l'écoute côté client → traité en B2, pas côté backend.
+- **Les scripts shell de backup** (`scripts/backup*.sh`, `restore.sh`) sont
+  fonctionnels et doivent RESTER. M2 ajoute une couche applicative par-dessus,
+  il ne les remplace pas.
+
+---
+
+## 2. VISION MONDIALE — EXIGENCES STRUCTURANTES
+
+### 2.1 Neutralité géographique (à appliquer dans TOUTE nouvelle feature)
+
+Toute fonctionnalité nouvelle **doit** être conçue ainsi dès le départ :
+
+| Dimension | Exigence |
+|-----------|----------|
+| **Langue** | Aucun texte métier codé en dur côté serveur. Clés i18n. Toute langue ajoutable sans redéploiement (DB + admin). |
+| **Fuseau** | IANA timezone par tenant. Jamais d'UTC implicite côté UI. |
+| **Monnaie** | ISO-4217 par tenant. Formatage via `Intl.NumberFormat` (web) / `intl` (mobile). Conversion avec taux historisés. |
+| **Réglementation** | Payout providers derrière une interface `PayoutProvider` pluggable (Mobile Money, SEPA, ACH, Stripe, PayPal, virement, espèces). |
+| **Religieux** | Aucune terminologie confessionnelle codée en dur côté plateforme. "Âme/disciple/faiseur/pasteur" = termes français par défaut, **traductibles et remplaçables par tenant** (dictionnaire de glossaire). |
+| **Structure** | Hiérarchie `OrganizationNode` déjà modélisée : ROOT_CHURCH → REGION → CHURCH → SUB_CHURCH → CAMPUS → ASSEMBLY → DEPARTMENT → GROUP. Ne pas la court-circuiter. |
+| **Fiscalité** | Reçus configurables par tenant (numéro fiscal, TVA, exemptions, mentions légales). |
+
+### 2.2 Cible d'échelle
+
+| Métrique | Cible | Implication technique |
+|----------|--------|-----------------------|
+| Tenants | 10⁶ (1 million) | Routage tenant par sharding, pas de `tenant_id` seul indexé |
+| Églises/sites | 10⁸ (100 millions) | Agrégation, pas de jointure cross-tenant, OLAP séparé |
+| Utilisateurs | 10⁸ | Cache multi-niveau, CDN, files asynchrones |
+| Débit | 50 000 req/s | CDN + edge cache + read replicas + partitioning |
+| Latence P95 | < 200 ms (lecture) | Cache Redis aggressive, pagination par clé, pas d'offset giant |
+| Disponibilité | 99.95 % | Multi-AZ, basculement, pas de point unique de défaillance |
+
+### 2.3 Stratégie de scalabilité (cible, pas implémentation 1-shot)
+
+```
+Niveau 1 — Now        : 1 PostgreSQL, partitioning par tenant_id, read replicas
+Niveau 2 — 10k+       : sharding applicatif (tenant_id → shard), pool par shard
+Niveau 3 — 100k+      : Citus / sharding horizontal, cache Redis par shard
+Niveau 4 — 1M+        : multi-cluster, multi-région, routage par région
+Niveau 5 — 100M+      : OLAP (ClickHouse/BigQuery) pour analytics, events Kafka
+```
+
+**Action immédiate** : poser les fondations du Niveau 1-2 sans casser le
+fonctionnement (migrations Flyway, `tenant_id` partout, accès DB derrière une
+abstraction `TenantDataSource` permettant le routage futur).
+
+---
+
+## 3. RÈGLES ABSOLUES (tout agent)
+
+1. ❌ **NE SUPPRIMER RIEN** — ni fichier, ni fonction, ni migration, ni chaîne i18n.
+   Si quelque chose est cassé, **réparer**. Si obsolète, **désactiver par config**.
+2. ✅ **Migration Flyway = ADDITIVE UNIQUEMENT.** Jamais de `DROP`, jamais de
+   `ALTER ... TYPE` cassant, jamais de modification d'une migration déjà appliquée.
+   Corriger une migration existante = créer une nouvelle migration V+1.
+3. ✅ **Commit par tâche livrée, message conventional commits en français**, corps expliquant le *pourquoi*.
+   ⚠️ **Correction 2026-09-28 — la version 1.0 imposait « Commit + **push** après chaque tâche ». C'est incompatible avec le plan onboarding, dont la règle R1 interdit explicitement `git push` et dont la checklist finale exige « aucun push ».** Un agent suivant les deux documents à la fois pousserait sur une branche d'agent, provoquant un conflit direct avec l'autre campagne.
+   **Règle d'arbitrage :** le `push` est décidé **par l'orchestrateur humain**, jamais par l'agent. Pendant une campagne multi-agents, l'agent **commit localement** et ne pousse **jamais**. La présente règle est donc reformulée en « commit local obligatoire, push sur autorisation ».
+4. ✅ **Rien ne part sans build vert.** Backend `mvn -q compile` + `mvn test`.
+   Frontend `tsc -b` + `vitest run` + `vite build`. Mobile `flutter analyze` + `flutter test`.
+   > Un « build vert » se prouve par le **code de sortie**, pas par l'absence de texte d'erreur. Rappel vérifié : `npm run lint` est configuré avec `--max-warnings 1000`, il ne peut donc **pas** échouer sur des warnings.
+5. ✅ **Sécurité fail-closed.** Toute feature flag absente = comportement sûr
+   (voir l'existant : quotas fail-closed, bootstrap super-admin durci).
+6. ✅ **Aucun secret committé.** Variables d'environnement uniquement.
+7. ✅ **Aucun mock/fake en production.** `503` honnête si non configuré (précedent
+   existant : `SpeechToTextProvider` → `503 STT_NOT_CONFIGURED`).
+8. ✅ **i18n obligatoire** : toute chaîne visible par l'utilisateur passe par une
+   clé de traduction dans les 6 langues existantes.
+9. ✅ **Tests obligatoires** pour toute correction de bug (test de régression) et
+   toute nouvelle feature.
+
+---
+
+## 4. RÉPARTITION PARALLÈLE — 2 AGENTS
+
+### 4.1 Règle de non-conflit (CRITIQUE)
+
+Les deux agents travaillent en parallèle sur des arbres **strictement disjoints**.
+
+| Agent |Propriétaire EXCLUSIF | Interdit |
+|-------|----------------------|----------|
+| **AGENT A** — Platform & Backend | `backend/**`, `docker-compose.yml`, `render.yaml`, `infra/**` (hors `infra/well-known/**`), `scripts/**`, `.github/workflows/**` | ne jamais toucher `frontend/**`, `mobile/**` |
+| **AGENT B** — Frontend & Mobile | `frontend/**`, `mobile/**`, `docs/**` | ne jamais toucher `backend/**`, `infra/**` (hors `infra/well-known/**`) |
+
+> ⚠️ **Correction 2026-09-28 — arbitrage de propriété.** Ce tableau attribue `docs/**` à l'Agent B et `infra/**` en bloc à l'Agent A, ce qui **contredit** le tableau `§2` de `PLAN_CORRECTIFS_ONBOARDING_TENANT_2AGENTS.md` (`docs/**` → Agent A via la tâche A13 ; `infra/well-known/**` → Agent B via la tâche B8). Les deux documents donnaient donc **deux propriétaires au même dossier** : conflit de merge garanti sur `docs/`.
+> **Règle retenue, par ordre de priorité :** (1) pendant l'exécution du plan onboarding, `§2` de ce plan fait foi ; (2) ensuite, et seulement ensuite, le présent tableau s'applique aux campagnes `feat/*`. En pratique : un seul agent écrit dans `docs/` à la fois, et il l'annonce dans son rapport.
+
+**Zones partagées interdites sans accord :**
+- `frontend/src/i18n/*.ts` → **Agent B seul** (Agent A ne traduit rien)
+- `mobile/lib/l10n/*.arb` → **Agent B seul**
+- `docker-compose.yml` → **Agent A seul** (Agent B n'ajoute pas de service)
+
+**Protocole de synchronisation :** chaque agent travaille dans son worktree
+(`feat/platform-monde`, `feat/clients-monde`), push sa branche, et ne
+fusionne dans `main` que lorsque **son build est vert**. Les deux branches
+n'empiètent jamais sur les fichiers de l'autre → fusion sans conflit.
+
+### 4.2 Branches et worktrees
+
+Le plan antérieur impose des **worktrees git séparés** — c'est la bonne
+pratique (évite les collisions de `target/`, `node_modules/`,
+`.dart_tool/` et de HEAD). **Utilise la même approche :**
+
+```bash
+git checkout main && git pull
+
+# Agent A
+git worktree add ..\discipolat_app-agentA -b feat/platform-monde
+
+# Agent B
+git worktree add ..\discipolat_app-agentB -b feat/clients-monde
+```
+
+Chaque agent travaille dans SON worktree. Interdits : `git push` vers la
+branche de l'autre, `--force`, `rebase` de la branche de l'autre.
+
+---
+
+## 5. PROMPTS — AGENT A (Platform & Backend)
+
+> À copier-coller tel quel. Exécuter **une tâche à la fois**, dans l'ordre.
+> Après chaque tâche : build + tests + commit + push.
+
+---
+
+### ✅ PROMPT A0 — Amorçage et vérification
+
+```
+Tu es l'AGENT A du projet Discipolat (plateforme SaaS multi-tenant de gestion
+ecclésiastique, Spring Boot 3.4.7 / Java 21 / PostgreSQL 16 / Redis 7).
+LIS EN PREMIER : AGENT_ORCHESTRATION.md à la racine du dépôt. Respecte
+STRICTEMENT les règles absolues de la section 3, en particulier :
+NE SUPPRIMER RIEN, migrations Flyway ADDITIVES uniquement, commit+push
+après chaque tâche, build vert obligatoire.
+
+CONTEXTE CRITIQUE : les rapports périmés de reports/ et docs/rapports/ ont été
+supprimés le 2026-09-28 (ménage) ; seul reports/GO_NO_GO_REPORT.md est conservé
+comme record de décision. Ne te fie pas aux historiques du git log.
+Vérifie toujours par grep/glob avant d'affirmer qu'un truc manque.
+
+TA MISSION IMMÉDIATE :
+1. git worktree add ..\discipolat_app-agentA -b feat/platform-monde
+2. Lis AGENT_ORCHESTRATION.md, puis backend/src/main/resources/application.yml
+   en entier, puis backend/src/main/java/com/discipolat/common/infrastructure/config/SecurityConfig.java
+3. Établis l'état réel de ces 4 points et inscris tes constats dans
+   AGENT_ORCHESTRATION.md section 1.3 (mets à jour la colonne "Preuve de l'absence") :
+   - M1 : envoi push FCM réel (cherche FirebaseMessaging, sendEach, sendMulticast, FCM_TOKEN)
+   - M2 : module Backup Java (cherche le dossier modules/backup)
+   - M3 : câblage notifications dans OutboxConsumers
+   - M7 : evidence de l'absence de sharding
+4. Lance la suite de tests complète et RAPPORTE le résultat réel
+   (nombre de tests, nombre d'échecs) : cd backend && mvn -q test
+5. Ne code rien pour l'instant. Commit uniquement le rapport de constats :
+   "docs(platform): etat reel verifie des manques M1-M3 M7 (rapport perime)"
+   et push.
+
+CONTRAINTE : ne modifie aucun code fonctionnel à cette étape.
+```
+
+---
+
+### ✅ PROMPT A1 — M1 : Envoi push FCM réel (P0)
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : implémenter l'ENVOI push FCM réel (manquant M1).
+
+ÉTAT ACTUEL : backend/src/main/java/com/discipolat/modules/notifications/api/
+PushTokenController.java enregistre les tokens. MAIS aucun envoi n'existe :
+aucune dépendance Firebase, aucun appel réseau. L'app mobile (firebase_messaging)
+ne reçoit donc jamais de notification. C'est un mensonge fonctionnel à corriger.
+
+OBJECTIF : un service backend qui envoie réellement des notifications push.
+
+ÉTAPES (respecte l'architecture existante) :
+1. Ajouter la dépendance Google Firebase Bootlin/admin au backend/pom.xml
+   (com.google.firebase:firebase-admin, version gérée par Spring Boot
+   dependency management — ne pas figer une version obsolète).
+2. Créer une interface PushGateway dans modules/notifications/domain/ avec
+   une implémentation FirebaseAdminPushGateway. Une seule méthode
+   `send(List<String> deviceTokens, PushMessage message) : PushResult`.
+3. Ajouter une implémentation NoOpPushGateway conditionnée par propriété
+   `app.push.enabled=false` (défaut). Si false → log warn UNE SEULE fois au
+   démarrage, et les envois sont no-op. CE N'EST PAS un échec silencieux
+   silencieux : le log doit être explicite. (Voir le précédent
+   SpeechToTextProvider → 503 STT_NOT_CONFIGURED.)
+4. Configurer Firebase via `app.push.credentials-path` (chemin vers le JSON
+   de service account) — JAMAIS le contenu du JSON dans une variable
+   d'environnement en clair, JAMAIS committé. Ajouter au .gitignore.
+5. Câbler l'envoi : quand une Notification est créée par le scheduler
+   (ScheduledJobs) ou par un événement, diffuser via l'outbox
+   (modules/core/service/OutboxConsumers.java — c'est le TODO ligne 141) :
+   créer la Notification en base (in-app) ET pousser via PushGateway aux
+   tokens enregistrés de l'utilisateur, en respectant
+   NotificationPreference (l'utilisateur a pu désactiver le canal push).
+6. Gérer : token invalide (FirebaseMessagingException INVALID_ARGUMENT /
+   UNREGISTERED) → supprimer le token de la base, ne pas boucler.
+7. Endpoint GET /api/v1/notifications/push-status → {enabled, configured, reason}
+   pour que l'UI et le mobile puissent afficher un état honnête.
+8. Configurer application.yml : app.push.enabled (défaut false),
+   app.push.credentials-path, app.push.dry-run (défaut true : journalise au
+   lieu d'envoyer — indispensable avant d'avoir de vraies credentials).
+
+TESTS (obligatoires) :
+- PushGatewayRegistryTest : NoOp sélectionné quand app.push.enabled=false
+- PushTokenCleanupTest : token invalide supprimé, pas de boucle infinie
+- NotificationPreferencePushTest : push respecté/refusé selon préférence
+- Un test d'intégration qui prouve qu'une Notification créée produit bien
+  une tentative d'envoi via le gateway (mocké)
+- AUCUN test ne doit tenter un vrai appel réseau Firebase.
+
+VALIDATION : cd backend && mvn -q compile && mvn test
+Le nombre de tests doit AUGMENTER et aucun test existant ne doit échouer.
+Si un test échoue à cause de ta modification, répare ta modification
+(jamais le test existant sauf s'il teste un bug avéré).
+
+COMMIT : "feat(push): envoi FCM reel via firebase-admin + outbox cablee
++ push-status honnete (ferme M1, M3)"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+
+Si un point exige de SUPPRIMER quelque chose, STOPPE-toi et demande.
+```
+
+---
+
+### ✅ PROMPT A2 — M2 : Module Backup/Restore Java (P0)
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : créer le module Backup/Restore côté Java (manquant M2).
+
+ÉTAT ACTUEL : seuls des scripts shell existent (scripts/backup.sh,
+scripts/backup-render.sh, scripts/restore.sh, scripts/test-restore.sh).
+Le cahier de charge annonce une API `POST /backups/{id}/verify` qui
+N'EXISTE PAS. Aucun contrôleur, aucun service, aucune table.
+
+CONTRAINTE FORTE : NE PAS SUPPRIMER les scripts shell. Ils restent
+ fonctionnels pour l'infrastructure. Tu AJOUTES une couche applicative.
+
+OBJECTIF : API de backup/restore par tenant, multi-tenant-safe.
+
+ÉTAPES :
+1. Nouvelle migration Flyway V{max+1} (lis le plus haut numéro dans
+   backend/src/main/resources/db/migration/ et ajoute le suivant ; **le plus haut numéro existant est V177 (vérifié 2026-09-28) → la migration à créer est V178**)
+   créant `backup_snapshots` :
+   id UUID PK, tenant_id UUID NOT NULL, type VARCHAR (MANUAL|SCHEDULED|PRE_RESTORE),
+   status VARCHAR (PENDING|RUNNING|COMPLETED|FAILED|EXPIRED),
+   storage_key VARCHAR (chemin S3-compatible, PAS l'URL publique),
+   size_bytes BIGINT, checksum_sha256 VARCHAR(64),
+   started_at, completed_at, expires_at, error_message TEXT,
+   created_by UUID, created_at, deleted BOOLEAN, deleted_at, deleted_by
+   + index sur (tenant_id, created_at DESC) et (status)
+   + FK tenant_id → tenants(id)
+   ADDITIF, pas de DROP.
+2. Entité JPA `BackupSnapshot` dans un NOUVEAU module
+   `com.discipolat.modules.backup` (api/ + domain/ + infrastructure/)
+   — respecte la structure des modules voisins (ex: modules/tontine).
+3. Repository avec finding.findByTenantIdOrderByCreatedAtDesc(tenantId) —
+   JAMAIS de méthode qui allows.findAll() sans filtre tenant.
+4. `BackupService` :
+   - `createSnapshot(tenantId, createdBy)` : déclenche la sauvegarde.
+   - Implémentation S3-compatible via l'abstraction de stockage déjà
+     présente (cherche FileStorageService dans modules/tenants/service/
+     et réutilise-la si elle est générique ; sinon crée une interface
+     `BlobStore` + une implémentation locale filesystem pour le dev).
+   - Propriété `app.backup.enabled` (défaut false) + `app.backup.local-dir`
+     pour le développement. Si disabled → 503 honnête avec code
+     BACKUP_DISABLED (comme le précédent STT_NOT_CONFIGURED).
+   - CRITIQUE : vérifie que le répertoire de destination est isolé par
+     tenant (chemin storage_key = "{tenantId}/{yyyy}/{MM}/{dd}/{id}.dump")
+     et que la lecture d'un snapshot vérifie Systematicement le tenantId
+     courant AVANT d'ouvrir le fichier (protection IDOR + isolation
+     fichiers, le point faible identifié dans COMMERCIALIZATION_AUDIT).
+5. `verifySnapshot(tenantId, id)` : recalcule SHA-256 et compare au
+   checksum_sha256 stocké. Retourne {valid, expected, actual}.
+   Route : POST /api/v1/backups/{id}/verify
+6. `listSnapshots(tenantId)` : GET /api/v1/backups — paginé, filtré tenant.
+7. `restoreSnapshot(tenantId, id, confirmedBySuperAdmin)` : POST
+   /api/v1/backups/{id}/restore — exige @PreAuthorize("hasRole('ADMIN')")
+   ET une double confirmation (un champ `confirm: true` explicite dans
+   le body, sinon 400). Journalise dans audit_logs AVANT et APRÈS.
+   Refuse la restauration depuis un snapshot expiré.
+8. Ajouter les secrets au .gitignore si nouveau. Aucun secret en clair.
+9. Ajouter les entrées de configuration dans application.yml sous
+   app.backup.* avec des valeurs par défaut sûres.
+
+TESTS (obligatoires) :
+- BackupServiceTest : création, list-Isolation (tenant A ne voit pas
+  les snapshots de tenant B), vérification checksum OK et KO,
+  refus si disabled (503), refus si expiré.
+- BackupSecurityTest : un utilisateur du tenant B ne peut PAS appeler
+  verify/restore sur un snapshot du tenant A → 403/404 (jamais 200).
+- RestoreConfirmationTest : restore sans confirm=true → 400.
+- Chaque test doit prouver l'ISOLATION (c'est le risque n°1 du produit).
+
+VALIDATION : mvn -q compile && mvn test
+COMMIT : "feat(backup): module backup/restore java multi-tenant (S3-compatible,
+verify sha256, restauration controlee) — ferme M2"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT A3 — M7 + M8 + M9 : Échelle mondiale et paiements universels (P0)
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : poser les fondations de l'ÉCHELLE MONDIALE. C'est le chantier le
+plus structurant. Ne le bâcle pas.
+
+CONTEXTE UTILISATEUR : le produit doit accueillir plusieurs MILLIONS de
+tenants et viser plusieurs CENTAINES DE MILLIONS d'églises à terme, et
+fonctionner sur TOUTE la planète (pas seulement l'Afrique / francophonie).
+
+RÈGLE : tu ne peux pas résoudre 10^6 tenants en une tâche. Tu poses les
+FONDATIONS non-rétrocompatibles et tu documentes la trajectoire. Priorité
+au (1) qui est le plus risqué techniquement.
+
+PARTIE 1 — Paiements universels (M8, M9) — LE PLUS BLOQUANT COMMERCIALEMENT
+
+1. Lis modules/payments/ en entier. Identifie TOUT ce qui est lié à
+   XOF / MTN / Orange / M-Pesa / pays africains, en particulier :
+   - le validateur de devise
+   - le formatage des montants
+   - les frais / commissions
+   - la logique de reçu
+2. Introduis une abstraction `PayoutProvider` (interface) :
+   `initiate(PayoutRequest) : PayoutResult`,
+   `queryStatus(providerRef) : PayoutStatus`,
+   `verifyWebhookSignature(headers, body) : boolean`
+   Implémentations : MtnMoMoPayoutProvider, OrangeMoneyPayoutProvider,
+   MPesaPayoutProvider (EXISTANTES, à adapter — NE PAS SUPPRIMER),
+   + nouvelles : StripePayoutProvider (Stripe Connect / PaymentIntents),
+     PayPalPayoutProvider, SepaDirectDebitProvider, BankTransferProvider.
+   Toutes sous `app.payments.providers.{mtn,orange,mpesa,stripe,paypal,
+   sepa,bank}.enabled` (défaut false).
+3. Devise : migration V{max+1} + entité. Toute transaction porte
+   désormais (montant_minor BIGINT, devise CHAR(3) ISO-4217, taux_vers_base,
+   montant_base) pour permettre l'audit multi-devises. Remplis les
+   colonnes existantes par le taux 1 pour ne pas casser les données.
+4. Formatage : côté serveur, expose GET /api/v1/platform/currencies
+   (liste ISO-4217 avec symboles et décimales) pour que le frontend
+   utilise Intl.NumberFormat et ne connaisse rien de figé.
+5. Reçus : rends numéro fiscal, mentions légales et devise
+   CONFIGURABLES PAR TENANT (table tenant_settings ou extension de
+   church_settings existante). Pas de valeur globale unique.
+
+PARTIE 2 — Fondations du sharding (M7)
+
+6. Crée une abstraction `TenantDataSource` (interface) qui encapsule
+   l'accès base de données par tenant. Implémentation par défaut :
+   `SingleDatabaseTenantDataSource` qui délègue au DataSource courant —
+   COMPORTEMENT IDENTIQUE à aujourd'hui, zéro régression.
+   La signature doit permettre demain un routage vers un autre cluster
+   (règle : shard = hash(tenantId) % N, N configurable).
+7. Ajoute une migration V{max+1} qui pose les fondements du partitionnement :
+   - sur la table la plus volumineuse (identifie-la par un
+     SELECT reltuples sur pg_class, documente ton choix),
+     CONVERTIR en partitionnement RANGE sur tenant_id
+     (ATTENTION : conversion sur une table vide seulement ; sur une table
+     peuplée, crée la table partitionnée en parallèle et un script de migration
+     documenté dans scripts/ — NE SUPPRIME PAS la table existante).
+   - index composé (tenant_id, <colonne frequently filtrée>) partout où
+     il manque, sur les 10 tables les plus chaudes. Documente chaque
+     choix dans une migration commentée.
+8. Documente la trajectoire complète (Niveau 1 à Niveau 5) dans
+   docs/SCALING.md : architecture cible, ordre de migration, coût
+   estimé par niveau, points de bascule. Sois honnête sur ce qui
+   reste à faire.
+
+PARTIE 3 — Nettoyage de l'hypothèse « Afrique/Français »
+
+9. Grep TODO/FIXME/chaînes codées en dur :
+   grep -rn "XOF\|FCFA\|Afrique\|MTN\|Orange Money\|M-Pesa\|Pays Africa"
+   backend/src/main/java
+   Pour chaque occurrence, évalue : est-ce une valeur par défaut
+   RAISONNABLE (un défaut neutre est acceptable), ou une hypothèse
+   structurante qui casse pour un autre marché ?
+   Ne change QUE ce qui casse réellement. Un défaut « XOF » dans une
+   config est acceptable si la config est modifiable par tenant ; un
+   validateur qui refuse toute devise ≠ XOF est un bug à corriger.
+10. Les termes religieux (« âme », « disciple », « pasteur ») doivent
+    être surchargeables par tenant via le dictionnaire existant
+    (PlatformDictionaryService). Vérifie que ce chemin existe et
+    complète-le si manquant.
+
+INTERDITS : ne supprime aucun provider de paiement existant, ne migre
+aucune donnée vers un autre schéma, ne renomme aucune table/endpoint
+existant sans fournir un alias de compatibilité.
+
+TESTS :
+- PayoutProviderRegistryTest : chaque provider s'active/désactive par config
+- CurrencyValidationTest : XOF, EUR, USD, KES, BRL, INR acceptés ;
+  montants avec décimales rejetés quand devise 0-décimal (JPY, KRW)
+- ShardingRoutingTest : hash(tenantId) est stable et distribué
+- IsolationBackupCurrencyTest : snapshot d'un tenant illisible depuis un autre
+
+VALIDATION : mvn -q compile && mvn test
+COMMIT : "feat(scale): fondations mondiale — payout providers ISO-4217, devises
+auditables, sharding abstraction, partitionnement (M7 M8 M9)"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+Si une conversion de table partitionnée est risquée à ce stade, NE LA FAIS
+PAS : laisse un script documenté dans scripts/ et explique pourquoi.
+```
+
+---
+
+### ✅ PROMPT A4 — M5, M6, durcissement configuration honnête
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : rendre la configuration HONNÊTE et SÉCURISÉE (M5, M6, durcissement).
+
+1. M5 — STT/Whisper : IMPLEMENTATION_STATUS.md documente
+   `app.speech.api-url/api-key/model` et un provider
+   WhisperSpeechToTextProvider existe déjà, mais application.yml ne
+   contient AUCUNE clé app.speech.*. Résultat : la feature est
+   impossible à configurer sans recompiler. Ajoute le bloc de config
+   avec des défauts sûrs, documente dans application.yml (commentaires)
+   et dans docs/RUNBOOK.md. Ajoute
+   app.speech.timeout-seconds et app.speech.max-file-bytes avec des
+   PLAFORMES DURCIES (ex: 25 Mo max) — un upload non borné est un DoS.
+2. M6 — Ollama : `ollama-url: ${OLLAMA_URL:http://localhost:11434}`.
+   Un défaut localhost en PRODUCTION fait que l'IA tente de joindre
+   localhost:11434 et échoue silencieusement. Change le défaut à vide,
+   et quand vide → le moteur déterministe de fallback s'active et un
+   warning clair est journalisé au démarrage. Ajoute
+   app.ai.timeout-seconds (défaut 30) — un LLM lent ne doit pas
+   bloquer un thread de requête indéfiniment.
+3. Durcissement systemique : grep tous les @Value avec des valeurs par
+   défaut qui sont DANGEREUSES en production (secrets, URLs, timeouts
+   infinis, "permitAll"). Pour chacun :
+   - soit tu le rends fail-closed (défaut sûr),
+   - soit tu documentes pourquoi le défaut est sûr.
+   Ne casse rien : le mode dev doit continuer à marcher.
+4. Ajoute un endpoint GET /api/v1/system/config-summary strictement
+   NON sensible : pour chaque feature flag, {key, enabled, configured}.
+   AUCUN secret, AUCUNE URL interne complète (masque les credentials dans
+   les URLs). Alimente une future page de diagnostic.
+
+TESTS : ConfigSummaryTest (aucun secret dans la réponse — test
+d'assertion explicite qu'aucune valeur de env.Privée/SECRET/PASSWORD/
+KEY/TOKEN n'apparaît), SpeechConfigTest, AiFallbackTest.
+
+VALIDATION : mvn -q compile && mvn test
+COMMIT : "config: durcissement systemique, defauts fail-closed, config-summary
+non sensible (ferme M5 M6)"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT A5 — CI/CD : tests E2E, charge, sécurité bloquants
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : rendre la CI bloquante sur la qualité (M10, M11, M13).
+
+ÉTAT : .github/workflows/ existe mais n'exécute pas de test E2E navigateur,
+ni test de charge, ni scan de sécurité. performance-tests/ (k6, JMeter)
+existe mais n'est jamais exécuté.
+
+1. Lis tous les fichiers de .github/workflows/ et DUPLIQUE l'existant
+   plutôt que d'en créer un nouveau concurrent.
+2. Workflow CI principal — doit BLOQUER le merge si :
+   - mvn test (backend) échoue
+   - tsc -b OU vitest run (frontend) échoue  [étape à confirmer avec Agent B]
+   - flutter analyze signale une erreur  [Agent B]
+3. Nouveau workflow security.yml (plan gratuit) :
+   - gitleaks (scan de secrets — AUCUN secret ne doit jamais être committé)
+   - dependency review / npm audit backend / flutter pub audit
+   - Bandit ou equivalent pour le code Python des scripts/
+4. Nouveau workflow e2e.yml : Playwright côté web. Attention : tu ne
+   touches PAS au code frontend (propriété Agent B) — tu crées
+   UNIQUEMENT le workflow CI et la configuration dans e2e/ (racine).
+   Lejour où Agent B livre la suite, elle s'exécute automatiquement.
+5. Nouveau workflow perf.yml (déclenché sur main et sur tag, ou en
+   manuel/schedule) : k6 avec le scénario existing performance-tests/k6-load-test.js.
+   Seuils : si P95 > 2000 ms → échec (trace le résultat dans l'artifact).
+6. Étends la couverture d'isolation multi-tenant : lis
+   backend/src/test/java/com/discipolat/security/TenantIsolationIntegrationTest.java
+   et ajoute un test bout-en-bout HTTP qui prouve qu'un utilisateur
+   authentifié du tenant A obtient 403/404 sur les endpoints
+   REST de CHAQUE module du tenant B. Automatise : parcours au moins
+   souls, families, departments, events, reports, payments, users,
+   settings, backups. C'est le test qui protège contre le risque
+   juridique n°1 du produit.
+7. Upload des rapports de tests comme artifacts (crucial pour diagnostiquer).
+
+CONTRAINTE : les workflows doivent tourner sur le plan gratuit GitHub
+(minutes limitées). Mets en cache Maven/NPM/Pub agressivement.
+
+VALIDATION : valide la syntaxe YAML de chaque workflow
+(python -c "import yaml,sys;yaml.safe_load(open(f))" ou équivalent).
+Ne peux pas exécuter la CI localement : assure-toi qu'elle est correcte
+par relecture, et dis-le explicitement dans ton rapport final.
+
+COMMIT : "ci: e2e + charge + securite + isolation multi-tenant bout-en-bout
+bloquantes (ferme M10 M11 M13)"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT A6 — Documentation professionnelle
+
+```
+Tu es l'AGENT A. Contexte : AGENT_ORCHESTRATION.md, worktree agentA (branche feat/platform-monde).
+TÂCHE : documentation API et exploitation. Manque majeur reconnu :
+"Documentation 4/10 — aucune doc utilisateur, README minimal".
+
+1. README.md : réécris-le. Aujourd'hui il fait 21 lignes. Il doit
+   contenir : ce que c'est, les 6 langues, capture d'architecture ASCII,
+   stack technique, prérequis (Java 21, Node 22, Flutter 3.35+, Docker),
+   démarrage local pas-à-pas (docker compose up puis start-local.sh),
+   comptes de démo par RÔLE (ADMIN, PASTEUR, RESPONSABLE, CHEF_DE_FAMILLE,
+   FAISEUR, MEMBRE) — génère la liste RÉELLE depuis start-local.sh et
+   les seeds, ne les invente pas, variables d'environnement requises,
+   section "Architecture mondiale" avec renvoi docs/SCALING.md.
+2. docs/API.md : génère la référence depuis le code (Springdoc est déjà
+   la dépendance : /v3/api-docs). Ne fais pas ça à la main : écris un
+   script scripts/generate-api-docs.sh qui appelle l'endpoint et produit
+   openapi.json + un Markdown lisible, committé. Vérifie le path exact
+   du springdoc dans application.yml d'abord.
+3. docs/DEPLOYMENT.md : déploiement production réel. Reprends les
+   informations déjà présentes dans render.yaml et docker-compose.yml
+   (ils sont la source de vérité, ne les contredis pas). Couvre :
+   variables d'environnement SECRETS (la liste exacte, avec quels sont
+   obligatoires vs optionnels), migrations Flyway en production,
+   sauvegardes, rotation des clés JWT, plan de rollback.
+4. docs/RUNBOOK.md : procédures d'exploitation. Incidents
+   courants ET leur résolution : API 5xx, pool PostgreSQL saturé,
+   Redis indisponible (le rate limiting doit dégrader proprement,
+   pas tout casser — vérifie le comportement de PerIpRateLimiter),
+   migrations échouées, fuite mémoire JVM, certificat expiré.
+   Format : symptôme / diagnostic / résolution, en tableaux.
+5. Mets à jour AGENT_ORCHESTRATION.md section 1.2 pour y inscrire ce
+   qui est désormais livré.
+
+RÈGLE : ne promets dans la doc que ce que le code fait VRAIMENT.
+Vérifie chaque affirmation par grep. Une doc fausse est pire que pas
+de doc.
+
+COMMIT : "docs: README, API, deployment, runbook professionnels et veridiques"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+## 6. PROMPTS — AGENT B (Frontend & Mobile)
+
+> Mêmes règles absolues. Mêmes discipline de build. Mêmes interdits.
+
+---
+
+### ✅ PROMPT B0 — Amorçage et audit de l'i18n
+
+```
+Tu es l'AGENT B du projet Discipolat. Frontend React 19 + Vite + TypeScript
+strict + TailwindCSS ; Mobile Flutter 3 + Riverpod + Drift + GoRouter.
+LIS EN PREMIER : AGENT_ORCHESTRATION.md. Respecte la section 3.
+NE SUPPRIMER RIEN — surtout pas une clé de traduction manquante :
+une clé manquante se COMPLÈTE ou se MAPPE, jamais ne se supprime.
+
+TA MISSION IMMÉDIATE :
+1. git worktree add ..\discipolat_app-agentB -b feat/clients-monde
+2. Lance les builds de référence et RAPPORTE les résultats RÉELS :
+   cd frontend && npm ci && npx tsc -b && npx vitest run 2>&1 | tail -30
+   cd mobile && flutter analyze 2>&1 | tail -20 && flutter test 2>&1 | tail -20
+   Note : l'environnement peut ne pas avoir Flutter/Node. Si un outil
+   manque, DIS-LE clairement et travaille sur ce que tu peux
+   (lecture, analyse statique, tests Vitest uniquement).
+3. Audit i18n — c'est ton chantier prioritaire (M4).
+   ⚠️ **Correction 2026-09-28 :** la v1.0 contenait ici une phrase de brouillon
+   (« scripts/... NON, c'est la zone Agent A : mets le script dans ... »).
+   Un prompt destiné à être **copié-collé tel quel** ne doit pas contenir de
+   raisonnement aborted. Décision arrêtée : le script d'audit va dans
+   **`frontend/scripts/i18n-audit.mjs`** (dans ta zone, `frontend/**`).
+   Ne le mets **jamais** dans `scripts/` (racine) : c'est la zone de l'Agent A.
+   Le script doit, pour les 6 langues :
+   - lister les clés présentes dans fr.ts (référence) et absentes ailleurs
+   - lister les clés présentes ailleurs et absentes de fr.ts
+   - détecter les clés NON TRADUITES, c'est-à-dire dont la valeur
+     est identique à la valeur française pour les langues non-anglaises,
+     OU dont la valeur contient des caractères latins pour ar.ts
+     alors que la clé est censée être traduite
+   - vérifier que les 6 fichiers exportent le même type TypeScript
+     (sinon tsc échoue)
+   Exécute-le et RAPPORTE le chiffre exact par langue.
+4. Rédige le rapport dans AGENT_ORCHESTRATION.md section 1.3 en
+   remplaçant la ligne M4 par les chiffres réels.
+5. Commit : "docs(frontend): audit i18n 6 langues — X cles manquantes,
+   Y non traduites" et push.
+
+NE CORRIGE PAS encore les traductions à cette étape. Mesure d'abord.
+```
+
+---
+
+### ✅ PROMPT B1 — M4 : Qualité i18n (P1)
+
+```
+Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
+TÂCHE : corriger la qualité de l'i18n web et mobile. 6 langues doivent être
+parfaitement cohérentes : FR (référence), EN, PT, ES, SW, AR (+ RTL).
+
+Le rapport de B0 a établi le nombre exact de clés à traiter. TRAITE-LES.
+
+RÈGLES :
+- NE SUPPRIME AUCUNE CLÈDE TRADUCTION.
+- Pour chaque clé manquante dans une langue, AJOUTE la traduction.
+  Si tu n'es pas sûr de la traduction, le comportement par défaut doit
+  être un fallback propre vers le français, et la clé doit rester
+  présente avec la meilleure traduction dont tu es sûr.
+- Vérifie que la gestion RTL est réelle pour ar.ts : dir="rtl" sur <html>,
+  pas de margin-left/margin-right hardcodés dans les composants qui
+  cassent en RTL, icônes directionnelles inversées.
+
+TÂCHES CONCRÈTES :
+1. Complète les clés manquantes dans les 6 fichiers frontend/src/i18n/*.ts
+2. Corrige les valeurs non traduites repérées (notamment les chaînes
+   françaises laissées dans sw.ts et les autres langues)
+3. Même travail sur `mobile/lib/l10n/intl_*.arb` (6 fichiers), puis lancer
+   `flutter gen-l10n` pour régénérer `app_localizations.dart`.
+   ⚠️ **Correction 2026-09-28 — consigne dangereusement fausse.** La v1.0 disait
+   « sinon édite le `app_localizations.dart` généré **À LA MAIN** ».
+   C'est un fichier **généré** (9 846 lignes) : toute édition manuelle est
+   **écrasée au prochain `flutter gen-l10n` ou `flutter build`**, donc perdue
+   silencieusement. Si `flutter gen-l10n` est indisponible, **ne contourne pas** :
+   corrige les `.arb` (la vraie source), laisse le fichier généré tel quel, et
+   signale-le explicitement dans ton rapport comme limite connue.
+4. Ajoute un contrôle CI-friendly : le script i18n-audit.mjs doit
+   exposer un exit code non-zéro si le nombre de clés manquantes
+   régresse (échec si > 0). Il doit pouvoir être appelé par l'Agent A
+   dans la CI.
+5. Ajoute un test Vitest de non-régression i18n.
+   ⚠️ **Correction 2026-09-28 — la v1.0 demandait un test « qui échoue si les 6
+   langues n'ont pas le même ensemble de clés ». Ce test échouerait dès le
+   premier run** : les 6 dictionnaires diffèrent déjà (mesuré : `fr` 2571 clés ;
+   `en` −1/+13 ; `pt` +58 ; `es` +142 ; `sw` +142 ; `ar` +186). Un test rouge
+   dès le premier commit n'est pas une garantie permanente, c'est du bruit : il
+   sera « corrigé » en étant désactivé, et le vrai problème restera invisible.
+   **Critère retenu :** le test échoue si le **delta** entre locales **augmente**
+   par rapport à la référence relevée en B0 — pas si l'égalité est atteinte.
+   Versionne ces deltas de référence dans un fixture. L'égalité parfaite est
+   l'objectif **final** du chantier i18n, pas un critère de fin de tâche.
+6. Interface : vérifie et corrige les libellés user-facing hardcodés en
+   français dans les pages/éléments qui ne passent PAS par i18n.
+   grep les chaînes françaises en dur dans frontend/src/pages et
+   frontend/src/components, et migre-les vers i18n.
+
+VALIDATION :
+  cd frontend && npx tsc -b && npx vitest run
+  Les tests existants ne doivent pas échouer. Si un test attend une
+  chaîne française et que tu la traduis, le test doit être adapté
+  (c'est legitimate : le comportement attendu change).
+
+COMMIT : "feat(i18n): 6 langues coherentes, 0 cle manquante, test de non-regression
+i18n, RTL corrige (ferme M4)"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT B2 — PWA offline réelle + notifications (P0)
+
+```
+Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
+TÂCHE : rendre la PWA réellement utilisable offline et brancher l'état du push.
+
+ÉTAT ACTUEL : frontend/public/manifest.json et frontend/public/sw.js
+existent mais le service worker est basique. Le backend a PushTokenController
+(Agent A ajoute l'envoi FCM). Sans travail frontend, l'utilisateur ne
+   recevra rien et ne pourra pas fonctionner offline.
+
+PARTIE 1 — Service worker professionnel
+1. Lis frontend/public/sw.js en entier. Réécris-le proprement SANS
+   supprimer les fonctionnalités existantes :
+   - stratégie de cache explicite par type de ressource :
+     * navigation (HTML) : network-first avec fallback offline page
+     * assets buildés (hachés dans filename) : cache-first, immuables
+     * API GET : stale-while-revalidate, AVEC QUOTA STRICTE (ne jamais
+       mettre en cache une réponse tenant-sensible sans le dire)
+   - invalidation propre à chaque nouveau déploiement (version de cache
+     = hash du build, purge des anciens)
+   - stratégie de mise à jour : le nouveau SW attend, l'UI propose
+     "Mise à jour disponible → Recharger" (pas de reload forcé en
+     plein milieu d'une saisie)
+2. Ajoute une page offline.html soignée (dans le ton visuel de l'app,
+   pas une page HTML brute) : explication honnête, bouton "Réessayer",
+   et liste des pages accessibles hors ligne.
+3. Enregistre le SW dans l'app React avec une stratégie propre
+   (composant hook dédié) : seulement en production, seulement une fois,
+   avec gestion de l'échec d'enregistrement (silencieux mais journalisé).
+4. Affiche un indicateur Offline/Online cohérent (le mobile a déjà
+   OfflineBanner — inspires-en, ne le duplique pas).
+5. Sécurité : le SW ne doit JAMAIS mettre en cache les réponses API
+   contenant des données d'un autre tenant. Comme l'API est par JWT et
+   non par cookie, le cache navigateur est cloisonné par navigateur :
+   documente ce point honnêtement dans un commentaire et limite le cache
+   API aux endpoints explicitement listés comme non-sensibles
+   (ex: config plateforme publique, plans tarifaires). Tout le reste
+   → réseau seul.
+
+PARTIE 2 — Push
+6. Vérifie si le web reçoit déjà des notifications push. Si non, il
+   faut : permission demandée au bon moment (pas à l'installation),
+   service worker capable de recevoir push et d'afficher une notification.
+   Branche sur GET /api/v1/notifications/push-status (Agent A) pour
+   afficher un état honnête : si le push n'est pas configuré côté
+   serveur, l'UI doit le dire clairement plutôt que d'échouer
+   silencieusement. (Cohérent avec la philosophie existante 503 honnête.)
+7. Enregistre le token : POST /api/v1/notifications/register-token
+   (route déjà présente côté backend) et deregister à la déconnexion.
+   Gère le cas "permission refusée" sans casser l'app.
+
+PARTIE 3 — Bottom navigation mobile
+8. L'audit signale que la navigation basse mobile manque. Ajoute-la
+   dans mobile/ : 4-5 destinations les plus utilisées par rôle,
+   cohérentes avec les rôles existants (MEMBRE n'a pas accès dashboard
+   pasteur, etc.). Badge de notification non lus. État actif clair.
+   Les 159 routes GoRouter existent déjà : ne les modifie pas, branche-toi dessus.
+
+TESTS (Vitest) :
+- sw.js : test du comportement de cache sur asset vs API
+- PushPermissionTest : permission demandée au bon moment, refus géré
+- OfflineBannerTest : visible offline, caché online
+- BottomNavTest (Flutter) : destinations correctes par rôle
+CRITIQUE : n'écris aucun test qui dépende d'un vrai service worker dans
+jsdom (utilise des mocks).
+
+VALIDATION : cd frontend && npx tsc -b && npx vitest run && npx vite build
+COMMIT : "feat(pwa): service worker prod (strategies de cache, offline page,
+update strategy) + push web branche + bottom nav mobile"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT B3 — Performance web (P0)
+
+```
+Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
+TÂCHE : performance de l'application web. Objectif : P95 < 200 ms API,
+web < 2 s de chargement perçu. L'audit signale un chunk Recharts
+~443 KB et des dashboards lourds.
+
+1. MESURE D'ABORD. Lance un build et relève la taille réelle des chunks :
+   cd frontend && npx vite build 2>&1 | tail -40
+   Note chaque chunk > 150 KB. Ne devine pas.
+
+2. Découpe Recharts : chaque page qui l'utilise doit l'importer
+   DYNAMIQUEMENT, ou mieux, remplacer les graphiques lourds par du SVG
+   maison léger pour les cas simples (sparkline, jauge, mini barre).
+   Un mini-graphique ne doit pas coûter 400 KB.
+   Ne supprime pas Recharts : il reste utile pour les vrais graphiques.
+
+3. Leaflet : charge uniquement sur les pages carte (lazy), et ne charge
+   pas les tuiles tant que la carte n'est pas visible.
+
+4. TanStack Query : audit des requêtes. Corrige :
+   - clés de cache qui ne sont PAS tenant-aware → BUG DE FUITE DE DONNÉES.
+     Cherche les queryKey qui n'incluent pas l'identifiant du tenant.
+     C'est le point le plus grave de cette tâche.
+   - refetchOnWindowFocus trop agressif (multiplie la charge serveur)
+   - pagination : toutes les listes doivent être paginées côté serveur,
+     jamais de fetch de liste complète.
+   - déduplication et staleTime adaptés par type de donnée.
+
+5. Images : loading="lazy" + dimensions réservées (évite le CLS).
+
+6. Accessibilité perçue : squelettes de chargement (shimmer) sur les
+   pages longues, états vides explicites et actionnables.
+   Vérifie qu'il existe un composant EmptyState réutilisable (il en
+   existe un dans components/ui) — UTILISE-LE partout où il manque,
+   ne le duplique pas.
+
+7. Confirmation avant action destructive : vérifie qu'un ConfirmDialog
+   existe (il existe dans components/ui) et qu'il est utilisé sur toutes
+   les suppressions. grep les handlers de suppression et vérifie.
+
+TESTS : ne casse aucun test existant. Ajoute un test si tu introduces
+un composant.
+
+VALIDATION : npx tsc -b && npx vitest run && npx vite build
+RAPPORTE le gain de taille obtenu (avant/après) dans le message de commit.
+COMMIT : "perf(web): chunks decoupes, Recharts allonge, query keys tenant-aware,
+pagination serveur, CLS et skeletons"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT B4 — Mobile : dette et robustesse (P1)
+
+```
+Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
+TÂCHE : mobile Flutter — dette de maintenabilité et robustesse.
+**Traite le constat M12** (et affine M13 côté mobile).
+
+CONTEXTE : 386 fichiers .dart, 135 399 lignes, 157 écrans, 159 routes
+GoRouter, 85 fichiers de test. L'IMPLEMENTATION_STATUS.md signale
+6 tests network_screen_test en échec (timeout pumpAndSettle) et
+4 écrans > 1000 lignes.
+
+0. MESURE D'ABORD (M12) : liste les écrans > 1000 lignes et dis
+   précisément lesquels. Un chiffre inventé fait perdre du temps.
+
+1. RÉPARE D'ABORD LES TESTS EN ÉCHEC. Les 6 tests
+   mobile/test/network_screen_test.dart échouent sur un timeout
+   pumpAndSettle. C'est un bug RÉEL de la suite de tests, pas de la
+   production. Diagnostique : pumpAndSettle ne termine pas quand il y a
+   une animation/processus continu (progress indicator, stream, etc.).
+   Utilise pump() avec des durées explicites là où pumpAndSettle ne
+   converge pas. Si le widget a une boucle infinie légitime (loading
+   en rotation), mock-la dans le test.
+   OBJECTIF : mobile/test en 100 % vert. Ne désactive JAMAIS un test
+   avec un @Skip ou en commentant des assertions.
+
+2. Refactorise les écrans > 1000 lignes : extrais les widgets, les
+   modèles de vue et les helpers dans des fichiers dédiés sous
+   lib/presentation/. REFACTORISATION PURE : comportement identique,
+   tests existants toujours verts. Va-y écran par écran, un commit
+   par écran, jamais un commit qui casse.
+
+3. Offline-first : vérifie que les parcours CRITIQUES fonctionnent
+   hors ligne (consulter mon profil, voir mes âmes assignées, saisir
+   un rapport de visite, prier). Le module offline_sync_manager existe.
+   Corrige ce qui casse. Un rapport de visite saisi hors ligne et
+   perdu est une perte de données inacceptable.
+
+4. Sécurité mobile : vérifie FLAG_SECURE (Android), secure storage,
+   pas de token en clair dans SharedPreferences. Ajoute une détection
+   de root/jailbreak si absente (avec un comportement dégradé honnête,
+   pas un blocage qui empêcherait l'usage légitime).
+
+5. Accessibilité : contraste, cibles tactiles >= 48dp, libellés
+   accessibles sur les icônes, navigation clavier/screen-reader.
+   Ajoute Semantics() là où il manque sur les actions critiques.
+
+6. Offline banner, empty states, error states : cohérents avec le web.
+
+TESTS : tout doit rester vert. Ajoute des tests pour chaque
+comportement corrigé.
+
+VALIDATION : cd mobile && flutter analyze && flutter test
+Si Flutter n'est pas installé sur ta machine, DIS-LE et fais au minimum
+la revue statique + les tests Vitest/web. Ne prétends jamais avoir
+exécuté une commande que tu n'as pas exécutée.
+
+COMMIT : "fix(mobile): 6 tests network verts, refactoring ecran X, offline-first
+critique, accessibilite"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+### ✅ PROMPT B5 — Documentation utilisateur (P0 commercial)
+
+```
+Tu es l'AGENT B. Contexte : AGENT_ORCHESTRATION.md, worktree agentB (branche feat/clients-monde).
+TÂCHE : documentation utilisateur. L'audit donne "Documentation 4/10 —
+aucune doc utilisateur". C'est un BLOCKER COMMERCIAL : une église ne sait
+pas utiliser l'app → elle ne paie pas.
+
+1. Crée docs/UTILISATEUR/ avec un guide par RÔLE (il y en a 6 :
+   ADMIN, PASTEUR, RESPONSABLE, CHEF_DE_FAMILLE, FAISEUR, MEMBRE).
+   Pour chaque rôle, en français ET en anglais :
+   - Ce que ce rôle peut faire / ne peut pas faire (tableau clair)
+   - Ses 5 premiers gestes concrets, étape par étape
+   - Les 3 erreurs les plus fréquentes et leur solution
+   - Les raccourcis qui font gagner du temps
+   VERIFIE chaque affirmation contre le code (lis workspaces.ts pour
+   la navigation réelle de chaque rôle, et les @PreAuthorize côté backend
+   si tu as besoin). Ne documente pas une fonctionnalité qui n'existe pas.
+
+2. Guide de démarrage pour UNE ÉGLISE (5 minutes) : de l'inscription
+   au premier rapport submitted. Numéroté, avec captures référencées par
+   emplacement (mets des placeholders clairement nommés si tu ne peux pas
+   produire les captures — ne fabrique pas de fausses captures).
+
+3. Guide ADMINISTRATEUR PLATEFORME : provisionner un tenant, gérer les
+   plans, les quotas, les feature flags (tout existe déjà dans
+   modules/platform et modules/tenants).
+
+4. FAQ (20 questions) : les questions qu'un pasteur poserait réellement.
+   ("Comment rattraper un membre absent depuis 6 mois ?",
+   "Comment fonctionne la note d'un disciple ?",
+   "Puis-je annuler un don ?", "CommentImporter mon Excel ?"...)
+
+5. Dans l'APPLICATION elle-même : ajoute un lien "Aide" vers la doc dans
+   le menu utilisateur, et des tooltips contextuels sur les 15 actions
+   les moins intuitives (créer un rapport, lancer un scan QR, faire un
+   don, etc.). Un tooltip = 1 phrase, pas un roman.
+
+6. Les docs doivent être navigables depuis docs/ avec un index
+   (README.md dans docs/UTILISATEUR/).
+
+VALIDATION : npx tsc -b && npx vitest run
+COMMIT : "docs(user): guides par role x6 bilingue, demarrage 5 min, FAQ 20,
+tooltips in-app"
+**NE PAS POUSSER** (règle 3, corrigée le 2026-09-28 : le push est décidé par l'orchestrateur humain). Commit local uniquement.
+```
+
+---
+
+## 7. SÉQUENCE RECOMMANDÉE
+
+```
+Jour 1    A0 + B0          (état réel, mesures)        — parallèle
+Jour 2-3  A1 + B1          (FCM push + i18n qualité)   — parallèle, sans conflit
+Jour 4-5  A2 + B2          (Backup Java + PWA/push)    — parallèle, sans conflit
+Jour 6-8  A3               (monde + échelle)           — seul (structurant)
+Jour 6-8  B3               (perf web)                   — parallèle de A3
+Jour 9-10 A4 + B4          (durcissement + mobile)      — parallèle
+Jour 11   A5 + B5          (CI bloquante + doc)         — parallèle
+Jour 12+  Merge main, revue croisée, tag bêta
+```
+
+**Contrainte de fusion :** `main` n'est fusionné que si la CI est verte
+ET qu'un agent a relu le travail de l'autre. Ne jamais fusionner deux
+branches qui modifient les mêmes fichiers.
+
+---
+
+## 8. MODÈLE DE RAPPORT (à remplir en fin de tâche)
+
+Chaque agent termine sa tâche par un rapport dans ce format :
+
+```
+## RAPPORT — <TÂCHE> — <DATE>
+
+### Fait
+- <livrable concret avec chemin de fichier>
+
+### VÉRIFIÉ (avec preuve)
+- <commande exécutée> → <résultat réel, chiffres>
+
+### NON FAIT / REFUSÉ
+- <ce qui n'a pas été fait, et pourquoi>
+
+### RISQUES INTRODUITS
+- <ou AUCUN>
+
+### PROCHAINE ÉTAPE
+- <tâche suivante>
+```
+
+## 9. RÈGLE DE SUPPRESSION
+
+Si une tâche exige absolument de supprimer du code existant :
+1. **NE SUPPRIME PAS.**
+2. Écris dans ce fichier une section `## 🔴 DEMANDE DE SUPPRESSION` avec :
+   - le fichier et les lignes concernées
+   - la preuve que c'est un problème (erreurs, failles, duplications)
+   - ce qui se passe SI on ne supprime pas
+   - ce qui se passe SI on supprime (conséquences précis)
+   - une proposition alternative non destructive si elle existe
+3. Passe à la tâche suivante en attendant la décision.
+
+---
+
+---
+
+## 10. JOURNAL DE RÉVISION (2026-09-28 — Agent B, sur instruction de l'orchestrateur)
+
+> Révision faite **en vérifiant le code réel** (backend, frontend, mobile lus directement), pas en relisant le document. Chaque correction est prouvée. `git diff` sur ce seul fichier donne le détail.
+
+| # | Défaut dans la v1.0 | Preuve (2026-09-28) | Correction |
+|---|---|---|---|
+| 1 | « 13 tâches `A1..A13` / `B1..B13` » | Le plan onboarding compte `A1..A16` + `B1..B13` | **32 tâches**, listes exactes |
+| 2 | « mêmes branches (`fix/onboarding-tenant-*`) » alors que §4.2 prescrit `feat/*` | Deux noms pour la même branche → fusion sur une branche inexistante | Règle d'arbitrage : le plan le plus récent fait foi ; `feat/*` réservé à la campagne suivante |
+| 3 | « mêmes worktrees » | `discipolat_app-agentB` **n'existe pas** | État réel documenté |
+| 4 | `docs/**` attribué à l'Agent B (§4.1) **et** à l'Agent A (plan §2) | Double propriétaire sur le même dossier | Règle de priorité explicite (§0 + §4.1) |
+| 5 | `infra/**` donné en bloc à l'Agent A | Le plan donne `infra/well-known/**` à l'Agent B | Exception `infra/well-known/**` added dans les deux documents |
+| 6 | Règle 3 : « Commit + **push** après chaque tâche » | Contredit `R1` du plan (« push interdit ») et sa checklist (« aucun push ») | Règle reformulée : commit local obligatoire, **push décidé par l'humain**. Les 11 prompts `PUSH :` réécrits |
+| 7 | « Onboarding wizard **5** étapes » | `StepType` = 7 valeurs, `DEFAULT_STEPS` = 7 | Corrigé à **7** |
+| 8 | M4 : preuve `sw.ts` contient `'Aucun passeport émis'` | Cette valeur **est** traduite (`Hakuna passeport émis`) : la preuve est un **faux positif** | Constat reformulé + **chiffres réels** (728 valeurs identiques au FR en `sw`, 721 en `ar`) |
+| 9 | M8 : preuve « `grep stripe/paypal` → 0 » | **Faux** : `SaasPlan`/`TenantSubscription` ont `stripe_price_id_*` | Constat conservé (vrai), **preuve** corrigée : c'est l'intégration qui manque, pas le mot |
+| 10 | M9 : « réglages non abstraits » | L'abstraction **existe** : `MobileMoneyProvider` + `MobileMoneyProviderRegistry` | Constat reformulé : non-universel, pas non-abstrait |
+| 11 | M10 : « seulement `puppeteer-core` dans `scripts/` » | `puppeteer-core` est dans **`frontend/package.json`** (devDependency) | Preuve corrigée |
+| 12 | M6 : `application.yml:190` | La ligne est **178** | Corrigé |
+| 13 | M12 : « écrans > 1000 lignes », preuve = un `.md` | Mesuré : **5** fichiers, **générés exclus** (`app_localizations.dart` = 9 846 lignes n'est pas de la dette) | Preuve mesurée et honnête |
+| 14 | A2 : « ajoute le suivant, **ex V179** » | Dernière migration = **V177** → il faut créer **V178** | Corrigé |
+| 15 | B0 : phrase de brouillon dans un prompt « à copier tel quel » | « scripts/... NON, c'est la zone Agent A » | Reformulé en décision ferme (`frontend/scripts/i18n-audit.mjs`) |
+| 16 | B1 : « édite `app_localizations.dart` **À LA MAIN** » | Fichier **généré** : toute édition est écrasée au prochain `gen-l10n` | Consigne dangerously fausse → `.arb` seuls, limite signalée |
+| 17 | B1 : test « échoue si les 6 langues n'ont pas les mêmes clés » | Échouerait **dès le premier run** (deltas déjà non nuls) → serait désactivé | Test de **non-régression du delta** contre référence versionnée |
+| 18 | §1.1 métriques « mesurées, pas estimées » : 1 266 `.java`, 146 migrations, « ~273 » tests | 1 264 / 145 / 272 (dont un « +4 » inexpliqué) | Chiffres revérifiés et écarts signalés |
+
+**Constat de fond, à retenir :** la v1.0 de ce fichier était davantage une **intention** qu'un **état mesuré**. Plusieurs « preuves » ne tenaient pas à la vérification — y compris une fausse preuve (M4) qui aurait envoyé un agent chercher un problème inexistant, et une fausse consigne (édition manuelle d'un fichier généré) qui aurait produit du travail perdu. C'est précisément ce que la règle « NE PAS SE FIER AUX ANCIENS RAPPORTS » du §1.1 exige : elle s'applique **aussi à ce fichier**.
+
+*Dernière mise à jour : 2026-09-28 par l'Agent B (révision vérifiée). Révision précédente : 2026-09-27 par l'agent orchestrateur.*

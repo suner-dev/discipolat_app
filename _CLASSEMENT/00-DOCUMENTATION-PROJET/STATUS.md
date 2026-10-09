@@ -3,53 +3,6 @@
 Ce document est un constat, pas une promesse. Chaque ligne est vérifiable dans
 le dépôt ou par les commandes citées.
 
-## Cycle — « église d'abord » : picker, landing par église, retour partout (V241, 09/10/2026)
-
-> `TODO_EGLISE_DABORD_MARQUE_RETOUR.md` — plan d'**ajouts sans rupture** (règles A1→A8,
-> décisions D1→D6, matrice de risques R1→R9). Journal détaillé en §8 du plan.
-
-**RAG : 🟢 DONE** — web **et** mobile **et** backend, testé et vérifié, **strictement additif**
-(A1 : rien de retiré ; tout ce qui fonctionnait hier fonctionne identiquement, y compris par lien profond).
-
-**Ce qui est livré**
-- **PROBLÈME 1 — choisir son église.** Picker `<ChurchPicker/>` (web) + `church_picker.dart` (mobile),
-  5 états, debounce 300 ms, a11y combobox ; branché **conditionnellement** sur `/register` et
-  **facultatif** sur `/login` (D5). Il **émet les paramètres d'URL déjà là** (`?church=`, `?joinCode=`,
-  `?mode=church`) — le payload `/auth/register` et le contrôleur **ne bougent pas** (A3/D1). Deux
-  endpoints **nouveaux** rate-limités : `/public/churches/suggest`, `/public/churches/exists` ;
-  `/exists` répond **identiquement** pour « fantôme » et « non listée » (anti-énumération, R3).
-- **PROBLÈME 2 — landing par église.** Route publique `/e/:slug` (web lazy + écran Dart), projection
-  **liste blanche stricte** de `TenantSettings`, **double opt-in** (`isListed` **et** `landing_enabled`,
-  défaut `false` — A2/A7 dark launch), `noindex`+`og:*`, marque via `applyScopedBranding` **à côté**
-  d'un `applyBranding` intact (A6/R4). Onglet admin « Page publique » (6ᵉ additif). Migration
-  **`V241`** à la suite de la chaîne, colonnes nullables + défaut (A5/R8).
-- **PROBLÈME 3 — retour partout.** Web : `<BackButton detectHistory>` inséré dans `AuthLayout`
-  (zone qui n'en avait **aucun**) + `PublicBreadcrumbs` sur la vitrine ; les 41 contrôles locaux et
-  le `MainLayout` **intacts** (R5), doublons seulement **journalisés** (A1). Mobile : la cause est
-  l'**absence de pile** (`go()` écrase tout) — inventaire complet des **143** `context.go(` classés
-  (`.e2e-tmp/t40_go_calls.txt`), puis conversions `go`→`push` **écran par écran** avec widget test
-  de `canPop` (D6/R6). `DetailBackButton` comme filet ; le geste matériel Android repose sur GoRouter
-  (`canPop`), **aucun** `PopScope` ajouté (l'audit en supposait un : **faux**, 0 occurrence).
-
-**Contrat gelé (§6), respecté :** 3 endpoints publics ajoutés **à côté**, 1 route web `/e/:slug`,
-2 colonnes nullables. **Aucune route existante modifiée, aucun champ requis nouveau, aucun index
-supprimé.**
-
-**Preuves par commande (rejouées 09/10, arbre intégré)**
-| Vérification | Résultat |
-|---|---|
-| `mvn -o test -Dtest=PublicChurchesSuggestExistsTest,PublicChurchesLandingTest` | **10/10 + 5/5, exit 0** (module test entier compile) |
-| `npx tsc -b` | **exit 0** |
-| `npx vitest run` (suite complète) | **862/862**, 106 fichiers, exit 0 |
-| `flutter analyze` (mobile) | **0** nouveau problème |
-| `flutter test` (suite complète) | **652/652**, exit 0 (648 après T2.6 + 4 tests de pile T4.1/T4.2) |
-| contrat web↔mobile↔serveur | `churchesSuggestExistsContract` **12/12** |
-
-**Résidu assumé** : les **37** autres occurrences `SOUS_ECRAN` (liste→enfant) ne sont **pas**
-converties — D6/R6/Annexe C #7 imposent **un commit + un widget test par écran**, jamais une
-conversion en rafale. Ce sont des livrables de suivi, pas des manques du lot. Le gate Flyway
-`V241` sur PostgreSQL réel (hors H2 `create-drop`) est à rejouer à la recette.
-
 ## Cycle — Hiérarchie & encadrement personnel des membres (V231, 06/10/2026)
 
 > `docs/PLAN_HIERARCHIE_RELATIONS_MEMBRES.md` — rapport exhaustif et preuves.
