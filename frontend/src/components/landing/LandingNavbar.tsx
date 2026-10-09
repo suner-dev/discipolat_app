@@ -5,6 +5,7 @@ import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import BrandLink from '@/components/shared/BrandLink';
 
 const NAV_ITEMS: { key: string; id: string }[] = [
   { key: 'landing.nav.product', id: 'problem' },
@@ -52,7 +53,13 @@ export default function LandingNavbar({ onNavigate, onDemo }: LandingNavbarProps
 
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Principal">
         <div className="flex items-center justify-between h-16 sm:h-[72px]">
-          <button onClick={() => go('hero')} className="flex items-center gap-2.5 group" aria-label="Discipolat">
+          {/* LOT 2 §BR — la marque mène au landing depuis n'importe quelle page ;
+              sur le landing déjà chargé, on garde l'ancre héro d'aujourd'hui. */}
+          <BrandLink
+            className="flex items-center gap-2.5 group"
+            ariaLabel={t('nav.backHome')}
+            onSameRoute={() => go('hero')}
+          >
             <span className="relative">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md shadow-primary-500/30 transition-transform duration-300 group-hover:scale-105">
                 {branding.logoUrl ? <img src={branding.logoUrl} alt="" className="w-6 h-6 object-contain" /> : <Church className="w-5 h-5 text-white" />}
@@ -60,7 +67,7 @@ export default function LandingNavbar({ onNavigate, onDemo }: LandingNavbarProps
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gold-400 animate-ping" />
             </span>
             <span className="text-base sm:text-lg font-bold font-display text-gray-900 dark:text-white">{branding.platformName || 'Discipolat'}</span>
-          </button>
+          </BrandLink>
 
           <div className="hidden lg:flex items-center gap-1">
             {NAV_ITEMS.map((item) => (

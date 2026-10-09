@@ -7,6 +7,7 @@ import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ROLE_META, PLATFORM_META } from '@/workspaces';
 import { useSettings } from '@/contexts/SettingsContext';
+import BrandLink from '@/components/shared/BrandLink';
 import { useI18n } from '@/i18n';
 import { navKeyMap } from '@/i18n/navKeys';
 import type { NavEntry } from '@/navigation/grouping';
@@ -151,11 +152,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         ${collapsed ? 'lg:w-20' : 'lg:w-64'}
       `}>
         <div className="flex flex-col flex-1 min-h-0 glass-strong border-r border-white/20 dark:border-white/[0.06]">
-          {/* Logo */}
+          {/* Logo — LOT 2 §BR : la marque est un lien vers le landing (avant :
+              une <div> sans lien). Mêmes classes, même rendu. */}
           <div className={`flex items-center flex-shrink-0 border-b border-white/20 dark:border-white/[0.06]
             ${collapsed ? 'justify-center h-16 px-2' : 'h-16 px-5'}
           `}>
-            <div className="flex items-center gap-3">
+            <BrandLink className="flex items-center gap-3" ariaLabel={t('nav.backHome')}>
               <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
                 {branding.logoUrl ? (
                   <img src={branding.logoUrl} alt="" className="w-5 h-5 object-contain drop-shadow-sm" />
@@ -174,7 +176,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   </span>
                 </div>
               )}
-            </div>
+            </BrandLink>
           </div>
 
           {/* Collapse toggle */}
@@ -271,7 +273,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         }`}>
           {/* Mobile header */}
           <div className="flex items-center justify-between h-16 px-5 border-b border-white/20 dark:border-white/[0.06]">
-            <div className="flex items-center gap-3">
+            <BrandLink className="flex items-center gap-3" ariaLabel={t('nav.backHome')}>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
                 {branding.logoUrl ? (
                   <img src={branding.logoUrl} alt="" className="w-5 h-5 object-contain" />
@@ -282,7 +284,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <span className="text-base font-bold text-gray-900 dark:text-gray-100 font-display">
                 {branding.platformName}
               </span>
-            </div>
+            </BrandLink>
             <button
               onClick={onClose}
               className="p-2 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/50 transition-colors"

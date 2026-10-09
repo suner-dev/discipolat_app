@@ -211,6 +211,32 @@ describe('Sidebar - Multi-Role Navigation', () => {
     expectTextPresent('PP');
   });
 
+  it('la marque est un lien vers le landing (LOT 2 §BR, T2.1)', () => {
+    // Avant T2.1, le bloc marque etait une <div> : rien n'etait cliquable.
+    (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
+      isAuthenticated: true,
+      user: {
+        id: '1',
+        email: 'pasteur@test.com',
+        role: 'PASTEUR',
+        roles: ['PASTEUR'],
+        activeRole: 'PASTEUR',
+        firstName: 'Pierre',
+        lastName: 'Pasteur',
+        estChefDeFamille: false,
+      },
+      isLoading: false,
+    });
+
+    renderSidebar();
+
+    // Desktop ET mobile rendent chacun leur bloc marque : les deux doivent
+    // être de vrais liens vers la page d'accueil.
+    const links = screen.getAllByRole('link', { name: "Retour à l'accueil" });
+    expect(links.length).toBeGreaterThanOrEqual(2);
+    for (const link of links) expect(link).toHaveAttribute('href', '/');
+  });
+
   it('MEMBRE nav keys are unique (anti-regression QA-001: duplicate href keys)', async () => {
     // La section MEMBRE contenait 2 items pointant vers le même href
     // ('Mes présences' + 'Ma progression' → '/dashboard/membre'), ce qui

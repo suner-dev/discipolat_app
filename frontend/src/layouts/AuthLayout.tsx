@@ -2,11 +2,14 @@ import { Outlet } from 'react-router-dom';
 import { Church, Sparkles, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useI18n } from '@/i18n';
 import BackButton from '@/components/navigation/BackButton';
+import BrandLink from '@/components/shared/BrandLink';
 
 export default function AuthLayout() {
   const { darkMode, toggleTheme } = useTheme();
   const { branding } = useSettings();
+  const { t } = useI18n();
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-100 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-500">
@@ -60,9 +63,9 @@ export default function AuthLayout() {
 
       {/* Main content */}
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-8">
-        {/* Logo section */}
+        {/* Logo section — LOT 2 §BR : la marque est un lien vers le landing */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="relative inline-flex mb-5">
+          <BrandLink className="relative inline-flex mb-5" ariaLabel={t('nav.backHome')}>
             {/* Glow behind logo */}
             <div className="absolute -inset-4 bg-gradient-to-br from-primary-500/20 to-gold-500/20 rounded-3xl blur-xl animate-pulse-soft" />
 
@@ -82,7 +85,7 @@ export default function AuthLayout() {
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-gold-400" />
               </span>
             </div>
-          </div>
+          </BrandLink>
 
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white font-display tracking-tight transition-colors">
             {branding.platformName}
