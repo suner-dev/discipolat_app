@@ -33,6 +33,9 @@ parce qu'il est « mieux que GitHub ».
 | `e2e:playwright`, `performance:k6` | ✅ présents, **`when: manual`** ; Playwright **s'auto-saute** tant qu'aucune spec n'existe (un job qui rougit sans cause = un rouge qu'on apprend à ignorer) | lecture du fichier |
 | **Le pipeline n'a JAMAIS tourné sur GitLab** | ❌ | aucun projet, aucun runner, aucun jeton sur ce poste (`env`, `~/.netrc`, `git remote -v` → uniquement l'origin GitHub) |
 | Le premier push GitLab | ❌ **action humaine** | `scripts/gitlab-mirror.sh` refuse de tourner sans `GITLAB_URL` et **ne simule pas** le succès |
+| Création du projet + portes par API | 🛠️ **écrit, prouvé sur mock** | `scripts/gitlab-init-project.sh` : `bash -n`, `dry-run` sans jeton, et `prepare`/`finalize`/`statut` rejoués contre un serveur API factice local — **33 assertions** sur ses journaux, 8 scénarios ; **0 appel réseau** depuis ce poste (aucun jeton) |
+| Deux défauts du script, **trouvés par le rejouage et corrigés** | ✅ **corrigés + redémontrés** | (1) `POST /projects` sans `namespace_id` : la documentation d'API dit « defaults to the current user's personal namespace » → le projet aurait été créé chez le **porteur du jeton**, alors que `gitlab-mirror.sh push` vise `GITLAB_NAMESPACE` : le push tombait sur un chemin inexistant. (2) `finalize` sur projet **vide** (`default_branch = null`) : les deux appels suivants étaient condamnés et le script les envoyait quand même. Le mock **rejette** une création dont `namespace_id` n'est pas le numéro attendu (la régression serait donc visible), et le script **refuse** le `finalize` sur dépôt vide sans rien écrire |
+| Modèles de MR/issue (`.gitlab/`) | ✅ **versionnés dans le dépôt** | `.gitlab/merge_request_templates/Default.md`, `.gitlab/issue_templates/{Default,Proposer-une-decision}.md` ; palier **gratuit** vérifié dans la documentation GitLab (« Tier: Free ») |
 | `deployment/infra/` (K8s/ArgoCD/Vault/Helm, ~420 l. de pipeline + charts) | 🚫 **brouillon inerte, documenté comme tel** | `deployment/infra/README.md` : clusters, serveur ArgoCD, `vault.discipolat.internal`, `kustomize/`, `terraform/` — mesurés inexistants/vide |
 
 ## 3. Décision — la pipeline comme **unique définition** de la preuve
@@ -98,17 +101,52 @@ La liste exacte figure dans `GITLAB-BOOTSTRAP.md` §3, avec la colonne « vérif
 ## 6. Ce qui reste à faire, côté humain (impossible sans l'opérateur)
 
 ```bash
-# 1. Créer le projet GitLab, VIDE, visibilité privée (interface ou API)
+# 1. Créer le projet GitLab, VIDE, visibilité privée — par script plutôt qu'en cliquant :
+export GITLAB_TOKEN=<PAT scope « api »> GITLAB_NAMESPACE=<groupe>
+scripts/gitlab-init-project.sh dry-run      # 0 appel réseau : les appels qui seraient faits
+scripts/gitlab-init-project.sh prepare      # POST /projects · variables CI masquées
 # 2. Pousser l'historique complet et vérifier l'égalité des SHA :
 GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
   scripts/gitlab-mirror.sh dry-run          # rien n'écrit
 GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
   scripts/gitlab-mirror.sh push             # puis assert local == remote
-# 3. Recréer les variables CI : RENDER_API_KEY, RENDER_API_SERVICE_ID, PERF_JWT_TOKEN
-#    (masquées) — voir GITLAB-BOOTSTRAP.md §0 ; le script les rappelle lui-même.
-# 4. Settings → Repository → Protected branches = main ; Merge requests → « Pipeline must succeed ».
-# 5. Lire la PREMIÈRE pipeline : c'est elle qui prouve, pas ce document.
+# 3. Poser les portes (branche par défaut, main protégée, pipeline obligatoire) :
+scripts/gitlab-init-project.sh finalize
+#    Les variables CI sont créées par « prepare » si RENDER_API_KEY, RENDER_API_SERVICE_ID et
+#    PERF_JWT_TOKEN sont dans l'environnement ; sinon le script le DIT et ne les invente pas.
+# 4. Règles de MR : les modèles sont versionnés (.gitlab/merge_request_templates/Default.md,
+#    .gitlab/issue_templates/) — palier gratuit. Les approbations par utilisateur et CODEOWNERS
+#    obligatoires sont Premium : non comptés comme porte.
+# 5. LIRE la PREMIÈRE pipeline : c'est elle qui prouve, pas ce document.
+scripts/gitlab-init-project.sh statut
 ```
+
+`scripts/gitlab-init-project.sh` ne **simule aucun appel** : sans jeton il sort en 2, ses quatre modes
+(`prepare`, `finalize`, `statut`, `dry-run`) ont été rejoués contre un **serveur API factice local**
+— **33 assertions**, 8 scénarios (projet à créer · projet existant · dépôt vide · namespace
+inaccessible · sorties sans jeton). Le journal du mock ne stocke que la **présence** du jeton
+(colonne `token_presente`, schéma vérifié : aucun champ jeton), et **0 occurrence** du jeton ni de la
+valeur de variable CI n'apparaît dans la sortie du script (le jeton ne transite pas par les arguments,
+donc pas visible dans `ps`).
+
+**Ce que le rejouage a changé au script** (un test qui ne trouve aucun défaut n'a rien testé) :
+`namespace_id` est désormais **résolu par `GET /namespaces?search=…&full_path_search=true`** et le
+script **sort en 2** si ce namespace n'est pas accessible au jeton, au lieu de créer le projet dans le
+mauvais namespace ; `finalize` **refuse un dépôt vide** (`default_branch = null`) sans aucune écriture,
+alors qu'il partait poser deux appels condamnés ; `topics[]` est envoyé en **tableau** (l'API attend
+un tableau) ; les dépendances `curl`/`jq`/`python3` sont vérifiées **avant** le premier appel (sortie 3).
+
+**Ce qui reste prouvé par le mock et non par gitlab.com** : les noms d'attributs sont relus dans la
+documentation d'API, mais la sémantique réelle (par ex. le refus de protéger une branche inexistante,
+le code HTTP renvoyé par un `POST /projects` dont le groupe est en visibilité restreinte) ne peut être
+observée qu'au premier essai humain.
+
+> **Le harnais factice n'est PAS versionné** (convention du dépôt : aucun artefact de test jetable dans
+> Git). Il est rejouable en décrivant ses deux pièces : un serveur HTTP local qui journalise
+> `{meth, path, query, token_presente, corps}` et refuse un `POST /projects` sans le `namespace_id`
+> attendu, et une batterie de 33 assertions sur ce journal + sur la sortie des quatre modes. Les
+> commandes de §8, elles, ne demandent aucun mock et revérifient l'essentiel (syntaxe, `dry-run`,
+> sorties 2/3, `namespace_id` présent dans le script).
 
 `scripts/gitlab-mirror.sh` ne **simule jamais** un succès : sans `GITLAB_URL` il imprime la
 procédure et sort en 2 ; après push il compare `main` local et `main` distant et **échoue** si ils
@@ -138,6 +176,13 @@ print('tolerants       :', sorted(k for k, v in jobs.items() if v.get('allow_fai
 print('environnements  :', {k: v['environment'] for k, v in jobs.items() if v.get('environment')})
 PY
 grep -n "allow_failure" .gitlab-ci.yml          # quels jobs sont tolérants aujourd'hui, et pourquoi
+ls .gitlab/merge_request_templates .gitlab/issue_templates   # les modèles versionnés (palier gratuit)
+bash -n scripts/gitlab-init-project.sh                       # syntaxe
+scripts/gitlab-init-project.sh dry-run | head -4             # les appels, sans réseau
+grep -n "namespace_id" scripts/gitlab-init-project.sh        # l'attribut qui manque = projet au mauvais endroit
+mkdir -p /tmp/sans-jq && for b in bash curl python3 sed head tr mktemp rm sort; do ln -sf "$(command -v $b)" /tmp/sans-jq/$b; done
+PATH=/tmp/sans-jq bash scripts/gitlab-init-project.sh dry-run   # sort en 3 : « dépendance absente : jq »
+GITLAB_NAMESPACE=groupe scripts/gitlab-init-project.sh prepare   # sort en 2 : pas de jeton, pas de succès simulé
 sed -n '/^## 3/,/^## 4/p' docs/architecture/GITLAB-BOOTSTRAP.md   # tableau job par job, colonne « verifie localement ? »
 GITLAB_URL= scripts/gitlab-mirror.sh dry-run 2>&1 | head -3        # sort en 2, ne simule rien
 ```

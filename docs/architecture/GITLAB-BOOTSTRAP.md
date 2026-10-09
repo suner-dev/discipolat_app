@@ -30,6 +30,14 @@ git log --oneline -5                                                        # HE
 > **Ne jamais** commité de clé privée. Le pipeline **génère** des clés RSA **de test** à chaque job
 > (comme `ci.yml`), ce n'est pas un secret.
 
+**Deux scripts, quatre commandes, zéro clic** (écrits et rejoués localement, voir §1 méthode C) :
+`scripts/gitlab-init-project.sh prepare` → `scripts/gitlab-mirror.sh push` →
+`scripts/gitlab-init-project.sh finalize` → `scripts/gitlab-init-project.sh statut`.
+Le premier résout le namespace et crée le projet **vide** + pose les variables, le deuxième pousse
+l'historique et **compare les SHA**, le troisième protège `main` et exige la pipeline, le quatrième
+**lit** ce que GitLab a réellement exécuté. Aucune de ces commandes ne simule un succès : sans
+`GITLAB_TOKEN` (resp. `GITLAB_URL`) ils impriment la procédure et sortent en 2.
+
 ---
 
 ## 1. Créer le projet GitLab et pousser le monorepo avec l'historique
@@ -47,6 +55,40 @@ git push gitlab main                       # ou: git push gitlab --mirror   pour
 ```text
 # Méthode B — GitLab → New project → Import project → GitHub → sélectionner le repo (import complet)
 ```
+
+```bash
+# Méthode C — RECOMMANDÉE : tout par API, sans ouvrir l'interface (ADR-008 §6)
+export GITLAB_TOKEN=<PAT scope « api », expiration courte> GITLAB_NAMESPACE=<groupe>
+scripts/gitlab-init-project.sh dry-run      # 0 appel réseau : affiche les appels qui seraient faits
+scripts/gitlab-init-project.sh prepare      # GET /namespaces (→ namespace_id) + POST /projects (vide :
+                                            # initialize_with_readme=false) + POST /variables (les 3 présentes)
+GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
+  scripts/gitlab-mirror.sh push             # historique + contrôle d'égalité des SHA
+scripts/gitlab-init-project.sh finalize     # default_branch=main · main protégée (40/40, pas de force-push)
+                                            # · only_allow_merge_if_pipeline_succeeds=true
+                                            # refuse si le dépôt est encore vide (aucun commit)
+scripts/gitlab-init-project.sh statut       # pipelines et jobs réellement exécutés par GitLab
+```
+
+> **Piège n°1 de la bascule** : un projet créé avec « Initialize with README » n'est **plus vide**,
+> donc le `push --mirror` est refusé (ou force). La méthode C pose `initialize_with_readme=false`;
+> les méthodes A/B doivent le vérifier à la main.
+> **Piège n°2, trouvé en rejouant le script** : `POST /projects` n'accepte **pas** un chemin de
+> namespace, il attend un `namespace_id` **numérique** ; sans lui GitLab crée le projet dans l'espace
+> **personnel du jeton**, alors que le push d'historique, lui, vise `GITLAB_NAMESPACE` : il tombe donc
+> sur un chemin inexistant. La méthode C résout le namespace par `GET /namespaces?search=…&full_path_search=true`
+> et **sort en 2** si le jeton n'y a pas accès — elle ne déplace jamais le projet en silence.
+> **Statut de la méthode C** : script écrit, `bash -n`, et les **quatre modes rejoués contre un
+> serveur API factice local — 33 assertions, 8 scénarios** : projet à créer (corps de requête lu :
+> `namespace_id`, `initialize_with_readme=false`, `topics[]`), idempotence (« existe déjà », 0 POST),
+> dépôt **vide** (`finalize` refuse et n'envoie aucune écriture), namespace inaccessible (refus motivé),
+> portes (`only_allow_merge_if_pipeline_succeeds=true`, `push/merge_access_level=40/40`,
+> `allow_force_push=false`), lecture des jobs, et **0 occurrence** du jeton comme de la valeur d'une
+> variable CI dans la sortie (le journal du mock ne trace que la *présence* du jeton). Le script vérifie
+> aussi ses dépendances (`curl`, `jq`, `python3`) **avant** le premier appel : sortie 3 nommée.
+> **Jamais exécuté contre gitlab.com** : ce poste n'a ni projet ni jeton. Les noms d'attributs utilisés
+> (`only_allow_merge_if_pipeline_succeeds`, `push_access_level`, `masked`/`protected`, `namespace_id`,
+> `full_path_search`) sont relus dans la documentation d'API GitLab.
 
 **Après import** : vérifier que `backup-before-gitlab` et les tags sont présents côté GitLab
 (`git ls-remote gitlab`). Ne **supprimer GitHub** qu'après le §4 vert (voir §6 pour la bascule).
@@ -118,8 +160,13 @@ Les dupliquer ferait partir ces jobs **deux fois** pendant la période de miroir
 ## 4. Chemin de fer de bascule (progressif, sans trou dans la raquette)
 
 1. §1-§3 ci-dessus → pipeline GitLab **vert** en parallèle de GitHub (les deux coexistent un temps).
-2. Protéger `main` sur GitLab (Settings → Repository → Protected branches) + exiger **un MR approuvé**
-   + pipeline vert pour merger (remplace la « porte commune » `needs:[backend,frontend,mobile]`).
+2. Protéger `main` sur GitLab + exiger un **MR approuvé** dont la **pipeline est verte** (remplace la
+   « porte commune » `needs:[backend,frontend,mobile]`) : c'est ce que fait
+   `scripts/gitlab-init-project.sh finalize` (§1 méthode C). Les modèles de description versionnés
+   dans le dépôt — `.gitlab/merge_request_templates/Default.md` (rouge → verte, non-régression,
+   gel ArchUnit) et `.gitlab/issue_templates/{Default,Proposer-une-decision}.md` (colonnes de
+   `KNOWN_ISSUES.md` et d'ADR) — sont **gratuits** ; les règles d'approbation par utilisateur et
+   `CODEOWNERS` obligatoires sont **Premium** et ne sont donc pas comptés comme porte.
 3. Traduire les **autres workflows** GitHub au rythme de leur utilité (voir §5).
 4. Une fois **2 semaines** sans incident GitLab : désactiver les workflows GitHub (`.github/workflows`
    en lecture seule), rendre le dépôt GitHub **archivé** ou **miroir push-only** vers GitLab.
