@@ -1,7 +1,10 @@
 # ADR-001 — Séparer les dépôts et migrer vers GitLab
 
 > **Statut** : **Accepté (humain 2026-10-09)** — monorepo **intact** (pas de split), GitLab retenu
-> comme **source de vérité**, GitHub en miroir pendant la transition. Le pipeline racine
+> comme **future source de vérité**. **Sens du miroir pendant la transition** : on pousse toujours
+> sur **GitHub** (c'est lui qui déclenche Render aujourd'hui), et GitHub **réplique** vers GitLab
+> (`scripts/gitlab-mirror.sh`) ; l'inversion — GitLab source, GitHub miroir push-only — n'intervient
+> qu'au **§4** du runbook, après 2 semaines sans incident de pipeline GitLab. Le pipeline racine
 > `.gitlab-ci.yml` est activé (ex-`.gitlab-ci.yml.example`) ; le **premier push GitLab reste à faire**
 > faute de projet et de jeton (voir GITLAB-BOOTSTRAP.md §3).
 > **Date** : 2026-09-29. **Mesures** : exécutées sur `main` @ `72ec85d5`, 2 730 fichiers versionnés,
