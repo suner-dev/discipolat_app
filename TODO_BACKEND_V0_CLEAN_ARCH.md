@@ -119,7 +119,7 @@ V0 est **ATTEINT** quand, sur `main` :
 
 | ID | Tâche | Note |
 |---|---|---|
-| **V0.14** | Import GitHub→GitLab **monorepo intact** + `.gitlab-ci.yml` (voir `docs/architecture/GITLAB-BOOTSTRAP.md`), jobs **conditionnés par `changes:`** (backend/frontend/mobile) — Option 2 de l'ADR-001. | ne **mélanger** ni déménagement ni refactor : d'abord GitLab vert, **puis** V0-A..D sur GitLab. |
+| **V0.14** | Import GitHub→GitLab **monorepo intact** + `.gitlab-ci.yml` (voir `docs/architecture/GITLAB-BOOTSTRAP.md`), jobs **conditionnés par `changes:`** (backend/frontend/mobile) — Option 2 de l'ADR-001. | ne **mélanger** ni déménagement ni refactor : d'abord GitLab vert, **puis** V0-A..D sur GitLab. **État 2026-10-09 : fait côté dépôt** (14 jobs, SBOM + scan d'image + `environment:`), le premier push et la première pipeline restent **humains** — ADR-008 §6. |
 
 ### LOT V0-F — Prérequis apparu de la mesure V0.1 : dé-enchaver les contexts
 
@@ -174,6 +174,14 @@ ensuite ; 4) **P2 (ledger) avant P4/P5** : la décision de modèle de données e
 retarder, un broker et un lakehouse restent achetables plus tard ; 5) les tâches proposées à trancher
 le sont **dans cet ordre**, sans toucher aux gates.
 
+**Troisième arbitrage (2026-10-09, exécution de ces décisions)** : les quatre décisions proposées
+ont été **traitées** : (1) FE → F-A d'abord, Next.js limité au funnel ; (2) P2 ledger → **ADR-005**
+accepté sur le principe, exécution après V0-F ; (3) GitLab → pipeline racine activée et miroir outillé
+(**ADR-008**) ; (4) formalisme → `VALORISATION-PLATEFORME.md` + **ADR-005/006/007/008** et registre à
+jour. **Ce qui reste ouvert n'est pas technique** : le critère d'acquisition (le funnel passe-t-il par
+le web public ?), l'ambition fintech (take-rate revendu ou simple encaissement → décide du périmètre
+de PCI), et la résidence des données (diaspora UE → multi-région). Voir `VALORISATION-PLATEFORME.md` §8.
+
 ---
 
 ## 4. Gates de validation (les mêmes que le dépôt, élargis)
@@ -216,6 +224,8 @@ le sont **dans cet ordre**, sans toucher aux gates.
 | **Gate V0-A** (non-régression complète) | **FAIT** | BE `mvn -o test` → **2 178 tests, 0 échec, 13 ignorés** (5 min 09 s) ; gates PG → **19/19** ; FE `tsc -b` 0 · **vitest 862/862** · `i18n:audit` et `debt:audit` en ratchet respecté. Mobile **non rejoué** : aucun fichier `mobile/` dans ce lot | *ce commit* | 2026-10-09 |
 | Bascule GitLab (V0.14 avancée) — pipeline **racine** activé + miroir outillé | **PRÉPARÉ — push GitLab impossible ici** | `git mv .gitlab-ci.yml.example .gitlab-ci.yml` + traduction de `security.yml` (npm-audit, bandit, owasp non bloquant), `report:size`, e2e/k6 manuels ; analyseur YAML OK, 12 jobs, tous les `stage` résolus. `scripts/gitlab-mirror.sh` : token **masqué** à la sortie, zéro fuite sur 3 journaux, `dry-run`/`status`/URL injoignable testés. **Blocage réel** : aucun projet GitLab ni jeton sur cette machine (`env`, `~/.netrc`, remotes → rien) → le premier push est une action humaine | *ce commit* | 2026-10-09 |
 | **Constat d'orchestration** — un agent parallèle a committé et poussé `58e82044`/`075114b7`/`3ae5b321` **pendant** ce travail, dont mon script **à mi-édition** et 1 456 lignes d'infra que je n'ai pas écrites | **OUVERT** | `git log` 17:19, auteur `suner-dev` ; HEAD contenait le bug d'extensions (`-name -name` = ET implicite → FE 0 fichier) alors que le rapport poussé venait de la version corrigée ; `deployment/infra/` = clusters/Vault/ArgoCD inexistants, `kustomize/` et `terraform/` **vides** → documenté dans `deployment/infra/README.md` au lieu d'être détruit | — | 2026-10-09 |
+| Formalisation de la proposition de valorisation (arbitrage « documenter ? » → **oui**) | **FAIT — doc** | `docs/architecture/VALORISATION-PLATEFORME.md` (6 plaques P1..P6 + F-A/F-B + M1..M4 + refusés + questions ouvertes) et **4 ADR nouveaux** : ADR-005 ledger, ADR-006 événements/data, ADR-007 identité, ADR-008 delivery GitLab. Chaque fait avancé est **mesuré dans le dépôt** avec sa commande de revérification (§7/§9 de chaque doc) ; **aucun code de production touché**. Deux constats sérieux en découlent, versés dans `KNOWN_ISSUES.md` : **A3** (le solde d'un compte financier est **déclaré par le client** — `FinanceService:510` lit `body["balance"]` — et les écritures ne sont rattachées à **aucun compte** : 0 occurrence de `account_id`) et **A4** (`OutboxPublisher.consumers` est une `Map` alimentée par `put` → **dernier inscrit gagne** sur 95 types) | *ce commit* | 2026-10-09 |
+| Suite GitLab (V0.14) — 2 jobs de preuve en plus, et le déploiement **enregistré** | **FAIT côté dépôt — pipeline jamais exécutée** | `.gitlab-ci.yml` passe de 12 à **14 jobs** : `sbom:release` (CycloneDX 1.6 fait **à la main**, le template natif exigeant Premium) et `scan:image` (Trivy `0.75.0` sur l'image poussée), tous deux `allow_failure: true` **avec la condition de bascule écrite dans le fichier** ; `environment: production` + URL sur `deploy:render` (les enregistrements de déploiement sont gratuits ; seul le tableau DORA est payant). **Preuve d'exécution** : les commandes du job SBOM ont été jouées localement aux mêmes versions → backend **244 composants** (BUILD SUCCESS, 28 s), frontend **407 composants**. Le premier jet du job était **faux** (`cyclonedx-npm --ignore-scripts`, option supprimée en v6) : refusé par le run local **avant** le push. `scan:image` placé en stage `report` (postérieur à `build`) parce que je n'ai pas vérifié en pipeline réel qu'un `needs:` peut cibler un stage postérieur | *ce commit* | 2026-10-09 |
 | V0.4 … V0.16 | **À faire** | — | — | — |
 
 > Politique : non committé tant que l'humain n'a pas validé. Chaque tâche = **une** PR, gate vert,

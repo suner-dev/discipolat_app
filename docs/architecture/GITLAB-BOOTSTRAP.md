@@ -23,6 +23,7 @@ git log --oneline -5                                                        # HE
 |---|---|---|---|
 | `RENDER_API_KEY` | GitHub secret | 🔐 masked | clef API Render |
 | `RENDER_API_SERVICE_ID` | GitHub secret | masqué | id service `discipolat-api` |
+| `PERF_JWT_TOKEN` | GitHub secret (workflow `perf.yml`) | 🔐 masked | **exigé par `performance:k6`** : absent, le job manuel sort en 1 avec le message exact de régénération (déjà rappelé par `scripts/gitlab-mirror.sh`) |
 | `GITHUB_TOKEN` (registry) | implicite | — | **remplacé** par `CI_REGISTRY_*` GitLab (auto) |
 | clés JWT de prod (`JWT_PRIVATE_KEY_PATH`) | hors-repo (paths) | 🔐 | **ne pas** mettre en variable CI : chemin + vault |
 
@@ -83,6 +84,11 @@ Le pipeline reproduit **exactement** les jobs de `ci.yml` **et** de `security.ym
 `report:size` (V0.2), `security:npm-audit`, `security:bandit`, `security:owasp-backend`
 (non bloquant, comme côté GitHub), `e2e:playwright` et `performance:k6` (manuel),
 `docker:backend` (build+push registry GitLab), `deploy:render`.
+**Ajoutés le 2026-10-09 hors parité GitHub** (voir ADR-008 §4) : `sbom:release` (CycloneDX fait à la
+main, car le template natif exige Premium), `scan:image` (Trivy sur l'image produite) — tous deux
+`allow_failure: true` jusqu'au premier vert observé en pipeline — et `environment: production` sur
+`deploy:render` pour que chaque déploiement laisse un **enregistrement** (matière première des SLO et
+des métriques DORA).
 Les `rules:changes:` = **Option 2** de l'ADR-001 (indépendance de CI sans split).
 
 **Ce qui n'est PAS traduit volontairement** : `keep-alive`, `backup-postgres` (déprécié),
@@ -98,7 +104,9 @@ Les dupliquer ferait partir ces jobs **deux fois** pendant la période de miroir
 | `mobile` | analyze 0 nouveau · test 652/652 · APK debug | **non** — aucun fichier `mobile/` touché par ce lot |
 | `report:size` | rapport publié (38 BE · 52 FE · 55 mobile > 500 l.) | **oui** — `scripts/report-size.sh` |
 | `docker:backend` | image poussée dans le registry GitLab | **non** — impossible sans projet GitLab |
-| `deploy:render` | HTTP 201/202 sur `main` | **non** — idem, + variables à recréer |
+| `deploy:render` | HTTP 201/202 sur `main`, **et** enregistrement de déploiement (`environment: production`) | **non** — idem, + variables à recréer |
+| `sbom:release` | `sbom-backend.json` + `sbom-frontend.json` en artefacts | **oui** — commandes jouées localement avec les versions épinglées : backend **244 composants**, frontend **407 composants**, CycloneDX 1.6. (La 1ʳᵉ version du job appelait `--ignore-scripts`, option supprimée en v6 : le run local l'a refusée avant le push) |
+| `scan:image` | tableau des CVE CRITICAL/HIGH de l'image | **non** — exige l'image du registry GitLab et un runner ; `allow_failure: true` en attendant |
 
 > **Honnête limite** : la grammaire GitLab CI de `.gitlab-ci.yml` est validée par analyseur YAML
 > et relue job par job, mais **aucun pipeline n'a encore tourné** — la première exécution réelle

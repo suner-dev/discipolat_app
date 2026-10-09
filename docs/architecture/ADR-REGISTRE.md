@@ -31,7 +31,15 @@ sous la charge. Ce registre priorise donc les capacités par **ROI de valorisati
 | [ADR-001](ADR-001-separer-les-repos-et-gitlab.md) | Migrer sur GitLab **monorepo intact** d'abord (Option 1, puis Option 2 `changes:`) ; split de dépôts ensuite, seulement si besoin réel | `Accepté` (humain 2026-10-09) | 2026-09-29 | Débloque DevSecOps, résidences UE, scans par écosystème |
 | [ADR-002](ADR-002-backend-clean-architecture.md) | Backend = **monolithe modulaire propre** (hexagonale + DDD), strangulation, PAS microservices d'emblée | `Accepté` (humain 2026-10-09) | 2026-10-09 | Due-diligence ; extraction de services à la demande ; CQRS/événementiel |
 | [ADR-003](ADR-003-frontend-nextjs-rsc.md) | Frontend = **Next.js App Router / RSC** pour la vitrine et le SEO des landing `/e/:slug` ; le SPA authentifié évolue vers les tranches verticales de `frontend-target-architecture.md` | `Accepté` (humain 2026-10-09) | 2026-10-09 | Acquisition organique (funnel) ; design system multi-marque |
-| [ADR-004](ADR-004-mobile-clean-progressive.md) | Mobile = Flutter **feature-first, clean architecture miroir du BE**, offline-first **progressif** capitalisant sur sync-lock + LowBand existants | `Accepté` (humain 2026-10-09) | 2026-10-09 | Rétention marché connexions faibles ; SDK réutilisable |
+| [ADR-004](ADR-004-mobile-clean-progressive.md) | Mobile = Flutter **feature-first, clean architecture miroir du BE**, offline-first **progressif** capitalisant sur sync-lock + LowBand existants | `Accepté` (humain 2026-10-09) | 2026-10-09 | Rétention marché à connexions faibles ; SDK réutilisable |
+| [ADR-005](ADR-005-ledger-immutabilite.md) | **Ledger append-only en partie double**, solde **dérivé** (et non déclaré par le client), idempotence sur toute écriture d'argent, unités mineures | `Accepté sur le principe` — **exécution non démarrée** (après V0-F) | 2026-10-09 | **Take-rate**, licence bancaire, module `finances` vendable |
+| [ADR-006](ADR-006-data-evenements-ia.md) | Événements **comme produit** (multi-consommateurs, schémas versionnés, tap outbox→broker, CQRS) **puis** data/IA en actif (CDC, lakehouse, sémantique, consentement) | `Accepté sur le principe` — exécution **après** ADR-005 | 2026-10-09 | Moat data, intégrations tierces, marge (projections lues) |
+| [ADR-007](ADR-007-iam-policy-driven.md) | Identité : **un seul contexte `identity`**, émetteur OIDC + SCIM, autorisation **policy-driven** (`can(...)` versionné) au lieu de 1 001 `@PreAuthorize` | `Accepté sur le principe` — exécution **en dernier** (point de rupture le plus cher) | 2026-10-09 | NRR enterprise, appels d'offres SSO, SOC 2 |
+| [ADR-008](ADR-008-delivery-gitlab-preuves.md) | Delivery GitLab = **machine à preuves** : une seule pipeline racine, portes traduites à l'identique, artefacts = data room (SBOM, scans, gel), environnements nommés | `Accepté` — partie exécutée (pipeline + miroir), **premier push = action humaine** | 2026-10-09 | Due-diligence sans friction ; SLO tenables |
+
+Synthèse transversale (BE/FE/Mobile/Plateforme) : [VALORISATION-PLATEFORME.md](VALORISATION-PLATEFORME.md)
+— cartes des six plaques P1..P6, levier de valorisation payé, **trigger chiffré** d'adoption, et liste
+des refus assumés (microservices maintenant, K8s le 1ᵉʳ jour, réécriture, blockchain, IA comme architecture).
 
 Docs cibles approfondies (les ADR pointent vers elles) :
 - Backend : [backend-target-architecture.md](backend-target-architecture.md)
@@ -45,13 +53,13 @@ Docs cibles approfondies (les ADR pointent vers elles) :
 
 | Levier (pourquoi le multiple monte) | Capacité technique requise | ADR / doc |
 |---|---|---|
-| Tarifs **enterprise / multi-région** | multi-tenant à 3 régimes (pool → schema → DB dédiée), résidence données, SSO OIDC, audit trail | ADR-002 §multi-tenant |
-| **Fintech** (dîmes, offrandes, mobile-money/USSD) → ×10 TAM | ledger immuable, idempotence, webhooks fail-closed, **PCI-DSS**, conciliation | ADR-002 §extract |
-| **Place de marché / écosystème** (effet de réseau) | API publique versionnée, plans/quotas, OAuth tiers, webhooks sortants | ADR-002 §contrats |
-| **Data + IA** (fossé) | événements→entrepôt, feature store, modèles de rétention/attrition | ADR-002 §événementiel |
-| **Rétention** marché à faible bande passante | offline-first, file d'écriture, sync idempotente | ADR-004 |
-| **Acquisition** organique (CAC bas) | SSR/RSC, SEO landing `/e/:slug`, perf Core Web Vitals | ADR-003 |
-| **Due-diligence sans friction** | ArchUnit + contrats + observabilité + SOC2/ISO + CI reproductible | tous |
+| Tarifs **enterprise / multi-région** | multi-tenant à 3 régimes (pool → schema → DB dédiée), résidence données, SSO OIDC, SCIM, audit trail | ADR-002 §multi-tenant, **ADR-007** |
+| **Fintech** (dîmes, offrandes, mobile-money/USSD) → ×10 TAM | ledger immuable en partie double, idempotence, webhooks fail-closed, **PCI-DSS**, conciliation | **ADR-005** (le module `finances` actuel n'est PAS un ledger : cf. son §1 mesuré) |
+| **Place de marché / écosystème** (effet de réseau) | API publique versionnée, plans/quotas, OAuth tiers, webhooks sortants signés (**déjà HMAC**), schémas d'événements | ADR-002 §contrats, **ADR-006 §3.1** |
+| **Data + IA** (fossé) | événements→lac, CDC, couche sémantique, feature store, modèles de rétention/attrition, lignée de consentement | **ADR-006 §3.2** |
+| **Rétention** marché à faible bande passante | offline-first, journal d'écriture idempotent, sync contract-first | ADR-004, VALORISATION §4 (M1..M4) |
+| **Acquisition** organique (CAC bas) | SSR/RSC, SEO landing `/e/:slug`, Core Web Vitals | ADR-003 (à **restreindre** au funnel si l'acquisition n'est pas web — question ouverte VALORISATION §8) |
+| **Due-diligence sans friction** | ArchUnit + contrats + observabilité + SOC2/ISO + CI reproductible + **SBOM par release** | **ADR-008**, tous les autres |
 
 ---
 
