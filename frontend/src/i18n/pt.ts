@@ -2888,7 +2888,7 @@ const pt: Record<string, string> = {
   'Âmes à risque prioritaire': 'Almas à risque prioritaire',
   'Échanges': 'Échanges',
   'Échanges communautaires': 'Échanges communautaires',
-  'Échec d\\u2019exécution': 'Échec d\\u2019exécution',
+  'Échec d’exécution': 'Échec d’exécution',
   'Échec du changement de rôle': 'Échec du changement de Função',
   'Échéance': 'Échéance',
   'Échéance dépassée': 'Échéance dépassée',

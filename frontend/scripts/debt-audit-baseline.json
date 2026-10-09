@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-10-09T15:46:03.781Z",
+  "thresholds": {
+    "largeFileLines": 1000
+  },
+  "metrics": {
+    "anyCount": 269,
+    "largeFileCount": 13,
+    "todoCount": 5,
+    "consoleDebugCount": 0
+  },
+  "largeFiles": [
+    {
+      "file": "i18n/es.ts",
+      "lines": 3666
+    },
+    {
+      "file": "i18n/sw.ts",
+      "lines": 3650
+    },
+    {
+      "file": "i18n/ar.ts",
+      "lines": 3578
+    },
+    {
+      "file": "i18n/fr.ts",
+      "lines": 3548
+    },
+    {
+      "file": "i18n/en.ts",
+      "lines": 3489
+    },
+    {
+      "file": "i18n/pt.ts",
+      "lines": 3435
+    },
+    {
+      "file": "types/index.ts",
+      "lines": 2048
+    },
+    {
+      "file": "App.tsx",
+      "lines": 1327
+    },
+    {
+      "file": "pages/SoulDetailPage.tsx",
+      "lines": 1245
+    },
+    {
+      "file": "pages/DepartmentMemberDossierPage.tsx",
+      "lines": 1138
+    },
+    {
+      "file": "pages/UsersPage.tsx",
+      "lines": 1125
+    },
+    {
+      "file": "pages/MemberDashboardPage.tsx",
+      "lines": 1078
+    },
+    {
+      "file": "components/users/UserDetailModal.tsx",
+      "lines": 1027
+    }
+  ]
+}

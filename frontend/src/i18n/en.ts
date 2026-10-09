@@ -2942,7 +2942,7 @@ const en: Record<string, string> = {
   'Âmes à risque prioritaire': 'Souls à risque prioritaire',
   'Échanges': 'Échanges',
   'Échanges communautaires': 'Échanges communautaires',
-  'Échec d\’exécution': 'Échec d\’exécution',
+  'Échec d’exécution': 'Échec d’exécution',
   'Échec du changement de rôle': 'Échec du changement de Role',
   'Échéance': 'Échéance',
   'Échéance dépassée': 'Échéance dépassée',

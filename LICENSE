@@ -1,0 +1,73 @@
+Discipolat — Licence Propriétaire (Tous droits réservés)
+=========================================================
+
+Copyright (c) 2026 Discipolat. Tous droits réservés.
+
+Le présent logiciel et les fichiers de documentation associés (ci-après le
+« Logiciel ») sont la propriété exclusive de leurs auteurs et titulaires des
+droits. Le Logiciel est protégé par les lois relatives au droit d'auteur, aux
+traités internationaux et par toute autre loi nationale applicable.
+
+RÉSERVE DE DROITS — AUCUNE LICENCE N'EST ACCORDÉE PAR DÉFAUT
+------------------------------------------------------------
+
+Sauf accord écrit préalable, exprès et signé par le titulaire des droits, il
+est STRICTEMENT INTERDIT, notamment mais sans s'y limiter, de :
+
+  1. copier, reproduire, publier, distribuer ou divulguer tout ou partie du
+     Logiciel, sous quelque forme et par quelque moyen que ce soit ;
+  2. modifier, adapter, traduire ou créer des œuvres dérivées du Logiciel ;
+  3. fusionner le Logiciel avec d'autres logiciels ;
+  4. vendre, louer, concéder, sous-licencier ou exploiter commercialement le
+     Logiciel ;
+  5. procéder à une ingénierie inverse, décompiler ou désassembler le Logiciel,
+     sauf dans la stricte mesure où une telle restriction est interdite par la
+     loi applicable ;
+  6. retirer, altérer ou masquer les mentions de droit d'auteur, marques ou
+     autres avis de propriété figurant dans le Logiciel.
+
+USAGE INTERNE ET ÉVALUATION
+---------------------------
+
+L'accès au code source qui pourrait être accordé à des fins d'évaluation, de
+test ou d'acquisition éventuelle constitue une simple autorisation limitée,
+personnelle, non exclusive, non transférable et révocable de consulter le
+Logiciel. Cette autorisation ne confère AUCUN droit de propriété intellectuelle
+et ne vaut en aucun cas licence d'exploitation.
+
+DIVULGATION CONFIDENTIELLE
+--------------------------
+
+Le Logiciel et sa documentation constituent des Informations Confidentielles et
+des secrets d'affaires au sens des législations applicables (y compris l'Accord
+sur les Aspects des Droits de Propriété Intellectuelle liés au Commerce —
+ADPIC/TRIPS). Toute divulgation non autorisée engage la responsabilité de son
+auteur, y compris civile et, le cas échéant, pénale.
+
+ABSENCE DE GARANTIE
+-------------------
+
+LE LOGICIEL EST FOURNI « EN L'ÉTAT », SANS GARANTIE D'AUCUNE SORTE, EXPRESSE OU
+IMPLICITE, Y COMPRIS MAIS SANS S'Y LIMITER LES GARANTIES DE QUALITÉ MARCHANDE,
+D'ADÉQUATION À UN USAGE PARTICULIER ET D'ABSENCE DE CONTREFAÇON. EN AUCUN CAS
+LES AUTEURS OU TITULAIRES DES DROITS NE POURRONT ÊTRE TENUS RESPONSABLES D'UNE
+QUELCONQUE RÉCLAMATION, DOMMAGE OU AUTRE RESPONSABILITÉ, QU'ELLE RELÈVE D'UN
+CONTRAT, D'UN DÉLIT OU AUTRE, RÉSULTANT DU LOGICIEL OU DE SON UTILISATION OU
+D'ÉCHANGES LIÉS AU LOGICIEL.
+
+TIERS OPEN SOURCE
+-----------------
+
+Le Logiciel s'appuie sur des composants tiers régis par leurs propres licences
+(Spring Boot — Apache-2.0, React — MIT, Flutter — BSD-3-Clause, PostgreSQL —
+PostgreSQL License, Redis — RSALv2/SSPLv1, etc.). Ces composants demeurent régis
+par leurs licences respectives. La liste des dépendances et de leurs licences est
+consultable via les fichiers de build (`backend/pom.xml`, `frontend/package.json`,
+`mobile/pubspec.yaml`). Voir NOTICE pour la répartition des droits tiers.
+
+CONTACT / LICENCES COMMERCIALES
+-------------------------------
+
+Pour toute demande d'exploitation, de partenariat, d'acquisition ou d'octroi de
+licence : voir la section « Contact » de NOTICE ou le contact déclaré dans
+`docs/openapi.json` (support@discipolat.com).

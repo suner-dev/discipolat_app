@@ -136,6 +136,28 @@ neutralité géographique : **[docs/SCALING.md](docs/SCALING.md)** et
 | [docs/SECURITY.md](docs/SECURITY.md) · [docs/RBAC.md](docs/RBAC.md) | modèle de sécurité et autorisations |
 | [e2/README.md](e2/README.md) | suite E2E Playwright (s'active à la première spec) |
 
+## Gouvernance, licence & conformité
+
+| Document | Contenu |
+|---|---|
+| [LICENSE](LICENSE) · [NOTICE](NOTICE) | licence propriétaire (tous droits réservés) et composants tiers |
+| [SECURITY.md](SECURITY.md) | politique de signalement de vulnérabilités (divulgation responsable) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | démarrage rapide, qualité des 3 piles, conventions |
+| [CHANGELOG.md](CHANGELOG.md) | versions notables (historique complet dans [docs/CHANGELOG.md](docs/CHANGELOG.md)) |
+| [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | registre honnête, daté et vérifiable des points ouverts |
+
+## Qualité (commandes opposables)
+
+```bash
+# Schéma de production prouvé (migrations réelles sur PostgreSQL via Testcontainers)
+cd backend && mvn verify            # tests + couverture JaCoCo
+# SCA Java (CVE) : job CI dédié « owasp-backend » (security.yml) — non bloquant,
+# voir SECURITY.md §5 ; porte bloquante Java = dependency-review sur chaque PR.
+
+# Ratchets de non-régression frontend (échouent en CI si la dette augmente)
+cd frontend && npm run lint && npm run i18n:audit && npm run debt:audit
+```
+
 ## Contribuer
 
 Branche `main` protégée par la CI bloquante ; conventions et périmètres

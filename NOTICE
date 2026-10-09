@@ -1,0 +1,62 @@
+Discipolat — Church OS
+NOTICE — Propriété intellectuelle et composants tiers
+=====================================================
+
+Produit      : Discipolat (plateforme multi-tenant de gestion d'église)
+Droits       : Copyright (c) 2026 Discipolat — tous droits réservés
+Licence      : Voir le fichier LICENSE (licence propriétaire)
+Contact      : support@discipolat.com
+
+1. PROPRIÉTÉ
+------------
+
+Le code source, la documentation, les marques « Discipolat » et « Church OS »,
+ainsi que l'architecture, les modèles de données et la charte graphique associés
+sont la propriété de leurs auteurs et titulaires de droits. Toute reproduction ou
+exploitation non autorisée est interdite (voir LICENSE).
+
+2. COMPOSANTS TIERS OPEN SOURCE UTILISÉS
+----------------------------------------
+
+Le produit s'appuie sur des bibliothèques tierces régies par leurs propres
+licences libres, dont notamment :
+
+  Couche     | Composant                     | Licence
+  -----------|-------------------------------|----------------------
+  Backend    | Spring Boot / Spring Security | Apache-2.0
+  Backend    | Hibernate ORM / Flyway        | Apache-2.0
+  Backend    | jjwt (JWT)                    | Apache-2.0
+  Backend    | Firebase Admin SDK            | Apache-2.0
+  Backend    | Stripe Java                   | MIT
+  Backend    | Bucket4j (rate limiting)      | Apache-2.0
+  Frontend   | React                         | MIT
+  Frontend   | Vite                          | MIT
+  Frontend   | TypeScript                    | Apache-2.0
+  Mobile     | Flutter / Dart                | BSD-3-Clause
+  Mobile     | Riverpod / Drift / GoRouter   | MIT
+  Data       | PostgreSQL                    | PostgreSQL License
+  Data       | Redis                         | RSALv2 / SSPLv1
+  Qualité    | JUnit 5 / Vitest / ArchUnit   | EPL-2.0 / MIT / Apache-2.0
+
+La liste exhaustive et versionnée est tenue à jour dans les fichiers de
+dépendances du projet :
+  - backend/pom.xml
+  - frontend/package.json (+ frontend/package-lock.json)
+  - mobile/pubspec.yaml (+ mobile/pubspec.lock)
+
+Les droits attachés à ces composants tiers demeurent régis par leurs licences
+respectives, qui prévalent sur la licence propriétaire du présent produit.
+
+3. GÉNÉRATION AUTOMATIQUE
+-------------------------
+
+Une SBOM (Software Bill of Materials) peut être produite à la demande via le
+plugin OWASP dependency-check (voir backend/pom.xml) et les verrous de
+dépendances listés au point 2.
+
+4. MARQUES
+----------
+
+« Discipolat », « Church OS » et les logos associés sont des marques utilisées
+pour désigner le présent produit. Leur usage sans autorisation écrite est
+interdit.

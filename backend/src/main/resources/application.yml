@@ -450,7 +450,13 @@ spring:
     enabled: true
   jpa:
     hibernate:
-      ddl-auto: update
+      # Le schéma est piloté EXCLUSIVEMENT par les migrations Flyway (activées
+      # ci-dessus). `validate` vérifie au démarrage que les entités collent au
+      # schéma migré et échoue sinon — aligné sur `prod` (none) et `dev`
+      # (validate). On n'utilise JAMAIS `update` : laisser Hibernate écrire le
+      # schéma en production/docker est un défaut de fiabilité (dérive hors
+      # migrations, invisible sous H2). Voir KNOWN_ISSUES.md Q2.
+      ddl-auto: validate
 
 server:
   port: ${PORT:8080}

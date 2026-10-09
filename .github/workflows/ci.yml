@@ -126,6 +126,8 @@ jobs:
         run: cd frontend && npm ci
       - name: TypeScript check
         run: cd frontend && npx tsc --noEmit
+      - name: Lint (bloquant — 0 erreur)
+        run: cd frontend && npm run lint
       - name: Run tests
         # double reporter : sortie lisible dans le log + junit.xml uploadé
         run: cd frontend && npx vitest run --reporter=default --reporter=junit --outputFile.junit=./test-results/junit.xml
@@ -138,6 +140,10 @@ jobs:
           retention-days: 14
       - name: Build
         run: cd frontend && npm run build
+      - name: Audit i18n (ratchet de non-régression)
+        run: cd frontend && npm run i18n:audit
+      - name: Dette technique frontend (ratchet de non-régression)
+        run: cd frontend && npm run debt:audit
 
   mobile:
     name: Mobile - Flutter

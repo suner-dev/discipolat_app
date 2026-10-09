@@ -3000,7 +3000,7 @@ const fr = {
   'Âmes à risque prioritaire': 'Âmes à risque prioritaire',
   'Échanges': 'Échanges',
   'Échanges communautaires': 'Échanges communautaires',
-  'Échec d\’exécution': 'Échec d\’exécution',
+  'Échec d’exécution': 'Échec d’exécution',
   'Échec du changement de rôle': 'Échec du changement de rôle',
   'Échéance': 'Échéance',
   'Échéance dépassée': 'Échéance dépassée',
