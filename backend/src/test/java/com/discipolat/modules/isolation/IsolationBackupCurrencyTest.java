@@ -168,6 +168,7 @@ class IsolationBackupCurrencyTest {
                     mock(com.discipolat.modules.audit.domain.AuditService.class),
                     mock(com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher.class),
                     currencyService, new Iso4217CurrencyValidator(),
+                    new com.discipolat.modules.currency.domain.TenantCurrencyResolver(currencyService),
                     mock(com.discipolat.modules.finances.domain.FinanceAccountRepository.class),
                     mock(com.discipolat.modules.finances.domain.FinanceDonationRepository.class),
                     mock(com.discipolat.modules.finances.domain.FinanceTontineRepository.class),

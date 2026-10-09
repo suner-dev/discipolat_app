@@ -12,6 +12,8 @@
 //
 // Le parsing est strictement tolérant : on ne casse jamais l'écran si un champ
 // optionnel manque (jamais de `as` massif, jamais d'invention de valeur).
+import 'package:dio/dio.dart';
+
 import 'api_service.dart';
 
 /// Une ligne d'invitation telle que renvoyée par `toMap` du contrôleur.
@@ -145,8 +147,80 @@ class ResendInvitationResult {
     );
   }
 }
+/// Rôle réellement assignable, lu depuis l'API.
+///
+/// Une liste figée dans l'écran ne peut pas connaître les rôles *custom* d'un
+/// tenant : `RoleManagementController` → `GET /admin/roles/overview` est la
+/// seule autorité (miroir du web, `useAssignableRoles`).
+class AssignableRole {
+  const AssignableRole(
+      {required this.key, this.label, this.description, this.system = false});
+
+  final String key;
+  final String? label;
+  final String? description;
+  final bool system;
+
+  /// `label` est la seule source d'affichage ; `key` reste l'identifiant
+  /// technique envoyé au backend. On n'invente jamais un libellé.
+  String get displayLabel => (label != null && label!.trim().isNotEmpty) ? label! : key;
+
+  static AssignableRole fromJson(Map<String, dynamic> json) => AssignableRole(
+        key: _str(json['key']) ?? '',
+        label: _str(json['label']),
+        description: _str(json['description']),
+        system: json['system'] == true,
+      );
+}
+
+/// Nœud organisationnel proposable comme portée d'invitation.
+///
+/// `InvitationService.createInvitation` refuse un scope non-TENANT sans
+/// `organizationNodeId` (INVITATION_SCOPE_INVALID) : l'écran DOIT donc proposer
+/// un nœud réel, jamais une chaîne libre.
+class OrganizationNodeRef {
+  const OrganizationNodeRef({required this.id, this.name, this.type, this.level});
+
+  final String id;
+  final String? name;
+  final String? type;
+  final int? level;
+
+  String get displayLabel {
+    final n = (name != null && name!.trim().isNotEmpty) ? name! : id;
+    final t = (type != null && type!.trim().isNotEmpty) ? type! : null;
+    return t == null ? n : '$n — $t';
+  }
+
+  static OrganizationNodeRef fromJson(Map<String, dynamic> json) {
+    final rawLevel = json['level'];
+    return OrganizationNodeRef(
+      id: _str(json['id']) ?? '',
+      name: _str(json['name']),
+      type: _str(json['type']),
+      level: rawLevel is num ? rawLevel.toInt() : null,
+    );
+  }
+}
+
+/// Erreur portant le message métier du serveur.
+///
+/// Le backend répond en `ProblemDetail` (RFC 7807) : `detail` porte le texte et
+/// `type` porte le code métier (`INVITATION_SCOPE_INVALID`…). Écrasser cela par
+/// « L'invitation a échoué » masquait la cause réelle à l'administrateur.
+class InvitationAdminException implements Exception {
+  InvitationAdminException(this.message, {this.code, this.statusCode});
+
+  final String message;
+  final String? code;
+  final int? statusCode;
+
+  @override
+  String toString() => message;
+}
 
 class InvitationAdminService {
+
   InvitationAdminService({ApiService? apiService})
       : _apiService = apiService ?? ApiService();
 
@@ -226,6 +300,52 @@ class InvitationAdminService {
     return _asMap(response.data);
   }
 
+  // ── B9 : référentiels lus depuis l'API (aucune liste en dur) ──────────────
+
+  /// Rôles réellement assignables — `GET /admin/roles/overview`
+  /// (`RoleManagementController.getAllRoles`).
+  ///
+  /// Le repli n'est jamais une liste de rôles *inventée* : si l'appel échoue on
+  /// renvoie une liste vide et l'appelant affiche l'erreur. Mieux vaut pas
+  /// proposer de rôle que proposer un rôle qui n'existe pas chez ce tenant.
+  Future<List<AssignableRole>> listAssignableRoles() async {
+    final response = await _apiService.get('/admin/roles/overview');
+    final data = response.data;
+    if (data is! List) return const <AssignableRole>[];
+    return data
+        .whereType<Map>()
+        .map((e) => AssignableRole.fromJson(Map<String, dynamic>.from(e)))
+        .where((r) => r.key.trim().isNotEmpty)
+        .toList();
+  }
+
+  /// Nœuds organisationnels — `GET /admin/org/tree`
+  /// (`OrganizationManagementController.getTree`).
+  ///
+  /// La réponse est un `OrganizationTreeResponse { root, allNodes,
+  /// childrenByParent }` : on lit `allNodes` et on aplati, parce que le
+  /// sélectionneur a besoin d'une liste plate triée, pas d'un arbre récursif
+  /// (la hiérarchie reste visible via `path`/`level` dans le libellé).
+  Future<List<OrganizationNodeRef>> listOrganizationNodes() async {
+    final response = await _apiService.get('/admin/org/tree');
+    final map = _asMap(response.data);
+    final rawNodes = map['allNodes'];
+    final source = rawNodes is List ? rawNodes : const <dynamic>[];
+    final nodes = source
+        .whereType<Map>()
+        .map((e) => OrganizationNodeRef.fromJson(Map<String, dynamic>.from(e)))
+        .where((n) => n.id.trim().isNotEmpty)
+        .toList();
+    // Rendre déterministe l'ordre : un tenant avec deux nœuds de même `level`
+    // doit toujours proposer le même ordre à l'administrateur.
+    nodes.sort((a, b) {
+      final byLevel = (a.level ?? 0).compareTo(b.level ?? 0);
+      if (byLevel != 0) return byLevel;
+      return a.displayLabel.compareTo(b.displayLabel);
+    });
+    return nodes;
+  }
+
   // ── Aides de parsing (tolérantes, aucune invention) ──────────────────────
   InvitationListResult _parseList(dynamic data) {
     if (data is Map) {
@@ -254,6 +374,64 @@ class InvitationAdminService {
     return InvitationListResult(
       items: <InvitationItem>[],
     );
+  }
+
+  /// Traduit une `DioException` en [InvitationAdminException] porteuse du
+  /// message métier du serveur.
+  ///
+  /// Le backend répond en `ProblemDetail` : `detail` = texte lisible,
+  /// `type` = code métier (`INVITATION_SCOPE_INVALID`, `INVITATION_ROLE_INVALID`…).
+  /// Sans cette traduction, l'écran affichait « L'invitation a échoué » pour un
+  /// 400 parfaitement explicite, ce qui rendait le bug ORGANIZATION
+  /// impossible à diagnostiquer depuis le terrain.
+  static InvitationAdminException translateError(Object error) {
+    if (error is InvitationAdminException) return error;
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      final body = error.response?.data;
+      String? detail;
+      String? code;
+      if (body is Map) {
+        detail = _str(body['detail']) ?? _str(body['message']);
+        final type = _str(body['type']);
+        // `…/errors/INVITATION_SCOPE_INVALID` → `INVITATION_SCOPE_INVALID`
+        if (type != null && type.isNotEmpty) {
+          final idx = type.lastIndexOf('/');
+          code = idx >= 0 ? type.substring(idx + 1) : type;
+        }
+      }
+      final hasBusinessDetail = detail != null && detail.trim().isNotEmpty;
+      return InvitationAdminException(
+        hasBusinessDetail ? detail : _fallbackMessage(status),
+        code: code,
+        statusCode: status,
+      );
+    }
+    return InvitationAdminException(
+      'Impossible de joindre le serveur.',
+      statusCode: null,
+    );
+  }
+
+  static String _fallbackMessage(int? status) {
+    switch (status) {
+      case 400:
+        return 'Requête refusée par le serveur (données invalides).';
+      case 401:
+        return 'Session expirée. Reconnectez-vous.';
+      case 403:
+        return "Vous n'avez pas les droits nécessaires.";
+      case 404:
+        return 'Ressource introuvable.';
+      case 409:
+        return 'Conflit : cet élément existe déjà.';
+      case 429:
+        return 'Trop de requêtes. Réessayez dans un instant.';
+      case null:
+        return 'Serveur injoignable.';
+      default:
+        return 'Erreur serveur ($status).';
+    }
   }
 }
 

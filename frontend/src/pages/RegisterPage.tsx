@@ -6,6 +6,7 @@ import { z } from 'zod';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n, tText } from '@/i18n';
 import { useAuth } from '@/contexts/AuthContext';
+import ChurchPicker from '@/components/auth/ChurchPicker';
 import { Loader2, UserPlus, MailCheck, ShieldCheck, ArrowRight, CheckCircle2, Church, KeyRound, Copy, MessageCircle } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -48,7 +49,7 @@ function useLegalVersions() {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   // SPEC_ORGANISATION_DENOMINATION_V2 §7.0 / T-W0 : adoption de session.
   const { adoptSession } = useAuth();
@@ -63,6 +64,16 @@ export default function RegisterPage() {
   const createChurch = searchParams.get('mode') === 'church';
   const joinCode = searchParams.get('joinCode')?.trim() || undefined;
   const joinChurchName = searchParams.get('church')?.trim() || undefined;
+  // LOT 1 §GLISE-D'ABORD (T1.3) — le sélecteur « église d'abord » n'est pertinent
+  // que si AUCUN contexte d'église n'est déjà porté par l'URL. Un lien profond
+  // existant (e-mail, QR, mobile, annuaire) court-circuite le picker et produit
+  // exactement le parcours d'aujourd'hui (A2/A3, R7). Il n'est donc jamais
+  // obligatoire et n'ajoute aucun champ au payload d'inscription.
+  const hasChurchContext =
+    Boolean(searchParams.get('mode')) ||
+    Boolean(searchParams.get('joinCode')) ||
+    Boolean(searchParams.get('tenant')) ||
+    Boolean(searchParams.get('church'));
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [churchResult, setChurchResult] = useState<{ name: string; slug: string; joinCode: string } | null>(null);
@@ -280,6 +291,20 @@ export default function RegisterPage() {
 
   return (
     <div className="space-y-6">
+      {/* LOT 1 §GLISE-D'ABORD (T1.3) — « église d'abord » : un raccourci ADDITIF
+          vers les capacités déjà là. Affiché seulement sans contexte d'URL (A2) ;
+          une église listée sélectionnée écrit les paramètres déjà implémentés
+          (?church=, ?tenant=) — aucun nouveau champ, le serveur ne bouge pas (A3). */}
+      {!hasChurchContext && (
+        <ChurchPicker
+          onSelect={({ name, slug }) => {
+            const p = new URLSearchParams(searchParams);
+            p.set('church', name);
+            if (slug) p.set('tenant', slug);
+            setSearchParams(p, { replace: true });
+          }}
+        />
+      )}
       {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2.5 mb-4 animate-fade-in">

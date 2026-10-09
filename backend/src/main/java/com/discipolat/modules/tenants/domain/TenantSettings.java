@@ -184,6 +184,18 @@ public class TenantSettings {
     @Column(name = "public_directory_enabled")
     private Boolean publicDirectoryEnabled;
 
+    // LOT 2 §GLISE-D'ABORD (T2.3) — landing publique par église. ADDITIF PUR :
+    // défaut {@code false} (A5/A7, dark launch naturel — aucune page publique
+    // n'apparaît pour une église existante tant qu'elle ne l'a pas demandé),
+    // nullable, aucune ligne existante modifiée. Double consentement RGPD
+    // (art. 9) : {@code isListed} (annuaire) ET {@code landingEnabled} (landing).
+    @Column(name = "landing_enabled")
+    private Boolean landingEnabled;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "landing_sections", columnDefinition = "jsonb")
+    private List<Map<String, Object>> landingSections;
+
     @Column(name = "legacy_migration_enabled")
     private Boolean legacyMigrationEnabled;
 
@@ -306,6 +318,8 @@ public class TenantSettings {
         if (this.weekStartDay == null) this.weekStartDay = 1;
         if (this.lowBandEnabled == null) this.lowBandEnabled = false;
         if (this.publicDirectoryEnabled == null) this.publicDirectoryEnabled = false;
+        // T2.3 — landing éteinte par défaut : le white-label est un opt-in explicite.
+        if (this.landingEnabled == null) this.landingEnabled = false;
         if (this.legacyMigrationEnabled == null) this.legacyMigrationEnabled = false;
         if (this.offlineMode == null) this.offlineMode = "LECTURE";
         if (this.analyticsEnabled == null) this.analyticsEnabled = true;

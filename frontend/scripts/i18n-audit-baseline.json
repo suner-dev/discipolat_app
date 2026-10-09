@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-10-09T11:35:59.559Z",
+  "referenceTotal": 3346,
+  "frenchOnlyTotal": 1763,
+  "locales": {
+    "fr": {
+      "total": 3346,
+      "missing": 0,
+      "extra": 0,
+      "untranslated": 0
+    },
+    "en": {
+      "total": 3346,
+      "missing": 0,
+      "extra": 0,
+      "untranslated": 536
+    },
+    "es": {
+      "total": 3430,
+      "missing": 0,
+      "extra": 84,
+      "untranslated": 515
+    },
+    "pt": {
+      "total": 3346,
+      "missing": 0,
+      "extra": 0,
+      "untranslated": 515
+    },
+    "sw": {
+      "total": 3430,
+      "missing": 0,
+      "extra": 84,
+      "untranslated": 504
+    },
+    "ar": {
+      "total": 3473,
+      "missing": 0,
+      "extra": 127,
+      "untranslated": 504
+    }
+  }
+}

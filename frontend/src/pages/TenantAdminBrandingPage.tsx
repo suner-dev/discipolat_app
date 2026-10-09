@@ -13,6 +13,9 @@ const DEFAULT_BRANDING = {
   successColor: "#10B981", warningColor: "#F59E0B", errorColor: "#EF4444", infoColor: "#3B82F6",
   primaryFont: "Inter", secondaryFont: "Inter", headingFont: "Inter", monoFont: "JetBrains Mono",
   customCss: "", customHeadHtml: "",
+  // LOT 2 §GLISE-D'ABORD (T2.5) — opt-in page publique. Défaut `false` : aucune
+  // page n'apparaît tant que l'église ne l'a pas demandé (dark launch A5/A7).
+  landingEnabled: false,
 };
 
 type BrandingData = typeof DEFAULT_BRANDING & Record<string, unknown>;
@@ -33,13 +36,15 @@ function ColorInput({ label, value, onChange }: { label: string; value: string; 
 
 export default function TenantAdminBrandingPage() {
   const { currentTenant, hasPermission } = useTenant();
+  const { t } = useI18n();
   const tenantId = currentTenant?.id;
   const [data, setData] = useState<BrandingData>(DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [tab, setTab] = useState<"colors" | "identity" | "fonts" | "contact" | "advanced">("colors");
+  const [tab, setTab] = useState<"colors" | "identity" | "fonts" | "contact" | "advanced" | "public">("colors");
   const [uploading, setUploading] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -114,12 +119,30 @@ export default function TenantAdminBrandingPage() {
     finally { setUploading(null); }
   };
 
+  // LOT 2 §GLISE-D'ABORD (T2.5) — page publique. Bascule additive sur
+  // `landing_enabled`. Le lien partageable réutilise la CONVENTION d'URL vanity
+  // déjà en place (`inviteUrl` dans RegisterPage), sur le chemin `/e/:slug`.
+  const landingSlug = currentTenant?.slug || "";
+  const landingUrl = landingSlug
+    ? `${window.location.origin}/e/${encodeURIComponent(landingSlug)}`
+    : "";
+  const setLandingEnabled = (v: boolean) => setData((prev) => ({ ...prev, landingEnabled: v }));
+  const copyLandingLink = async () => {
+    if (!landingUrl) return;
+    try {
+      await navigator.clipboard.writeText(landingUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch { setMsg({ type: "error", text: t("landingAdmin.copyErr") }); }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500">Chargement des paramètres...</div>;
 
   const tabs = [
     { key: "colors", label: "Couleurs" }, { key: "identity", label: "Identité" },
     { key: "fonts", label: "Polices" }, { key: "contact", label: "Contact" },
     { key: "advanced", label: "Avancé" },
+    { key: "public", label: t("landingAdmin.tab") },
   ] as const;
 
   return (
@@ -275,6 +298,72 @@ export default function TenantAdminBrandingPage() {
                       <div><label className="block text-sm font-medium text-gray-700 mb-1">Pied de page</label>
                         <input type="text" value={(data.footerText as string) || ""} onChange={(e) => update("footerText", e.target.value)}
                           className="w-full px-3 py-2 border rounded-lg" placeholder="© {{year}} {{tenant_name}}" /></div>
+                    </div>
+                  )}
+                  {tab === "public" && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-1">{t("landingAdmin.title")}</h3>
+                        <p className="text-xs text-gray-500">{t("landingAdmin.subtitle")}</p>
+                      </div>
+
+                      {/* Opt-in — défaut false (A5/A7). Ne s'affiche au public que si
+                          l'église est AUSSI listée dans l'annuaire (double consentement, R2). */}
+                      <label className="flex items-start gap-3 p-4 rounded-lg border cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" checked={Boolean(data.landingEnabled)}
+                          onChange={(e) => setLandingEnabled(e.target.checked)} className="mt-1 h-4 w-4" />
+                        <span>
+                          <span className="block text-sm font-medium text-gray-900">{t("landingAdmin.enabledLabel")}</span>
+                          <span className="block text-xs text-gray-500 mt-0.5">{t("landingAdmin.enabledHint")}</span>
+                        </span>
+                      </label>
+
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        {t("landingAdmin.requiresDirectory")}
+                      </p>
+                      <p className="text-xs text-gray-500">{t("landingAdmin.noindexNote")}</p>
+
+                      {/* Lien partageable — réutilise la convention vanity existante sur /e/:slug. */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t("landingAdmin.shareLabel")}</label>
+                        {landingUrl ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input readOnly value={landingUrl} data-testid="landing-share-url"
+                              className="flex-1 min-w-[16rem] px-3 py-2 border rounded-lg font-mono text-xs bg-gray-50" />
+                            <button type="button" onClick={copyLandingLink}
+                              className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">
+                              {linkCopied ? t("landingAdmin.copied") : t("landingAdmin.copy")}
+                            </button>
+                            <a href={landingUrl} target="_blank" rel="noreferrer"
+                              className="px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium">
+                              {t("landingAdmin.preview")}
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">{t("landingAdmin.noSlug")}</p>
+                        )}
+                      </div>
+
+                      {/* Aperçu statique de la projection (champs déjà saisis, liste blanche). */}
+                      <div>
+                        <p className="text-xs font-semibold text-gray-700 mb-2">{t("landingAdmin.previewTitle")}</p>
+                        <div className="rounded-lg border overflow-hidden max-w-md" style={{ background: data.backgroundColor }}>
+                          <div className="p-4 flex items-center gap-3" style={{ background: data.primaryColor, color: "#FFFFFF" }}>
+                            {data.logoUrl ? <img src={data.logoUrl} alt="" className="h-10" /> : (
+                              <span className="w-10 h-10 rounded-lg flex items-center justify-center font-bold"
+                                style={{ background: data.accentColor }}>{(data.businessName || "E")[0]}</span>
+                            )}
+                            <div>
+                              <div className="font-bold text-sm">{data.businessName || t("landingAdmin.unnamed")}</div>
+                              {data.slogan ? <div className="text-xs opacity-80">{data.slogan}</div> : null}
+                            </div>
+                          </div>
+                          <div className="p-4 text-center">
+                            <span className="inline-block px-4 py-2 rounded-lg text-xs font-medium text-white"
+                              style={{ background: data.primaryColor }}>{t("landingAdmin.joinCta")}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </form>

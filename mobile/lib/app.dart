@@ -9,6 +9,8 @@ import 'presentation/screens/ai_predictions/ai_predictions_screen.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/login/join_church_screen.dart';
+// LOT 2 §GLISE-D'ABORD (T2.6, mobile) — deeplink `/e/:slug`, additif.
+import 'presentation/screens/landing/church_landing_screen.dart';
 import 'presentation/screens/transfer/transfer_screen.dart';
 import 'presentation/screens/invitations/accept_invitation_screen.dart';
 import 'presentation/screens/invitations/invitation_management_screen.dart';
@@ -1361,6 +1363,24 @@ const _publicRoutes = {
   // session existante est conservée.
 };
 
+/// LOT 2 §GLISE-D'ABORD (T2.6, mobile) — les préfixes de routes publiques
+/// dynamiques (paramétrées) que `_publicRoutes`, cantonné aux chemins
+/// littéraux, ne peut pas énumérer. Additif : ne modifie aucune des six
+/// entrées ci-dessus, ne fait que EN AJOUTER une famille. `/e/:slug` est
+/// la landing publique d'une église (R3 : réponse indistinguable pour
+/// slug inconnu / non listée / landing éteinte, mais la navigation elle-
+/// même reste autorisée à un visiteur non authentifié).
+const _publicRoutePrefixes = <String>['/e/'];
+
+/// Helper pur — la même logique est appliquée aux deux interceptions
+/// (`firstRunExemptRoutes` et `_publicRoutes`), pour éviter qu'un deeplink
+/// `/e/bethel` soit dévié vers `/onboarding` puis `/login` sur une première
+/// exécution. La garde est volontairement restrictive : uniquement les
+/// préfixes explicitement listés, pas « tout ce qui n'est pas reconnu ».
+bool _isPublicLocation(String location) =>
+    _publicRoutes.contains(location) ||
+    _publicRoutePrefixes.any(location.startsWith);
+
 final appRouter = GoRouter(
   initialLocation: '/onboarding',
   redirect: (context, state) async {
@@ -1385,14 +1405,24 @@ final appRouter = GoRouter(
         '/accept-invitation',
         '/join',
       };
-      if (!onboardingComplete &&
-          !firstRunExemptRoutes.contains(state.matchedLocation)) {
+      // T2.6 : un deeplink `/e/:slug` doit être servi tel quel, même sur une
+      // première exécution (avant onboarding) et avant login. Sans cette
+      // extension, le visiteur serait éjecté vers `/onboarding` puis `/login`
+      // et la landing ne serait jamais vue (rédhibitoire pour un partage de
+      // lien par SMS/QR). **Additif strict** : on n'élargit PAS la liste
+      // littérale `firstRunExemptRoutes` (qui exclut déjà `/login` et `/register`
+      // on purpose — un visiteur qui ouvre l'app SANS deeplink doit finir sur
+      // l'onboarding), on n'ajoute QUE la exemption par préfixe pour `/e/…`.
+      // Autrement dit : `isExempt = ancien ⟶ inchangé ∪ nouveau préfixe`.
+      final isExempt = firstRunExemptRoutes.contains(state.matchedLocation) ||
+          _publicRoutePrefixes.any(state.matchedLocation.startsWith);
+      if (!onboardingComplete && !isExempt) {
         return onboardingRoute;
       }
       if (onboardingComplete && state.matchedLocation == onboardingRoute) {
         return loginRoute;
       }
-      if (_publicRoutes.contains(state.matchedLocation)) return null;
+      if (_isPublicLocation(state.matchedLocation)) return null;
       return loginRoute;
     }
 
@@ -1516,6 +1546,17 @@ final appRouter = GoRouter(
       name: 'accept-invitation',
       builder: (context, state) => AcceptInvitationScreen(
         initialToken: invitationTokenFromUri(state.uri),
+      ),
+    ),
+    // LOT 2 §GLISE-D'ABORD (T2.6, mobile) — deeplink de la landing publique
+    // d'une église. Additif : aucune route existante modifiée, aucune garde
+    // par rôle (la projection serveur est déjà `permitAll` + liste blanche
+    // + R3 404 indistinguable). Voir `church_landing_screen.dart`.
+    GoRoute(
+      path: '/e/:slug',
+      name: 'church-landing',
+      builder: (context, state) => ChurchLandingScreen(
+        slug: state.pathParameters['slug'] ?? '',
       ),
     ),
     GoRoute(

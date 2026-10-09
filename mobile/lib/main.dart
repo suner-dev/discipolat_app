@@ -20,11 +20,14 @@ import 'data/services/impersonation_service.dart';
 import 'data/services/data_saver_service.dart';
 import 'data/services/orientation_service.dart';
 import 'core/tenant_session.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (_) {}
 
   runApp(

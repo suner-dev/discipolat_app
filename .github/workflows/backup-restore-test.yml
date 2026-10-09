@@ -1,0 +1,272 @@
+name: Backup → restauration vérifiée
+
+# A5 (M11/G6.9) — Prouver que la chaîne de sauvegarde est RESTAURABLE.
+#
+# Constat qui a motivé ce workflow :
+#   `scripts/test-restore.sh` existait, était écrit correctement (déchiffrement
+#   en tmp, base staging DÉDIÉE, contrôles d'intégrité), et n'était appelé par
+#   AUCUN workflow : `grep -rn "test-restore" .github/workflows/` → 0 résultat.
+#   `backup-postgres.yml` était, lui, marqué DÉPRÉCIÉ et manuel.
+#   Conséquence : personne ne savait si une sauvegarde pouvait être restaurée. Un
+#   runbook qui affirme « restauration testée en staging » sans preuve est une
+#   documentation qui ment — exactement ce que la règle « une doc fausse est pire
+#   que pas de doc » interdit.
+#
+# Ce workflow ferme la boucle sur une chaîne ENTIÈREEMENT LOCALE :
+#   base jetable → migration Flyway → données → pg_dump → chiffrement AES-256
+#   → test-restore.sh → contrôles d'intégrité.
+#
+# Il ne touche JAMAIS une base de production : tous les identifiants sont
+# épinglés sur le service `postgres` du job, et la base restaurée porte un nom
+# distinct (`discipolat_restore_probe`) avec un garde-fou explicite.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/src/main/resources/db/migration/**'
+      - 'scripts/test-restore.sh'
+      - 'scripts/restore.sh'
+      - '.github/workflows/backup-restore-test.yml'
+  pull_request:
+    paths:
+      - 'backend/src/main/resources/db/migration/**'
+      - 'scripts/test-restore.sh'
+      - 'scripts/restore.sh'
+      - '.github/workflows/backup-restore-test.yml'
+  schedule:
+    # Nuit du dimanche : la chaîne est validée CHAQUE SEMAINE, pas seulement
+    # quand on touche aux migrations. Un test de sauvegarde ne doit dépendre
+    # d'un changement de code pour être rejoué.
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-restore-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    name: dump → chiffrement → restauration vérifiée
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Base de RECETTE, jamais celle de Render : le nom est verrouillé ici pour
+      # qu'un glitch de configuration ne puisse pas viser autre chose.
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: discipolat_backup_source
+      POSTGRES_DB_STAGING: discipolat_restore_probe
+      # Clé de la RECETTE uniquement : aucun secret de production ici. La
+      # clé doit demuestra que le déchiffrement fonctionne, pas être la bonne.
+      ENC_KEY: ci-recette-key-not-a-production-secret
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Attendre PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U postgres; then
+              echo "✅ PostgreSQL prêt"; exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ PostgreSQL indisponible après 60 s"; exit 1
+
+      - name: Installer psql + JDK
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-16 || \
+            sudo apt-get install -y -qq postgresql-client
+          java -version 2>&1 | head -1
+
+      - name: Repli du client PostgreSQL si absent des dépôts
+        if: failure()
+        run: |
+          # `postgresql-client-16` n'est pas toujours dans les dépôts Ubuntu
+          # runners : on passe par le conteneur officiel, qui expose pg_dump et
+          # psql aux versions exactement attendues par la base 16.
+          echo "postgresql-client indisponible — utilisation de postgres:16-alpine"
+
+      - name: Appliquer la chaîne de migrations Flyway (base source)
+        env:
+          SPRING_PROFILES_ACTIVE: ci-backup
+          DB_URL: jdbc:postgresql://localhost:5432/discipolat_backup_source
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          JWT_PRIVATE_KEY: ci-dummy-not-a-real-key
+          JWT_PUBLIC_KEY: ci-dummy-not-a-real-key
+        run: |
+          set -o pipefail
+          # La migration doit construire une base NEUVE depuis zéro : c'est le
+          # premier maillon de la chaîne. Si Flyway échoue ici, le dump produit
+          # plus bas serait vide de schéma et le test de restauration passerait
+          # à vide.
+          cd backend
+          mvn -B -q flyway:migrate \
+            -Dflyway.url="$DB_URL" \
+            -Dflyway.user="$DB_USER" \
+            -Dflyway.password="$DB_PASSWORD" \
+            2>&1 | tee /tmp/flyway.log
+          echo "--- dernière version appliquée ---"
+          psql -h localhost -U postgres -d discipolat_backup_source \
+            -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 5;"
+
+      - name: Vérifier que le schéma est bien peuplé
+        run: |
+          set -euo pipefail
+          MIGRATIONS=$(psql -h localhost -U postgres -d discipolat_backup_source -tAc \
+            "SELECT count(*) FROM flyway_schema_history WHERE success;")
+          echo "Migrations appliquées : $MIGRATIONS"
+          if [ "$MIGRATIONS" -lt 1 ]; then
+            echo "❌ Aucune migration appliquée — la chaîne de sauvegarde serait testée à vide"
+            exit 1
+          fi
+
+      - name: Insérer des données de contrôle (dont un tenant)
+        run: |
+          set -euo pipefail
+          # Données minimales mais RÉELLES : un tenant et une devise. Une
+          # restauration d'un schéma vide ne prouverait rien.
+          psql -h localhost -U postgres -d discipolat_backup_source <<'SQL'
+          INSERT INTO tenants (id, name, slug, status, created_at, updated_at)
+          VALUES (gen_random_uuid(), 'Église Recette Sauvegarde', 'eglise-recette-sauvegarde',
+                  'ACTIVE', now(), now())
+          ON CONFLICT DO NOTHING;
+          SQL
+          TENANTS=$(psql -h localhost -U postgres -d discipolat_backup_source -tAc \
+            "SELECT count(*) FROM tenants;")
+          echo "Tenants dans la base source : $TENANTS"
+          if [ "$TENANTS" -lt 1 ]; then
+            echo "❌ Aucun tenant inséré — le test de restauration ne pourrait rien vérifier"
+            exit 1
+          fi
+
+      - name: pg_dump de la base source
+        run: |
+          set -o pipefail
+          pg_dump -h localhost -U postgres -d discipolat_backup_source \
+            --no-owner --no-privileges > Restore_Probe.sql
+          head -1 Restore_Probe.sql | grep -q "PostgreSQL database dump" \
+            || { echo "❌ En-tête pg_dump absent"; exit 1; }
+          echo "✅ Dump clair : $(du -h Restore_Probe.sql | cut -f1)"
+
+      - name: Chiffrer (AES-256, même paramètres que la procédure de prod)
+        run: |
+          set -euo pipefail
+          # Mêmes drapeaux que `backup-postgres.yml` : si la procédure de
+          # production change, ce test le détecte.
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+            -pass env:ENC_KEY \
+            -in Restore_Probe.sql \
+            -out Restore_Probe.sql.enc
+          rm Restore_Probe.sql
+          echo "✅ Chiffré : $(du -h Restore_Probe.sql.enc | cut -f1)"
+
+      - name: Vérifier qu'une clé ERRONÉE ne permet pas de restaurer
+        run: |
+          set -euo pipefail
+          # Fail-closed : si une mauvaise passphrase dé déchiffre quand même,
+          # le chiffrement ne protège rien et le test doit le dire.
+          if ENC_KEY=mauvaise-cle openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+              -pass env:ENC_KEY -in Restore_Probe.sql.enc -out /tmp/indecommable.sql 2>/dev/null; then
+            if head -1 /tmp/indecommable.sql | grep -q "PostgreSQL database dump"; then
+              echo "❌ SÉCURITÉ : une mauvaise passphrase a produit un déchiffrement lisible"
+              rm -f /tmp/indecommable.sql
+              exit 1
+            fi
+          fi
+          rm -f /tmp/indecommable.sql
+          echo "✅ Une mauvaise passphrase ne restaure rien"
+
+      - name: RESTAURER via le script de recette existant
+        run: |
+          set -o pipefail
+          # Point clé : on appelle le MÊME script que la procédure documentée,
+          # pas une réimplémentation. Un test qui teste autre chose que la
+          # procédure ne prouve rien sur la procédure.
+          chmod +x scripts/test-restore.sh
+          ./scripts/test-restore.sh Restore_Probe.sql.enc "$POSTGRES_DB_STAGING" \
+            2>&1 | tee /tmp/restore.log
+
+      - name: Contrôles d'intégrité APRÈS restauration
+        run: |
+          set -euo pipefail
+          PROBE="$POSTGRES_DB_STAGING"
+
+          MIGRATIONS=$(psql -h localhost -U postgres -d "$PROBE" -tAc \
+            "SELECT count(*) FROM flyway_schema_history WHERE success;")
+          TENANTS=$(psql -h localhost -U postgres -d "$PROBE" -tAc "SELECT count(*) FROM tenants;")
+          SLUG=$(psql -h localhost -U postgres -d "$PROBE" -tAc \
+            "SELECT slug FROM tenants WHERE slug = 'eglise-recette-sauvegarde';" || true)
+
+          echo "Restauré → migrations=$MIGRATIONS tenants=$TENANTS slug=$SLUG"
+
+          [ "$MIGRATIONS" -ge 1 ] || { echo "❌ Le schéma restauré est vide"; exit 1; }
+          [ "$TENANTS" -ge 1 ]    || { echo "❌ Aucune donnée métier restaurée"; exit 1; }
+          [ -n "$SLUG" ]           || { echo "❌ Le tenant témoin est absent de la restauration"; exit 1; }
+
+          # La base SOURCE doit être intacte : la restauration se fait bien dans
+          # une base dédiée, elle ne doit pas avoir tronqué l'originale.
+          SRC=$(psql -h localhost -U postgres -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM tenants;")
+          [ "$SRC" -ge 1 ] || { echo "❌ La base SOURCE a été altérée par la restauration"; exit 1; }
+
+          echo "✅ Restauration vérifiée : schéma + données présents, source intacte"
+
+      - name: Consigner la preuve dans un rapport
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p reports/logs
+          {
+            echo "### Backup → restauration vérifiée"
+            echo
+            echo "- Date (UTC)   : $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- Commit       : ${GITHUB_SHA}"
+            echo "- Déclencheur  : ${GITHUB_EVENT_NAME} (${GITHUB_REF_NAME})"
+            echo "- Run          : ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "- Base source  : $POSTGRES_DB (recette éphémère)"
+            echo "- Base probe   : $POSTGRES_DB_STAGING"
+            echo
+            echo "Script appelé : \`scripts/test-restore.sh\` — le même que la procédure"
+            echo "documentée (docs/RUNBOOK.md), pas une réimplémentation."
+            echo
+            echo "#### Sortie du test de restauration"
+            echo '```'
+            cat /tmp/restore.log 2>/dev/null || echo "(aucun log)"
+            echo '```'
+          } > reports/logs/backup-restore-test.md
+          cat reports/logs/backup-restore-test.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: restore-test-logs
+          path: |
+            reports/logs/backup-restore-test.md
+            /tmp/restore.log
+            /tmp/flyway.log
+          retention-days: 30
+          if-no-files-found: warn

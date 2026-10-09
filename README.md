@@ -40,7 +40,7 @@ voit JAMAIS les données d'une autre (prouvé bout-en-bout par
 
 | Couche | Technologies |
 |---|---|
-| Backend | Java 21, Spring Boot 3.4.7, Spring Security (JWT RSA), Spring Data JPA/Hibernate 6, Flyway (159 migrations), springdoc (`/api-docs`), JUnit 5 + Mockito (~1 660 tests) |
+| Backend | Java 21, Spring Boot 3.4.7, Spring Security (JWT RSA), Spring Data JPA/Hibernate 6, Flyway (204 migrations), springdoc (`/api-docs`), JUnit 5 + Mockito (~1 900 tests) |
 | Frontend | React 19, Vite, TypeScript strict, TailwindCSS, Vitest, PWA (manifest + service worker) |
 | Mobile | Flutter 3.35+, Riverpod, Drift (base locale), GoRouter, notifications FCM |
 | Data & infra | PostgreSQL 16, Redis 7, Docker Compose, Render (prod/bêta), GitHub Actions, GHCR |

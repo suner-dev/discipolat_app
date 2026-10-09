@@ -17,6 +17,8 @@ import { useUsageTracking } from '@/hooks/useUsageTracking';
  * ========================================================================== */
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const PublicChurchesPage = lazy(() => import('@/pages/PublicChurchesPage'));
+// LOT 2 §GLISE-D'ABORD (T2.4) — landing publique d'une église (/e/:slug).
+const ChurchLandingPage = lazy(() => import('@/pages/ChurchLandingPage'));
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 // SPEC_ONBOARDING_FLOWS (FE-1..FE-3) — rejointure, gouvernance & annonces.
@@ -428,6 +430,11 @@ export default function App() {
             depuis la landing et le formulaire d'inscription (hors shell auth) */}
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/legal/:code" element={<LegalPage />} />
+
+        {/* LOT 2 §GLISE-D'ABORD (T2.4) — landing PUBLIQUE par église. Route
+            autonome (hors shell auth et hors MainLayout) : la marque est
+            appliquée en scopé par la page elle-même, jamais sur :root (R4). */}
+        <Route path="/e/:slug" element={<ChurchLandingPage />} />
 
         {/* Protected routes */}
         <Route element={<MainLayout />}>

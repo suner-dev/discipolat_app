@@ -37,8 +37,18 @@ public class FinanceAccount {
     private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(name = "devise", nullable = false, length = 3)
-    @Builder.Default
-    private String devise = "XOF";
+    /**
+     * A3 (M9) — plus de valeur par défaut « XOF ».
+     *
+     * <p>La devise est désormais TOUJOURS renseignée explicitement par le service
+     * ({@code TenantCurrencyResolver.resolve}), qui lit la devise primaire du
+     * tenant. Un défaut muet transformait une absence de choix en donnée
+     * comptable : un compte créé en EUR se retrouvait en XOF, sans trace.</p>
+     *
+     * <p>Le setter direct reste possible : c'est un setter JPA, pas une API
+     * d'écriture métier. Toute création passe par le service.</p>
+     */
+    private String devise;
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default

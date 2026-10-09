@@ -60,5 +60,19 @@
     "familyError": "Impossible de charger l'espace famille",
     "family": "Famille",
     "familySpaceTitle": "Espace Famille"
+  },
+  "churchPicker":   {
+    "label": "Votre église",
+    "optional": "(facultatif)",
+    "placeholder": "Commencez à taper le nom…",
+    "searching": "Recherche en cours…",
+    "notFound": "Aucune église publique ne correspond.",
+    "retry": "Réessayer",
+    "clear": "Effacer",
+    "networkError": "Indisponible pour le moment — vous pouvez continuer sans choisir d’église.",
+    "joinHint": "Rejoindre avec un code",
+    "acceptHint": "Accepter une invitation",
+    "createHint": "Créer mon église",
+    "resultsSemantics": "Suggestions d’églises"
   }
 }

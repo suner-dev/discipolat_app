@@ -16,6 +16,43 @@ const fr = {
   // ── LOT 2 §BK : retour arrière & fil d'Ariane ──
   'nav.back': 'Retour',
   'nav.backHome': "Retour à l'accueil",
+  // LOT 1 §GLISE-D'ABORD (T1.5) — sélecteur d'église « église d'abord ».
+  'churchPicker.label': 'Votre église',
+  'churchPicker.optional': '(facultatif — pour vous orienter)',
+  'churchPicker.placeholder': 'Commencez à taper le nom de votre église',
+  'churchPicker.clear': 'Effacer',
+  'churchPicker.results': "Suggestions d'églises",
+  'churchPicker.found': 'Église trouvée : {name}',
+  'churchPicker.notFound': "Cette église n'existe pas ou n'est pas publiée dans l'annuaire.",
+  'churchPicker.ctaCode': "J'ai un code d'entrée",
+  'churchPicker.ctaInvite': "J'ai reçu un lien d'invitation",
+  'churchPicker.ctaCreate': 'Créer mon église',
+  'churchPicker.error': 'Recherche temporairement indisponible — continuez le formulaire.',
+  'churchPicker.loginLabel': 'Vous cherchez votre église ?',
+  'churchPicker.joinHint': 'Connectez-vous normalement — pour rejoindre {name}, il faut une preuve (code ou invitation).',
+  'churchPicker.openJoin': 'Ouvrir la page de rejointure',
+  'churchPicker.cancel': 'Annuler',
+  // LOT 2 §GLISE-D'ABORD (T2.5) — onglet admin « Page publique ».
+  'landingAdmin.tab': 'Page publique',
+  'landingAdmin.title': 'Page publique de l\'église',
+  'landingAdmin.subtitle': 'Une vitrine en ligne que vous choisissez de publier. Rien n\'apparaît tant que vous ne l\'activez pas.',
+  'landingAdmin.enabledLabel': 'Publier la page publique',
+  'landingAdmin.enabledHint': 'Affiche les informations que vous avez saisies (nom, slogan, logo, couleurs) sur une page dédiée.',
+  'landingAdmin.requiresDirectory': 'Nécessite aussi que l\'église soit listée dans l\'annuaire public : ce sont deux consentements distincts.',
+  'landingAdmin.noindexNote': 'Cette page n\'est pas indexée par les moteurs de recherche.',
+  'landingAdmin.shareLabel': 'Lien partageable',
+  'landingAdmin.copy': 'Copier le lien',
+  'landingAdmin.copied': 'Lien copié',
+  'landingAdmin.copyErr': 'Copie impossible',
+  'landingAdmin.preview': 'Prévisualiser',
+  'landingAdmin.noSlug': 'Définissez un identifiant (slug) pour obtenir un lien partageable.',
+  'landingAdmin.previewTitle': 'Aperçu de la projection publique',
+  'landingAdmin.unnamed': 'Votre église',
+  'landingAdmin.joinCta': 'Rejoindre cette église',
+  // LOT 3 §BK (T3.2) — fil d'Ariane de la zone vitrine publique.
+  'publicNav.home': 'Accueil',
+  'publicNav.directory': 'Annuaire',
+  'publicNav.church': 'Église',
   'nav.backToList': 'Retour à la liste',
   'nav.breadcrumb': "Fil d'Ariane",
   // ── LOT 2 §GR : groupes d'onglets ──
@@ -360,6 +397,7 @@ const fr = {
   'settings.language': 'Langue',
   'settings.theme': 'Thème',
   'settings.darkMode': 'Mode sombre',
+  'settings.lightMode': 'Mode clair',
   'settings.notifications': 'Notifications',
   'settings.privacy': 'Confidentialité',
 
@@ -2962,7 +3000,7 @@ const fr = {
   'Âmes à risque prioritaire': 'Âmes à risque prioritaire',
   'Échanges': 'Échanges',
   'Échanges communautaires': 'Échanges communautaires',
-  'Échec d\\u2019exécution': 'Échec d\\u2019exécution',
+  'Échec d\’exécution': 'Échec d\’exécution',
   'Échec du changement de rôle': 'Échec du changement de rôle',
   'Échéance': 'Échéance',
   'Échéance dépassée': 'Échéance dépassée',
@@ -3488,6 +3526,22 @@ const fr = {
   'hierarchy.responsibleOf': 'responsable de',
   'hierarchy.step': 'Étape {n}',
   'hierarchy.loadUserError': 'Impossible de charger cette fiche.',
+  // B6 — QuotaUsageCards : le composant était intégralement en français codé en
+  // dur, donc illisible en `ar`/`sw`. Une clé par libellé réellement affiché.
+  'quotas.title': 'Quotas et usage',
+  'quotas.retry': 'Réessayer',
+  'quotas.loading': 'Chargement des quotas…',
+  'quotas.empty': 'Aucune donnée de quota disponible.',
+  'quotas.unavailable': 'Indisponible',
+  'quotas.unlimited': 'Illimité',
+  'quotas.enforced': 'Limite appliquée',
+  'quotas.notEnforced': 'Limite non appliquée',
+  'quotas.enforcementUnknown': 'Application de la limite indisponible',
+  'quotas.limitLabel': 'Limite : {value}',
+  'quotas.percentLabel': 'Pourcentage : {value}',
+  'quotas.sourceLabel': 'Source : {value}',
+  'quotas.megabytes': '{value} Mo',
+
 };
 
 export default fr;

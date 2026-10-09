@@ -7,6 +7,10 @@ import '../../../data/services/api_service.dart';
 import '../../../tenant_config.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/secure_screen.dart';
+// LOT 1 §GLISE-D'ABORD (T1.6) — le picker « église d'abord » s'AJOUTE en tete
+// du formulaire « classique » (ni createChurch, ni joinCode). Les trois gestes
+// existants restent intacts (A1), le picker est un raccourci facultatif (D5).
+import 'church_picker.dart';
 
 /// Création de compte — trois gestes d'entrée (SPEC_ONBOARDING_FLOWS MO-1) :
 ///  • [createChurch] = « Créer mon église » (fondateur self-service, D1) ;
@@ -61,6 +65,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _consentCgu = false;
   bool _consentPrivacy = false;
   bool _consentArt9 = false;
+
+  // LOT 1 §GLISE-D'ABORD (T1.6) — l'église choisie via `ChurchPicker`.
+  // Volontairement LOCAL et facultatif : la sélection n'est JAMAIS envoyée
+  // comme preuve d'adhésion (D1/R1 : seule `joinCode` ou une invitation font
+  // foi). Elle sert d'indice visuel à l'utilisateur et, le jour où un
+  // back-office en a besoin, d'un futur champ `requestedChurchHint` côté
+  // serveur (décision à journaliser en §8 avant d'ajouter un champ au
+  // payload /auth/register).
+  String? _pickedChurchName;
+  String? _pickedChurchSlug;
 
   @override
   void dispose() {
@@ -349,6 +363,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ],
                           ),
                         ),
+
+                      // LOT 1 §GLISE-D'ABORD (T1.6) — le picker s'AJOUTE
+                      // UNIQUEMENT sur le parcours « classique » (aucun
+                      // contexte d'église dans l'URL). Les deux autres
+                      // gestes (`?mode=church` = createChurch, `?joinCode=`)
+                      // ont DÉJÀ leur église cible : le picker serait un
+                      // pas de côté inutile et trompeur (A1/A3, R7 : ne
+                      // casser aucun lien déjà distribué). Le widget lui-
+                      // même n'écrit RIEN dans le payload d'inscription :
+                      // D1/R1 interdisent au slug public de tenir lieu de
+                      // preuve d'adhésion.
+                      if (!widget.createChurch &&
+                          (widget.joinCode == null ||
+                              widget.joinCode!.isEmpty)) ...[
+                        ChurchPicker(
+                          apiService: _apiService,
+                          onSelect: (name, slug) => setState(() {
+                            _pickedChurchName = name;
+                            _pickedChurchSlug = slug;
+                          }),
+                          onNotFound: (_) {
+                            // Le CTA « non trouvée » reste dans le picker
+                            // lui-même ; ici on ne réagit pas pour ne pas
+                            // masquer le parcours classique.
+                          },
+                        ),
+                        if (_pickedChurchName != null) ...[
+                          const SizedBox(height: 8),
+                          Semantics(
+                            identifier: 'register.pickedChurch',
+                            child: Text(
+                              'Vous avez ciblé : $_pickedChurchName'
+                              '${_pickedChurchSlug != null ? ' ($_pickedChurchSlug)' : ''}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                      ],
 
                       Form(
                         key: _formKey,

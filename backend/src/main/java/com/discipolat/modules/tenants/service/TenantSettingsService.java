@@ -108,6 +108,11 @@ public class TenantSettingsService {
         // Feature flags
         if (request.lowBandEnabled() != null) settings.setLowBandEnabled(request.lowBandEnabled());
         if (request.publicDirectoryEnabled() != null) settings.setPublicDirectoryEnabled(request.publicDirectoryEnabled());
+        // LOT 2 §GLISE-D'ABORD (T2.5) — opt-in page publique. ADDITIF : le défaut
+        // serveur reste false (dark launch) ; l'activation est explicite, second
+        // verrou après l'annuaire (double consentement RGPD art. 9).
+        if (request.landingEnabled() != null) settings.setLandingEnabled(request.landingEnabled());
+        if (request.landingSections() != null) settings.setLandingSections(request.landingSections());
         if (request.legacyMigrationEnabled() != null) settings.setLegacyMigrationEnabled(request.legacyMigrationEnabled());
         if (request.offlineMode() != null) settings.setOfflineMode(request.offlineMode());
         if (request.analyticsEnabled() != null) settings.setAnalyticsEnabled(request.analyticsEnabled());
@@ -357,6 +362,7 @@ public class TenantSettingsService {
             String footerText, List<Map<String, String>> footerLinks,
             // Feature flags
             Boolean lowBandEnabled, Boolean publicDirectoryEnabled, Boolean legacyMigrationEnabled,
+            Boolean landingEnabled, List<Map<String, Object>> landingSections,
             String offlineMode, Boolean analyticsEnabled, Boolean aiFeaturesEnabled,
             Boolean chatEnabled, Boolean academyEnabled, Boolean marketplaceEnabled,
             Boolean apiAccessEnabled, Boolean customDomainEnabled, Boolean ssoEnabled,

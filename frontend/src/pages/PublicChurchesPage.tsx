@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import LandingNavbar from '@/components/landing/LandingNavbar';
 import { CTAFinal, Footer } from '@/components/landing/CTAFooter';
 import SkeletonLoader from '@/components/shared/SkeletonLoader';
 import EmptyState from '@/components/shared/EmptyState';
+import BackButton from '@/components/navigation/BackButton';
+import PublicBreadcrumbs from '@/components/navigation/PublicBreadcrumbs';
 import { Building2, Globe, MapPin, Search } from 'lucide-react';
 
 interface PublicChurch { name: string; slug?: string; city?: string; country?: string; denomination?: string; website?: string; description?: string; }
@@ -11,6 +13,11 @@ const API_BASE = (import.meta as unknown as { env?: Record<string, string> }).en
 
 /** G6.9 — Annuaire public « Eglises sur Discipolat » (opt-in individuel, aucune PII). */
 export default function PublicChurchesPage() {
+  const location = useLocation();
+  // `/churches` est monté seul ; `/eglises` est dans `AuthLayout`, qui rend
+  // déjà un `<BackButton/>` (T3.1). On n'en ajoute donc un en-page QUE sur la
+  // monture autonome, pour ne pas dupliquer le contrôle (esprit A1 / anti-pattern n°1).
+  const standalone = location.pathname === '/churches';
   const [churches, setChurches] = useState<PublicChurch[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -36,6 +43,12 @@ export default function PublicChurchesPage() {
     <div className="min-h-screen">
       <LandingNavbar onNavigate={go} onDemo={() => {}} />
       <main className="max-w-6xl mx-auto px-4 pt-24 pb-16">
+        {/* LOT 3 §BK (T3.2) — fil d'Ariane public ; contrôle de retour ajouté
+            uniquement quand la page est montée hors `AuthLayout`. */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <PublicBreadcrumbs />
+          {standalone && <BackButton detectHistory fallbackTo="/" />}
+        </div>
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold">Eglises sur Discipolat</h1>
           <p className="mt-3 text-sm text-gray-500 max-w-2xl mx-auto">

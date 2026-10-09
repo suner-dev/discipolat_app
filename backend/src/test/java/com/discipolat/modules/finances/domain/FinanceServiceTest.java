@@ -46,6 +46,9 @@ class FinanceServiceTest {
         service = new FinanceService(transactionRepository, budgetRepository, securityUtils, auditService,
                 propagationPublisher, currencyService,
                 new com.discipolat.modules.currency.domain.Iso4217CurrencyValidator(),
+                // Résolveur RÉEL autour du CurrencyService mocké : la règle de
+                // devise (M9) est le comportement testé, pas une dépendance.
+                new com.discipolat.modules.currency.domain.TenantCurrencyResolver(currencyService),
                 mock(com.discipolat.modules.finances.domain.FinanceAccountRepository.class),
                 mock(com.discipolat.modules.finances.domain.FinanceDonationRepository.class),
                 mock(com.discipolat.modules.finances.domain.FinanceTontineRepository.class),

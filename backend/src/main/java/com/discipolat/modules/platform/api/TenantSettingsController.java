@@ -134,6 +134,9 @@ public class TenantSettingsController {
                 settings.getLowBandEnabled(),
                 settings.getPublicDirectoryEnabled(),
                 settings.getLegacyMigrationEnabled(),
+                // LOT 2 §GLISE-D'ABORD (T2.5) — relecture de l'opt-in page publique.
+                settings.getLandingEnabled(),
+                settings.getLandingSections(),
                 settings.getOfflineMode(),
                 settings.getAnalyticsEnabled(),
                 settings.getAiFeaturesEnabled(),
@@ -177,6 +180,7 @@ public class TenantSettingsController {
             String welcomeEmailSubject, String welcomeEmailBody,
             String footerText, List<Map<String, String>> footerLinks,
             Boolean lowBandEnabled, Boolean publicDirectoryEnabled, Boolean legacyMigrationEnabled,
+            Boolean landingEnabled, List<Map<String, Object>> landingSections,
             String offlineMode, Boolean analyticsEnabled, Boolean aiFeaturesEnabled,
             Boolean chatEnabled, Boolean academyEnabled, Boolean marketplaceEnabled,
             Boolean apiAccessEnabled, Boolean customDomainEnabled, Boolean ssoEnabled,

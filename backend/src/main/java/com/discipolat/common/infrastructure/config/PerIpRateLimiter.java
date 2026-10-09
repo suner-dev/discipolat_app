@@ -143,6 +143,41 @@ public class PerIpRateLimiter {
     @Value("${app.rate-limiting.join-lookup-period-minutes:1}")
     private int joinLookupPeriodMinutes;
 
+    // LOT 1 §GLISE-D'ABORD (T1.1) — suggestions du sélecteur d'église (typeahead
+    // public, branché sur /public/churches/suggest). L'appel est debouncé côté
+    // client (300 ms) mais le champ est libre : quota moyen, borné en anti-
+    // énumération. Il ne renvoie QUE des églises déjà en opt-in annuaire, donc
+    // aucune donnée privée ne transite — mais le volume de requêtes est régulé.
+    @Value("${app.rate-limiting.church-suggest-capacity:30}")
+    private int churchSuggestCapacity;
+    @Value("${app.rate-limiting.church-suggest-refill:30}")
+    private int churchSuggestRefill;
+    @Value("${app.rate-limiting.church-suggest-period-minutes:1}")
+    private int churchSuggestPeriodMinutes;
+
+    // LOT 1 §GLISE-D'ABORD (T1.1) — vérification d'existence par nom exact
+    // (/public/churches/exists). C'est un oracle d'existence d'église (donnée
+    // sensible au sens RGD, art. 9) : quota le plus serré des deux, réponse
+    // binaire identique pour « inexistante » et « non listée » (cf. D2/R3).
+    @Value("${app.rate-limiting.church-exists-capacity:12}")
+    private int churchExistsCapacity;
+    @Value("${app.rate-limiting.church-exists-refill:12}")
+    private int churchExistsRefill;
+    @Value("${app.rate-limiting.church-exists-period-minutes:1}")
+    private int churchExistsPeriodMinutes;
+
+    // LOT 2 §GLISE-D'ABORD (T2.2) — lecture de la landing publique d'une église
+    // (/public/churches/{slug}). Ce n'est PAS un oracle d'existence : le 404 est
+    // identique que la ressource soit absente, non listée ou en landing éteinte
+    // (D2/R3). Quota plus large que les deux endpoints d'oracle : une page vitrine
+    // se charge depuis des NAT partagés (visiteurs), il ne faut pas les bloquer.
+    @Value("${app.rate-limiting.church-landing-capacity:60}")
+    private int churchLandingCapacity;
+    @Value("${app.rate-limiting.church-landing-refill:60}")
+    private int churchLandingRefill;
+    @Value("${app.rate-limiting.church-landing-period-minutes:1}")
+    private int churchLandingPeriodMinutes;
+
     private final MeterRegistry meterRegistry;
     private final boolean usingRedis;
     private final LettuceBasedProxyManager<byte[]> redisProxyManager;
@@ -158,6 +193,9 @@ public class PerIpRateLimiter {
     private Counter counterSocialLoginTotal;
     private Counter counterSocialLinkTotal;
     private Counter counterJoinLookupTotal;
+    private Counter counterChurchSuggestTotal;
+    private Counter counterChurchExistsTotal;
+    private Counter counterChurchLandingTotal;
     private Counter counterLoginDenied, counterRefreshDenied, counterForgotPasswordDenied;
     private Counter counterResetPasswordDenied, counterActivateDenied, counterChangePasswordDenied;
     private Counter counterSwitchRoleDenied;
@@ -168,6 +206,9 @@ public class PerIpRateLimiter {
     private Counter counterSocialLoginDenied;
     private Counter counterSocialLinkDenied;
     private Counter counterJoinLookupDenied;
+    private Counter counterChurchSuggestDenied;
+    private Counter counterChurchExistsDenied;
+    private Counter counterChurchLandingDenied;
 
     public PerIpRateLimiter(
             Optional<LettuceBasedProxyManager<byte[]>> redisProxyManager,
@@ -199,6 +240,9 @@ public class PerIpRateLimiter {
         counterSocialLoginTotal = buildCounter("social_login", "total");
         counterSocialLinkTotal = buildCounter("social_link", "total");
         counterJoinLookupTotal = buildCounter("join_lookup", "total");
+        counterChurchSuggestTotal = buildCounter("church_suggest", "total");
+        counterChurchExistsTotal = buildCounter("church_exists", "total");
+        counterChurchLandingTotal = buildCounter("church_landing", "total");
 
         counterLoginDenied = buildCounter("login", "denied");
         counterRefreshDenied = buildCounter("refresh", "denied");
@@ -214,6 +258,9 @@ public class PerIpRateLimiter {
         counterSocialLoginDenied = buildCounter("social_login", "denied");
         counterSocialLinkDenied = buildCounter("social_link", "denied");
         counterJoinLookupDenied = buildCounter("join_lookup", "denied");
+        counterChurchSuggestDenied = buildCounter("church_suggest", "denied");
+        counterChurchExistsDenied = buildCounter("church_exists", "denied");
+        counterChurchLandingDenied = buildCounter("church_landing", "denied");
     }
 
     private Counter buildCounter(String endpoint, String result) {
@@ -306,6 +353,39 @@ public class PerIpRateLimiter {
         return consume("join_lookup",
                 joinLookupCapacity, joinLookupRefill, joinLookupPeriodMinutes, ip,
                 counterJoinLookupTotal, counterJoinLookupDenied);
+    }
+
+    /**
+     * LOT 1 §GLISE-D'ABORD (T1.1) — suggestions publiques du sélecteur d'église
+     * ({@code /public/churches/suggest}) : 30 req / min / IP.
+     */
+    public RateLimitResult tryConsumeChurchSuggest(String ip) {
+        return consume("church_suggest",
+                churchSuggestCapacity, churchSuggestRefill, churchSuggestPeriodMinutes, ip,
+                counterChurchSuggestTotal, counterChurchSuggestDenied);
+    }
+
+    /**
+     * LOT 1 §GLISE-D'ABORD (T1.1) — test d'existence par nom exact
+     * ({@code /public/churches/exists}) : 12 req / min / IP. Oracle d'existence
+     * d'un lieu de culte, donc quota serré (cf. R3 anti-énumération).
+     */
+    public RateLimitResult tryConsumeChurchExists(String ip) {
+        return consume("church_exists",
+                churchExistsCapacity, churchExistsRefill, churchExistsPeriodMinutes, ip,
+                counterChurchExistsTotal, counterChurchExistsDenied);
+    }
+
+    /**
+     * LOT 2 §GLISE-D'ABORD (T2.2) — lecture d'une landing publique
+     * ({@code /public/churches/{slug}}) : 60 req / min / IP. Le 404 uniforme
+     * (absente / non listée / landing éteinte) retire tout effet d'oracle ;
+     * le quota borne l'aval, pas la confidentialité.
+     */
+    public RateLimitResult tryConsumeChurchLanding(String ip) {
+        return consume("church_landing",
+                churchLandingCapacity, churchLandingRefill, churchLandingPeriodMinutes, ip,
+                counterChurchLandingTotal, counterChurchLandingDenied);
     }
 
     /**

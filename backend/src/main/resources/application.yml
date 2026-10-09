@@ -297,6 +297,29 @@ app:
     # une OPÉRATION PLANIFIÉE (re-sharding), pas un simple redémarrage :
     # voir docs/SCALING.md Niveau 3.
     shard-count: ${SCALING_SHARD_COUNT:1}
+    # ── Routage RÉEL multi-bases (opt-in) ──────────────────────────────────
+    # false = DÉSACTIVÉ : c'est `SingleDatabaseTenantDataSource` qui sert, et le
+    # comportement est exactement celui d'aujourd'hui. Passer à true exige
+    # (1) un `ShardDataSourceFactory` fourni par l'infrastructure, et
+    # (2) un anneau `shards` déclaré ci-dessous.
+    #
+    # Attention : en multi-bases, un tenant hors anneau est REFUSÉ (les données
+    # d'une église ne doivent jamais atterrir dans le shard d'une autre). Le
+    # basculement à chaud d'un tenant d'un shard à l'autre n'est PAS implémenté :
+    # chaque tenant reste épinglé à son shard pour la durée du process. C'est
+    # une opération d'exploitation gelante, à préparer hors bande
+    # (docs/SCALING.md, Niveau 3).
+    sharded: ${SCALING_SHARDED:false}
+    shards: []
+    # shards:
+    #   - id: 0
+    #     url: ${SHARD0_URL:jdbc:postgresql://shard0:5432/discipolat_0}
+    #     username: ${SHARD0_USERNAME:discipolat}
+    #     password: ${SHARD0_PASSWORD:}
+    #   - id: 1
+    #     url: ${SHARD1_URL:jdbc:postgresql://shard1:5432/discipolat_1}
+    #     username: ${SHARD1_USERNAME:discipolat}
+    #     password: ${SHARD1_PASSWORD:}
   stripe:
     # Facturation SaaS par abonnement (carte bancaire) — DÉSACTIVÉ par défaut :
     # s'active dès que STRIPE_SECRET_KEY est fournie (clé sk_test/... ou sk_live/...).

@@ -47,9 +47,22 @@ export default function PlatformOnboardingFlowPage() {
   const [family, setFamily] = useState<FamilyResult | null>(null);
 
   // Formulaires
+  // B12 — AUCUNE valeur géo/plan n'est pré-remplie.
+  //
+  // L'état part vide : `plan: 'free'`, `country: 'CM'`, `currency: 'XAF'` et
+  // `timezone: 'Africa/Douala'` étaient écrits en dur, puis envoyés tels quels au
+  // serveur. C'est une DONNÉE FORCÉE : un super-admin provisionnant une église
+  // européenne obtenait un tenant camerounais en devise XOF, sans l'avoir
+  // demandé et sans aucun moyen de voir que c'était une valeur par défaut.
+  //
+  // Règle G-B §5 : seule une valeur EXPLICITEMENT choisie est envoyée ; le reste
+  // est omis pour que le serveur applique SA valeur par défaut (aligné sur
+  // `super_admin_provisioning_screen.dart`, qui applique déjà cette règle côté
+  // mobile). `locale` reste pré-remplie : elle décrit l'interface, pas la
+  // localisation de l'église, et n'a pas de défaut serveur équivalent.
   const [tenantForm, setTenantForm] = useState({
-    name: '', slug: '', plan: 'free', country: 'CM', currency: 'XAF',
-    timezone: 'Africa/Douala', locale: 'fr',
+    name: '', slug: '', plan: '', country: '', currency: '',
+    timezone: '', locale: 'fr',
   });
   const [slugTouched, setSlugTouched] = useState(false);
   // B12 — owner obligatoire (contrat §3.5) : sans owner valide, aucun tenant n'est créé.
@@ -73,7 +86,12 @@ export default function PlatformOnboardingFlowPage() {
     queryFn: async () => (await api.get('/platform/admin/plans')).data as PlanOption[],
     retry: 1,
   });
-  const planOptions = plans.length > 0 ? plans : [{ key: 'free', name: 'Free' }];
+  // Aucun repli sur un plan INVENTÉ : si l'API n'a rien renvoyé, la liste est
+  // vide et le champ affiche « Aucun plan » — l'administrateur le voit au lieu de
+  // croire qu'il a choisi « Free ». L'ancien repli `[{key:'free',name:'Free'}]`
+  // était d'autant plus trompeur que 'free' n'est plus une clé canonique
+  // (`AdminTenantsPage.tsx`, `CANONICAL_PLAN_KEYS`).
+  const planOptions = plans;
 
   // Slug auto-tant que l'utilisateur n'a pas édité manuellement
   const effectiveSlug = slugTouched ? tenantForm.slug : slugify(tenantForm.name);
@@ -155,8 +173,17 @@ export default function PlatformOnboardingFlowPage() {
       }
 
       const { data } = await api.post('/platform/admin/provisioning', {
-        ...tenantForm,
+        name: tenantForm.name.trim(),
         slug: effectiveSlug,
+        // B12 — seules les valeurs EXPLICITEMENT choisies voyagent. Étaler
+        // `...tenantForm` envoyait `plan: 'free'`, `country: 'CM'`,
+        // `currency: 'XAF'`, `timezone: 'Africa/Douala'` même quand
+        // l'administrateur n'avait touché à aucun champ.
+        ...(tenantForm.plan ? { plan: tenantForm.plan } : {}),
+        ...(tenantForm.country.trim() ? { country: tenantForm.country.trim() } : {}),
+        ...(tenantForm.currency.trim() ? { currency: tenantForm.currency.trim().toUpperCase() } : {}),
+        ...(tenantForm.timezone.trim() ? { timezone: tenantForm.timezone.trim() } : {}),
+        locale: tenantForm.locale,
         ownerEmail: ownerForm.email.trim(),
         ownerFirstName: ownerForm.firstName.trim(),
         ownerLastName: ownerForm.lastName.trim(),
@@ -202,7 +229,8 @@ export default function PlatformOnboardingFlowPage() {
 
   const resetAll = () => {
     setStep(0); setTenant(null); setChurch(null); setDepartment(null); setFamily(null); setOwner(null);
-    setTenantForm({ name: '', slug: '', plan: 'free', country: 'CM', currency: 'XAF', timezone: 'Africa/Douala', locale: 'fr' });
+    // Reset symétrique de l'initialisation : aucun plan/géo pré-rempli (cf. plus haut).
+    setTenantForm({ name: '', slug: '', plan: '', country: '', currency: '', timezone: '', locale: 'fr' });
     setOwnerForm({ email: '', firstName: '', lastName: '' });
     setSlugTouched(false);
     setChurchForm({ name: '' });
@@ -214,6 +242,7 @@ export default function PlatformOnboardingFlowPage() {
   const inputCls =
     'w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500';
   const labelCls = 'block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1';
+  const hintCls = 'mt-1 text-xs text-amber-600 dark:text-amber-400';
 
   return (
     <div className="page-container max-w-4xl mx-auto">
@@ -317,10 +346,20 @@ export default function PlatformOnboardingFlowPage() {
               <label className={labelCls}>Plan</label>
               <select className={inputCls} value={tenantForm.plan}
                 onChange={(e) => setTenantForm((p) => ({ ...p, plan: e.target.value }))}>
+                {/*Placeholder « Aucun plan » : laisser le champ vide revient à
+                    laisser le serveur décider, ce qui est le comportement
+                    normal quand aucun plan n'est choisi. */}
+                <option value="">Aucun plan (valeur par défaut du serveur)</option>
                 {planOptions.map((p) => (
                   <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
                 ))}
               </select>
+              {planOptions.length === 0 && (
+                <p className={hintCls}>
+                  Aucun plan renvoyé par le serveur — le tenant sera créé sans
+                  plan, et pourra en recevoir un ensuite.
+                </p>
+              )}
             </div>
             <div>
               <label className={labelCls}>Pays</label>

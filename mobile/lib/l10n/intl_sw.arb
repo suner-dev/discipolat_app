@@ -50,5 +50,19 @@
     "edit": "Hariri",
     "loading": "Inapakia…",
     "offline": "Nje ya mtandao"
+  },
+  "churchPicker":   {
+    "label": "Kanisa lako",
+    "optional": "(si lazima)",
+    "placeholder": "Anza kuandika jina…",
+    "searching": "Inatafuta…",
+    "notFound": "Hakuna kanisa la umma linalolingana.",
+    "retry": "Jaribu tena",
+    "clear": "Futa",
+    "networkError": "Haipatikani kwa sasa — unaweza kuendelea bila kuchagua kanisa.",
+    "joinHint": "Jiunga na msimbo",
+    "acceptHint": "Kubali mwaliko",
+    "createHint": "Unda kanisa langu",
+    "resultsSemantics": "Pendekezo za makanisa"
   }
 }

@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 1000",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "i18n:audit": "node scripts/i18n-audit.mjs",
+    "i18n:baseline": "node scripts/i18n-audit.mjs --update-baseline"
   },
   "dependencies": {
     "@azure/msal-browser": "^5.23.0",

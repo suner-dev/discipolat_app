@@ -142,3 +142,54 @@ export function humanizeSegment(segment: string): string {
     .replace(/\.\w+$/, '')
     .trim();
 }
+
+// ── LOT 3 §BK (T3.2) — zone vitrine PUBLIQUE, hors `ROUTE_ROLES` ────────────
+// Ces routes sont volontairement absentes de la table d'accès (elles sont
+// publiques et non gardées) : le déducteur standard `deriveParentPath` les
+// ignore. Voici le pendant public — **pur**, testable, et qui ne touche
+// AUCUNE fonction existante (A1/A6 : rien de partagé n'est modifié).
+
+/** Hub de la vitrine : l'annuaire public. */
+export const PUBLIC_DIRECTORY_PATH = '/eglises';
+
+/** Route de vitrine publique (annuaire `/eglises`|`/churches` ou fiche `/e/:slug`) ? */
+export function isPublicShowcaseRoute(pathname: string): boolean {
+  const segs = pathSegments(pathname);
+  if (segs.length === 2 && segs[0] === 'e') return true;
+  return segs.length === 1 && (segs[0] === 'eglises' || segs[0] === 'churches');
+}
+
+/** Parent public d'une route de vitrine : fiche → annuaire ; annuaire → `/`. */
+export function derivePublicParentPath(pathname: string): string | null {
+  const segs = pathSegments(pathname);
+  if (segs.length === 2 && segs[0] === 'e') return PUBLIC_DIRECTORY_PATH;
+  if (segs.length === 1 && (segs[0] === 'eglises' || segs[0] === 'churches')) return '/';
+  return null;
+}
+
+export interface PublicCrumb {
+  href: string;
+  /** Clé i18n à résoudre. */
+  labelKey: string;
+  /** Libellé explicite (p. ex. le nom de l'église) ; gagne sur `labelKey`. */
+  label?: string;
+}
+
+/**
+ * Fil d'Ariane public : Accueil → Annuaire → [page courante]. Vide hors vitrine.
+ * `currentLabel` remplace le libellé de la fiche courante (le nom de l'église).
+ */
+export function publicBreadcrumbTrail(pathname: string, currentLabel?: string): PublicCrumb[] {
+  const segs = pathSegments(pathname);
+  const inDirectory = segs.length === 1 && (segs[0] === 'eglises' || segs[0] === 'churches');
+  const inChurch = segs.length === 2 && segs[0] === 'e';
+  if (!inDirectory && !inChurch) return [];
+  const trail: PublicCrumb[] = [{ href: '/', labelKey: 'publicNav.home' }];
+  if (inDirectory) {
+    trail.push({ href: PUBLIC_DIRECTORY_PATH, labelKey: 'publicNav.directory' });
+  } else if (inChurch) {
+    trail.push({ href: PUBLIC_DIRECTORY_PATH, labelKey: 'publicNav.directory' });
+    trail.push({ href: pathname, labelKey: 'publicNav.church', label: currentLabel });
+  }
+  return trail;
+}

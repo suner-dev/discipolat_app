@@ -715,6 +715,10 @@ public class OnboardingStepActions {
                 null, null,                      // welcomeEmailSubject, welcomeEmailBody
                 null, null,                      // footerText, footerLinks
                 null, null, null,                // lowBandEnabled, publicDirectoryEnabled, legacyMigrationEnabled
+                // LOT 2 §GLISE-D'ABORD (T2.5) — l'opt-in page publique n'est pas
+                // porté par l'étape d'identité : on laisse les 2 nouveaux champs
+                // additifs à null (le record en compte désormais 71, pas 69).
+                null, null,                      // landingEnabled, landingSections
                 null, null, null,                // offlineMode, analyticsEnabled, aiFeaturesEnabled
                 null, null, null,                // chatEnabled, academyEnabled, marketplaceEnabled
                 null, null, null,                // apiAccessEnabled, customDomainEnabled, ssoEnabled

@@ -50,5 +50,19 @@
     "edit": "تعديل",
     "loading": "جارٍ التحميل…",
     "offline": "غير متصل"
+  },
+  "churchPicker":   {
+    "label": "كنيستك",
+    "optional": "(اختياري)",
+    "placeholder": "ابدأ بكتابة الاسم…",
+    "searching": "جارٍ البحث…",
+    "notFound": "لا توافق أي كنيسة عامة.",
+    "retry": "إعادة المحاولة",
+    "clear": "مسح",
+    "networkError": "غير متاح حاليً، يمكنك المتابعة دون اختيار كنيسة.",
+    "joinHint": "انضم بمستعرف",
+    "acceptHint": "قبول دعوة",
+    "createHint": "أنشئ كنيستي",
+    "resultsSemantics": "اقتراحات الكنائس"
   }
 }

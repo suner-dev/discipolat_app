@@ -5,6 +5,7 @@ import com.discipolat.common.infrastructure.propagation.EntityPropagationPublish
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.currency.domain.CurrencyService;
+import com.discipolat.modules.currency.domain.TenantCurrencyResolver;
 import com.discipolat.modules.currency.domain.Iso4217CurrencyValidator;
 import com.discipolat.modules.finances.api.FinanceBudgetRequest;
 import com.discipolat.modules.finances.api.FinanceTransactionRequest;
@@ -33,9 +34,16 @@ public class FinanceService {
             "juillet", "août", "septembre", "octobre", "novembre", "décembre"
     };
 
-    /** Défaut historique du produit : jamais une hypothèse structurante, la
-     *  devise réelle est celle du tenant (currency_configs), modifiable. */
-    static final String DEVISE_DEFAUT = "XAF";
+    /**
+     * Défaut historique, désormais défini au SEUL endroit :
+     * {@link com.discipolat.modules.currency.domain.TenantCurrencyResolver#FALLBACK}.
+     *
+     * <p>Avant, cette constante valait « XAF » ici et les entités
+     * {@code FinanceAccount}/{@code FinanceDonation} portaient « XOF » : deux
+     * valeurs par défaut pour le même concept, selon le chemin d'écriture.</p>
+     */
+    static final String DEVISE_DEFAUT =
+            com.discipolat.modules.currency.domain.TenantCurrencyResolver.FALLBACK;
 
     private final FinanceTransactionRepository transactionRepository;
     private final FinanceBudgetRepository budgetRepository;
@@ -43,6 +51,7 @@ public class FinanceService {
     private final AuditService auditService;
     private final EntityPropagationPublisher propagationPublisher;
     private final CurrencyService currencyService;
+    private final com.discipolat.modules.currency.domain.TenantCurrencyResolver currencyResolver;
     private final Iso4217CurrencyValidator currencyValidator;
     private final FinanceAccountRepository accountRepository;
     private final FinanceDonationRepository donationRepository;
@@ -57,6 +66,7 @@ public class FinanceService {
                           EntityPropagationPublisher propagationPublisher,
                           CurrencyService currencyService,
                           Iso4217CurrencyValidator currencyValidator,
+                          TenantCurrencyResolver currencyResolver,
                           FinanceAccountRepository accountRepository,
                           FinanceDonationRepository donationRepository,
                           FinanceTontineRepository tontineRepository,
@@ -69,6 +79,7 @@ public class FinanceService {
         this.propagationPublisher = propagationPublisher;
         this.currencyService = currencyService;
         this.currencyValidator = currencyValidator;
+        this.currencyResolver = currencyResolver;
         this.accountRepository = accountRepository;
         this.donationRepository = donationRepository;
         this.tontineRepository = tontineRepository;
@@ -568,11 +579,14 @@ public class FinanceService {
      * « XOF » en dur : un tenant configuré en EUR se retrouvait avec des
      * comptes et des dons en XOF alors que ses transactions étaient en EUR.
      */
+    /**
+     * Devise d'une écriture : valeur explicite si fournie, sinon celle du tenant.
+     *
+     * <p>Délégué à {@link TenantCurrencyResolver} pour que Finance et Payments
+     * partagent exactement la même règle (M9).</p>
+     */
     private String deviseOf(Object explicit) {
-        if (explicit != null && !String.valueOf(explicit).isBlank()) {
-            return String.valueOf(explicit).trim().toUpperCase(Locale.ROOT);
-        }
-        return resolveDeviseTenant();
+        return currencyResolver.resolve(explicit);
     }
 
     // ========== DONATIONS (V236) ==========

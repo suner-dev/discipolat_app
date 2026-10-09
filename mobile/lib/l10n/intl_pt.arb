@@ -50,5 +50,19 @@
     "edit": "Editar",
     "loading": "A carregar…",
     "offline": "Sem ligação"
+  },
+  "churchPicker":   {
+    "label": "Sua igreja",
+    "optional": "(opcional)",
+    "placeholder": "Comece a digitar o nome…",
+    "searching": "Pesquisando…",
+    "notFound": "Nenhuma igreja pública corresponde.",
+    "retry": "Tentar novamente",
+    "clear": "Limpar",
+    "networkError": "Indisponível no momento — você pode continuar sem escolher uma igreja.",
+    "joinHint": "Participar com um código",
+    "acceptHint": "Aceitar um convite",
+    "createHint": "Criar minha igreja",
+    "resultsSemantics": "Sugestões de igrejas"
   }
 }

@@ -152,6 +152,51 @@ export function applyBranding(branding: PublicBranding): void {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * LOT 2 §GLISE-D'ABORD (T2.4, R4) — variante SCOPÉE, additive.
+ *
+ * `applyBranding` écrit sur `:root` (document.documentElement) : c'est la
+ * marque PLATFORM, et elle ne doit en AUCUN cas être dégradée par la landing
+ * d'une église (risque R4 : « une landing écrase la marque plateforme »).
+ * `applyScopedBranding` pose les MÊMES variables CSS sur un NŒUD CONTENANT
+ * (`node.style`) plutôt que sur `:root`. Les variables héritent vers le bas
+ * du DOM : tout ce qui est sous `node` prend la palette de l'église, et rien
+ * d'autre. Un `cleanup()` retire les propriétés posées — deux onglets `/` et
+ * `/e/:slug` n'échangent AUCUNE teinte.
+ *
+ * Elle ne touche PAS non plus : `document.title`, le favicon, `localStorage`,
+ * ni la classe `dark` (effets globaux réservés à `applyBranding`).
+ * ------------------------------------------------------------------ */
+export function applyScopedBranding(
+  node: HTMLElement,
+  branding: Partial<PublicBranding>,
+): () => void {
+  const b = { ...DEFAULT_BRANDING, ...branding };
+  const applied: string[] = [];
+  const setVar = (name: string, value: string) => {
+    node.style.setProperty(name, value);
+    applied.push(name);
+  };
+
+  const primary = shadeScale(b.primaryColor);
+  const accent = shadeScale(b.accentColor);
+  Object.entries(primary).forEach(([shade, rgb]) => setVar(`--color-primary-${shade}`, rgb));
+  Object.entries(accent).forEach(([shade, rgb]) => setVar(`--color-gold-${shade}`, rgb));
+
+  const button = b.buttonColor && b.buttonColor !== b.primaryColor ? b.buttonColor : b.primaryColor;
+  const buttonRgb = hexToRgb(button);
+  const buttonHover = mixWith(buttonRgb, BLACK, 0.14);
+  setVar('--color-button', `${buttonRgb.r} ${buttonRgb.g} ${buttonRgb.b}`);
+  setVar('--color-button-hover', `${buttonHover.r} ${buttonHover.g} ${buttonHover.b}`);
+
+  setVar('--font-sans', fontStack(b.fontFamily));
+  setVar('--font-display', fontStack(b.fontFamily));
+
+  return () => {
+    applied.forEach((name) => node.style.removeProperty(name));
+  };
+}
+
 export function getCachedBranding(): PublicBranding | null {
   try {
     const raw = localStorage.getItem(BRANDING_CACHE_KEY);

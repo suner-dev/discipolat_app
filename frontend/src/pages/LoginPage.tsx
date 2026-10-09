@@ -10,6 +10,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { SocialLoginButtons } from '@/features/auth/social/SocialLoginButtons';
+import ChurchPicker from '@/components/auth/ChurchPicker';
 
 import { tText } from '@/i18n';
 const loginSchema = z.object({
@@ -82,6 +83,13 @@ export default function LoginPage() {
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+
+  // LOT 1 §GLISE-D'ABORD (T1.4, D5) — le choix d'église à la connexion est
+  // FACULTATIF : il n'entre PAS dans LoginRequest (email + password), ne filtre
+  // pas l'authentification et ne touche pas le sélecteur de rôle. C'est un simple
+  // raccourci de découverte : une église listée sélectionnée propose les flux de
+  // PREUVE déjà là (/j/:slug, /join) — jamais une adhésion auto-déclarée (D1/R1).
+  const [pickedChurch, setPickedChurch] = useState<{ name: string; slug?: string } | null>(null);
 
   // ── Magic link (connexion sans mot de passe) ──
   const [showMagicLink, setShowMagicLink] = useState(false);
@@ -221,6 +229,44 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6">
+      {/* LOT 1 §GLISE-D'ABORD (T1.4) — sélecteur facultatif, sans effet sur le
+          formulaire de connexion. Affiché seulement tant qu'aucune église n'a
+          été choisie ici (l'affordance de rejointure prend le relais ensuite). */}
+      {!showRoleSelector && (
+        <div className="animate-slide-up">
+          <ChurchPicker
+            compact
+            label={t('churchPicker.loginLabel')}
+            onSelect={(c) => setPickedChurch(c)}
+            onNotFound={() => setPickedChurch(null)}
+          />
+          {pickedChurch && (
+            <div className="mt-2 rounded-xl border border-primary-500/20 bg-primary-500/5 p-3">
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {t('churchPicker.joinHint', { name: pickedChurch.name })}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {pickedChurch.slug && (
+                  <Link
+                    to={`/j/${encodeURIComponent(pickedChurch.slug)}`}
+                    className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                  >
+                    {t('churchPicker.openJoin')}
+                  </Link>
+                )}
+                <span className="text-gray-300 dark:text-white/20">·</span>
+                <Link to="/join" className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline">
+                  {t('churchPicker.ctaCode')}
+                </Link>
+                <span className="text-gray-300 dark:text-white/20">·</span>
+                <button type="button" onClick={() => setPickedChurch(null)} className="text-xs text-gray-500 dark:text-gray-400 hover:underline">
+                  {t('churchPicker.cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2.5 mb-4 animate-fade-in">

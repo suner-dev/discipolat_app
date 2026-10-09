@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082318256863",
+    "project_id": "discipolat-mobile",
+    "storage_bucket": "discipolat-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082318256863:android:17113ef47758f8dfb4476a",
+        "android_client_info": {
+          "package_name": "com.discipolat.discipolat_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJYWXWhnd4-C7bGghQ5R82d53fuIsGZqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

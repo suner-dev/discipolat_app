@@ -46,9 +46,15 @@ public class PaymentIntent {
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "currency", nullable = false)
-    @Builder.Default
-    private String currency = "XOF";
+        @Column(name = "currency", nullable = false)
+    /**
+     * A3 (M9) — plus de valeur par défaut « XOF ».
+     *
+     * <p>Renseignée explicitement par le service de création, via
+     * {@code TenantCurrencyResolver.resolve}, qui lit la devise primaire du
+     * tenant. Voir {@code FinanceAccount#devise} pour la raison du correctif.</p>
+     */
+    private String currency;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "purpose", nullable = false)

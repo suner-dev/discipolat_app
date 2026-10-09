@@ -60,5 +60,19 @@
     "familyError": "Unable to load family space",
     "family": "Family",
     "familySpaceTitle": "Family Space"
+  },
+  "churchPicker":   {
+    "label": "Your church",
+    "optional": "(optional)",
+    "placeholder": "Start typing the name…",
+    "searching": "Searching…",
+    "notFound": "No public church matches.",
+    "retry": "Retry",
+    "clear": "Clear",
+    "networkError": "Unavailable right now — you can continue without picking a church.",
+    "joinHint": "Join with a code",
+    "acceptHint": "Accept an invitation",
+    "createHint": "Create my church",
+    "resultsSemantics": "Church suggestions"
   }
 }
