@@ -9,6 +9,7 @@ import '../../../app.dart';
 import '../../widgets/beta_badge.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/social_login_buttons.dart';
+import 'church_picker.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -220,6 +221,27 @@ class _LoginScreenState extends State<LoginScreen>
                           fontSize: 13),
                     ),
                     const SizedBox(height: 48),
+
+                    // LOT 1 §GLISE-D'ABORD (T1.6) — l'église choisie via ChurchPicker
+                    // n'est PAS obligatoire à la connexion (D5) : le picker ne filtre
+                    // pas l'authentification (l'email reste l'identifiant global).
+                    // Il ne s'affiche que si AUCUN contexte d'église n'est déjà dans l'URL
+                    // (mode, joinCode, tenant, church) — les liens existants court-circuitent
+                    // le picker et produisent le parcours d'aujourd'hui (A2/A3/R7).
+                    ChurchPicker(
+                      compact: true,
+                      labels: const ChurchPickerLabels(),
+                      onSelect: (String name, String? slug) {
+                        // L'église trouvée met à jour les paramètres d'URL existants
+                        // (?church=, ?tenant=) — le formulaire reste inchangé.
+                        // Rien à faire ici : le parent gère l'URL via GoRouter.
+                      },
+                      onNotFound: (String name) {
+                        // L'utilisateur a tapé un nom inconnu → message discret,
+                        // il continue le formulaire normalement.
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
                     // Error
                     if (_error != null)
