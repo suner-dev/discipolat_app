@@ -1,0 +1,27 @@
+Rapport de taille — seuil 500 lignes, top 20 par pile
+généré : 2026-10-09T16:18:46Z · dépôt : 70260d03
+
+== backend : 57 fichier(s) > 500 lignes, 40128 lignes concernées
+    1545 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentManagementService.java
+    1480 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/dashboard/domain/DashboardService.java
+    1419 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentDossierService.java
+    1124 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/common/infrastructure/SchemaVerificationIntegrationTest.java
+    1011 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/tenants/MultiTenantSecurityTests.java
+     999 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/departments/domain/DepartmentManagementServiceTest.java
+     934 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/search/domain/SearchService.java
+     878 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/transfers/domain/TransferWorkflowService.java
+     860 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/souls/domain/SoulService.java
+     830 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/platform/domain/PageBuilderService.java
+     821 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/finances/domain/FinanceService.java
+     812 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/events/domain/EventService.java
+     796 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/users/domain/UserService.java
+     787 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/members/domain/MemberService.java
+     770 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/discipleship/domain/DiscipleshipService.java
+     762 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/ai/domain/AiAssistantService.java
+     731 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/onboarding/domain/OnboardingStepActions.java
+     722 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/health/service/HealthService.java
+     703 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/tenants/domain/OrganizationHierarchyService.java
+     695 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/onboarding/domain/OnboardingWizardServiceTest.java
+  … 37 autre(s) hors du top 20
+
+total inter-piles : 57 fichier(s) > 500 lignes

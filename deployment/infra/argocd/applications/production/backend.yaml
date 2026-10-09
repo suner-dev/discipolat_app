@@ -1,0 +1,238 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-backend-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/backend.git
+    targetRevision: main
+    path: helm/discipolat-backend
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "6"
+        - name: resources.limits.memory
+          value: "4Gi"
+        - name: resources.limits.cpu
+          value: "4000m"
+        - name: autoscaling.enabled
+          value: "true"
+        - name: autoscaling.minReplicas
+          value: "6"
+        - name: autoscaling.maxReplicas
+          value: "20"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "backend-production"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-frontend-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/frontend.git
+    targetRevision: main
+    path: helm/discipolat-frontend
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "6"
+        - name: resources.limits.memory
+          value: "1Gi"
+        - name: resources.limits.cpu
+          value: "1000m"
+        - name: autoscaling.enabled
+          value: "true"
+        - name: autoscaling.minReplicas
+          value: "6"
+        - name: autoscaling.maxReplicas
+          value: "20"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "frontend-production"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-mobile-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/mobile.git
+    targetRevision: main
+    path: helm/discipolat-mobile
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "4"
+        - name: resources.limits.memory
+          value: "2Gi"
+        - name: resources.limits.cpu
+          value: "2000m"
+        - name: autoscaling.enabled
+          value: "true"
+        - name: autoscaling.minReplicas
+          value: "4"
+        - name: autoscaling.maxReplicas
+          value: "12"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "mobile-production"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-infrastructure-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/infra.git
+    targetRevision: main
+    path: kustomize/overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-observability-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/infra.git
+    targetRevision: main
+    path: helm/opentelemetry-collector
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

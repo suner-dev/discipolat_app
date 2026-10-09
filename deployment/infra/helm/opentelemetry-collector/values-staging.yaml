@@ -1,0 +1,23 @@
+env:
+  - name: DEPLOYMENT_ENVIRONMENT
+    value: "staging"
+  - name: OTLP_ENDPOINT
+    value: "https://otel-collector-staging.observability:4317"
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 384Mi
+  requests:
+    cpu: 150m
+    memory: 192Mi
+
+config:
+  processors:
+    tail_sampling:
+      num_traces: 10000
+      expected_new_traces_per_sec: 200
+    batch:
+      timeout: 5s
+      send_batch_size: 512
+      send_batch_max_size: 1024

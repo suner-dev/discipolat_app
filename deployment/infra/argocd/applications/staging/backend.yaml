@@ -1,0 +1,220 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-backend-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/backend.git
+    targetRevision: main
+    path: helm/discipolat-backend
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "3"
+        - name: resources.limits.memory
+          value: "2Gi"
+        - name: resources.limits.cpu
+          value: "2000m"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "backend-staging"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-frontend-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/frontend.git
+    targetRevision: main
+    path: helm/discipolat-frontend
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "3"
+        - name: resources.limits.memory
+          value: "512Mi"
+        - name: resources.limits.cpu
+          value: "500m"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "frontend-staging"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-mobile-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/mobile.git
+    targetRevision: main
+    path: helm/discipolat-mobile
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+      parameters:
+        - name: image.tag
+          value: "{{.ARGOCD_APP_SOURCE_TARGET_REVISION}}"
+        - name: replicaCount
+          value: "2"
+        - name: resources.limits.memory
+          value: "1Gi"
+        - name: resources.limits.cpu
+          value: "1000m"
+        - name: otel.exporter.endpoint
+          value: "https://otel-collector.observability:4317"
+        - name: vault.enabled
+          value: "true"
+        - name: vault.role
+          value: "mobile-staging"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-infrastructure-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/infra.git
+    targetRevision: main
+    path: kustomize/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: discipolat-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: discipolat-observability-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: discipolat
+  source:
+    repoURL: https://gitlab.com/discipolat/infra.git
+    targetRevision: main
+    path: helm/opentelemetry-collector
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

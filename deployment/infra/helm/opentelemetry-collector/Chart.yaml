@@ -1,0 +1,15 @@
+apiVersion: v2
+name: opentelemetry-collector
+description: OpenTelemetry Collector for Discipolat Platform
+type: application
+version: 1.0.0
+appVersion: "0.112.0"
+keywords:
+  - observability
+  - opentelemetry
+  - tracing
+  - metrics
+  - logs
+maintainers:
+  - name: Platform Team
+    email: platform@discipolat.com

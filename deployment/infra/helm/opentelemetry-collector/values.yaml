@@ -1,0 +1,228 @@
+mode: "daemonset"
+replicaCount: 1
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.112.0"
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+  ports:
+    - name: otlp
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+    - name: prometheus
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+      protocol: TCP
+    - name: jaeger-thrift
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+          tls:
+            cert_file: /etc/otel/certs/tls.crt
+            key_file: /etc/otel/certs/tls.key
+        http:
+          endpoint: 0.0.0.0:4318
+          tls:
+            cert_file: /etc/otel/certs/tls.crt
+            key_file: /etc/otel/certs/tls.key
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: 'opentelemetry-collector'
+            static_configs:
+              - targets: ['0.0.0.0:8888']
+          - job_name: 'kubernetes-pods'
+            kubernetes_sd_configs:
+              - role: pod
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+                action: keep
+                regex: true
+              - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+                action: replace
+                target_label: __metrics_path__
+                regex: (.+)
+              - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+                action: replace
+                regex: ([^:]+)(?::\d+)?;(\d+)
+                replacement: $1:$2
+                target_label: __address__
+              - action: labelmap
+                regex: __meta_kubernetes_pod_label_(.+)
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+    zipkin:
+      endpoint: 0.0.0.0:9411
+
+  processors:
+    batch:
+      timeout: 10s
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 512
+      spike_limit_mib: 128
+    attributes:
+      actions:
+        - key: "k8s.namespace.name"
+          action: upsert
+          value: "${K8S_NAMESPACE}"
+        - key: "k8s.pod.name"
+          action: upsert
+          value: "${K8S_POD_NAME}"
+        - key: "service.name"
+          action: upsert
+          value: "${OTEL_SERVICE_NAME}"
+        - key: "deployment.environment"
+          action: upsert
+          value: "${DEPLOYMENT_ENVIRONMENT}"
+    resource:
+      attributes:
+        - key: "service.namespace"
+          value: "discipolat"
+          action: upsert
+        - key: "service.instance.id"
+          from_attribute: "k8s.pod.uid"
+          action: upsert
+    tail_sampling:
+      decision_wait: 30s
+      num_traces: 50000
+      expected_new_traces_per_sec: 1000
+      policies:
+        - name: "errors"
+          type: "string_attribute"
+          string_attribute:
+            key: "http.status_code"
+            values: ["500", "501", "502", "503", "504"]
+        - name: "slow"
+          type: "latency"
+          latency:
+            threshold_ms: 1000
+        - name: "random"
+          type: "probabilistic"
+          probabilistic:
+            sampling_percentage: 10
+
+  exporters:
+    otlp:
+      endpoint: "${OTLP_ENDPOINT}"
+      tls:
+        insecure: false
+      headers:
+        Authorization: "Bearer ${OTLP_TOKEN}"
+    prometheus:
+      endpoint: "0.0.0.0:8888"
+      namespace: "discipolat"
+      const_labels:
+        environment: "${DEPLOYMENT_ENVIRONMENT}"
+    logging:
+      loglevel: info
+      sampling_initial: 5
+      sampling_thereafter: 200
+
+  service:
+    extensions: [health_check, pprof, zpages]
+    pipelines:
+      traces:
+        receivers: [otlp, jaeger, zipkin]
+        processors: [memory_limiter, batch, attributes, resource, tail_sampling]
+        exporters: [otlp, logging]
+      metrics:
+        receivers: [otlp, prometheus]
+        processors: [memory_limiter, batch, attributes, resource]
+        exporters: [otlp, prometheus, logging]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, batch, attributes, resource]
+        exporters: [otlp, logging]
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  namespace: observability
+
+podMonitor:
+  enabled: true
+
+extraVolumes:
+  - name: otel-certs
+    secret:
+      secretName: otel-collector-tls
+      optional: true
+
+extraVolumeMounts:
+  - name: otel-certs
+    mountPath: /etc/otel/certs
+    readOnly: true
+
+env:
+  - name: K8S_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  - name: K8S_POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: OTEL_SERVICE_NAME
+    value: "opentelemetry-collector"
+  - name: DEPLOYMENT_ENVIRONMENT
+    value: "staging"
+  - name: OTLP_ENDPOINT
+    value: "https://otel-collector.observability:4317"
+  - name: OTLP_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: otel-collector-token
+        key: token
+        optional: true
+
+tls:
+  enabled: true
+  certManager:
+    enabled: true
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+priorityClassName: "system-cluster-critical"

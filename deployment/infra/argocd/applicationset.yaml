@@ -1,0 +1,96 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: discipolat-platform
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://gitlab.com/discipolat/infra.git
+        revision: main
+        directories:
+          - path: argocd/applications/*
+  template:
+    metadata:
+      name: 'discipolat-{{path.basename}}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: discipolat
+      source:
+        repoURL: https://gitlab.com/discipolat/infra.git
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          valueFiles:
+            - values.yaml
+            - values-{{path.basename}}.yaml
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: 'discipolat-{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: discipolat
+  namespace: argocd
+spec:
+  description: Discipolat Platform Project
+  sourceRepos:
+    - 'https://gitlab.com/discipolat/infra.git'
+    - 'https://gitlab.com/discipolat/backend.git'
+    - 'https://gitlab.com/discipolat/frontend.git'
+    - 'https://gitlab.com/discipolat/mobile.git'
+  destinations:
+    - namespace: 'discipolat-*'
+      server: 'https://kubernetes.default.svc'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: 'argoproj.io'
+      kind: Application
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: '*'
+    - group: 'apps'
+      kind: '*'
+    - group: 'batch'
+      kind: '*'
+    - group: 'networking.k8s.io'
+      kind: '*'
+    - group: 'rbac.authorization.k8s.io'
+      kind: '*'
+    - group: 'cert-manager.io'
+      kind: '*'
+    - group: 'external-secrets.io'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Admin privileges
+      policies:
+        - p, proj:discipolat:admin, applications, *, discipolat/*, allow
+      groups:
+        - discipolat:admins
+    - name: developer
+      description: Developer privileges
+      policies:
+        - p, proj:discipolat:developer, applications, get, discipolat/*, allow
+        - p, proj:discipolat:developer, applications, sync, discipolat/*, allow
+      groups:
+        - discipolat:developers

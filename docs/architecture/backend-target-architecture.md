@@ -117,9 +117,11 @@ règle (cf. frontend doc §3).
 | R3 | Un module d'un contexte **n'importe pas** les internes d'un autre contexte | `import com.discipolat.fintech.domain.*` depuis `people` | Le couplage passe par un **port publié** ou un **événement** (contract) |
 | R4 | Les **annotations** Spring (`@Service`, `@Component`, `@Autowired`, `@Transactional`) n'apparaissent **que** dans `adapters-*` et `application` | dans `domain` | Le domaine reste une bibliothèque pure |
 | R5 | Les `@RestController` n'appellent **que** les use-cases `application` | un contrôleur qui ouvre une transaction ou parle à un repository | On sépare transport HTTP et logique métier (la 1ʳᵉ est fine, la 2ᵈ est le produit) |
-| R6 | Aucun **cycle** de paquet entre contexts | `A ⇄ B` | Un cycle rend l'extraction future **impossible** |
+| R6 | Aucun **couplage réciproque** entre contexts (mesuré : 45 couples ; gelé par paire) | `A ⇄ B` | Un cycle rend l'extraction future **impossible** — et Maven l'interdit entre modules, cf. §4.1 |
 
-Exemple de config ArchUnit à poser (à copier telle quelle dans V0) :
+Exemple de config ArchUnit à poser (schématique — **l'API réelle vérifiée sur la 1.4.2 du dépôt local est
+différente** : `slices()` vient de `SlicesRuleDefinition` et non de `ArchRuleDefinition`, et le `orShould()`
+chainé n'existe pas sous cette forme ; la version qui tourne est `ArchitectureRulesTest.java`) :
 
 ```java
 @ArchTest
@@ -140,6 +142,33 @@ static final ArchRule frontieres_entre_contexts =
 **Effet secondaire immédiat** : `mvn verify` qui échoue sur une violation **documente** l'architecture.
 Une équipe qui arrive peut lire `ArchRulesTest.java` et savoir **exactement** ce qui est permis. C'est
 ce qui se vend en due-diligence.
+
+### 4.1 MESURE RÉELLE — ce que le gel V0.1 a trouvé (2026-10-09, `backend/src/test/resources/architecture/architecture-freeze.txt`)
+
+2 253 classes de production importées, 8 s d'exécution. La règle R6 a été **réécrite après mesure** :
+` slices().beFreeOfCycles()` énumérait >100 cycles de 19 tranches dans un ordre dépendant du parcours du
+graphe — **93 « nouveaux » cycles sur 96 entre deux exécutions du même code**. Un ratchet non
+reproductible est pire que pas de ratchet : il apprend à laisser un test rouge. R6 gèle donc la
+**paire en couplage réciproque**, propriété unique du graphe (stabilité vérifiée sur 3 exécutions).
+
+| Ce qui est gelé | Valeur | Lecture |
+|---|---|---|
+| R1 domaine ↔ infrastructure (plafond de compte) | **7 867** | le domaine n'est pur nulle part ; c'est le chantier V1, pas V0 |
+| R4 annotations de conteneur dans `domain/` (plafond) | **2 948** | `@Service`/`@Transactional` sont dans le domaine : le câblage et le métier sont écrits ensemble |
+| R2 `application` → adaptateurs (plafond) | **0** | aucune couche `application/` n'existe encore : la règle est **verte par absence**, elle deviendra vivante au premier use-case |
+| R3 arêtes contexte → internes d'un autre contexte | **354 arêtes** (952 accès) | c'est la **carte des blocages d'extraction** ; le record est `platform -> tenants` (65 accès) |
+| R5 contrôleur → repository/JPA/EntityManager | **8** | petit, précis, scandaleux : `AdminSystemHealthController` injecte un `JdbcTemplate`, `EncouragementController` pilote un `EntityManager` et une requête native |
+| R6 couples en couplage réciproque | **45** | deux contexts qui se connaissent mutuellement |
+| **Composants fortement connexes** (rapport, non gelé) | **41 contexts dans UN SEUL cycle**, 75 contexts en jeu, + `badges<->visits` + `dataMigration<->imports` | **le fait le plus important du document** |
+
+**Conséquence, et elle dément une hypothèse de mon propre plan** : Maven **interdit** un cycle entre
+modules. `departments` (pilote V0.6), `authentication` (V0.6bis), `payments` (V0.7) et `fintech` (§10)
+appartiennent tous au cycle de 41. **Aucun ne peut devenir un module autonome** avant que ses arêtes
+réciproques soient rompues. La stratégie du « contexte pilote isolé » que j'énonçais en §14 est donc
+**inapplicable telle quelle** ; elle devient la tâche **V0.15** du plan d'exécution (rompre un couple
+par PR, par dépendance inverse, sans toucher aux contrats). Le point positif introduit par le gel R6 :
+le blob **peut cesser de grossir immédiatement** — toute nouvelle paire réciproque fait désormais
+rougir la CI, sans aucune refonte.
 
 ---
 
@@ -285,6 +314,11 @@ Candidats naturels dans **cet ordre** (valeur / coût) :
 Chaque extraction se fait **sans toucher au domaine** : l'outbox (§7) devient le contrat binaire, et
 le module extrait consomme/publie sur les topics AsyncAPI.
 
+> **Réservé par la mesure §4.1** : cette liste suppose les contexts **découplables**. Ils ne le sont pas
+> aujourd'hui — 41 d'entre eux forment un seul composant fortement connexe, `fintech` (`payments`) compris.
+> L'ordre ci-dessus reste le bon en **valeur**, mais son prérequis est V0.15 (rompre les couples
+> réciproques), pas l'écriture du module.
+
 ---
 
 ## 11. Data & IA (le moat réel)
@@ -413,6 +447,10 @@ l'architecture) donc aucune suspicion ne s'installe dans l'équipe.
    le pilote qui **épreuve les règles R1-R6 sur le cas le plus dur** plutôt que sur un cas facile —
    un gabarit validé ici se copie ailleurs, l'inverse ne garantit rien. Mon texte recommandait
    `identity` (meilleur effet de démonstration) ; **`identity` devient V0.6bis** et `fintech` V0.7.
+   **CORRIGÉ APRÈS MESURE (§4.1)** : ce pilote ne peut pas être élevé en module Maven autonome, il est
+   dans le cycle de 41 contexts. Le pilote devient donc un **chantier en deux temps** : couches
+   `domain/application/adapters` **dans** `monolith/` (faisable dès V0.6), élévation en module **après**
+   V0.15. Le choix du pilote reste valable — c'est sa **sortie** qui était surestimée.
    Note : le module s'appelle `departments` et son plus gros service est dans `departments/domain/`
    — donc R1 (domaine pur) y **échouera** immédiatement, ce qui est exactement la preuve rouge
    recherchée en V0.1.

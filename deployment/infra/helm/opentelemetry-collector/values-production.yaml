@@ -1,0 +1,39 @@
+replicaCount: 3
+
+env:
+  - name: DEPLOYMENT_ENVIRONMENT
+    value: "production"
+  - name: OTLP_ENDPOINT
+    value: "https://otel-collector-production.observability:4317"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+config:
+  processors:
+    memory_limiter:
+      limit_mib: 1024
+      spike_limit_mib: 256
+    tail_sampling:
+      num_traces: 100000
+      expected_new_traces_per_sec: 5000
+    batch:
+      timeout: 15s
+      send_batch_size: 2048
+      send_batch_max_size: 4096
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

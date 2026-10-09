@@ -20,14 +20,22 @@
 
     <properties>
         <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <!-- V0.3 : on remplace source/target par RELEASE. Différence qui compte : source/target
+             fixent la SIGNATURE des bytecode tout en linkant les API du JDK qui lance le build ;
+             <release> fixe aussi les API. Sans cela, un build lancé sur JDK 25 (le defaut de la
+             machine de dev, et deja documente plus bas via net.bytebuddy.experimental) acceptait
+             un appel a une API apparue apres 21 : compile ici, casse ailleurs. Le build devient
+             reproductible, ce que la CI GitLab et un audit exigent. -->
+        <maven.compiler.release>21</maven.compiler.release>
         <lombok.version>1.18.38</lombok.version>
         <jjwt.version>0.12.6</jjwt.version>
         <spring-modulith.version>1.4.3</spring-modulith.version>
         <springdoc.version>2.8.6</springdoc.version>
         <testcontainers.version>1.21.0</testcontainers.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <!-- V0.1 : version alignee sur celle du depot local (1.4.2), non geree par
+             le BOM Spring Boot 3.4 -> a fixer ici, comme firebase-admin plus haut. -->
+        <archunit.version>1.4.2</archunit.version>
     </properties>
 
     <dependencies>
@@ -206,6 +214,22 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            V0.1 (ADR-002) — ArchUnit : la regle non executee n'est pas une regle.
+            Une seule dependance (archunit « cœur ») : elle n'exige que slf4j-api,
+            deja resolu, et fonctionne donc hors ligne — aucun apport reseau au build.
+            Les regles R1-R6 sont evaluees dans ArchitectureRulesTest en mode
+            avertissement : l'etat historique est gele dans
+            src/test/resources/architecture/architecture-freeze.txt, et la suite
+            ROUGIT sur toute violation nouvelle (regle A7 « dark launch »).
+            La portee est « test » : rien n'est embarque dans le JAR de production.
+        -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
     <!-- P0 (A1) : Notifications push Firebase Cloud Messaging (SDK admin).
          Version non figee : elle suit la gestion de dependances de Spring Boot.
          Le service account n'est JAMAIS dans une variable d'environnement en
@@ -248,13 +272,21 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- OWASP dependency-check (SCA Java) — le scan est exécuté par le job
+                 dédié « owasp-backend » de .github/workflows/security.yml
+                 (org.owasp:dependency-check-maven:check, rapport en artifact, NON
+                 bloquant). Il n'est volontairement PAS lié à la phase `verify` :
+                 sans clé NVD, le débit gratuit fait échouer le téléchargement de la
+                 base de manière aléatoire, et une porte aléatoire n'est pas un gate.
+                 La porte bloquante côté dépendances Java est dependency-review
+                 (GitHub Advisory DB). Voir security.yml et KNOWN_ISSUES.md Q7. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <!-- <release>${java.version}</release> -->
+                    <!-- V0.3 : <release> plu tot commente, remedite ici. source/target sont
+                         supprimes car ignores quand release est pose (avertissement du plugin). -->
+                    <release>${java.version}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

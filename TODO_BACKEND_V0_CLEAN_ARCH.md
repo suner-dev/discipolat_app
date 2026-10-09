@@ -35,22 +35,43 @@ Décisions :
   **freeze** des violations historiques (une liste qui ne peut que **régresser**, jamais grossir).
 
 Risques :
-- **RV-1** : le multi-module sur 135 modules peut déclencher des cycles de dépendance cachés. Mitigé :
-  on commence par **3 contexts pilotes** isolés, pas les 135 d'un coup.
+- **RV-1 — CONFIRMÉ ET AGGRAVÉ PAR LA MESURE (V0.1, 2026-10-09)** : le graphe de dépendance entre
+  contexts n'est pas « peut-être cyclique », il **est** un bloc monolithique. ArchUnit (rapport
+  `target/architecture-report.txt`, section composants fortement connexes) mesure **75 contexts en
+  jeu, dont 41 dans un seul et même cycle** (`ai … whatsapp`, en passant par `departments`, `users`,
+  `core`, `platform`, `tenants`, `payments`), plus **45 couples en couplage réciproque** direct.
+  **Conséquence dure** : Maven **interdit** un cycle entre modules. Aucun des 41 contexts ne peut
+  devenir un module autonome — **y compris le pilote choisi (`governance`/`departments`)** — tant que
+  ses arêtes réciproques ne sont pas rompues. Mon mitigation initiale (« 3 contexts pilotes isolés »)
+  était **fausse** : ces contexts ne sont pas isolés. Réordonnancement en §3 et nouvelle tâche **V0.15**.
+  Ce que le gel R6 change d'ailleurs : il ne dit pas seulement « c'est sale », il dit **« ne créez
+  plus aucun nouveau couple réciproque »**, c'est-à-dire que le blob peut cesser de grossir dès
+  aujourd'hui, sans refactorer quoi que ce soit.
 - **RV-2** : générer les clients web/mobile en CI peut faire échouer le build sur la dérive existante.
   Mitigé : en V0, la génération est **rapportée** (diff publié), pas **bloquante**.
 - **RV-3** : OTel peut ajouter de la latence/verbosité. Mitigé : échantillonnage, `logback` inchangé,
   activation par profil `observability`.
+- **RV-4** (nouveau, né de V0.1) : un ratchet **non reproductible** est pire que l'absence de ratchet.
+  La première implémentation de R6 via `slices().beFreeOfCycles()` donnait 93 « nouveaux » cycles sur
+  96 entre deux exécutions **du même code** (l'énumération de cycles dépend de l'ordre de parcours du
+  graphe). R6 a été réécrite sur une propriété **unique** du graphe (la paire en couplage réciproque),
+  vérifiée stable sur 3 exécutions. Leçon tenue : **exiger le déterminisme avant la finesse**.
 
 ---
 
 ## 1. Définition de fini (V0)
 
 V0 est **ATTEINT** quand, sur `main` :
-1. `mvn verify` **exécute** une suite ArchUnit R1..R6 (mode warning, rapport publié, liste de freeze non-nulle mais monotone décroissante).
-2. Le backend est **multi-module** pour au moins **`cross-cutting` + `governance` (pilote) + `identity`
-   + `fintech` + `platform-bootstrap`** (les autres suivront en V1), **sans perte de aucun test**
-   (suite ~1 884 verte).
+1. `mvn verify` **exécute** une suite ArchUnit R1..R6 — **FAIT, V0.1 (2026-10-09)** : gel de 424 lignes
+   (3 plafonds + 354 arêtes R3 + 8 fuites R5 + 45 couples R6), déterminisme prouvé sur 3 exécutions,
+   rouge prouvé par deux sondes (plafond R1 +1, nouvelle arête `archprobe -> departments`).
+2. Le backend est **multi-module** pour ce qui est réellement découplable : **`cross-cutting` +
+   `contract` + `monolith/` + `platform-bootstrap`** (V0.4, V0.5, V0.8). Les contexts pilotes
+   (`governance`, `identity`, `fintech`) **ne peuvent pas** être des modules autonomes avant V0.15 :
+   ils sont dans le cycle géant de 41 contexts (RV-1). En V0, ils reçoivent donc les **couches
+   `domain/application/adapters` à l'intérieur de `monolith/`** (préparation), l'élévation en module
+   Maven venant après la rupture des couples réciproques. Le tout **sans perdre aucun test**
+   (~1 884 verts).
 3. `openapi.json` est **régénéré en CI** et **comparé** au contrat commité (diff bloquant si breaking-change non versionné ; rapport sinon).
 4. Un **`asyncapi.yaml`** squelette existe, listant les événements publiés par l'outbox existante.
 5. Un **traceId** circule de bout en bout (requête HTTP → log → réponse) via OpenTelemetry, prouvé par un test.
@@ -100,19 +121,43 @@ V0 est **ATTEINT** quand, sur `main` :
 |---|---|---|
 | **V0.14** | Import GitHub→GitLab **monorepo intact** + `.gitlab-ci.yml` (voir `docs/architecture/GITLAB-BOOTSTRAP.md`), jobs **conditionnés par `changes:`** (backend/frontend/mobile) — Option 2 de l'ADR-001. | ne **mélanger** ni déménagement ni refactor : d'abord GitLab vert, **puis** V0-A..D sur GitLab. |
 
+### LOT V0-F — Prérequis apparu de la mesure V0.1 : dé-enchaver les contexts
+
+**Pourquoi ce lot existe** : la mesure ArchUnit de V0.1 montre **41 contexts dans un seul cycle** et
+**45 couples en couplage réciproque** direct. Or Maven **refuse** un cycle entre modules : V0.6, V0.6bis,
+V0.7 et V1 (extraction `fintech`) sont **matériellement impossibles** tant que les arêtes visées ne sont
+pas rompues. Ce n'était pas dans le plan ; c'est la mesure qui l'a mis à jour.
+
+| ID | Tâche | Preuve rouge → verte | Gate |
+|---|---|---|---|
+| **V0.15** | **Rupture des couples réciproques bloquants**, un couple par PR, **par dépendance inverse** et non par déplacement de code : sur le couple choisi (recommandé : `audit <-> users`, le plus central et le moins métier), on introduit un **port** dans le contexte qui doit rester bas de pile, et l'autre contexte passe par ce port. Additif : aucune signature de contrôleur touchée (A4). | Rouge : `ArchitectureRulesTest` liste le couple dans le gel → on le retire du gel, le test **rougit** tant que l'arête existe. Verte : l'arête est rompue, le couple disparaît du rapport, le test passe **sans** `freeze.update`. | `mvn -o test -Dtest=ArchitectureRulesTest` vert **avec le gel déjà allégé** |
+| **V0.16** | **Palier de pilotage** : la liste des 45 couples est triée par centralité (nb d'arêtes) et publiée dans le rapport CI, pour que l'ordre des ruptures soit une **décision documentée** et pas un choix de dernière minute. | Verte : le rapport contient le classement. | job `report-size` (V0.2) |
+
+> **V0.15 est le seul travail de V0 qui touche au code de production.** Il est donc tenu plus
+> strictement que les autres : un couple par PR, contrat gelé, suite ~1 884 verte, et **le gel est
+> allégé avant le code** — c'est-à-dire que la PR démarre rouge et finit verte, jamais l'inverse.
+
 ---
 
 ## 3. Ordre et dépendances
 
 ```
-V0.1,V0.2,V0.3  (outillage, parallèles, 0 risque)
-        └─► V0.4 → V0.5 → V0.6 → V0.7 → V0.8   (multi-module séquentiel, chaque PR = tests verts)
-                   ├─► V0.9,V0.10,V0.11          (contrats, dès que contract/ existe)
-                   └─► V0.12,V0.13               (observabilité, indépendant)
-V0.14 (GitLab) — pré-requis d'exécution de tout le reste sur le nouvel hébergeur
+V0.1 (FAIT) , V0.2, V0.3  (outillage, parallèles, 0 risque)
+        ├─► V0.4 → V0.5 → V0.8            (multi-module de CE QUI EST découplable : cross-cutting,
+        │                                   contract, monolith/, platform-bootstrap)
+        │        ├─► V0.9, V0.10, V0.11    (contrats, dès que contract/ existe)
+        │        └─► V0.12, V0.13          (observabilité, indépendant)
+        ├─► V0.15 → V0.16                  (rupture des couples réciproques — PRÉREQUIS de V0.6+)
+        └─► V0.6 → V0.6bis → V0.7          (couches clean dans monolith/, puis élévation en modules
+                                            — seulement après V0.15 sur les couples concernés)
+V0.14 (GitLab) — en parallèle de V0-A ; bloquant uniquement pour V0-B (gros remaniement de pom.xml)
 ```
 
-**Chemin critique** : V0.14 (GitLab) → V0.4 (multi-module) → V0.6 (pilote `governance/departments`) → V0.9 (contrats).
+**Chemin critique revu après mesure** : V0.1 (fait) → V0.4 (multi-module sûr) → **V0.15 (rompre les
+couples réciproques)** → V0.6 (pilote `governance/departments` élevé en module) → V0.9 (contrats).
+
+L'ancien chemin critique (`V0.4 → V0.6` direct) était **infaisable** : `departments` est dans le cycle
+de 41 contexts, donc dans un `monolith/` obligatoire jusqu'à V0.15.
 
 **Arbitrages humains enregistrés (2026-10-09)** : cadence = monolithe modulaire propre (ADR-002) ;
 frontend = Next.js RSC **vitrine seulement** (ADR-003) ; mobile = progressif sur briques existantes
@@ -152,7 +197,9 @@ V0-A d'abord sur GitHub**, GitLab (V0.14) en parallèle et non en pré-requis bl
 | Tâche | État | Preuve (sortie archivée) | Commit | Date |
 |---|---|---|---|---|
 | V0.0 cadre (ce fichier) + ADR-002/003/004 + registre + doc cible BE + runbook GitLab + `.gitlab-ci.yml.example` | **FAIT — doc** | dépôt additif, aucun code touché ; 8 fichiers, liens internes vérifiés | commité à la demande explicite de l'humain (2026-10-09) | 2026-10-09 |
-| V0.1 ArchUnit R1..R6 (warning + freeze) | **À faire** — prochain | — | — | — |
+| V0.1 ArchUnit R1..R6 (plafond + gel, warning first) | **FAIT** | `mvn -o test -Dtest=ArchitectureRulesTest` vert sur 3 exécutions (8-9 s) ; gel 424 lignes = `plafond R1=7867 R2=0 R4=2948` + 354 arêtes R3 + 8 fuites R5 + 45 couples R6 ; **rouge prouvé** par 2 sondes supprimées depuis (R1 7868>7867, et `R3|archprobe -> departments`) ; dépendances ajoutées en portées `test` uniquement | *ce commit* | 2026-10-09 |
+| **Découverte V0.1** : 41 contexts dans un seul cycle, 45 couples réciproques | **OUVERT** | invalide le chemin critique initial → nouveau LOT V0-F (V0.15, V0.16) et §3 révisé | — | 2026-10-09 |
+| V0.2 … V0.16 | **À faire** | — | — | — |
 
 > Politique : non committé tant que l'humain n'a pas validé. Chaque tâche = **une** PR, gate vert,
 > non-régression prouvée.
