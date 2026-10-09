@@ -15,6 +15,7 @@ const fr = {
   'nav.search': 'Recherche',
   // ── LOT 2 §BK : retour arrière & fil d'Ariane ──
   'nav.back': 'Retour',
+  'nav.backHome': "Retour à l'accueil",
   'nav.backToList': 'Retour à la liste',
   'nav.breadcrumb': "Fil d'Ariane",
   // ── LOT 2 §GR : groupes d'onglets ──

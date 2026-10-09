@@ -15,6 +15,7 @@ const es: Record<string, string> = {
   'nav.search': 'Buscar',
   // ── LOT 2 §BK: volver atrás y ruta de navegación ──
   'nav.back': 'Volver',
+  'nav.backHome': 'Volver al inicio',
   'nav.backToList': 'Volver a la lista',
   'nav.breadcrumb': 'Ruta de navegación',
   // ── LOT 2 §GR: grupos de pestañas ──

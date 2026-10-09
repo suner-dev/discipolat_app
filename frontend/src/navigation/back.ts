@@ -94,7 +94,35 @@ export function resolveBack(
 }
 
 /**
- * Chemin de fil d'Ariane : ancêtres déduits + route courante, du plus général
+ * LOT 3 §BK — l’historique du navigateur offre-t-il une entrée exploitable
+ * par l’application ?
+ *
+ * <p>react-router v6 range la position courante dans `window.history.state.idx`
+ * (0 = première entrée de la session, donc **atterrissage direct** : `navigate(-1)`
+ * ne fait rien, voire éjecte l’utilisateur du site). Un layout connu
+ * (`MainLayout`) peut supposer que l’on vient de quelque part ; les zones sans
+ * layout (`AuthLayout`, vitrine) reçoivent des liens directs — e-mails, QR codes,
+ * deep links mobile — et doivent s’appuyer sur l’historique **réel**.
+ *
+ * <p>Fonction **pure** : l’état est injectable, donc testable sans DOM.
+ */
+export function hasUsableHistory(historyState: unknown = readHistoryState()): boolean {
+  const idx = (historyState as { idx?: unknown } | null | undefined)?.idx;
+  return typeof idx === 'number' && Number.isFinite(idx) && idx > 0;
+}
+
+/** Lit `window.history.state` en tolérant l’absence de `window` (SSR, tests). */
+export function readHistoryState(): unknown {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.history?.state ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chemin de fil d’Ariane : ancêtres déduits + route courante, du plus général
  * au plus précis. Les segments non-orphelins (ids, slugs) sont écartés.
  */
 export function breadcrumbTrail(pathname: string): string[] {

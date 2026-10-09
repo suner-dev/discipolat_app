@@ -14,6 +14,7 @@ const pt: Record<string, string> = {
   'nav.search': 'Pesquisar',
   // ── LOT 2 §BK: voltar atrás e trilha de navegação ──
   'nav.back': 'Voltar',
+  'nav.backHome': 'Voltar ao início',
   'nav.backToList': 'Voltar à lista',
   'nav.breadcrumb': 'Trilha de navegação',
   // ── LOT 2 §GR: grupos de abas ──

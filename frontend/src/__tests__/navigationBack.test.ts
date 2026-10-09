@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   breadcrumbTrail,
   deriveParentPath,
+  hasUsableHistory,
   humanizeSegment,
   isKnownRoute,
   matchesRoutePattern,
@@ -83,6 +84,34 @@ describe('LOT 2 §BK — retour arrière & fil d’Ariane', () => {
       // Le bouton doit alors être masqué : un retour qui ne fait rien est pire
       // que l'absence de retour.
       expect(resolveBack('/dashboard')).toEqual({ target: null, source: 'none' });
+    });
+  });
+
+  describe('mesure de l’historique réel (LOT 3 §BK)', () => {
+    it('idx = 0 est un atterrissage direct : rien à popper', () => {
+      expect(hasUsableHistory({ idx: 0 })).toBe(false);
+    });
+
+    it('idx > 0 offre une entrée exploitable', () => {
+      expect(hasUsableHistory({ idx: 1 })).toBe(true);
+      expect(hasUsableHistory({ idx: 12 })).toBe(true);
+    });
+
+    it('un état absent, vide ou non numérique ne vaut pas historique', () => {
+      expect(hasUsableHistory(null)).toBe(false);
+      expect(hasUsableHistory(undefined)).toBe(false);
+      expect(hasUsableHistory({})).toBe(false);
+      expect(hasUsableHistory({ idx: '2' })).toBe(false);
+      expect(hasUsableHistory({ idx: Number.NaN })).toBe(false);
+    });
+
+    it('sans historique, resolveBack ne propose plus la cible muette -1', () => {
+      // Comportement d’avant : `resolveBack('/register', null, true)` renvoyait
+      // -1, un bouton qui ne fait rien sur un lien direct reçu par e-mail.
+      expect(resolveBack('/register', null, hasUsableHistory({ idx: 0 })))
+        .toEqual({ target: null, source: 'none' });
+      expect(resolveBack('/register', null, hasUsableHistory({ idx: 3 })))
+        .toEqual({ target: -1, source: 'history' });
     });
   });
 

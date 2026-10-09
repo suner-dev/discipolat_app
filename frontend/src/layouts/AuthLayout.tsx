@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Church, Sparkles, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/contexts/SettingsContext';
+import BackButton from '@/components/navigation/BackButton';
 
 export default function AuthLayout() {
   const { darkMode, toggleTheme } = useTheme();
@@ -47,6 +48,15 @@ export default function AuthLayout() {
           <Moon className="w-[18px] h-[18px] transition-transform duration-500 group-hover:-rotate-12" />
         )}
       </button>
+
+      {/* LOT 3 §BK — le seul trou mesuré du web : cette zone ne rendait
+          AUCUN contrôle de retour (/login, /register, /join, /accept-invitation,
+          /forgot-password, /activate…). `detectHistory` + `fallbackTo` : sur
+          atterrissage direct (e-mail, QR, deep link) le bouton devient
+          « Retour à l'accueil » au lieu d'un navigate(-1) qui ne fait rien. */}
+      <div className="absolute top-4 left-4 z-20">
+        <BackButton detectHistory fallbackTo="/" className="glass-strong" />
+      </div>
 
       {/* Main content */}
       <div className="relative z-10 w-full max-w-md mx-auto px-4 py-8">

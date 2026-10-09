@@ -15,6 +15,7 @@ const ar: Record<string, string> = {
   'nav.search': 'بحث',
   // ── LOT 2 §BK: الرجوع ومسار التنقل ──
   'nav.back': 'رجوع',
+  'nav.backHome': 'العودة إلى الصفحة الرئيسية',
   'nav.backToList': 'العودة إلى القائمة',
   'nav.breadcrumb': 'مسار التنقل',
   // ── LOT 2 §GR: مجموعات علامات التبويب ──

@@ -15,6 +15,7 @@ const sw: Record<string, string> = {
   'nav.search': 'Tafuta',
   // ── LOT 2 §BK: kurudi na nyuma na njia ──
   'nav.back': 'Rudi',
+  'nav.backHome': 'Rudi nyumbani',
   'nav.backToList': 'Rudi kwenye orodha',
   'nav.breadcrumb': 'Njia ya ukielekeza',
   // ── LOT 2 §GR: makundi ya tabs ──

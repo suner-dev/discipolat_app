@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { resolveBack } from '@/navigation/back';
+import { resolveBack, hasUsableHistory } from '@/navigation/back';
 import { useI18n } from '@/i18n';
 
 /**
@@ -23,15 +23,30 @@ interface BackButtonProps {
   className?: string;
   /** Force l'affichage même sans destination connue (utile pour tests/écrans connus). */
   fallbackTo?: string;
+  /**
+   * LOT 3 §BK — ajoute la mesure de l'historique **réel** à l'hypothèse
+   * d'aujourd'hui. Dans une zone sans layout (`AuthLayout`, vitrine),
+   * l'utilisateur arrive souvent par lien direct : `navigate(-1)` y est un
+   * bouton mort. Avec ce drapeau, l'absence d'historique rend `target` nul,
+   * et `fallbackTo` reprend la main (libellé « Retour à l'accueil »).
+   *
+   * <p>**Absent = comportement strictement identique à aujourd'hui** (la
+   * version historique suppose l'historique exploitable) : `MainLayout`, qui
+   * monte `<BackButton />` sans prop, n'est pas affecté.
+   */
+  detectHistory?: boolean;
 }
 
-export function BackButton({ label, className, fallbackTo }: BackButtonProps) {
+export function BackButton({ label, className, fallbackTo, detectHistory = false }: BackButtonProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useI18n();
 
   const state = location.state as { from?: string } | null;
-  const { target, source } = resolveBack(location.pathname, state?.from, true);
+  // Par défaut on conserve l'hypothèse d'un retour possible ; `detectHistory`
+  // la remplace par une mesure de `window.history.state.idx`.
+  const hasHistory = detectHistory ? hasUsableHistory() : true;
+  const { target, source } = resolveBack(location.pathname, state?.from, hasHistory);
 
   const onClick = useCallback(() => {
     if (target === null) {
@@ -47,7 +62,15 @@ export function BackButton({ label, className, fallbackTo }: BackButtonProps) {
 
   if (target === null && !fallbackTo) return null;
 
-  const text = label ?? t('nav.back') ?? 'Retour';
+  // Quand le bouton retombe sur une destination forcée (atterrissage direct,
+  // aucun historique), le libellé le dit : un « Retour à l'accueil » qui mène
+  // au landing surprend moins qu'un « Retour » silencieux. Cette branche est
+  // inatteignable sans `fallbackTo`, donc sans effet sur les appelants actuels.
+  const text = label ?? (
+    target === null && fallbackTo
+      ? (t('nav.backHome') ?? "Retour à l'accueil")
+      : (t('nav.back') ?? 'Retour')
+  );
 
   return (
     <button

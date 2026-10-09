@@ -15,6 +15,7 @@ const en: Record<string, string> = {
   'nav.search': 'Search',
   // ── LOT 2 §BK: back navigation & breadcrumbs ──
   'nav.back': 'Back',
+  'nav.backHome': 'Back to home',
   'nav.backToList': 'Back to list',
   'nav.breadcrumb': 'Breadcrumb',
   // ── LOT 2 §GR: tab groups ──
