@@ -69,17 +69,27 @@ for pile in "${PILES[@]}"; do
   dossier="$1"; shift; globs=("$@")
   [ -d "$dossier" ] || { printf '%s\n' "== $dossier : absent, ignoré" "" >> "$tmp"; continue; }
 
-  find_args=(-type f)
-  for g in "${globs[@]}"; do find_args+=(-name "$g"); done
+  # Les extensions d'une même pile sont en OR explicite : les empiler en -name -name ferait un
+  # ET implicite, et une pile à deux extensions (frontend .ts/.tsx) remonterait 0 fichier.
+  or=()
+  for g in "${globs[@]}"; do
+    if [ ${#or[@]} -gt 0 ]; then or+=(-o); fi
+    or+=(-name "$g")
+  done
+
+  find_args=(-type f \( "${or[@]}" \))
   find_args+=(-not -path '*/node_modules/*' -not -path '*/build/*' -not -path '*/.dart_tool/*'
     -not -path '*/target/*' -not -path '*/dist/*'
     -not -path '*__tests__*' -not -name '*.test.ts' -not -name '*.test.tsx'
     -not -name '*.g.dart' -not -name '*.freezed.dart' -not -name '*.gr.dart')
 
-  # `wc -l` en lot, puis on garde ce qui dépasse le seuil. Aucun fichier n'est modifié.
+  # Comptage par `wc -l` en lot. /dev/null est un opérande factice : sans lui, un lot d'un
+  # seul fichier imprime le compte sans le nom, et la ligne utile du rapport est perdue.
   corps="$(find "$dossier" "${find_args[@]}" -print0 \
-    | xargs -0 -r wc -l 2>/dev/null \
-    | awk -v s="$SEUIL" '$1 > s && $2 != "total" {print $1 "\t" $2}' \
+    | xargs -0 -r wc -l /dev/null 2>/dev/null \
+    | awk -v s="$SEUIL" '$1 > s && $2 != "total" && $2 != "/dev/null" {
+        nom = $2; for (i = 3; i <= NF; i++) nom = nom " " $i; print $1 "\t" nom
+      }' \
     | sort -rn || true)"
 
   if [ -z "$corps" ]; then

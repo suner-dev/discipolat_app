@@ -1,27 +1,73 @@
 Rapport de taille — seuil 500 lignes, top 20 par pile
-généré : 2026-10-09T16:18:46Z · dépôt : 70260d03
+généré : 2026-10-09T16:21:56Z · dépôt : 3ae5b321
 
-== backend : 57 fichier(s) > 500 lignes, 40128 lignes concernées
-    1545 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentManagementService.java
-    1480 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/dashboard/domain/DashboardService.java
-    1419 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentDossierService.java
-    1124 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/common/infrastructure/SchemaVerificationIntegrationTest.java
-    1011 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/tenants/MultiTenantSecurityTests.java
-     999 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/departments/domain/DepartmentManagementServiceTest.java
-     934 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/search/domain/SearchService.java
-     878 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/transfers/domain/TransferWorkflowService.java
-     860 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/souls/domain/SoulService.java
-     830 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/platform/domain/PageBuilderService.java
-     821 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/finances/domain/FinanceService.java
-     812 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/events/domain/EventService.java
-     796 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/users/domain/UserService.java
-     787 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/members/domain/MemberService.java
-     770 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/discipleship/domain/DiscipleshipService.java
-     762 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/ai/domain/AiAssistantService.java
-     731 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/onboarding/domain/OnboardingStepActions.java
-     722 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/health/service/HealthService.java
-     703 l.  /home/arise/discipolat/discipolat_app/backend/src/main/java/com/discipolat/modules/tenants/domain/OrganizationHierarchyService.java
-     695 l.  /home/arise/discipolat/discipolat_app/backend/src/test/java/com/discipolat/modules/onboarding/domain/OnboardingWizardServiceTest.java
-  … 37 autre(s) hors du top 20
+== backend/src/main/java : 38 fichier(s) > 500 lignes, 27818 lignes concernées
+    1545 l.  backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentManagementService.java
+    1480 l.  backend/src/main/java/com/discipolat/modules/dashboard/domain/DashboardService.java
+    1419 l.  backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentDossierService.java
+     934 l.  backend/src/main/java/com/discipolat/modules/search/domain/SearchService.java
+     878 l.  backend/src/main/java/com/discipolat/modules/transfers/domain/TransferWorkflowService.java
+     860 l.  backend/src/main/java/com/discipolat/modules/souls/domain/SoulService.java
+     830 l.  backend/src/main/java/com/discipolat/modules/platform/domain/PageBuilderService.java
+     821 l.  backend/src/main/java/com/discipolat/modules/finances/domain/FinanceService.java
+     812 l.  backend/src/main/java/com/discipolat/modules/events/domain/EventService.java
+     796 l.  backend/src/main/java/com/discipolat/modules/users/domain/UserService.java
+     787 l.  backend/src/main/java/com/discipolat/modules/members/domain/MemberService.java
+     770 l.  backend/src/main/java/com/discipolat/modules/discipleship/domain/DiscipleshipService.java
+     762 l.  backend/src/main/java/com/discipolat/modules/ai/domain/AiAssistantService.java
+     731 l.  backend/src/main/java/com/discipolat/modules/onboarding/domain/OnboardingStepActions.java
+     722 l.  backend/src/main/java/com/discipolat/modules/health/service/HealthService.java
+     703 l.  backend/src/main/java/com/discipolat/modules/tenants/domain/OrganizationHierarchyService.java
+     688 l.  backend/src/main/java/com/discipolat/modules/platform/api/SuperAdminController.java
+     684 l.  backend/src/main/java/com/discipolat/modules/departments/domain/DepartmentReportingService.java
+     674 l.  backend/src/main/java/com/discipolat/modules/tasks/domain/TaskService.java
+     642 l.  backend/src/main/java/com/discipolat/modules/authentication/domain/AuthService.java
+  … 18 autre(s) hors du top 20
 
-total inter-piles : 57 fichier(s) > 500 lignes
+== frontend/src : 52 fichier(s) > 500 lignes, 56828 lignes concernées
+    3665 l.  frontend/src/i18n/es.ts
+    3649 l.  frontend/src/i18n/sw.ts
+    3577 l.  frontend/src/i18n/ar.ts
+    3547 l.  frontend/src/i18n/fr.ts
+    3488 l.  frontend/src/i18n/en.ts
+    3434 l.  frontend/src/i18n/pt.ts
+    2047 l.  frontend/src/types/index.ts
+    1326 l.  frontend/src/App.tsx
+    1244 l.  frontend/src/pages/SoulDetailPage.tsx
+    1137 l.  frontend/src/pages/DepartmentMemberDossierPage.tsx
+    1124 l.  frontend/src/pages/UsersPage.tsx
+    1077 l.  frontend/src/pages/MemberDashboardPage.tsx
+    1026 l.  frontend/src/components/users/UserDetailModal.tsx
+     986 l.  frontend/src/pages/EventsPage.tsx
+     973 l.  frontend/src/pages/IntelligentSearchPage.tsx
+     968 l.  frontend/src/pages/AdminTenantsPage.tsx
+     943 l.  frontend/src/pages/ResponsableDashboardPage.tsx
+     811 l.  frontend/src/workspaces.ts
+     807 l.  frontend/src/pages/DepartmentDetailPage.tsx
+     791 l.  frontend/src/components/pasteur/PasteurDashboardTab.tsx
+  … 32 autre(s) hors du top 20
+
+== mobile/lib : 55 fichier(s) > 500 lignes, 54660 lignes concernées
+   10853 l.  mobile/lib/l10n/app_localizations.dart
+    2654 l.  mobile/lib/app.dart
+    1598 l.  mobile/lib/presentation/widgets/app_drawer.dart
+    1441 l.  mobile/lib/presentation/screens/departments/department_management_screen.dart
+    1429 l.  mobile/lib/features/health/screens/health_screen.dart
+    1362 l.  mobile/lib/presentation/screens/departments/department_member_dossier_screen.dart
+    1336 l.  mobile/lib/presentation/screens/departments/department_tools_screen.dart
+    1328 l.  mobile/lib/presentation/screens/departments/department_detail_screen.dart
+    1175 l.  mobile/lib/presentation/screens/platform/super_admin_provisioning_screen.dart
+    1004 l.  mobile/lib/features/assets/models/asset_model.dart
+     970 l.  mobile/lib/presentation/screens/family_space/family_space_screen.dart
+     950 l.  mobile/lib/presentation/screens/users/users_list_screen.dart
+     945 l.  mobile/lib/features/health/models/health_model.dart
+     944 l.  mobile/lib/presentation/screens/users/user_detail_screen.dart
+     935 l.  mobile/lib/presentation/screens/discipline/discipline_screen.dart
+     928 l.  mobile/lib/features/tasks/screens/tasks_screen.dart
+     903 l.  mobile/lib/presentation/screens/reports/maker_report_screen.dart
+     848 l.  mobile/lib/presentation/screens/voice_assistant/voice_assistant_screen.dart
+     824 l.  mobile/lib/features/tasks/models/task_model.dart
+     813 l.  mobile/lib/presentation/screens/giving/giving_screen.dart
+  … 35 autre(s) hors du top 20
+
+total inter-piles : 145 fichier(s) > 500 lignes

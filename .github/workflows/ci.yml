@@ -172,6 +172,26 @@ jobs:
       - name: Build APK
         run: cd mobile && flutter build apk --debug --no-pub
 
+  # V0.2 (TODO_BACKEND_V0_CLEAN_ARCH.md) — rapport de taille. Informatif : le gate est « le job
+  # publie un rapport », pas « la dette est nulle ». Équivalent exact du job report:size de
+  # .gitlab-ci.yml. ubuntu-latest parce que le script s'appuie sur find/xargs GNU.
+  report-size:
+    name: Rapport de taille (V0.2, informatif)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Générer le rapport
+        run: |
+          bash scripts/report-size.sh --out reports/size-report.txt
+          sed -n '1,6p' reports/size-report.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-report-${{ github.run_id }}
+          path: reports/size-report.txt
+          retention-days: 30
+
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest
