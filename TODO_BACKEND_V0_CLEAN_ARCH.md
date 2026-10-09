@@ -1,0 +1,173 @@
+# TODO — Backend V0 : outiller l'architecture propre (additif, gated, non-régression)
+
+> **Objet** : première vague exécutable de l'ADR-002 / `backend-target-architecture.md`. V0 **ne change
+> aucun comportement** : il **rend l'architecture vérifiable par la machine** et met en place les
+> contrats + l'observabilité. C'est le socle qui se rentabilise **même si V1+ n'est jamais fait**.
+> **Rattaché à** : [docs/architecture/ADR-002-backend-clean-architecture.md](docs/architecture/ADR-002-backend-clean-architecture.md)
+> et [docs/architecture/backend-target-architecture.md](docs/architecture/backend-target-architecture.md) §14.
+> **Contexte d'exécution** : `discipolat_app`, branche `main`, base verte `4f196242` (BE gates
+> `10/10 + 5/5`, suite backend ~1 884 tests, FE 862/862, MOB 652/652). JDK 21 (temurin SDKMAN),
+> Maven 3.9 (SDKMAN), pas de `mvnw`. **Machine partagée** : ne jamais lancer deux Maven dans le même
+> `backend/` (corruption de `target/`).
+
+---
+
+## 0. Règles du jeu (identiques à la culture du dépôt — cf. plan église d'abord)
+
+| ID | Règle |
+|---|---|
+| **A1** | **Aucune suppression.** On ajoute des couches/côts à côté ; rien de retiré avant remplaçant testé. |
+| **A2** | Un nouveau mécanisme n'est **jamais** obligatoire au démarrage d'un comportement existant. |
+| **A3** | Contrats **additifs** : on ne casse pas un champ/type requis existant sans incrément de version d'API. |
+| **A4** | **Gelé** : signatures publiques existantes des contrôleurs, payloads `/auth/*`, routes `/public/churches*`. |
+| **A5** | Migrations Flyway **numérotées en fin de chaîne** (actuellement V241 → suivantes V242+). |
+| **A6** | On ne **mutile** pas une fonction partagée ; on crée à côté (ex. `Projection` en plus, pas à la place). |
+| **A7** | **Dark launch** : ArchUnit d'abord en **mode warning** (liste d'exemptions), verrouillé en bloquant seulement quand le pass est propre. |
+| **A8** | **Preuve par exécution** : chaque tâche a une preuve rouge (ça échoue sans le correctif) + verte + une non-régression. |
+| **A9** | **Additif = la suite backend existante (~1 884) reste verte à chaque PR.** Si elle rougit, la PR ne merge pas. |
+
+Décisions :
+- **DV-1** : V0 = **outillage**, pas refactorisation du domaine. Les méga-services sont **mesurés**
+  (rapport de taille) mais **pas encore éclatés** (ça, c'est V1, tranche par tranche).
+- **DV-2** : le **multi-module Maven** est introduit par **déplacement physique pur** (mêmes fichiers,
+  même code, nouveaux `pom.xml`) ; aucune ligne de logique n'est écrite en V0 à cette occasion.
+- **DV-3** : les règles ArchUnit **R1..R6** sont actives en **avertissement** dès V0, avec un
+  **freeze** des violations historiques (une liste qui ne peut que **régresser**, jamais grossir).
+
+Risques :
+- **RV-1** : le multi-module sur 135 modules peut déclencher des cycles de dépendance cachés. Mitigé :
+  on commence par **3 contexts pilotes** isolés, pas les 135 d'un coup.
+- **RV-2** : générer les clients web/mobile en CI peut faire échouer le build sur la dérive existante.
+  Mitigé : en V0, la génération est **rapportée** (diff publié), pas **bloquante**.
+- **RV-3** : OTel peut ajouter de la latence/verbosité. Mitigé : échantillonnage, `logback` inchangé,
+  activation par profil `observability`.
+
+---
+
+## 1. Définition de fini (V0)
+
+V0 est **ATTEINT** quand, sur `main` :
+1. `mvn verify` **exécute** une suite ArchUnit R1..R6 (mode warning, rapport publié, liste de freeze non-nulle mais monotone décroissante).
+2. Le backend est **multi-module** pour au moins **`cross-cutting` + `governance` (pilote) + `identity`
+   + `fintech` + `platform-bootstrap`** (les autres suivront en V1), **sans perte de aucun test**
+   (suite ~1 884 verte).
+3. `openapi.json` est **régénéré en CI** et **comparé** au contrat commité (diff bloquant si breaking-change non versionné ; rapport sinon).
+4. Un **`asyncapi.yaml`** squelette existe, listant les événements publiés par l'outbox existante.
+5. Un **traceId** circule de bout en bout (requête HTTP → log → réponse) via OpenTelemetry, prouvé par un test.
+6. Les trois gates §7 du dépôt restent verts (BE ciblé + `mvn test` module entier, FE `tsc`/`vitest`, MOB `analyze`/`test`) — **la suite de référence ne bouge pas** : ~1 884 BE, 862 FE, 652 MOB.
+
+---
+
+## 2. Tâches (par lot, chacune = une PR, additive, gated)
+
+### LOT V0-A — Outiller l'architecture (0 risque, valeur immédiate)
+
+| ID | Tâche | Preuve rouge → verte | Gate |
+|---|---|---|---|
+| **V0.1** | Ajouter **ArchUnit** (`com.tngtech.archunit:archunit-junit5`) en `test` + une classe `ArchitectureRulesTest` codant R1..R6 **en mode warning** (`allowEmptyShould`, violations consignées dans un fichier `archunit-freeze.txt`). | Rouge : la règle R1 échoue sur l'existant (domaine impur) → on consigne le pass dans le freeze. Verte : `mvn verify` passe **avec** le freeze ; **tout nouveau** fichier violant R1 fait échouer. | `mvn -o test -Dtest=ArchitectureRulesTest` exit 0 |
+| **V0.2** | **Rapport de taille** : une étape CI publie le top-20 des `.java > 500 l.` (les méga-services) et le compte. Aucun code touché. | Rouge : pas de rapport. Verte : rapport artifacts. | job `report-size` vert |
+| **V0.3** | Configurer le **bom de dépendances** (déjà spring-boot-parent) + verrouiller JDK 21 via `<maven.compiler.release>21</maven.compiler.release>` et `toolchains`. | Rouge : build sans release figé (différent selon machine). Verte : build reproductible. | `mvn -o -q verify -DskipTests` |
+
+### LOT V0-B — Multi-module par strangulation (déplacements physiques purs)
+
+| ID | Tâche | Preuve rouge → verte | Gate |
+|---|---|---|---|
+| **V0.4** | Passer `backend/pom.xml` en **parent `packaging=pom`** + créer `cross-cutting/` (déplace `common/{infrastructure,multitenancy,scaling,observability,util,exception,enums}`) **sans changer le code**. Le reste (135 modules) reste dans un module `monolith/` provisoire. | Rouge : `mvn` ne connaît que le mono-module. Verte : build multi-modules, **mêmes tests verts**. | suite ~1 884 **inchangée et verte** |
+| **V0.5** | Extraire **`contract/`** (DTO partagés + futur openapi-generator) en module leaf **sans dépendance**. `monolith/` en dépend. | Verte : `mvn dependency:tree` montre `monolith → contract` et **jamais** l'inverse. | `mvn verify` + ArchUnit R6 (aucun cycle) |
+| **V0.6** | **CONTEXTE PILOTE** : `governance/` avec **un seul** module migré (`departments`) en couches `domain/application/adapters-in/adapters-out` — **en déplaçant seulement**, comportement identique. Sert de **modèle copié**. Choix humain explicite (arbitrage du 2026-10-09) : c'est là que sont les plus gros services (`DepartmentManagementService` 1 545 l., `DepartmentDossierService` 1 419 l.), donc le pilote qui **épreuve les règles** au plus dur plutôt que sur un cas facile. | Rouge : les **routes `/departments/*`** et leurs payloads sont **gelés** (A4) → les tests de contrat existants doivent passer **sans modification**. Verte : mêmes réponses, code restructuré. | tests `departments` verts + contrat `/departments` inchangé |
+| **V0.6bis** | **Contexte pilote 2** : `identity/` avec `authentication`, **en copiant le gabarit** validé en V0.6. | Verte : `/auth/*` inchangé (A4). | tests `authentication` verts |
+| **V0.7** | **Contexte pilote 3** : `fintech/` — isoler `payments`, `ussd`, `webhooks` (périmètre PCI futur). **Additif** : le ledger existant n'est pas encore réécrit. | Verte : `fintech/` ne dépend **que** de `contract/` + `cross-cutting/` + `identity` (via port). | ArchUnit R3 + tests paiement verts |
+| **V0.8** | `platform-bootstrap/` : déplacer `DiscipolatApplication.java` + scans ; le `@SpringBootApplication` devient une **composition** des modules. | Rouge : l'app ne démarre plus. Verte : démarre, health check 200. | `mvn -o test` + boot smoke test |
+
+### LOT V0-C — Contrats (la frontière web/mobile/BE)
+
+| ID | Tâche | Preuve | Gate |
+|---|---|---|---|
+| **V0.9** | Régénérer `openapi.json` en CI (`springdoc` `/v3/api-docs`) et le **comparer** au contrat commité. **Rapporté** en V0 (RV-2), bloquant en V1. | Diff publié ; breaking-change détecté = échec. | job `contract-diff` |
+| **V0.10** | Générer un **`asyncapi.yaml`** squelette depuis les types d'événements publiés par l'outbox (`OutboxEvent` + events du module `core`). | Fichier présent + validé par un parseur. | job `asyncapi` |
+| **V0.11** | **Test de contrat web↔BE↔mobile** : étendre la famille `churchesSuggestExistsContract` (déjà 12/12) à **3 endpoints supplémentaires** choisis dans les chemins mobiles historically dérivés. | Rouge : un des 3 échoue si on retire un champ. Verte : aligné. | FE + MOB + BE contract tests |
+
+### LOT V0-D — Observabilité (dark launch, profil `observability`)
+
+| ID | Tâche | Preuve | Gate |
+|---|---|---|---|
+| **V0.12** | Ajouter **OpenTelemetry** (API + agent ou Spring OTel) ; propager un `traceId` dans le **MDC** et l'**entête de réponse** `X-Trace-Id`. Activation par profil, **off par défaut** (A7/RV-3). | Rouge : pas de traceId. Verte : un test d'intégration vérifie `X-Trace-Id` présent et corrélé au log. | `mvn test -Dtest=TracePropagationTest` |
+| **V0.13** | **Métriques** de base (actuator + micrometer) : `http.server.requests`, `flyway`, `hikari`, `jvm`. Dashboards non requis en V0. | `/actuator/metrics` expose les séries. | smoke |
+
+### LOT V0-E — GitLab (dépend de l'ADR-001 — à faire APRÈS déménagement)
+
+| ID | Tâche | Note |
+|---|---|---|
+| **V0.14** | Import GitHub→GitLab **monorepo intact** + `.gitlab-ci.yml` (voir `docs/architecture/GITLAB-BOOTSTRAP.md`), jobs **conditionnés par `changes:`** (backend/frontend/mobile) — Option 2 de l'ADR-001. | ne **mélanger** ni déménagement ni refactor : d'abord GitLab vert, **puis** V0-A..D sur GitLab. |
+
+---
+
+## 3. Ordre et dépendances
+
+```
+V0.1,V0.2,V0.3  (outillage, parallèles, 0 risque)
+        └─► V0.4 → V0.5 → V0.6 → V0.7 → V0.8   (multi-module séquentiel, chaque PR = tests verts)
+                   ├─► V0.9,V0.10,V0.11          (contrats, dès que contract/ existe)
+                   └─► V0.12,V0.13               (observabilité, indépendant)
+V0.14 (GitLab) — pré-requis d'exécution de tout le reste sur le nouvel hébergeur
+```
+
+**Chemin critique** : V0.14 (GitLab) → V0.4 (multi-module) → V0.6 (pilote `governance/departments`) → V0.9 (contrats).
+
+**Arbitrages humains enregistrés (2026-10-09)** : cadence = monolithe modulaire propre (ADR-002) ;
+frontend = Next.js RSC **vitrine seulement** (ADR-003) ; mobile = progressif sur briques existantes
+(ADR-004) ; **contexte pilote V0-B = `governance` / module `departments`** ; ordre = **doc commitée →
+V0-A d'abord sur GitHub**, GitLab (V0.14) en parallèle et non en pré-requis bloquant.
+
+---
+
+## 4. Gates de validation (les mêmes que le dépôt, élargis)
+
+| Gate | Commande | Attendu |
+|---|---|---|
+| **BE** | `mvn -o test` (module entier / multi-modules) | ~1 884 **inchangés et verts** + ArchUnit `ArchitectureRulesTest` vert (avec freeze monotone) |
+| **BE ciblé** | `mvn -o -q test -Dtest=ArchitectureRulesTest,TracePropagationTest` | exit 0 |
+| **PG gates** | `mvn test -Dtest=FlywayMigrationChainPostgreSqlTest,EventTableContractTest` | 16/16 (V242+ si nouvelle migration) |
+| **FE** | `npx tsc -b` ; `npx vitest run` | 0 ; 862/862 |
+| **MOB** | `flutter analyze` ; `flutter test` | 0 nouveau ; 652/652 |
+| **Contrat** | job `contract-diff` + tests V0.11 | rapport sans breaking non-versionné |
+
+> Machine partagée : **un seul Maven à la fois** dans `backend/` ; capturer la sortie **au premier
+> plan** avec timeout long (pas de `nohup >` qui perd le buffer).
+
+---
+
+## 5. Ce que V0 ne fait PAS (explicite)
+
+- Il **n'éclate pas** les méga-services (V1). Il les **mesure** (V0.2).
+- Il **ne migre pas** `ApplicationEventPublisher` → Kafka (V1/E1). Il **décrit** les événements (V0.10).
+- Il **n'active pas** CQRS/projections (V1).
+- Il **ne change aucune signature** de contrôleur, aucun payload, **aucun comportement** (A4).
+- Il **ne supprime aucun** des 135 modules ; il les **ré-héberge** progressivement dans des contexts.
+
+---
+
+## 6. Journal d'avancement (à remplir à chaque PR — format du plan église)
+
+| Tâche | État | Preuve (sortie archivée) | Commit | Date |
+|---|---|---|---|---|
+| V0.0 cadre (ce fichier) + ADR-002/003/004 + registre + doc cible BE + runbook GitLab + `.gitlab-ci.yml.example` | **FAIT — doc** | dépôt additif, aucun code touché ; 8 fichiers, liens internes vérifiés | commité à la demande explicite de l'humain (2026-10-09) | 2026-10-09 |
+| V0.1 ArchUnit R1..R6 (warning + freeze) | **À faire** — prochain | — | — | — |
+
+> Politique : non committé tant que l'humain n'a pas validé. Chaque tâche = **une** PR, gate vert,
+> non-régression prouvée.
+
+---
+
+## 7. Annexe — commandes de mesure (reproductibles, exécutées le 2026-10-09)
+
+```bash
+cd discipolat_app
+ls backend/src/main/java/com/discipolat/modules | wc -l           # 135
+find backend -maxdepth 2 -name pom.xml                            # un seul (backend/pom.xml)
+grep -rl "org.springframework" backend/src/main/java/com/discipolat/modules/*/domain | wc -l   # domaine impur
+grep -rn "ApplicationEventPublisher" backend/src/main/java | wc -l                              # 9 (à faire migrer V1)
+find backend/src/main/java -name '*.java' | xargs wc -l | sort -rn | head -6                    # méga-services
+ls backend/src/main/java/com/discipolat/common/scaling            # ShardedTenantDataSource… (déjà là)
+ls backend/src/main/java/com/discipolat/modules/core              # Outbox*… (déjà là)
+```
