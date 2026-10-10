@@ -2,8 +2,6 @@ package com.discipolat.modules.audit.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.compliance.domain.ComplianceManagerService;
-import com.discipolat.modules.users.domain.User;
-import com.discipolat.modules.users.domain.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,14 +22,18 @@ public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
     private final SecurityUtils securityUtils;
-    private final UserRepository userRepository;
+    /**
+     * Port publié par {@code audit} (V0.15) : l'adaptateur est fourni par {@code users}.
+     * C'est l'inversion de dépendance qui rompt le couple réciproque {@code audit <-> users}.
+     */
+    private final UserEmailPort userEmailPort;
     private final ComplianceManagerService complianceManagerService;
 
     public AuditService(AuditLogRepository auditLogRepository, SecurityUtils securityUtils,
-                        UserRepository userRepository, ComplianceManagerService complianceManagerService) {
+                        UserEmailPort userEmailPort, ComplianceManagerService complianceManagerService) {
         this.auditLogRepository = auditLogRepository;
         this.securityUtils = securityUtils;
-        this.userRepository = userRepository;
+        this.userEmailPort = userEmailPort;
         this.complianceManagerService = complianceManagerService;
     }
 
@@ -193,8 +195,10 @@ public class AuditService {
         if (ids.isEmpty()) {
             return Map.of();
         }
-        return userRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(User::getId, User::getEmail));
+        // V0.15 : plus de pénétration dans `users.domain` — la résolution passe par le port publié
+        // ici même, dont l'adaptateur vit dans le contexte `users`. Même lot, même requête, même
+        // comportement observable.
+        return userEmailPort.emailsOf(ids);
     }
 
     private String details(AuditLog log) {

@@ -49,7 +49,6 @@ objet|R3|announcements -> tenants
 objet|R3|appointments -> notifications
 objet|R3|appointments -> users
 objet|R3|audit -> compliance
-objet|R3|audit -> users
 objet|R3|authentication -> people
 objet|R3|authentication -> platform
 objet|R3|authentication -> security
@@ -380,7 +379,6 @@ objet|R5|Method <com.discipolat.modules.encouragements.api.EncouragementControll
 objet|R6|ai <-> tenants
 objet|R6|alerts <-> departments
 objet|R6|audit <-> compliance
-objet|R6|audit <-> users
 objet|R6|authentication <-> platform
 objet|R6|authentication <-> tenants
 objet|R6|authentication <-> users

@@ -2,8 +2,6 @@ package com.discipolat.modules.audit.domain;
 
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.modules.compliance.domain.ComplianceManagerService;
-import com.discipolat.modules.users.domain.User;
-import com.discipolat.modules.users.domain.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,14 +27,15 @@ class AuditServiceTest {
 
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private SecurityUtils securityUtils;
-    @Mock private UserRepository userRepository;
+    /** Le port publié par `audit` (V0.15) ; l'adaptateur réel vit dans `users` et a son propre test. */
+    @Mock private UserEmailPort userEmailPort;
     @Mock private ComplianceManagerService complianceManagerService;
 
     private AuditService auditService;
 
     @BeforeEach
     void setUp() {
-        auditService = new AuditService(auditLogRepository, securityUtils, userRepository, complianceManagerService);
+        auditService = new AuditService(auditLogRepository, securityUtils, userEmailPort, complianceManagerService);
     }
 
     @Test
@@ -95,8 +94,8 @@ class AuditServiceTest {
 
         when(auditLogRepository.findFiltered(eq(userId), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(log)));
-        when(userRepository.findAllById(Set.of(userId)))
-                .thenReturn(List.of(User.builder().id(userId).email("pasteur@discipolat.com").build()));
+        when(userEmailPort.emailsOf(Set.of(userId)))
+                .thenReturn(Map.of(userId, "pasteur@discipolat.com"));
 
         byte[] csv = auditService.exportCsv(userId, null, null, null, null);
         String content = new String(csv, StandardCharsets.UTF_8);
@@ -123,7 +122,7 @@ class AuditServiceTest {
 
         when(auditLogRepository.findFiltered(any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(log)));
-        when(userRepository.findAllById(any())).thenReturn(List.of());
+        when(userEmailPort.emailsOf(any())).thenReturn(Map.of());
 
         byte[] csv = auditService.exportCsv(null, null, null, null, null);
         String content = new String(csv, StandardCharsets.UTF_8);
