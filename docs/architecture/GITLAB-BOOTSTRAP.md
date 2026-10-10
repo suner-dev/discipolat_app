@@ -14,13 +14,19 @@
 ```bash
 cd discipolat_app
 git tag backup-before-gitlab main && git push origin backup-before-gitlab   # filet de retour
-git log --oneline -5                                                        # HEAD = 42b3e306 (mesure du 2026-10-10)
+git log --oneline -5                     # à RELIRE avant de tagger : le filet doit porter ce que GitHub
+                                         # contient À CE MOMENT-LÀ. Mesure du 2026-10-10 : baseline
+                                         # DISTANTE `origin/main` = `42b3e306` ; `main` local peut avoir
+                                         # avancé (commits de recette non poussés) — ne pas tagger à l'aveugle
+                                         # sur un SHA publié ici, c'est `git log` qui fait foi.
 ```
 
 > **État mesuré le 2026-10-10** : le tag `backup-before-gitlab` **n'existe pas** (`git tag -l` →
 > `v0.10-snapshot-pre-church-os`, `v1.0-commercial-release`). Le pré-vol n'a donc **pas** été fait —
 > et il ne peut pas être fait par un agent sans autorisation d'écrire sur le dépôt distant : un tag
 > local seul ne protège rien contre une perte du poste. À exécuter **avant** le premier push GitLab.
+> Un commit local de plus entre-temps (`869141f6`, recette de revérification V0.14) ne change rien à
+> ce constat : la commande ci-dessus tague `main`, donc **l'état de la branche au moment du geste**.
 
 **Inventaire des secrets GitHub à recréer dans GitLab (Settings → CI/CD → Variables)** :
 
