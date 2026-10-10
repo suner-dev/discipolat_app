@@ -170,6 +170,26 @@ par PR, par dépendance inverse, sans toucher aux contrats). Le point positif in
 le blob **peut cesser de grossir immédiatement** — toute nouvelle paire réciproque fait désormais
 rougir la CI, sans aucune refonte.
 
+**Et maintenant l'ordre (V0.16, publié — pas improvisé)** : `scripts/architecture-couples.sh`, branché
+sur le job de rapport (V0.2), classe les 45 couples par **centralité** en relisant **le même gel que la
+gate** — il ne peut donc pas raconter une histoire différente d'elle. Mesure 2026-10-10 :
+**1 `souls <-> users` (100)**, **2 `tenants <-> users` (93)**, **3 `families <-> users` (86)**,
+**4 `departments <-> users` (83)**, …, **7 `audit <-> users` (78)** ; contexts les plus embrouillés
+`tenants` (12 couples), `souls` (9), `users` (9), `departments` (7).
+
+> **Deux choses à lire avec le chiffre.** (1) La centralité est un **proxy** : R3 ne compte que les accès
+> aux *internes* (`domain`, `repository`) d'un contexte voisin, alors que R6 est calculé par ArchUnit sur
+> **toute** dépendance entre contexts — le graphe complet n'est pas dans le gel et le recalculer ici
+> dupliquerait le travail de la règle avec un risque de divergence. (2) Le classement mesure
+> l'**importance du blocage**, pas le **coût de la rupture** : deux couples de même score peuvent coûter
+> un fichier ou quarante.
+>
+> C'est ce que le palier rend lisible, et il dément au passage une hypothèse de V0.15 : la paire
+> recommandée `audit <-> users` n'est **pas** en tête mais au **7ᵉ rang**. Ce n'est pas un
+> contresens : `audit` ne participe qu'à **2** couples et pèse **1 572 lignes** — assez central pour
+> débloquer de vrais cycles, assez petit pour qu'une première PR de rupture reste revue par un humain.
+> L'outil chiffre l'ordre ; il ne choisit pas à la place de l'équipe (ADR-002, §10).
+
 ---
 
 ## 5. ANATOMIE D'UN BOUNDED CONTEXT (l'exemple réel : `departments`, aujourd'hui 3 services de 1 545+1 419+684 = **3 648 lignes**)

@@ -174,22 +174,34 @@ jobs:
 
   # V0.2 (TODO_BACKEND_V0_CLEAN_ARCH.md) — rapport de taille. Informatif : le gate est « le job
   # publie un rapport », pas « la dette est nulle ». Équivalent exact du job report:size de
-  # .gitlab-ci.yml. ubuntu-latest parce que le script s'appuie sur find/xargs GNU.
+  # .gitlab-ci.yml. ubuntu-latest parce que les scripts s'appuient sur find/xargs GNU.
+  # V0.16 ajoute le palier de pilotage des couples R6 : même philosophie — le classement est
+  # publié, il ne bloque pas. Seule `--check` bloque, et elle ne peut rougir que sur un gel
+  # impossible (0 couple, ligne mal formée, arête dupliquée, contexte sans dossier) : jamais sur
+  # le volume de dette, qui est précisément ce que le gel assume.
   report-size:
-    name: Rapport de taille (V0.2, informatif)
+    name: Rapports de taille (V0.2) et de couples (V0.16)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Générer le rapport
+      - name: Générer les rapports
         run: |
           bash scripts/report-size.sh --out reports/size-report.txt
+          bash scripts/architecture-couples.sh --check
+          # --top 60 : au-dessus du nombre de couples (45 aujourd'hui, et la liste ne fait que
+          # décroître au fil de V0.15) — le gate V0.16 exige le classement COMPLET, pas un extrait.
+          bash scripts/architecture-couples.sh --top 60 --out reports/couples-report.txt
           sed -n '1,6p' reports/size-report.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          sed -n '1,24p' reports/couples-report.txt >> "$GITHUB_STEP_SUMMARY"
       - name: Upload rapport
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: size-report-${{ github.run_id }}
-          path: reports/size-report.txt
+          path: |
+            reports/size-report.txt
+            reports/couples-report.txt
           retention-days: 30
 
   # SBOM par production (ADR-008 §4). GitHub est la plateforme qui tourne AUJOURD'HUI : la preuve

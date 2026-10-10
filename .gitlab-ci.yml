@@ -191,23 +191,35 @@ deploy:render:
 
 # ------------------------------------------------------------------------- Rapport de taille (V0.2)
 # Informatif par conception : le gate de V0.2 est « le job publie un rapport », pas « la dette
-# est nulle ». Image Ubuntu et non Alpine : le script s'appuie sur find/xargs GNU (-print0,
-# -not, lots), et une mesure qui change selon la distribution ne serait plus une mesure.
+# est nulle ». Équivalent exact du job `report-size` de `.github/workflows/ci.yml` (mêmes scripts,
+# mêmes artefacts), pour que la bascule GitLab ne change rien à la preuve produite.
+# Image Ubuntu et non Alpine : les scripts s'appuient sur find/xargs GNU (-print0, -printf, lots),
+# et une mesure qui change selon la distribution ne serait plus une mesure.
+# V0.16 ajoute le palier de pilotage des couples R6 (`scripts/architecture-couples.sh`) : le
+# classement est publié, il ne bloque pas. Seule `--check` bloque, et elle ne peut rougir que sur
+# un gel impossible (0 couple, ligne mal formée, arête dupliquée, contexte sans dossier).
 report:size:
   stage: report
   image: ubuntu:24.04
   needs: []
   rules:
-    - changes: [ backend/**/*, frontend/**/*, mobile/**/*, scripts/report-size.sh ]
+    - changes: [ backend/**/*, frontend/**/*, mobile/**/*, scripts/report-size.sh,
+                 scripts/architecture-couples.sh,
+                 backend/src/test/resources/architecture/architecture-freeze.txt ]
     - if: $CI_COMMIT_BRANCH == "main"
   before_script:
     - apt-get update -qq && apt-get install -y -qq --no-install-recommends git
   script:
     - bash scripts/report-size.sh --out reports/size-report.txt
+    - bash scripts/architecture-couples.sh --check
+    # --top 60 : au-dessus du nombre de couples (45 aujourd'hui, et la liste ne fait que
+    # décroître au fil de V0.15) — le gate V0.16 exige le classement COMPLET, pas un extrait.
+    - bash scripts/architecture-couples.sh --top 60 --out reports/couples-report.txt
+    - head -n 24 reports/couples-report.txt
   artifacts:
     when: always
     expire_in: 30 days
-    paths: [ reports/size-report.txt ]
+    paths: [ reports/size-report.txt, reports/couples-report.txt ]
 
 # ---------------------------------------------------- Scans de sécurité (traduit de security.yml)
 security:npm-audit:

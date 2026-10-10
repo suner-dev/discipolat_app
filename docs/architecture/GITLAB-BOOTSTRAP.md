@@ -123,7 +123,7 @@ GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
 Le pipeline reproduit **exactement** les jobs de `ci.yml` **et** de `security.yml` :
 `backend:h2` (mvn verify, service redis), `backend:pg-gates` (Testcontainers PG via dind),
 `frontend` (tsc · lint · i18n:audit · debt:audit · vitest · build), `mobile` (analyze/test/apk),
-`report:size` (V0.2), `security:npm-audit`, `security:bandit`, `security:owasp-backend`
+`report:size` (V0.2 taille + V0.16 classement des couples), `security:npm-audit`, `security:bandit`, `security:owasp-backend`
 (non bloquant, comme côté GitHub), `e2e:playwright` et `performance:k6` (manuel),
 `docker:backend` (build+push registry GitLab), `deploy:render`.
 **Ajoutés le 2026-10-09 hors parité GitHub** (voir ADR-008 §4) : `sbom:release` (CycloneDX fait à la
@@ -144,7 +144,7 @@ Les dupliquer ferait partir ces jobs **deux fois** pendant la période de miroir
 | `backend:pg-gates` | **19/19** (11 Flyway + 8 EventTableContract) | **oui** — `mvn -o test -Dtest=…` → BUILD SUCCESS |
 | `frontend` | tsc 0 · vitest **862/862** · i18n et dette en ratchet · build ok | **oui** |
 | `mobile` | analyze 0 nouveau · test 652/652 · APK debug | **non** — aucun fichier `mobile/` touché par ce lot |
-| `report:size` | rapport publié (38 BE · 52 FE · 55 mobile > 500 l.) | **oui** — `scripts/report-size.sh` |
+| `report:size` | **deux** rapports publiés : taille (38 BE · 52 FE · 55 mobile > 500 l.) **et** classement des 45 couples R6 (V0.16), avec `--check` vert | **oui** — `scripts/report-size.sh` puis `scripts/architecture-couples.sh` : les quatre lignes de `script:` du job ont été jouées dans l'ordre sur cet arbre (exit 0, artefacts en 0644, 45/45 couples) |
 | `docker:backend` | image poussée dans le registry GitLab | **non** — impossible sans projet GitLab |
 | `deploy:render` | HTTP 201/202 sur `main`, **et** enregistrement de déploiement (`environment: production`) | **non** — idem, + variables à recréer |
 | `sbom:release` | `sbom-backend.json` + `sbom-frontend.json` en artefacts | **oui** — commandes jouées localement avec les versions épinglées : backend **244 composants**, frontend **407 composants**, CycloneDX 1.6. (La 1ʳᵉ version du job appelait `--ignore-scripts`, option supprimée en v6 : le run local l'a refusée avant le push) |

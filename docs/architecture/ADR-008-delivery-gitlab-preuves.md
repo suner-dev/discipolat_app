@@ -26,7 +26,7 @@ parce qu'il est « mieux que GitHub ».
 |---|---|---|
 | `.gitlab-ci.yml` à la **racine** | ✅ **activé** (`git mv` depuis `.gitlab-ci.yml.example`), **14 jobs**, 6 stages | parse YAML local : 14 jobs, toutes les `stages:` résolues |
 | `backend:h2`, `backend:pg-gates` (dind + Testcontainers), `frontend`, `mobile` | ✅ traduits de `ci.yml` (parité job-par-job), avec les ratchets `i18n:audit` / `debt:audit` et `tsc --noEmit` | commandes réellement exécutées en local le 2026-10-09 : BE **2 178** verts, gates PG **19/19**, FE **862/862** |
-| `report:size` (V0.2) | ✅ branché sur `scripts/report-size.sh`, artefact 30 j | script exécuté localement : 38 BE · 52 FE · 55 mobile > 500 l. |
+| `report:size` (V0.2 + V0.16) | ✅ branché sur `scripts/report-size.sh` **et** `scripts/architecture-couples.sh`, deux artefacts 30 j | les deux scripts exécutés localement : taille 38 BE · 52 FE · 55 mobile > 500 l. ; **classement des 45 couples R6** (1 `souls <-> users` 100 … 7 `audit <-> users` 78), `--check` vert et **rouge sur les 7 corruptions** d'un gel impossible |
 | `security:npm-audit`, `security:bandit`, `security:owasp-backend` | ✅ traduits de `security.yml` ; owasp en **`allow_failure: true`** (le flux NVD rend ce scan aléatoire, le rendre bloquant apprendrait à l'équipe à ignorer un rouge) | mêmes commandes locales que le workflow GitHub |
 | Secret-Detection (template Core) | ✅ inclus | disponible sur tous les paliers |
 | SAST / Dependency-Scanning / SBOM **par template GitLab** | ⚠️ **commentés** : palier **Premium+**. Le SBOM est produit **à la main** (voir §4) pour ne pas dépendre du palier | en-tête du fichier |
@@ -55,8 +55,9 @@ parce qu'il est « mieux que GitHub ».
 5. **Environnements nommés** : le job de déploiement déclare un `environment` (avec son URL) pour
    que chaque déploiement laisse un **enregistrement** (qui, quand, quelle SHA, réussi/échoué).
    Sans cela, aucune SLO, aucun rollback racontable, et pas de métriques DORA plus tard.
-6. **Artefacts = data room** : SBOM (CycloneDX), rapports de scan, `size-report.txt`, rapports de
-   tests JUnit, gel d'architecture → **expire_in 30 jours minimum**, et une release tagguée conserve
+6. **Artefacts = data room** : SBOM (CycloneDX), rapports de scan, `size-report.txt`,
+   `couples-report.txt` (l'ordre chiffré des ruptures d'architecture, V0.16), rapports de tests
+   JUnit, gel d'architecture → **expire_in 30 jours minimum**, et une release tagguée conserve
    le lot. Une release sans SBOM n'est pas vendable en due-diligence.
 7. **Déploiement : Render inchangé.** La topologie n'est **pas** modifiée par cet ADR (arbitrage
    humain). Le brouillon K8s reste une **cible** documentée, à activer au déclencheur (> 100 tenants
@@ -185,4 +186,9 @@ PATH=/tmp/sans-jq bash scripts/gitlab-init-project.sh dry-run   # sort en 3 : «
 GITLAB_NAMESPACE=groupe scripts/gitlab-init-project.sh prepare   # sort en 2 : pas de jeton, pas de succès simulé
 sed -n '/^## 3/,/^## 4/p' docs/architecture/GITLAB-BOOTSTRAP.md   # tableau job par job, colonne « verifie localement ? »
 GITLAB_URL= scripts/gitlab-mirror.sh dry-run 2>&1 | head -3        # sort en 2, ne simule rien
+# Ajouté par V0.16 (aucun réseau, aucune dépendance neuve — le même outillage que report-size.sh) :
+bash -n scripts/architecture-couples.sh                          # syntaxe
+bash scripts/architecture-couples.sh --check                     # « gel cohérent (354 arêtes R3, 45 couples R6) »
+bash scripts/architecture-couples.sh --rang "audit <-> users"    # le rang publié du couple recommandé V0.15
+sed -n '/^report:size:/,/^security/p' .gitlab-ci.yml             # les deux rapports, le même job
 ```
