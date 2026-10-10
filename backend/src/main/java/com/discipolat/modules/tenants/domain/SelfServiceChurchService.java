@@ -155,7 +155,7 @@ public class SelfServiceChurchService {
                 .phone(phone != null ? phone.trim() : null)
                 .passwordHash(passwordEncoder.encode(rawPassword))
                 .role(UserRole.ADMIN)
-                .roles(Set.of(UserRole.ADMIN))
+                .roles(new java.util.HashSet<>(Set.of(UserRole.ADMIN)))
                 .activeRole(UserRole.ADMIN)
                 .statut(UserStatus.ACTIVE)
                 .estChefDeFamille(false)
