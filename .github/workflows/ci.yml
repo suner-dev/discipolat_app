@@ -184,12 +184,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Auto-validation du pipeline GitLab (miroir de la porte GitLab `ci:self-check`)
+        # Meme commande, meme porte que le stage `validate` de .gitlab-ci.yml. Pourquoi ici alors
+        # que GitHub n'execute pas ce pipeline : GitHub est la plateforme qui tourne AUJOURD'HUI,
+        # et un defaut de structure GitLab doit rougir avant le push, pas au premier run GitLab.
+        # Blast radius nul : ce job n'est dans le `needs:` de personne (deploy-render ne depend pas
+        # de lui), et `report-size` reste un job de rapport, pas une porte de deploiement.
+        run: |
+          python3 -c "import yaml" || pip install --quiet pyyaml==6.0.1
+          python3 scripts/gitlab-ci-selfcheck.py --file .gitlab-ci.yml
       - name: Générer les rapports
         run: |
           bash scripts/report-size.sh --out reports/size-report.txt
           bash scripts/architecture-couples.sh --check
-          # --top 60 : au-dessus du nombre de couples (45 aujourd'hui, et la liste ne fait que
-          # décroître au fil de V0.15) — le gate V0.16 exige le classement COMPLET, pas un extrait.
+          # --top 60 : au-dessus du nombre de couples (44 mesurés le 2026-10-10 dans l'image du job,
+          # et la liste ne fait que décroître au fil de V0.15) — le gate V0.16 exige le classement
+          # COMPLET, pas un extrait.
           bash scripts/architecture-couples.sh --top 60 --out reports/couples-report.txt
           sed -n '1,6p' reports/size-report.txt >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
@@ -206,8 +216,8 @@ jobs:
 
   # SBOM par production (ADR-008 §4). GitHub est la plateforme qui tourne AUJOURD'HUI : la preuve
   # de due-diligence doit commencer maintenant, pas au jour de la bascule GitLab. Mêmes versions
-  # épinglées que .gitlab-ci.yml (job `sbom:release`), rejouées localement le 2026-10-09 : 244
-  # composants backend, 407 composants frontend.
+  # épinglées que .gitlab-ci.yml (jobs `sbom:backend` / `sbom:frontend` depuis le 2026-10-10), rejouées
+  # localement le 2026-10-09 : 244 composants backend, 407 composants frontend.
   # continue-on-error : la génération résout les dépendances depuis le réseau ; un échec de
   # résolution n'est pas un défaut de code. À passer en bloquant après le premier vert observé.
   sbom:

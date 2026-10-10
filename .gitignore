@@ -15,6 +15,10 @@ node_modules/
 dist/
 .vite/
 
+# Python — artefact local de compilation, régénéré à chaque import d'un script
+__pycache__/
+*.pyc
+
 # Flutter
 mobile/.dart_tool/
 mobile/build/

@@ -44,6 +44,28 @@ workflow:
 default:
   interruptible: true
 
+# ---------------------------------------------------------------- Self-validation du pipeline (V0.14)
+# Les autres jobs **exécutent** ce fichier ; celui-ci le **vérifie** avant eux. Trois défauts
+# bloquants ont survécu à plusieurs relectures humaines et ne se voient qu'en appliquant la
+# sémantique GitLab au YAML (besoin absent d'une pipeline → pipeline non créée ; manuel sans
+# allow_failure → pipeline `blocked` ; binaire absent de l'image → rouge au premier script) :
+# `scripts/gitlab-ci-selfcheck.py` encode ces trois règles, avec la citation de la référence YAML
+# en face de chacune. Hors ligne, aucune dépendance de service : la porte ne peut pas rougir pour
+# une raison réseau (PyYAML est épinglé, voir la ligne de mesure dans le fichier même).
+# Le stage `validate` était déclaré sans emploi depuis la traduction du 2026-10-09 : il sert.
+ci:self-check:
+  stage: validate
+  image: python:3.12-slim
+  needs: []
+  rules:
+    - changes: [ .gitlab-ci.yml, scripts/gitlab-ci-selfcheck.py ]
+    - if: $CI_COMMIT_BRANCH == "main"
+  before_script:
+    # Version épinglée et mesurée dans l'image du job le 2026-10-10 (pip 25.0.1, pyyaml 6.0.1).
+    - python -m pip install --quiet --no-cache-dir pyyaml==6.0.1
+  script:
+    - python3 scripts/gitlab-ci-selfcheck.py --file .gitlab-ci.yml
+
 # ------------------------------------------------------------------ Backend (H2, profil test)
 backend:h2:
   stage: test
@@ -164,9 +186,12 @@ docker:backend:
     - docker push "$CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA"
 
 # ------------------------------------------------------------------------ Déploiement Render (auto, main)
+# Image EPINGLEE (8.13.0, tag vérifié auprès du registre le 2026-10-10) : le `latest` contredisait la
+# règle que ce fichier s'impose ailleurs (« version épinglée exprès »). Outillage mesuré dans ce tag :
+# curl, find, awk, apk — assez pour le script POSIX ci-dessous (aucun bashism).
 deploy:render:
   stage: deploy
-  image: curlimages/curl:latest
+  image: curlimages/curl:8.13.0
   needs: [ docker:backend ]
   # L'enregistrement du déploiement (qui, quand, quelle SHA, réussi/échoué) est la matière première
   # des SLO, du rollback racontable et des métriques DORA. Sans `environment`, GitLab exécute le job
@@ -212,8 +237,9 @@ report:size:
   script:
     - bash scripts/report-size.sh --out reports/size-report.txt
     - bash scripts/architecture-couples.sh --check
-    # --top 60 : au-dessus du nombre de couples (45 aujourd'hui, et la liste ne fait que
-    # décroître au fil de V0.15) — le gate V0.16 exige le classement COMPLET, pas un extrait.
+    # --top 60 : au-dessus du nombre de couples (44 mesurés le 2026-10-10 dans l'image du job,
+    # et la liste ne fait que décroître au fil de V0.15) — le gate V0.16 exige le classement
+    # COMPLET, pas un extrait.
     - bash scripts/architecture-couples.sh --top 60 --out reports/couples-report.txt
     - head -n 24 reports/couples-report.txt
   artifacts:
@@ -280,13 +306,19 @@ security:owasp-backend:
     paths: [ backend/target/dependency-check-report.html ]
 
 # ------------------------------------------------------------------------ SBOM par release (ADR-008 §4)
+# DEUX jobs, pas un : la version du 2026-10-09 faisait le backend ET le frontend dans l'image
+# Maven. Mesure en conteneur (`docker run --rm --entrypoint sh maven:3.9-eclipse-temurin-21 -c
+# 'command -v npm'`) : npm y est ABSENT — le `npm ci` du frontend échouait donc dès le premier run.
+# La « preuve d'exécution » du 2026-10-09 avait été faite sur LE POSTE (qui a node), pas dans
+# L'IMAGE DU JOB : c'est exactement la classe de défaut que `scripts/gitlab-ci-selfcheck.py`
+# (stage `validate`, ci-dessus) bloque désormais.
 # Data room automatique : chaque release porte sa liste de composants. Fait ICI à la main (et non
 # par `template: Security/SBOM`) parce que le template natif exige un palier Premium/Ultimate : la
 # preuve ne doit pas dépendre du niveau d'abonnement.
 # NON BLOQUANT au départ : la génération résout les dépendances depuis le réseau, un échec de
 # résolution n'est pas un défaut de code. À rendre bloquant dès le premier vert observé en pipeline
 # (modifier `allow_failure` en une ligne) — c'est le seul changement de porte prévu ici.
-sbom:release:
+sbom:backend:
   stage: security
   image: maven:3.9-eclipse-temurin-21
   needs: []
@@ -301,21 +333,43 @@ sbom:release:
     paths: [ .m2/repository ]
   script:
     # Version épinglée exprès : un SBOM régénéré six mois plus tard doit donner la même liste.
-    # --package-lock-only (et non --ignore-scripts, qui n'existe plus dans cyclonedx-npm v6) :
-    # le SBOM se construit depuis le verrou, donc sans évaluer un arbre installé.
     - cd backend && mvn -B -DskipTests -Dmaven.repo.local="$CI_PROJECT_DIR/.m2/repository"
         org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
         -DoutputFormat=json -DoutputName=bom
-    - cd .. && cp "$(find backend/target -name 'bom*.json' | head -1)" sbom-backend.json
-    - cd frontend && npm ci --ignore-scripts
-    - npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
-    - cd .. && ls -l sbom-backend.json sbom-frontend.json
-    # Prouvé localement le 2026-10-09 (même commande, même version) : backend 244 composants,
-    # frontend 407 composants, CycloneDX 1.6, BUILD SUCCESS en 28 s cote Maven.
+    - cp "$(find backend/target -name 'bom*.json' | head -1)" sbom-backend.json
+    - ls -l sbom-backend.json
+    # Outillage vérifié dans l'image du job le 2026-10-10 (mvn 3.9.16, JDK 21.0.12, find, awk).
+    # Mesure hors conteneur du 2026-10-09, même version épinglée : 244 composants, CycloneDX 1.6,
+    # BUILD SUCCESS en 28 s.
   artifacts:
     when: always
     expire_in: 30 days
-    paths: [ sbom-backend.json, sbom-frontend.json ]
+    paths: [ sbom-backend.json ]
+
+sbom:frontend:
+  stage: security
+  image: node:23              # outillage mesure dans cette image : node, npm, npx, git, python3
+  needs: []
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "main"
+    - when: manual
+      allow_failure: true
+  cache:
+    key: npm-$CI_COMMIT_REF_SLUG
+    paths: [ frontend/node_modules ]
+  script:
+    # --package-lock-only (et non --ignore-scripts, qui n'existe plus dans cyclonedx-npm v6) :
+    # le SBOM se construit depuis le verrou, donc sans évaluer un arbre installé.
+    - cd frontend && npm ci --ignore-scripts
+    - npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
+    - cd .. && ls -l sbom-frontend.json
+    # Mesure du 2026-10-09 (même version épinglée) : 407 composants, CycloneDX 1.6.
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [ sbom-frontend.json ]
 
 # ------------------------------------------------------------------- Scan de l'image produite (ADR-008 §4)
 # Le build pousse une image, personne ne la regardait : c'est la surface réellement exposée.
@@ -328,7 +382,15 @@ scan:image:
                            # s'en remettre à la sémantique DAG inter-stages, que je n'ai pas vérifiée
                            # en pipeline réel
   image: aquasec/trivy:0.75.0
-  needs: [ docker:backend ]
+  # `optional: true` : dans la pipeline d'un TAG, `docker:backend` n'est pas créé (sa règle cible
+  # la branche main). Sans l'option, la référence YAML est formelle — « If a needed job has
+  # optional: false, but it was not added to the pipeline, the pipeline fails to create » — donc
+  # chaque release aurait échoué à la CRÉATION de la pipeline, avant même le premier script.
+  # L'image scannée a été poussée par la pipeline de `main` sur le MEMME SHA (le tag est posé sur
+  # main), donc la référence reste valide ; si elle manquait, Trivy le dit dans le log.
+  needs:
+    - job: docker:backend
+      optional: true
   allow_failure: true
   variables:
     TRIVY_USERNAME: gitlab-ci-token
@@ -344,7 +406,14 @@ scan:image:
 # ------------------------------------------------------------------ E2E et charge (manuels, actifs)
 e2e:playwright:
   stage: test
-  image: mcr.microsoft.com/playwright:v1.49.0-jammy
+  # Version = celle de e2/package-lock.json (@playwright/test 1.63.0), et pas une autre : ces images
+  # embarquent les navigateurs À LA RÉVISION DU TAG. Mesure en conteneur du 2026-10-10 avec l'ancienne
+  # valeur (v1.49.0-jammy) et le lock à 1.63.0 : `npx playwright test` échoue sur
+  # « Executable doesn't exist at /ms-playwright/chromium_headless_shell-1243/… » puis
+  # « Looks like Playwright was just updated to 1.63.0. Please update docker image as well. »
+  # Le job ne fait pas `playwright install` (il se fie à l'image), donc le tag porte la révision de
+  # navigateur attendue. `scripts/gitlab-ci-selfcheck.py` (S9) vérifie ce couplage par une machine.
+  image: mcr.microsoft.com/playwright:v1.63.0-jammy
   needs: []
   # Manuel : la suite ne s'active qu'à la première spec déposée dans e2/specs/, et son déclenchement
   # automatique sur chaque MR coûterait un run contre un environnement beta partagé.
@@ -377,6 +446,13 @@ performance:k6:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
+      # allow_failure: true est OBLIGATOIRE ici, et c'est écrit dans la référence YAML :
+      # « When using rules:when: manual to add a manual job: allow_failure becomes false by
+      # default ». Sans cette ligne, k6 était un job manuel BLOQUANT dans le stage `test` : la
+      # pipeline restait `blocked`, security/build/deploy ne partaient pas, et toute merge était
+      # impossible tant que `finalize` pose only_allow_merge_if_pipeline_succeeds. Parité avec
+      # `e2e:playwright`, qui avait déjà cette ligne.
+      allow_failure: true
   variables:
     BASE_URL: https://discipolat-beta-api.onrender.com
   before_script:

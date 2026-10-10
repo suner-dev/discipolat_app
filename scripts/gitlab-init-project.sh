@@ -267,8 +267,10 @@ case "$ACTION" in
     echo "== jobs de la pipeline #$pid"
     jq -r '.[] | "   \(.status | ascii_upcase)\t\(.stage)\t\(.name)"' "$CORPS" | sort -k2 | masquer
     echo
-    echo "À rendre bloquant après le premier vert observé : sbom:release et scan:image sont en"
-    echo "allow_failure: true (dépendance réseau) — la condition est écrite dans .gitlab-ci.yml."
+    echo "À rendre bloquant après le premier vert observé : sbom:backend, sbom:frontend et scan:image"
+    echo "sont en allow_failure: true (dépendance réseau) — la condition est écrite dans .gitlab-ci.yml."
+    echo "Job manuel normal : performance:k6 et e2e:playwright sont allow_failure: true — sans cette"
+    echo "ligne, un « rules: when: manual » est BLOQUANT et la pipeline resterait « blocked » (merge impossible)."
     ;;
 
   *)

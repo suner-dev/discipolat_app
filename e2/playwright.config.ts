@@ -8,8 +8,14 @@ import { defineConfig, devices } from '@playwright/test';
  * rend valide sur n'importe quel environnement : beta, staging, preview.
  *
  * Activation : le workflow .github/workflows/e2e.yml exécute automatiquement
- * tous les fichiers `specs/**/*.spec.ts` dès qu'ils existent. Le jour où
+ * tous les fichiers `*.spec.ts` du dossier specs dès qu'ils existent. Le jour où
  * Agent B livre la suite, elle tourne sans qu'aucun fichier de CI ne change.
+ *
+ * Écriture du commentaire : ne jamais écrire ici un motif glob « deux étoiles slash »
+ * (la suite étoile-étoile-slash contient en réalité une suite barre-étoile, qui FERME
+ * le commentaire bloc) ; le reste du texte devient du code, et la config ne se parse
+ * plus — job e2e rouge dès la première spec déposée. Ce fichier l'a porté jusqu'au
+ * 2026-10-10 : c'est la mesure en conteneur qui l'a trouvé, aucun gate ne le voyait.
  */
 export default defineConfig({
   testDir: './specs',

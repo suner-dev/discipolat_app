@@ -9,13 +9,18 @@
 
 ---
 
-## 0. Pré-vol (sur GitHub, avant de toucher à quoi que ce soit)
+## 0. Pré-vol (sur GitHub, avant de toucher à quoi que ce soit) — **NON FAIT, action humaine**
 
 ```bash
 cd discipolat_app
 git tag backup-before-gitlab main && git push origin backup-before-gitlab   # filet de retour
-git log --oneline -5                                                        # HEAD = 4f196242, gates verts
+git log --oneline -5                                                        # HEAD = 42b3e306 (mesure du 2026-10-10)
 ```
+
+> **État mesuré le 2026-10-10** : le tag `backup-before-gitlab` **n'existe pas** (`git tag -l` →
+> `v0.10-snapshot-pre-church-os`, `v1.0-commercial-release`). Le pré-vol n'a donc **pas** été fait —
+> et il ne peut pas être fait par un agent sans autorisation d'écrire sur le dépôt distant : un tag
+> local seul ne protège rien contre une perte du poste. À exécuter **avant** le premier push GitLab.
 
 **Inventaire des secrets GitHub à recréer dans GitLab (Settings → CI/CD → Variables)** :
 
@@ -118,6 +123,12 @@ GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
   scripts/gitlab-mirror.sh dry-run     # ce qui sera poussé, sans écrire
 GITLAB_URL="https://oauth2:<TOKEN>@gitlab.com/<groupe>/discipolat_app.git" \
   scripts/gitlab-mirror.sh push        # push --mirror + contrôle que les SHA correspondent
+
+# AUPARANT, à chaque session de bootstrap : la preuve d'existence des images est **datée**, pas acquise.
+# Mesure du 2026-10-10 : `--registry` a répondu 11/11 `present` le matin, puis a rougi en sortie 1 sur
+# `ghcr.io` (jeton anonyme refusé, `i/o timeout`) le même jour. Un rouge de registre n'est pas un rouge
+# de pipeline — le rejouer avant de conclure, et ne pas « corriger » le pipeline pour ça.
+python3 scripts/gitlab-ci-selfcheck.py --registry
 ```
 
 Le pipeline reproduit **exactement** les jobs de `ci.yml` **et** de `security.yml` :
@@ -126,34 +137,53 @@ Le pipeline reproduit **exactement** les jobs de `ci.yml` **et** de `security.ym
 `report:size` (V0.2 taille + V0.16 classement des couples), `security:npm-audit`, `security:bandit`, `security:owasp-backend`
 (non bloquant, comme côté GitHub), `e2e:playwright` et `performance:k6` (manuel),
 `docker:backend` (build+push registry GitLab), `deploy:render`.
-**Ajoutés le 2026-10-09 hors parité GitHub** (voir ADR-008 §4) : `sbom:release` (CycloneDX fait à la
-main, car le template natif exige Premium), `scan:image` (Trivy sur l'image produite) — tous deux
+**Ajoutés hors parité GitHub** — le 2026-10-09 (voir ADR-008 §4) : `sbom:backend`/`sbom:frontend`
+(CycloneDX fait à la main, car le template natif exige Premium ; **deux jobs** depuis le 2026-10-10,
+voir la grille ci-dessous), `scan:image` (Trivy sur l'image produite) — tous deux
 `allow_failure: true` jusqu'au premier vert observé en pipeline — et `environment: production` sur
 `deploy:render` pour que chaque déploiement laisse un **enregistrement** (matière première des SLO et
-des métriques DORA).
+des métriques DORA) ; le 2026-10-10 : `ci:self-check` (stage `validate`), qui **valide la structure du
+présent fichier** à chaque push `main` et à chaque modification de `.gitlab-ci.yml`.
 Les `rules:changes:` = **Option 2** de l'ADR-001 (indépendance de CI sans split).
 
 **Ce qui n'est PAS traduit volontairement** : `keep-alive`, `backup-postgres` (déprécié),
 `backup-restore-test`, `deploy-beta`, `ci-cd` — tous déclenchés par `schedule:` ou doublons.
 Les dupliquer ferait partir ces jobs **deux fois** pendant la période de miroir.
 
-**Vérification job par job** (attendus = mesures du 2026-10-09 sur cette machine) :
+**Vérification job par job** (attendus = **mesures du 2026-10-10**, et depuis cette date jouées
+**dans l'image du job** quand l'image est téléchargeable — la colonne dit où la preuve a été faite) :
 | Job | Attendu | Vérifié localement ? |
 |---|---|---|
+| `ci:self-check` | `scripts/gitlab-ci-selfcheck.py` sort en 0 sur le fichier commité (16 jobs, 6 stages, 0 rouge) | **oui** — commande jouée dans `python:3.12-slim` (son image de job : pip 25.0.1 accepte `pyyaml==6.0.1`), et **rouge prouvé** par 17 scénarios hors dépôt (11 rouges obtenus un par un, 1 couplage non contrôlable signalé, 3 refus, dépendance absente, déterminisme) — ADR-008 §2 |
 | `backend:h2` | suite **2 178** tests verte (dont `ArchitectureRulesTest`) | **oui** — `mvn -o test` → BUILD SUCCESS, 13 ignorés |
 | `backend:pg-gates` | **19/19** (11 Flyway + 8 EventTableContract) | **oui** — `mvn -o test -Dtest=…` → BUILD SUCCESS |
 | `frontend` | tsc 0 · vitest **862/862** · i18n et dette en ratchet · build ok | **oui** |
-| `mobile` | analyze 0 nouveau · test 652/652 · APK debug | **non** — aucun fichier `mobile/` touché par ce lot |
-| `report:size` | **deux** rapports publiés : taille (38 BE · 52 FE · 55 mobile > 500 l.) **et** classement des 45 couples R6 (V0.16), avec `--check` vert | **oui** — `scripts/report-size.sh` puis `scripts/architecture-couples.sh` : les quatre lignes de `script:` du job ont été jouées dans l'ordre sur cet arbre (exit 0, artefacts en 0644, 45/45 couples) |
-| `docker:backend` | image poussée dans le registry GitLab | **non** — impossible sans projet GitLab |
-| `deploy:render` | HTTP 201/202 sur `main`, **et** enregistrement de déploiement (`environment: production`) | **non** — idem, + variables à recréer |
-| `sbom:release` | `sbom-backend.json` + `sbom-frontend.json` en artefacts | **oui** — commandes jouées localement avec les versions épinglées : backend **244 composants**, frontend **407 composants**, CycloneDX 1.6. (La 1ʳᵉ version du job appelait `--ignore-scripts`, option supprimée en v6 : le run local l'a refusée avant le push) |
-| `scan:image` | tableau des CVE CRITICAL/HIGH de l'image | **non** — exige l'image du registry GitLab et un runner ; `allow_failure: true` en attendant |
+| `mobile` | analyze 0 nouveau · test 652/652 · APK debug | **non** — aucun fichier `mobile/` touché par ce lot. Outillage de l'image **non mesuré** : le `docker pull ghcr.io/cirruslabs/flutter:3.35.6` a **échoué le 2026-10-10** (`AUTH ANONYME REFUSE` puis `dial tcp 140.82.121.34:443: i/o timeout`, couche de 711 Mo tronquée à 62 Mo) — la preuve d'existence au registre avait réussi **plus tôt le même jour**, ce qui est exactement pourquoi `--registry` est une preuve **datée** à retaper au moment du bootstrap, pas un acquis. Le self-check le dit lui-même : `[info] S7-image-non-auditee (mobile)`, et non « c'est bon » |
+| `report:size` | **deux** rapports publiés : taille (38 BE · 52 FE · 55 mobile > 500 l.) **et** classement des couples R6 (V0.16), avec `--check` vert | **oui, et dans l'image du job** — les quatre lignes de `script:` rejouées dans `ubuntu:24.04` le 2026-10-10 (exit 0) : **353 arêtes R3, 44 couples R6**, 44/44 couples dans l'artefact. (Les 354/45 publiés le 2026-10-09 étaient la mesure d'avant : `42b3e306` a rompu le couple `audit <-> users`) |
+| `docker:backend` | image poussée dans le registry GitLab | **partiellement** — le push est impossible sans projet, mais **l'outillage du job est vérifié en conteneur** : `docker:27` + `apk add maven openjdk21` donne `mvn 3.9.9` sur **JDK 21.0.10**, donc le `before_script` du job sait construire |
+| `deploy:render` | HTTP 201/202 sur `main`, **et** enregistrement de déploiement (`environment: production`) | **non** — idem, + variables à recréer. Image **épinglée** `curlimages/curl:8.13.0` (tag vérifié au registre) depuis le 2026-10-10 ; était `:latest`, contrairement à la règle que le fichier s'impose ailleurs |
+| `sbom:backend` / `sbom:frontend` | `sbom-backend.json` + `sbom-frontend.json` en artefacts | **oui** — commandes jouées avec les versions épinglées : backend **244 composants**, frontend **407 composants**, CycloneDX 1.6. (La 1ʳᵉ version du job appelait `--ignore-scripts`, option supprimée en v6 : le run local l'a refusée avant le push.) **Correction du 2026-10-10** : ces deux commandes vivaient dans **un seul job en image Maven**, qui n'a **ni node ni npm** (mesuré en conteneur) ; la preuve du 2026-10-09 avait été faite **sur le poste**, pas dans l'image. D'où la scission |
+| `scan:image` | tableau des CVE CRITICAL/HIGH de l'image | **non** — exige l'image du registry GitLab et un runner ; `allow_failure: true` en attendant. `trivy` **0.75.0** mesuré dans son image ; `needs: docker:backend` rendu **`optional: true`** le 2026-10-10, sinon **toute pipeline de tag est refusée** |
+| `performance:k6` | run k6 contre l'environnement bêta (manuel, `PERF_JWT_TOKEN`) | **installation jouée** dans `ubuntu:24.04` le 2026-10-10 → `k6 v2.3.0` ; le run lui-même reste manuel (il frappe un environnement partagé). **`allow_failure: true` ajouté** : sans lui, un job `rules: when: manual` est **bloquant** et gelait chaque pipeline `main` |
+| `e2e:playwright` | specs Playwright contre l'URL déployée (`e2/specs/`, hors ligne tant qu'aucune spec n'y est) | **oui — la commande du job a été JOUÉE DANS SON IMAGE** le 2026-10-10 (`npm ci` + `npx playwright test` avec une spec témoin, dans `v1.49.0-jammy`) : **deux défauts bloquants pour la première spec déposée**, invisibles tant que le job se tait : `SyntaxError` sur `e2/playwright.config.ts` (un glob portait une barre-étoile dans le commentaire bloc, ce qui le **fermait**) puis `Executable doesn't exist at /ms-playwright/chromium_headless_shell-1243/…` (l'image embarquait les navigateurs 1148, le lock épingle Playwright 1.63.0). Corrigés : commentaire réécrit, image épinglée à `mcr.microsoft.com/playwright:v1.63.0-jammy` (= version du lock, tag vérifié au registre), et couplage désormais **machine-validé** (famille S9 du self-check). Le `exit 0` sans spec reste voulu : un job qui rougit sans cause est un rouge qu'on apprend à ignorer |
 
-> **Honnête limite** : la grammaire GitLab CI de `.gitlab-ci.yml` est validée par analyseur YAML
-> et relue job par job, mais **aucun pipeline n'a encore tourné** — la première exécution réelle
-> peut révéler des défauts d'images ou de `rules:`. C'est le §4 (chemin de fer) qui les corrigera,
-> pas un « ça devrait marcher ».
+> **Honnête limite, resserrée le 2026-10-10** : la structure de `.gitlab-ci.yml` n'est plus seulement
+> « relue job par job » — elle est **machine-validée** par `scripts/gitlab-ci-selfcheck.py`, qui a trouvé
+> **trois défauts bloquants** passés au travers des relectures du 2026-10-09 (ADR-008 §2). Cela ne dit
+> **toujours pas** qu'une pipeline tournera : les `rules:` réelles sur diff, l'allocation d'un runner,
+> les versions d'outils téléchargées à l'exécution et les droits du registry ne s'observent qu'au
+> **premier run** (§4). C'est le premier run qui corrigera le reste, pas un « ça devrait marcher ».
+>
+> **Deux `[info]` restent au compteur du self-check, et il faut les lire précisément** : (a) l'outillage
+> interne de `ghcr.io/cirruslabs/flutter:3.35.6` n'est **pas mesuré** — le `docker pull` a échoué le
+> 2026-10-10 (voir la ligne `mobile` ci-dessus) ; (b) l'outillage interne du **nouveau** tag
+> `mcr.microsoft.com/playwright:v1.63.0-jammy` n'est **pas encore mesuré non plus** (pull de 3,3 Go en
+> cours au moment de ce lot). Ce qui **a** été fait sur `e2e:playwright`, c'est l'audit le plus utile des
+> deux : la **commande du job jouée dans son image**, qui a trouvé les deux défauts ci-dessus. La mesure
+> de la table `OUTILS_PAR_IMAGE` (binaires présents dans l'image) est une autre commande, écrite dans
+> l'en-tête de `scripts/gitlab-ci-selfcheck.py`, et lève la `[info]` quand le tag concerné est
+> téléchargé. **Un `[info]` n'est pas un risque de rouge muet** : si l'image manque un binaire que son
+> `script:` appelle, le job le dira au premier run — c'est le rouge qu'on veut voir, pas un faux vert.
 
 ---
 
@@ -194,9 +224,10 @@ Les dupliquer ferait partir ces jobs **deux fois** pendant la période de miroir
 
 Tant que GitHub n'est **pas archivé**, un retour est trivial :
 ```bash
-git push origin main --force-with-lease     # sur GitHub (le tag backup existe)
+git push origin main --force-with-lease     # sur GitHub (si le tag backup a été posé, cf §0)
 ```
-Le tag `backup-before-gitlab` est le point d'ancrage. **Ne jamais** `--force` sans `--force-with-lease`.
+Le tag `backup-before-gitlab` est le point d'ancrage — **s'il a été créé** (§0 : mesuré absent le
+2026-10-10, donc le pré-vol reste à faire avant toute bascule). **Ne jamais** `--force` sans `--force-with-lease`.
 
 ---
 

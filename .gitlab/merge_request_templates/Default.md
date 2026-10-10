@@ -62,8 +62,10 @@ git diff --stat backend/src/test/resources/architecture/architecture-freeze.txt 
 <summary>Rappel : ce MR ne fusionne que si la pipeline est verte</summary>
 
 `only_allow_merge_if_pipeline_succeeds` est posé sur le projet (`scripts/gitlab-init-project.sh
-finalize`). Les jobs `sbom:release` et `scan:image` sont en `allow_failure: true` tant que leur
-premier vert n'a pas été observé en pipeline réelle — la condition de bascule est dans
-`.gitlab-ci.yml`, pas dans ma tête.
+finalize`). Les jobs `sbom:backend`, `sbom:frontend` et `scan:image` sont en `allow_failure: true`
+tant que leur premier vert n'a pas été observé en pipeline réelle — la condition de bascule est
+dans `.gitlab-ci.yml`, pas dans ma tête. Les jobs manuels `e2e:playwright` et `performance:k6`
+portent aussi `allow_failure: true` : avec `rules: when: manual`, son absence rendrait le job
+**bloquant**, donc la pipeline `blocked` et la merge impossible.
 
 </details>
