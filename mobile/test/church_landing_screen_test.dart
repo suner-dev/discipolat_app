@@ -179,7 +179,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Indisponible temporairement'), findsOneWidget);
       expect(find.textContaining('timeout'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Réessayer'), findsOneWidget);
+      expect(find.bySemanticsIdentifier('churchLanding.retry'), findsOneWidget);
+      expect(find.text('Réessayer'), findsOneWidget);
       // Pas de SnackBar / Dialog : le visiteur reste sur la page.
       expect(find.byType(SnackBar), findsNothing);
       expect(find.byType(Dialog), findsNothing);
@@ -195,7 +196,13 @@ void main() {
       await tester.pumpWidget(_host(ChurchLandingScreen(slug: 'bethel', apiService: api)));
       await tester.pumpAndSettle();
       expect(api.calls.length, 1);
-      expect(find.widgetWithText(OutlinedButton, 'Réessayer'), findsOneWidget);
+      // On cible le contrôle par son identifiant sémantique, et le libellé par
+      // son texte : `find.widgetWithText(OutlinedButton, …)` dépendait du
+      // runtimeType interne produit par la fabrique `OutlinedButton.icon`, qui
+      // n'est pas stable entre versions du SDK Flutter (0 candidat en 3.35.6,
+      // 1 en 3.38.7 — alors que le bouton s'affiche et se tape dans les deux).
+      expect(find.bySemanticsIdentifier('churchLanding.retry'), findsOneWidget);
+      expect(find.text('Réessayer'), findsOneWidget);
       // Le prochain coup marche.
       api.nextError = null;
       api.nextBody = {
@@ -203,7 +210,7 @@ void main() {
         'name': 'Bethel',
         'landingEnabled': true,
       };
-      await tester.tap(find.widgetWithText(OutlinedButton, 'Réessayer'));
+      await tester.tap(find.text('Réessayer'));
       await tester.pumpAndSettle();
       expect(api.calls.length, 2);
       expect(find.text('Bethel'), findsOneWidget);

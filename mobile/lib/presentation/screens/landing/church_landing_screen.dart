@@ -338,14 +338,24 @@ class _ChurchLandingScreenState extends State<ChurchLandingScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: _load,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Réessayer'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white70,
-                side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.24)),
+            // Identifiant sémantique stable : les tests (et l'accessibilité)
+            // doivent pouvoir cibler ce contrôle sans dépendre du type interne
+            // rendu par `OutlinedButton.icon`, qui change selon la version du
+            // SDK Flutter (3.35.6 ne produit aucun élément de runtimeType
+            // `OutlinedButton` ici, 3.38.7 oui). Même convention que
+            // `churchLanding.website` plus bas et `churchPicker.cta.*`.
+            Semantics(
+              identifier: 'churchLanding.retry',
+              button: true,
+              child: OutlinedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Réessayer'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white70,
+                  side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.24)),
+                ),
               ),
             ),
           ],
