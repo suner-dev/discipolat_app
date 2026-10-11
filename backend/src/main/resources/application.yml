@@ -87,6 +87,18 @@ app:
     # Création/activation des comptes de démonstration (DataInitializer) —
     # VRAI uniquement en bêta. En prod : AUCUN compte de test n'est créé.
     seed-demo-accounts: ${DEMO_SEED_ENABLED:false}
+    # Mot de passe réellement injecté aux comptes créés par ce seed. Le défaut
+    # est PUBLIÉ dans le dépôt (docs/DEPLOYMENT.md) : il doit donc être surchargé
+    # dès qu'une instance est adressable depuis Internet — le garde-fou
+    # `exposed-publicly` refuse alors le démarrage tant que ce défaut reste actif.
+    demo-password: ${DEMO_PASSWORD:password123}
+    # VRAI si l'instance est joignable depuis Internet. Deduit de RENDER_SERVICE_ID
+    # (Render l'injecte sur chaque service, absent en local et en CI) ; la valeur
+    # reste une CHAINE et c'est DataInitializer qui l'interprete, car cet
+    # identifiant (`srv-…`) n'est pas un booleen : le convertir par Spring ferait
+    # echouer le demarrage. Surchargeable par DEMO_EXPOSED_PUBLICLY pour tout autre
+    # exposant (tunnel, reverse proxy, IP publique).
+    exposed-publicly: ${DEMO_EXPOSED_PUBLICLY:${RENDER_SERVICE_ID:}}
     # Réinitialisation de l'environnement bêta (admin) — strictement inactif en prod
     reset-enabled: ${BETA_RESET_ENABLED:false}
   jwt:
@@ -477,6 +489,10 @@ app:
   beta-testing:
     demo-accounts-enabled: ${DEMO_ACCOUNTS_ENABLED:false}
     seed-demo-accounts: ${DEMO_SEED_ENABLED:false}
+    # Voir le garde-fou E3 dans DataInitializer : seed + exposition publique +
+    # mot de passe publié = démarrage refusé. Surchargeable via DEMO_PASSWORD.
+    demo-password: ${DEMO_PASSWORD:password123}
+    exposed-publicly: ${DEMO_EXPOSED_PUBLICLY:${RENDER_SERVICE_ID:}}
     reset-enabled: ${BETA_RESET_ENABLED:false}
   payments:
   jwt:

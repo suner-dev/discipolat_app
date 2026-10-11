@@ -35,6 +35,12 @@ import java.util.UUID;
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    /**
+     * Mot de passe de démonstration PAR DÉFAUT, publié dans le dépôt
+     * (`docs/DEPLOYMENT.md`, `README`). Il ne doit JAMAIS être le mot de passe
+     * réellement actif d'une instance exposée sur Internet : voir
+     * {@link #exposedPublicly}, qui rend cette combinaison impossible.
+     */
     private static final String DEFAULT_PASSWORD = "password123";
 
     // Identifiants stables définis dans V2__seed_data.sql
@@ -63,6 +69,35 @@ public class DataInitializer implements CommandLineRunner {
      */
     @Value("${app.beta-testing.seed-demo-accounts:false}")
     private boolean seedDemoAccounts;
+
+    /**
+     * Mot de passe réellement injecté aux comptes de démonstration créés par
+     * ce seed. Surchargeable par `DEMO_PASSWORD` : c'est ce qui permet
+     * d'exposer une démo sans reposer sur un secret publié dans le dépôt.
+     * Le défaut reste {@link #DEFAULT_PASSWORD} pour ne casser aucun flux de
+     * test existant (CI, E2E, scripts locaux) — la sécurité vient du garde-fou
+     * {@link #exposedPublicly}, pas d'un changement de comportement par défaut.
+     */
+    @Value("${app.beta-testing.demo-password:" + DEFAULT_PASSWORD + "}")
+    private String demoPassword = DEFAULT_PASSWORD;
+
+    /**
+     * VRAI lorsque l'instance est adressable depuis Internet. Lu comme une
+     * CHAÎNE puis interprété : la propriété vaut `true` pour toute valeur non
+     * vide autre que `false`. Cela permet de la dériver de `RENDER_SERVICE_ID`
+     * (Render l'injecte sur chaque service, ex. `srv-abc123`, absent en local
+     * et en CI) sans faire échouer le démarrage sur une conversion booléenne
+     * impossible. Surchargeable par `DEMO_EXPOSED_PUBLICLY` pour tout autre
+     * exposant (tunnel, reverse proxy, IP publique).
+     */
+    @Value("${app.beta-testing.exposed-publicly:}")
+    private String exposedPubliclyFlag = "";
+
+    /** Interprétation de {@link #exposedPubliclyFlag} (présence, pas parsing). */
+    private boolean isExposedPublicly() {
+        String flag = exposedPubliclyFlag == null ? "" : exposedPubliclyFlag.trim();
+        return !flag.isEmpty() && !"false".equalsIgnoreCase(flag);
+    }
 
     @Value("${app.environment:dev}")
     private String environment;
@@ -108,7 +143,38 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         boolean demoOrBeta = !isProductionEnvironment()
                 && (seedDemoAccounts || "beta".equalsIgnoreCase(environment));
-        String encodedPassword = demoOrBeta ? passwordEncoder.encode(DEFAULT_PASSWORD) : null;
+
+        // GARDE-FOU (E3) — un seed de comptes démo sur une instance adressable
+        // depuis Internet avec le mot de passe PUBLIÉ dans le dépôt = prise de
+        // contrôle ADMIN garantie pour quiconque lit le README. On refuse de
+        // démarrer plutôt que d'exposer ce couple : échec bruyant, jamais une
+        // désactivation silencieuse qui laisserait croire que la démo est saine.
+        // Placé AVANT toute écriture : aucun effet de bord partiel.
+        if (demoOrBeta && isExposedPublicly() && DEFAULT_PASSWORD.equals(demoPassword)) {
+            throw new IllegalStateException(
+                    "Refus de démarrer : comptes de démonstration activés ("
+                            + "app.beta-testing.seed-demo-accounts=true) sur une instance "
+                            + "exposée publiquement (RENDER_SERVICE_ID présent ou "
+                            + "DEMO_EXPOSED_PUBLICLY=true) avec le mot de passe publié "
+                            + "'" + DEFAULT_PASSWORD + "'. Choisir l'une des deux : "
+                            + "(1) fixer DEMO_PASSWORD à un secret non publié, "
+                            + "(2) mettre DEMO_SEED_ENABLED=false et approvisionner les "
+                            + "comptes par le parcours d'onboarding réel.");
+        }
+        if (demoOrBeta && !DEFAULT_PASSWORD.equals(demoPassword)) {
+            log.warn("Comptes de démonstration créés avec un mot de passe non publié "
+                    + "(DEMO_PASSWORD). ATTENTION : les comptes préexistants portant le "
+                    + "hash hérité de V8__fix_password_hashes.sql ne sont PAS ré-encodés "
+                    + "par ce seed ; ils restent neutralisés par "
+                    + "V192__neutralize_demo_accounts.sql et ne deviennent pas une porte.");
+        } else if (demoOrBeta) {
+            log.warn("Comptes de démonstration créés avec le mot de passe PUBLIÉ '{}'. "
+                    + "Interdit dès que l'instance est adressable depuis Internet "
+                    + "(voir le garde-fou E3) : ne jamais jumeler seed + tunnel/url "
+                    + "public avec ce défaut.", DEFAULT_PASSWORD);
+        }
+
+        String encodedPassword = demoOrBeta ? passwordEncoder.encode(demoPassword) : null;
         int updatedCount = 0;
 
         // Migration de données (applicable dans tous les environnements) :
@@ -441,7 +507,7 @@ public class DataInitializer implements CommandLineRunner {
         User user = User.builder()
                 .tenantId(tenantId)
                 .email(email)
-                .passwordHash(passwordEncoder.encode(DEFAULT_PASSWORD))
+                .passwordHash(passwordEncoder.encode(demoPassword))
                 .firstName(firstName)
                 .lastName(lastName)
                 .role(primaryRole)
@@ -477,7 +543,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         String email = demoOrBeta ? "superadmin@discipolat.com" : superadminEmail.trim();
-        String rawPassword = demoOrBeta ? DEFAULT_PASSWORD : superadminSecret;
+        String rawPassword = demoOrBeta ? demoPassword : superadminSecret;
         if (!demoOrBeta && DEFAULT_PASSWORD.equals(rawPassword)) {
             log.warn("Bootstrap du Super Admin plateforme refusé : secret interdit hors mode démo");
             return;
