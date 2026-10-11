@@ -2,13 +2,16 @@ package com.discipolat.modules.tenants.domain;
 
 import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.Payloads;
+import com.discipolat.modules.tenants.enums.BillingCycle;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import org.springframework.scheduling.annotation.Scheduled;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,17 +28,23 @@ public class SubscriptionService {
     private final SaasPlanRepository planRepository;
     private final FeatureAccessService featureAccessService;
     private final QuotaService quotaService;
+    private final PricingCatalogService catalogService;
+    private final ObjectMapper objectMapper;
 
     public SubscriptionService(TenantRepository tenantRepository,
                                TenantSubscriptionRepository subscriptionRepository,
                                SaasPlanRepository planRepository,
                                FeatureAccessService featureAccessService,
-                               QuotaService quotaService) {
+                               QuotaService quotaService,
+                               PricingCatalogService catalogService,
+                               ObjectMapper objectMapper) {
         this.tenantRepository = tenantRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.featureAccessService = featureAccessService;
         this.quotaService = quotaService;
+        this.catalogService = catalogService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -72,6 +81,8 @@ sub.setStatus(SubscriptionStatus.CANCELED);
                 LocalDateTime.now().plusYears(1).atZone(java.time.ZoneId.systemDefault()).toInstant() :
                 LocalDateTime.now().plusMonths(1).atZone(java.time.ZoneId.systemDefault()).toInstant();
 
+        PricingCatalogService.ResolvedPrice price = resolvePriceForSnapshot(plan, billingCycle);
+
         TenantSubscription subscription = TenantSubscription.builder()
                 .tenantId(tenantId)
                 .planKey(plan.getKey())
@@ -82,6 +93,14 @@ sub.setStatus(SubscriptionStatus.CANCELED);
                 .cancelAtPeriodEnd(false)
                 .trialEndsAt(LocalDateTime.now().plusDays(14).atZone(java.time.ZoneId.systemDefault()).toInstant())
                 .quotasJson(plan.getLimitsJson())
+                // Figeage du prix (contrat §2.4). Une hausse de tarif décidée plus
+                // tard ne doit pas modifier la facture de cet abonnement en cours :
+                // le client a souscrit à un prix, on le lui tient.
+                .priceCurrency(price == null ? null : price.currency())
+                .priceMinor(price == null ? null : price.amountMinor())
+                .priceCycle(price == null ? null : price.cycle().name())
+                .priceSource("ADMIN")
+                .priceSnapshotJson(buildPriceSnapshot(plan, price))
                 .build();
 
         subscription = subscriptionRepository.save(subscription);
@@ -100,6 +119,53 @@ sub.setStatus(SubscriptionStatus.CANCELED);
         }
 
         return subscription;
+    }
+
+    /**
+     * Prix à figer sur l'abonnement au moment de la souscription.
+     *
+     * <p>Aucun prix trouvé n'est pas une erreur ici : la souscription manuelle
+     * par un administrateur est un acte de gestion, pas un encaissement Stripe. On
+     * fige alors ce qu'on peut (null) et l'écran d'abonnement le dira
+     * honnêtement plutôt que d'afficher un tarif au hasard.</p>
+     */
+    private PricingCatalogService.ResolvedPrice resolvePriceForSnapshot(SaasPlan plan, String billingCycle) {
+        try {
+            var cycle = BillingCycle.fromString(billingCycle);
+            Optional<PricingCatalogService.ResolvedPrice> resolved =
+                    catalogService.resolvePrice(plan.getKey(), null, cycle, null);
+            return resolved.orElse(null);
+        } catch (RuntimeException unavailable) {
+            return null;
+        }
+    }
+
+    /**
+     * Instantané explicite du plan figé avec l'abonnement.
+     *
+     * <p>Le but est opérationnel autant qu'historique : quand un client
+     * contestera une facture dans deux ans, on doit pouvoir répondre « vous
+     * étiez à 15 000 FCFA/mois quand vous avez souscrit », et non « c'est ce que
+     * le catalogue dit aujourd'hui ».</p>
+     */
+    private String buildPriceSnapshot(SaasPlan plan, PricingCatalogService.ResolvedPrice price) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("frozenAt", Instant.now().toString());
+        snapshot.put("planKey", plan.getKey());
+        snapshot.put("planName", plan.getName());
+        if (price != null) {
+            snapshot.put("currency", price.currency());
+            snapshot.put("amountMinor", price.amountMinor());
+            snapshot.put("cycle", price.cycle().name());
+            snapshot.put("channels", price.channels().stream().map(Enum::name).toList());
+        } else {
+            snapshot.put("note", "Aucun prix de catalogue applicable a la date de la souscription.");
+        }
+        try {
+            return objectMapper.writeValueAsString(snapshot);
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     /**

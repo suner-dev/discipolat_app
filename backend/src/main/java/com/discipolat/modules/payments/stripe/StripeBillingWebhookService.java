@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -266,6 +268,8 @@ public class StripeBillingWebhookService {
                 .billingCycle(metadata != null ? metadata.getOrDefault("billing_cycle", "monthly") : "monthly")
                 .currentPeriodStart(now)
                 .currentPeriodEnd(now.plusSeconds(30L * 24 * 3600))
+                // Le montant sera figé par applyRemoteState depuis le Price Stripe.
+                .priceSource("STRIPE")
                 .build();
         return subscriptionRepository.save(fresh);
     }
@@ -289,6 +293,74 @@ public class StripeBillingWebhookService {
         }
         if (remote.getId() != null) {
             local.setStripeSubscriptionId(remote.getId());
+        }
+        freezePriceFromStripe(local, remote);
+    }
+
+    /**
+     * Fige le prix constaté par Stripe sur l'abonnement local (contrat §2.4).
+     *
+     * <p>Stripe est l'autorité de fait : c'est lui qui débitera au prochain
+     * renouvellement. Tant que l'abonnement local ignore le montant du Price
+     * auquel il est rattaché, l'écran « Facturation » afficherait le tarif du
+     * catalogue — qui peut différer — et un litige de facturation serait
+     * irrécupérable. On lit donc l'item de ligne du premier poste.</p>
+     *
+     * <p>Le figeage est <b>unique</b> : il ne s'écrase pas à chaque webhook. Un
+     * changement de tarif ne doit pas réécrire l'historique d'un abonnement.</p>
+     */
+    private void freezePriceFromStripe(TenantSubscription local, Subscription remote) {
+        if (local.getPriceMinor() != null || remote == null || remote.getId() == null) {
+            return;
+        }
+        try {
+            com.stripe.model.SubscriptionItem item = com.stripe.model.SubscriptionItem.list(
+                    com.stripe.param.SubscriptionItemListParams.builder()
+                            .setSubscription(remote.getId())
+                            .setLimit(1L)
+                            .build(),
+                    billingService.requestOptions())
+                    .getData().stream().findFirst().orElse(null);
+            if (item == null || item.getPrice() == null) {
+                return;
+            }
+            com.stripe.model.Price price = item.getPrice();
+            String planKey = local.getPlanKey() == null
+                    ? null : local.getPlanKey().toUpperCase(Locale.ROOT);
+            String metadataPlan = price.getMetadata() == null ? null : price.getMetadata().get("plan_key");
+            // Garde-fou : ne jamais figer le prix d'un autre plan sur cet abonnement.
+            if (planKey != null && metadataPlan != null && !planKey.equalsIgnoreCase(metadataPlan)) {
+                log.warn("[Stripe:Webhook] Price {} rattaché au plan {} mais abonnement sur {} — figeage ignoré",
+                        price.getId(), metadataPlan, planKey);
+                return;
+            }
+            if (price.getUnitAmount() == null || price.getCurrency() == null) {
+                return;
+            }
+            String currency = price.getCurrency().toUpperCase(Locale.ROOT);
+            local.setPriceMinor(price.getUnitAmount());
+            local.setPriceCurrency(currency);
+            local.setPriceSource("STRIPE");
+            Map<String, Object> snapshot = new LinkedHashMap<>();
+            snapshot.put("frozenAt", Instant.now().toString());
+            snapshot.put("planKey", planKey);
+            snapshot.put("stripePriceId", price.getId());
+            snapshot.put("stripeSubscriptionId", remote.getId());
+            snapshot.put("currency", currency);
+            snapshot.put("amountMinor", price.getUnitAmount());
+            try {
+                local.setPriceSnapshotJson(new com.fasterxml.jackson.databind.ObjectMapper()
+                        .writeValueAsString(snapshot));
+            } catch (Exception ignored) {
+                local.setPriceSnapshotJson("{}");
+            }
+            log.info("[Stripe:Webhook] prix figé — tenant={} {} {} minor (price={})",
+                    local.getTenantId(), price.getUnitAmount(), currency, price.getId());
+        } catch (Exception e) {
+            // Non bloquant : le webhook d'état reste traité même si la lecture du
+            // Price échoue. Le prix sera figé au prochain passage.
+            log.warn("[Stripe:Webhook] lecture du Price impossible pour sub={} : {}",
+                    remote.getId(), e.getMessage());
         }
     }
 

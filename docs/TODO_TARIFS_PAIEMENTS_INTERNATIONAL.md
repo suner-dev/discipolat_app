@@ -1,14 +1,29 @@
 # TODO — TARIFS & PAIEMENTS INTERNATIONIONALISATION (multi-devises, multi-régions, multi-canaux)
 
-> **STATUT** : À FAIRE (spécification détaillée, non commencée).
-> **VERSION** : v1.0 — rédigée le 11/10/2026.
+> **STATUT** : **LIVRÉ** le 11/10/2026 — lots T1 à T10 livrés, sauf T10.5 (test Stripe live) et le §T8.4 (voir §0.1).
+> **VERSION** : v2.0 — spécification initiale v1.0, puis implémentation.
+
+### §0.1 Ce qui reste réellement à faire
+
+| Reste | Pourquoi | Où |
+|---|---|---|
+| **T10.5 — test Stripe en mode test** | `KNOWN_ISSUES.md:33` reste `PARTIELLEMENT RÉSOLU` tant qu'aucun checkout réel n'a été exécuté. C'est le **dernier obstacle à la monétisation**. | §T10.5 |
+| **T8.4 — inscription sur plan payant** | Non implémenté : le point A1 (§16) reste à arbitrer. Aujourd'hui `/register?plan=startup` crée le tenant sur le plan payant **sans encaissement**. C'est un angle mort commercial à traiter avant ouverture. | §T8.4, §16 A1 |
+| **T6.3 — abonnement Mobile Money récurrent** | Les tables et services sont prévus mais non livrés : M-Pesa (STK Push) n'est pas rejouable automatiquement, seul MTN MoMo l'est. Ne pas livrer un abonnement « récurrent » sur un opérateur qui ne sait pas débiter deux fois. | §T6.3, §16 A4 |
+| **T9.2 — écran mobile de souscription** | `pricing_service.dart` livre la lecture du catalogue et le formatage ; l'écran et l'ouverture du checkout restent à faire (dépendance `url_launcher` à valider). | §T9.2 |
+| **Choix A2** (prix annuel explicite vs calculé) et **A3** (ouverture de la liste de plans) | A2 tranché enniociel : prix saisi prioritaire, calcul en repli. A3 tranché : liste ouverte. | §16 |
+
+**État de la vérification au 11/10/2026** : 2200 tests backend ✅ · 887 tests frontend ✅ ·
+`tsc -b` et `eslint` sans erreur ✅ · `flutter analyze` sans erreur ✅ ·
+audit i18n : 0 clé manquante sur les 6 locales ✅ · gel d'architecture re-régelé
+(2 arêtes `→ currency`, **−1 cycle R6**) ✅ · 4 scénarios E2E ajoutés ✅.
 > **PÉRIMÈTRE** : Lots T1 → T9 ci-dessous. Couvre **backend (Spring Boot)**, **frontend (React/Vite)**, **mobile (Flutter)**, **E2E (Playwright)**.
 > **PRINCIPE DIRECTEUR** : *ne rien supprimer qui fonctionne*. Toute évolution est **additive** (nouvelles tables, nouvelles colonnes, nouvelles routes). Les colonnes et endpoints legacy restent lisibles et en écriture pendant au moins une version.
 > **AUDIENCES** : tout agent (ou humain) reprenant le chantier doit pouvoir exécuter ce document de bout en bout sans redécouvrir le codebase.
 >
 > **Documents liés** : `docs/SPEC_LOT2_TOUT_PARAMETRABLE.md` (surcharge d'étiquettes, pattern `resolveLabel`),
-> `docs/ARCHITECTURE.md`, `docs/RBAC.md`, `docs/GUIDE_SUPER_ADMIN.md`, `docs/KNOWN_ISSUES.md:33`
-> (« Stripe / paiements jamais testés en live — Bloquant monétisation »), `docs/DECISIONS.md`.
+> `docs/ARCHITECTURE.md`, `docs/RBAC.md`, `docs/GUIDE_SUPER_ADMIN.md`, `docs/KNOWN_ISSUES.md` **J3** (Stripe jamais testé en live — `PARTIELLEMENT RÉSOLU`),
+> `docs/API_TARIFS.md` (contrat d'API du catalogue), `docs/DECISIONS.md`.
 
 ---
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LandingPage from '@/pages/LandingPage';
 import AuthLayout from '@/layouts/AuthLayout';
 import LoginPage from '@/pages/LoginPage';
@@ -37,6 +38,23 @@ vi.mock('@/contexts/AuthContext', async () => {
   };
 });
 
+/**
+ * La section tarifs consomme le catalogue via TanStack Query
+ * (TODO_TARIFS_PAIEMENTS_INTERNATIONAL) : le rendu de la landing doit donc être
+ * encapsulé dans un QueryClient, sinon le test planterait sur « No QueryClient
+ * set » — exactement comme le ferait un vrai navigateur.
+ */
+function renderLanding(element: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>{element}</BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+
 describe('LandingPage — page accueil', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -45,44 +63,28 @@ describe('LandingPage — page accueil', () => {
   });
 
   it('rend la marque et le titre du hero', () => {
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
     expect(screen.getAllByText('Discipolat').length).toBeGreaterThanOrEqual(1);
     // Le titre du hero peut être découpé en plusieurs spans (décor + gradient).
     expect(screen.getAllByText(/croissance spirituelle/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('affiche les boutons de connexion et les fonctionnalites', () => {
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
     expect(screen.getAllByRole('link', { name: /connexion/i }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Suivi des disciples')).toBeInTheDocument();
     expect(screen.getByText('Reporting hebdomadaire')).toBeInTheDocument();
   });
 
   it('le lien Connexion pointe vers /login', () => {
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
     const links = screen.getAllByRole('link', { name: /connexion/i });
     expect(links[0]).toHaveAttribute('href', '/login');
   });
 
   it('le toggle de theme bascule la classe dark sur html', async () => {
     const user = userEvent.setup();
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
 
     expect(document.documentElement.classList.contains('dark')).toBe(false);
 
@@ -99,11 +101,7 @@ describe('LandingPage — page accueil', () => {
 
   it('la modale démo s\'ouvre, valide les champs et affiche la confirmation', async () => {
     const user = userEvent.setup();
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
 
     // Ouvre la démo depuis le CTA du hero.
     await user.click(screen.getAllByRole('button', { name: /demander une démonstration/i })[0]);
@@ -135,11 +133,7 @@ describe('LandingPage — page accueil', () => {
 
   it('l’explorateur de rôles change le contenu selon le rôle sélectionné', async () => {
     const user = userEvent.setup();
-    render(
-      <BrowserRouter>
-        <LandingPage />
-      </BrowserRouter>
-    );
+    renderLanding(<LandingPage />);
 
     // Rôle par défaut : Pasteur.
     expect(screen.getByText(/vue complète de toute l’église/i)).toBeInTheDocument();

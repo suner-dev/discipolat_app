@@ -72,6 +72,32 @@ public class TenantSubscription {
     @JdbcTypeCode(SqlTypes.JSON)
     private String metadataJson;
 
+    // ===== TODO_TARIFS_PAIEMENTS_INTERNATIONAL — T1.4 (V248, additif) =====
+    // Figeage du prix à la souscription (contrat §2.4) : une hausse de tarif
+    // décidée par le super-admin ne doit pas modifier la facture d'un
+    // abonnement en cours avant son renouvellement.
+
+    /** Devise du prix figé. */
+    @Column(name = "price_currency", length = 3)
+    private String priceCurrency;
+
+    /** Prix figé en unités mineures ISO-4217 (contrat §2.1). */
+    @Column(name = "price_minor")
+    private Long priceMinor;
+
+    @Column(name = "price_cycle", length = 20)
+    private String priceCycle;
+
+    /** STRIPE | MOMO | STRONG | MANUAL | ADMIN | MIGRATION. */
+    @Column(name = "price_source", nullable = false, length = 20)
+    @Builder.Default
+    private String priceSource = "MIGRATION";
+
+    /** Instantané du plan au moment du figeage, pour expliquer une évolution de tarif. */
+    @Column(name = "price_snapshot_json", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String priceSnapshotJson;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

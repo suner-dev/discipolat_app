@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale, tText } from '@/i18n';
+import { formatMinor } from '@/lib/money';
 import { QuotaUsageCards } from '@/components/admin/QuotaUsageCards';
 import { normalizeQuotaUsage } from '@/types/quota';
 import { EmptyState, SkeletonDashboard, VisuallyHidden, ConfirmDialog } from '@/components/ui/UXComponents';
@@ -61,6 +62,24 @@ interface CatalogPlan {
   priceYearly?: number;
   currency?: string;
   isActive?: boolean;
+  /**
+   * Catalogue résolu côté serveur (T8.3) : prix en unités mineures, dans la
+   * devise primaire du tenant. C'est la MÊME source que la page publique — sans
+   * quoi l'administrateur verrait un tarif différent du visiteur, ce qui est
+   * le pire façon de traiter de l'argent.
+   */
+  prices?: Array<{
+    currency: string;
+    cycle: string;
+    amountMinor: number;
+    decimals: number;
+  }>;
+  display?: {
+    available: boolean;
+    amountMinor: number | null;
+    currency: string;
+    decimals: number;
+  } | null;
 }
 
 /**
@@ -124,9 +143,54 @@ const readPlans = (payload: unknown): CatalogPlan[] => {
       priceYearly: typeof record.priceYearly === 'number' ? record.priceYearly : undefined,
       currency: typeof record.currency === 'string' ? record.currency : undefined,
       isActive: typeof record.isActive === 'boolean' ? record.isActive : undefined,
+      prices: Array.isArray(record.prices)
+        ? (record.prices as Array<Record<string, unknown>>)
+            .filter((entry) => typeof entry.currency === 'string' && typeof entry.amountMinor === 'number')
+            .map((entry) => ({
+              currency: String(entry.currency),
+              cycle: String(entry.cycle ?? 'MONTHLY'),
+              amountMinor: Number(entry.amountMinor),
+              decimals: typeof entry.decimals === 'number' ? entry.decimals : 2,
+            }))
+        : undefined,
+      display:
+        record.display && typeof record.display === 'object'
+          ? (() => {
+              const display = record.display as Record<string, unknown>;
+              return {
+                available: display.available === true,
+                amountMinor: typeof display.amountMinor === 'number' ? display.amountMinor : null,
+                currency: typeof display.currency === 'string' ? display.currency : 'XAF',
+                decimals: typeof display.decimals === 'number' ? display.decimals : 2,
+              };
+            })()
+          : undefined,
     });
     return acc;
   }, []);
+};
+
+/**
+ * Prix d'un plan pour l'écran d'administration.
+ *
+ * <p>Priorité au catalogue résolu (unités mineures, devise du tenant) ; à
+ * défaut, l'ancien couple montant majeur / devise du plan, qui reste disponible
+ * pour les déploiements d'avant la migration.</p>
+ */
+const planPrice = (plan: CatalogPlan, cycle: 'MONTHLY' | 'YEARLY'): string => {
+  const resolved = plan.prices?.find((price) => price.cycle === cycle);
+  if (resolved) {
+    return formatMinor(resolved.amountMinor, { code: resolved.currency, decimals: resolved.decimals }, getI18nLocale());
+  }
+  if (plan.display?.available && plan.display.amountMinor != null) {
+    return formatMinor(
+      plan.display.amountMinor,
+      { code: plan.display.currency, decimals: plan.display.decimals },
+      getI18nLocale(),
+    );
+  }
+  const fallback = cycle === 'YEARLY' ? plan.priceYearly : plan.priceMonthly;
+  return formatPrice(fallback, plan.currency);
 };
 
 export default function TenantAdminSubscriptionPage() {
@@ -402,11 +466,11 @@ export default function TenantAdminSubscriptionPage() {
                       )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
-                          {formatPrice(plan.priceMonthly, plan.currency)}
+                          {planPrice(plan, 'MONTHLY')}
                         </span> / {tText('mois')}
                       </p>
                       <p className="text-[11px] text-gray-400">
-                        {formatPrice(plan.priceYearly, plan.currency)} / {tText('an')}
+                        {planPrice(plan, 'YEARLY')} / {tText('an')}
                       </p>
                       {!isCurrent && (
                         <button

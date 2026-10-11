@@ -45,6 +45,24 @@
 | `PAYMENTS_WEBHOOK_SECRET` | (vide → endpoint ferme, 503) | Secret webhook operateur |
 | `PAYMENTS_WEBHOOK_POLL_INTERVAL_MS` | `30000` | Poll PENDING (MTN sans webhook) |
 | `PAYMENTS_SIMULATE_CONFIRM_DELAY_MS` (+ `_NON_MANAGER_MS`, `_SCAN_INTERVAL_MS`) | `0/0/5000` | Simulation beta/dev — **0 en prod** |
+| `STRIPE_SECRET_KEY` | (vide → facturation carte **désactivée**) | Cle Stripe (`sk_test_…` / `sk_live_…`). Sans elle, aucun checkout par carte n'est proposé. |
+| `STRIPE_WEBHOOK_SECRET` | (vide → webhook fermé, 503) | Secret de signature `whsec_…` |
+| `STRIPE_SUCCESS_URL` | `http://localhost:5173/billing?checkout=success` | Retour post-checkout |
+| `STRIPE_CANCEL_URL` | `http://localhost:5173/pricing?checkout=cancelled` | Retour si abandon |
+| `STRIPE_PRICE_SYNC_INTERVAL_MS` | `300000` | Rattrapage periodique des Prices Stripe en attente/échec |
+| `STRIPE_PRICE_SYNC_INITIAL_DELAY_MS` | `60000` | Delai avant le premier passage du batch |
+
+> **Ces variables pilotent l'exécution, pas la politique.** La politique
+> tarifaire — devises autorisées, mode d'affichage, canaux ouverts, activation de
+> la creation automatique des Prices — vit dans `saas_pricing_settings` et se
+> modifie depuis `/platform/saas/plans` (voir [API_TARIFS.md](API_TARIFS.md)).
+> Ne creez donc pas deux sources de verite : les variables servent au demarrage et
+> au batch, jamais a la configuration commerciale.
+
+> **Rattrapage et creation automatique.** `saas_pricing_settings.stripe_price_auto_sync`
+> controle si les Prices sont crees des l'enregistrement d'un plan. Le batch, lui,
+> s'execute toujours : « ne pas creer tout seul » ne doit pas vouloir dire
+> « ne jamais reessayer apres un incident reseau ».
 
 ## 5. WhatsApp / IA / rate limiting / schedulers
 
@@ -81,6 +99,9 @@ FRONTEND_URL=*
 VITE_API_URL=http://localhost:8080
 MOBILEMONEY_ENABLED=false
 WHATSAPP_ENABLED=false
+# Facturation carte : sans cle, le canal CARD n'est pas propose.
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
 
 Generer les cles : `openssl genpkey -algorithm RSA -out keys/private.pem -pkeyopt rsa_keygen_bits:2048 && openssl pkey -in keys/private.pem -pubout -out keys/public.pem` (ou `bash scripts/deploy-setup.sh --keys`).

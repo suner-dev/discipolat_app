@@ -34,7 +34,7 @@ public class StripeBillingController {
         this.subscriptionRepository = subscriptionRepository;
     }
 
-    public record CheckoutRequest(String planKey, String billingCycle) {
+    public record CheckoutRequest(String planKey, String billingCycle, String currency, String region) {
     }
 
     @PostMapping("/checkout")
@@ -42,7 +42,8 @@ public class StripeBillingController {
         UUID tenantId = TenantContext.requireTenantId();
         UUID userId = SecurityUtils.getCurrentUserId();
         Map<String, Object> result = billingService.createCheckoutSession(
-                tenantId, userId, request.planKey(), request.billingCycle());
+                tenantId, userId, request.planKey(), request.billingCycle(),
+                request.currency(), request.region());
         return ResponseEntity.ok(result);
     }
 
@@ -79,6 +80,12 @@ public class StripeBillingController {
         view.put("currentPeriodEnd", sub.getCurrentPeriodEnd() != null ? sub.getCurrentPeriodEnd().toString() : null);
         view.put("trialEndsAt", sub.getTrialEndsAt() != null ? sub.getTrialEndsAt().toString() : null);
         view.put("hasStripeCustomer", sub.getStripeCustomerId() != null && !sub.getStripeCustomerId().isBlank());
+        // Prix figé à la souscription (contrat §2.4) : le visiteur peut changer de
+        // tarif, un abonné en cours ne doit pas être re-facturé au nouveau prix.
+        view.put("priceCurrency", sub.getPriceCurrency());
+        view.put("priceMinor", sub.getPriceMinor());
+        view.put("priceCycle", sub.getPriceCycle());
+        view.put("priceSource", sub.getPriceSource());
         body.put("subscription", view);
         return ResponseEntity.ok(body);
     }

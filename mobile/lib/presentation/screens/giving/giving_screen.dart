@@ -43,6 +43,13 @@ class _GivingScreenState extends State<GivingScreen> {
   List<dynamic> _recurring = [];
   bool _recurringLoading = true;
 
+  // Devise du tenant, lue sur le serveur (TODO_TARIFS_PAIEMENTS_INTERNATIONAL §0).
+  // Avant, 'XOF' était écrit en dur : un tenant camerounais était enregistré en
+  // franc CFA de l'UEM au lieu du franc CFA de la CEMAC — deux devises
+  // différentes, au taux différent. La valeur ci-dessous n'est qu'un repli
+  // d'affichage tant que le serveur n'a pas répondu.
+  String _currency = 'XAF';
+
   static const _operators = {
     'M_PESA': 'M-Pesa',
     'MTN_MOMO': 'MTN MoMo',
@@ -73,6 +80,23 @@ class _GivingScreenState extends State<GivingScreen> {
     _loadMine();
     _loadRecurring();
     _loadStats();
+    _loadCurrency();
+  }
+
+  /// Devise primaire du tenant. Silencieux en cas d'échec : la donation ne
+  /// doit pas être bloquée par un souci de lecture de devise.
+  Future<void> _loadCurrency() async {
+    try {
+      final res = await _apiService.get('/currencies/primary');
+      final data = res.data;
+      if (!mounted || data is! Map) return;
+      final code = data['currencyCode'];
+      if (code is String && code.length == 3) {
+        setState(() => _currency = code.toUpperCase());
+      }
+    } catch (_) {
+      // Repli conservé : XAF est la devise de base de la plateforme.
+    }
   }
 
   @override
@@ -129,7 +153,7 @@ class _GivingScreenState extends State<GivingScreen> {
         'operator': _operator,
         'amount': num.tryParse(_amountCtrl.text.trim()) ?? 0,
         'purpose': _purpose,
-        'currency': 'XOF',
+        'currency': _currency,
         if (_phoneCtrl.text.trim().isNotEmpty)
           'phoneNumber': _phoneCtrl.text.trim(),
       });
@@ -214,7 +238,7 @@ class _GivingScreenState extends State<GivingScreen> {
         'amount': amount,
         'purpose': _rcPurpose,
         'frequency': _rcFrequency,
-        'currency': 'XOF',
+        'currency': _currency,
         if (_rcPhoneCtrl.text.trim().isNotEmpty)
           'phoneNumber': _rcPhoneCtrl.text.trim(),
       });

@@ -116,6 +116,25 @@ public class SaasPlan {
     @Column(name = "status", length = 20)
     private String status;
 
+    // ===== TODO_TARIFS_PAIEMENTS_INTERNATIONAL — T1 (additif, V247) =====
+    // Les colonnes price_eur/price_xaf/price_usd ci-dessus restent en place et
+    // restent lisibles : le catalogue de référence vit désormais dans
+    // saas_plan_prices (un prix = une devise x un cycle x une region x un canal).
+
+    /** Produit Stripe cree une fois par plan ; les Price s'y rattachent. */
+    @Column(name = "stripe_product_id")
+    private String stripeProductId;
+
+    /** PER_CURRENCY (defaut) ou PER_REGION (grille regionale prioritaire). */
+    @Column(name = "pricing_model", length = 20, nullable = false)
+    @Builder.Default
+    private String pricingModel = "PER_CURRENCY";
+
+    /** Nombre maximum de devises affichees sur la carte de plan (lisibilite). */
+    @Column(name = "max_currencies", nullable = false)
+    @Builder.Default
+    private Integer maxCurrencies = 3;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
@@ -125,6 +144,8 @@ public class SaasPlan {
         if (this.isPublic == null) this.isPublic = true;
         if (this.trialDays == null) this.trialDays = 30;
         if (this.annualDiscountPct == null) this.annualDiscountPct = 17;
+        if (this.pricingModel == null) this.pricingModel = "PER_CURRENCY";
+        if (this.maxCurrencies == null) this.maxCurrencies = 3;
     }
 
     @PreUpdate

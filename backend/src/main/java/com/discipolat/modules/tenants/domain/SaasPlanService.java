@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +20,15 @@ import java.util.UUID;
 @Transactional
 public class SaasPlanService {
 
+    /**
+     * Ordre d'affichage historique des quatre plans canoniques.
+     *
+     * <p>Ce n'est <b>plus</b> un filtre d'appartenance : jusqu'ici il servait de
+     * liste blanche, et un plan créé par le super-admin avec
+     * {@code is_public = true} n'apparaissait jamais sur la page publique
+     * (faille F3). Il ne sert plus qu'à préserver la position des plans connus,
+     * les autres venant après.</p>
+     */
     public static final List<String> PUBLIC_PLAN_KEYS = List.of("DISCOVERY", "STARTUP", "GROWTH", "NETWORK");
 
     private final SaasPlanRepository planRepository;
@@ -40,14 +48,20 @@ public class SaasPlanService {
         return planRepository.findByIsActiveTrueOrderBySortOrderAsc();
     }
 
+    /**
+     * Plans publics : publiés, actifs, statut non déprécié.
+     *
+     * <p><b>Faille F3 corrigée</b> — la liste blanche {@link #PUBLIC_PLAN_KEYS}
+     * ne filtre plus. Elle rendait invisible tout plan créé par le super-admin,
+     * ce qui rendait la création d'une offre inopérante alors même que
+     * l'interface la proposait.</p>
+     */
     @Transactional(readOnly = true)
     public List<SaasPlan> getPublicPlans() {
         return planRepository.findByIsActiveTrueAndIsPublicTrueOrderBySortOrderAsc().stream()
-                .filter(plan -> PUBLIC_PLAN_KEYS.contains(normalizePublicKey(plan.getKey())))
                 .filter(plan -> plan.getStatus() == null
                         || !(plan.getStatus().equalsIgnoreCase("INACTIVE")
                         || plan.getStatus().equalsIgnoreCase("DEPRECATED")))
-                .sorted(Comparator.comparingInt(plan -> PUBLIC_PLAN_KEYS.indexOf(normalizePublicKey(plan.getKey()))))
                 .toList();
     }
 

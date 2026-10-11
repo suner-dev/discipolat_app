@@ -12,7 +12,23 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 
-/** Catalogue SaaS minimal nécessaire à la page de tarifs publique. */
+/**
+ * Catalogue SaaS minimal nécessaire à la page de tarifs publique.
+ *
+ * <p><b>Endpoint conservé tel quel</b> pour ne casser aucun client existant : les
+ * champs d'origine ({@code priceMonthly}, {@code priceEur}, {@code priceXaf},
+ * {@code priceUsd}…) répondent toujours, avec leur sémantique historique de
+ * montants <b>majeurs</b>. Les prix résolus en unités mineures, multi-devises et
+ * multi-régions sont servis par {@link PublicPricingController}.</p>
+ *
+ * <p><b>Correction de la faille F3</b> : le filtre sur
+ * {@code SaasPlanService.PUBLIC_PLAN_KEYS} était appliqué ici <em>et</em> dans
+ * {@code SaasPlanService.getPublicPlans()}. Conséquence : tout plan créé par le
+ * super-admin avec {@code is_public = true} était invisible de la page publique,
+ * quelle que soit sa configuration. Le seul critère retenu est désormais
+ * « publié, actif, statut non déprécié » ; le tri conserve la position des plans
+ * canoniques et place les plans ajoutés ensuite.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/public/plans")
 public class PublicSaasPlanController {
@@ -25,9 +41,18 @@ public class PublicSaasPlanController {
 
     @GetMapping
     public ResponseEntity<List<PublicPlanResponse>> getPublicPlans() {
+        // Les plans canoniques gardent leur position historique ; les plans ajoutés
+        // par le super-admin viennent ensuite, classés par ordre puis par clé.
+        Comparator<SaasPlan> order = Comparator
+                .comparingInt((SaasPlan plan) -> {
+                    int index = SaasPlanService.PUBLIC_PLAN_KEYS.indexOf(normalize(plan.getKey()));
+                    return index >= 0 ? index : SaasPlanService.PUBLIC_PLAN_KEYS.size();
+                })
+                .thenComparingInt(plan -> plan.getSortOrder() == null ? 0 : plan.getSortOrder())
+                .thenComparing(plan -> normalize(plan.getKey()));
+
         List<SaasPlan> plans = planService.getPublicPlans().stream()
-                .filter(plan -> SaasPlanService.PUBLIC_PLAN_KEYS.contains(normalize(plan.getKey())))
-                .sorted(Comparator.comparingInt(plan -> SaasPlanService.PUBLIC_PLAN_KEYS.indexOf(normalize(plan.getKey()))))
+                .sorted(order)
                 .toList();
         CacheControl cacheControl = CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic().mustRevalidate();
         return ResponseEntity.ok().cacheControl(cacheControl).body(plans.stream().map(this::toResponse).toList());

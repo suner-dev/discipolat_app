@@ -1,6 +1,6 @@
 # Base de donnees — Discipolat Church OS
 
-> Version 2.0 — 2026-09-22 · §72 / G6.8. PostgreSQL 16 · JPA/Hibernate 6 · Flyway · 132 migrations (V1→V164). Voir [ARCHITECTURE.md](ARCHITECTURE.md) · [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) · [DEPLOYMENT.md](DEPLOYMENT.md).
+> Version 2.1 — 2026-10-11 · §72 / G6.8. PostgreSQL 16 · JPA/Hibernate 6 · Flyway · **208 migrations (V1→V248)**. Voir [ARCHITECTURE.md](ARCHITECTURE.md) · [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) · [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## 1. Technologies & regles
 
@@ -25,6 +25,7 @@
 | V222–V232 | Organisation modulable V3 : `organization_levels` (V224) · `role_titles` (V225) · **`member_role_assignments` — affiliation multi-nœuds (V226)** · features de nœud (V227) · branding & agrégats (V228) · groupes de navigation (V229) · libellés UI (V230) · **`member_relations` — rattachements déclaratifs « Mon encadrement » (V231)** · **backfill dictionnaire `NOTIFICATION_TYPE` (V232)** |
 | V233-V239 | Backends des services mobile refusés : `discipleship_*` (V233) · `tasks`/`task_*`/`kanban_columns` (V234) · `health_medications`/`health_kits`/`health_duties`/`campaign_participants` (V235) · `finance_accounts`/`finance_donations`/`finance_tontines*` (V236) · `finance_transactions.reconciled` (V237). **Corrections V234** : `tasks.tags` et `task_templates.default_tags` passent de `TEXT[]` (tableau PG) à `TEXT` — `StringListConverter` écrit une chaîne, la déclaration tableau était incompatible et empêchait le démarrage du contexte Spring (V238) · `tasks.sort_order` ajouté : le mobile envoyait déjà `order` sur `POST /tasks/{id}/reorder` mais le serveur la rejetait silencieusement (V239) |
 | V158–V164 | Migration events legacy → `church_event` (V158) · family OS visites/receptions (V160) · pastorat transferts/RDV (V161) · versioning permissions/roles vivants (V162) · fulltext pg_trgm (V163) · **moteur migration legacy dry-run+replay (V164)** |
+| **V245–V248** | **Catalogue de prix multi-devises** : `saas_plan_prices` (plan x devise x cycle x region x canal, `amount_minor` en unites mineures ISO-4217) · `saas_pricing_settings` (singleton de la politique tarifaire) · colonnes de tracabilite `saas_plans` (`stripe_product_id`, `pricing_model`, `max_currencies`) + **backfill du catalogue depuis les colonnes legacy** · figeage du prix sur `tenant_subscriptions` (`price_minor`, `price_source`, `price_snapshot_json`) |
 
 ## 3. Schema conceptuel (extrait)
 

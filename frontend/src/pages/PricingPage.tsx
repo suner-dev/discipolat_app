@@ -1,257 +1,68 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, X, ArrowRight, Zap, Shield, Bot, AlertCircle, CreditCard, Loader2 } from 'lucide-react';
-import { tText, useI18n, type Locale } from '@/i18n';
+import { AlertCircle, ArrowRight, Bot, Check, CreditCard, Loader2, Minus, Shield, Zap } from 'lucide-react';
+import { tText, useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePricing } from '@/features/pricing/usePricing';
+import { formatMinor } from '@/lib/money';
+import type { BillingCycleName, PublicPlanView } from '@/features/pricing/types';
+import { CURRENCY_LABEL, PLAN_BLURB } from '@/components/landing/pricingCopy';
+import type { Locale } from '@/i18n';
 
-interface PriceView {
-  amount: number;
-  currency: string;
-}
-
-interface PlanView {
-  id: string;
-  name: string;
-  description: string;
-  prices: PriceView[];
-  period: string;
-  popular: boolean;
-  features: Array<{ text: string; included: boolean }>;
-}
-
-interface PublicPlan {
-  key: string;
-  name: string;
-  description: string | null;
-  priceMonthly: number | null;
-  priceEur: number | null;
-  priceXaf: number | null;
-  priceUsd: number | null;
-  currency: string | null;
-  seatsLimit: number | null;
-  storageLimitMb: number | null;
-  aiCreditsLimit: number | null;
-  billingPeriod: string | null;
-  sortOrder: number | null;
-}
-
-const FALLBACK_PLANS: PlanView[] = [
-  {
-    id: 'discovery',
-    name: 'Découverte',
-    description: 'Parfait pour démarrer et tester la plateforme',
-    prices: [{ amount: 0, currency: 'EUR' }],
-    period: 'Gratuit',
-    popular: false,
-    features: [
-      { text: 'Jusqu\'à 50 membres', included: true },
-      { text: '1 espace (département/famille)', included: true },
-      { text: '100 Mo de stockage', included: true },
-      { text: '10 crédits IA/mois', included: true },
-      { text: '5 événements/mois', included: true },
-      { text: 'Assistant IA basique', included: true },
-      { text: 'Support par email', included: true },
-      { text: 'API publique', included: false },
-      { text: 'Mobile Money intégré', included: false },
-      { text: 'Jumeau numérique', included: false },
-    ],
-  },
-  {
-    id: 'startup',
-    name: 'Démarrage',
-    description: 'Idéal pour les églises en croissance',
-    prices: [{ amount: 9, currency: 'EUR' }],
-    period: '/mois',
-    popular: true,
-    features: [
-      { text: 'Jusqu\'à 250 membres', included: true },
-      { text: '10 espaces', included: true },
-      { text: '1 Go de stockage', included: true },
-      { text: '30 crédits IA/mois', included: true },
-      { text: 'Événements illimités', included: true },
-      { text: 'Assistant IA complet', included: true },
-      { text: 'Support prioritaire', included: true },
-      { text: 'API publique', included: true },
-      { text: 'Mobile Money intégré', included: true },
-      { text: 'Analyse des risques IA', included: true },
-    ],
-  },
-  {
-    id: 'growth',
-    name: 'Croissance',
-    description: 'Pour les églises dynamiques et en expansion',
-    prices: [{ amount: 29, currency: 'EUR' }],
-    period: '/mois',
-    popular: false,
-    features: [
-      { text: 'Jusqu\'à 2 000 membres', included: true },
-      { text: '50 espaces', included: true },
-      { text: '20 Go de stockage', included: true },
-      { text: '100 crédits IA/mois', included: true },
-      { text: 'Événements illimités', included: true },
-      { text: 'Assistant IA avancé avec RAG', included: true },
-      { text: 'Support dédié', included: true },
-      { text: 'API publique complète', included: true },
-      { text: 'Mobile Money + Stripe', included: true },
-      { text: 'Jumeau numérique IA', included: true },
-      { text: 'Prédictions de décrochage', included: true },
-      { text: 'Benchmark inter-églises', included: true },
-    ],
-  },
-  {
-    id: 'network',
-    name: 'Réseau & Campus',
-    description: 'Pour les réseaux d\'églises et campuses multinationaux',
-    prices: [{ amount: 79, currency: 'EUR' }],
-    period: '/mois',
-    popular: false,
-    features: [
-      { text: 'Jusqu\'à 10 000 membres', included: true },
-      { text: '150+ espaces', included: true },
-      { text: '100 Go de stockage', included: true },
-      { text: '500 crédits IA/mois', included: true },
-      { text: 'Événements illimités', included: true },
-      { text: 'Assistant IA personnalisé', included: true },
-      { text: 'Account manager dédié', included: true },
-      { text: 'API publique illimitée', included: true },
-      { text: 'Mobile Money + Stripe + SEPA', included: true },
-      { text: 'Jumeau numérique complet', included: true },
-      { text: 'Module Santé/Infrimerie', included: true },
-      { text: 'Multi-campus', included: true },
-      { text: 'Annuaire inter-églises', included: true },
-    ],
-  },
-];
-
-const formatStorage = (megabytes: number | null, locale: Locale): string => {
-  if (megabytes == null) return 'Stockage non précisé';
-  if (megabytes >= 1024) return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(megabytes / 1024)} Go`;
-  return `${new Intl.NumberFormat(locale).format(megabytes)} Mo`;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-);
-
-const toNullableNumber = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === '') return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-};
-
-const toNullableString = (value: unknown): string | null => (
-  typeof value === 'string' && value.trim() ? value.trim() : null
-);
-
-const normalizeCurrency = (value: unknown): string | null => {
-  const currency = toNullableString(value)?.toUpperCase();
-  return currency && /^[A-Z]{3}$/.test(currency) ? currency : null;
-};
-
-const parsePublicPlans = (payload: unknown): PublicPlan[] => {
-  if (!Array.isArray(payload)) return [];
-  return payload.flatMap((item): PublicPlan[] => {
-    if (!isRecord(item)) return [];
-    const key = toNullableString(item.key);
-    const name = toNullableString(item.name);
-    if (!key || !name) return [];
-    return [{
-      key,
-      name,
-      description: toNullableString(item.description),
-      priceMonthly: toNullableNumber(item.priceMonthly),
-      priceEur: toNullableNumber(item.priceEur),
-      priceXaf: toNullableNumber(item.priceXaf),
-      priceUsd: toNullableNumber(item.priceUsd),
-      currency: toNullableString(item.currency),
-      seatsLimit: toNullableNumber(item.seatsLimit),
-      storageLimitMb: toNullableNumber(item.storageLimitMb),
-      aiCreditsLimit: toNullableNumber(item.aiCreditsLimit),
-      billingPeriod: toNullableString(item.billingPeriod),
-      sortOrder: toNullableNumber(item.sortOrder),
-    }];
-  });
-};
-
-const toPlanPrices = (plan: PublicPlan): PriceView[] => {
-  const specificPrices: PriceView[] = [
-    { amount: plan.priceEur, currency: 'EUR' },
-    { amount: plan.priceXaf, currency: 'XAF' },
-    { amount: plan.priceUsd, currency: 'USD' },
-  ].filter((price): price is PriceView => price.amount !== null);
-  if (specificPrices.length > 0) return specificPrices;
-  const currency = normalizeCurrency(plan.currency);
-  return plan.priceMonthly !== null && currency ? [{ amount: plan.priceMonthly, currency }] : [];
-};
-
-const formatPrice = (price: PriceView, locale: Locale): string => (
-  new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: price.currency,
-    maximumFractionDigits: 0,
-  }).format(price.amount)
-);
-
-const toPlanView = (plan: PublicPlan, locale: Locale): PlanView => {
-  const formatter = new Intl.NumberFormat(locale);
-  const seats = plan.seatsLimit === null
-    ? 'Utilisateurs non précisés'
-    : `Jusqu'à ${formatter.format(plan.seatsLimit)} utilisateurs`;
-  const aiCredits = plan.aiCreditsLimit === null
-    ? 'Crédits IA non précisés'
-    : `${formatter.format(plan.aiCreditsLimit)} crédits IA / mois`;
-
-  return {
-    id: plan.key.toLowerCase(),
-    name: plan.name,
-    description: plan.description ?? 'Offre Discipolat',
-    prices: toPlanPrices(plan),
-    period: plan.billingPeriod?.toUpperCase() === 'YEARLY' ? '/an' : '/mois',
-    popular: plan.key.toUpperCase() === 'STARTUP',
-    features: [
-      { text: seats, included: true },
-      { text: formatStorage(plan.storageLimitMb, locale), included: true },
-      { text: aiCredits, included: true },
-    ],
-  };
-};
-
+/**
+ * Page publique des tarifs — TODO_TARIFS_PAIEMENTS_INTERNATIONAL T7.1.
+ *
+ * <p><b>Ce qui ne change pas</b> (rien de cassé, conformément à la règle du
+ * projet) : la route publique, la gestion de {@code ?checkout=cancelled}, la
+ * détection de la caisse Stripe via {@code /public/billing/status}, le CTA
+ * réservé aux sessions authentifiées, et le repli visuel si le catalogue est
+ * indisponible.</p>
+ *
+ * <p><b>Ce qui change</b> : la devise affichée et le cycle de facturation
+ * deviennent des <b>choix du visiteur</b>, dans la stricte limite de ce que le
+ * super-admin a autorisé. Aucun interrupteur n'est codé en dur ici — un
+ * sélecteur absent signifie « non autorisé », pas « oublié ».</p>
+ *
+ * <p>Les montants affichés proviennent tous de {@code display.amountMinor},
+ * déjà en unités mineures côté serveur. Le client ne fait aucune conversion.</p>
+ */
 export default function PricingPage() {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
-  const [plans, setPlans] = useState<PlanView[]>(FALLBACK_PLANS);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [usingFallback, setUsingFallback] = useState(false);
-  // Stripe : CTA de souscription par carte visibles seulement si la caisse
-  // en ligne est activée côté serveur (STRIPE_SECRET_KEY configurée).
-  const [stripeEnabled, setStripeEnabled] = useState(false);
+  const {
+    config,
+    plans,
+    currency,
+    cycle,
+    currencies,
+    loading,
+    error,
+    setCurrency,
+    setCycle,
+  } = usePricing();
+
   const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const cancelled = searchParams.get('checkout') === 'cancelled';
 
-  useEffect(() => {
-    let active = true;
-    api.get<{ stripeEnabled: boolean }>('/public/billing/status')
-      .then(({ data }) => { if (active) setStripeEnabled(Boolean(data?.stripeEnabled)); })
-      .catch(() => { if (active) setStripeEnabled(false); });
-    return () => { active = false; };
-  }, []);
+  // Le CTA Stripe n'existe que si la caisse est réellement activée côté serveur.
+  const stripeEnabled = config?.stripeEnabled === true;
 
-  const subscribeWithStripe = async (planId: string) => {
+  const subscribeWithStripe = async (planKey: string) => {
     try {
-      setCheckoutBusy(planId);
+      setCheckoutBusy(planKey);
       setCheckoutError(null);
       const { data } = await api.post<{ url: string }>('/billing/stripe/checkout', {
-        planKey: planId.toUpperCase(),
-        billingCycle: 'monthly',
+        planKey: planKey.toUpperCase(),
+        billingCycle: cycle.toLowerCase(),
+        currency,
       });
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        setCheckoutError('Réponse de caisse inattendue, réessayez.');
+        setCheckoutError(t('pricing.checkoutUnexpected'));
         setCheckoutBusy(null);
       }
     } catch (err) {
@@ -260,303 +71,452 @@ export default function PricingPage() {
     }
   };
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    api.get<unknown>('/public/plans')
-      .then(({ data }) => {
-        if (!active) return;
-        const publicPlans = parsePublicPlans(data);
-        if (publicPlans.length > 0) {
-          setPlans(publicPlans.map((plan) => toPlanView(plan, locale)));
-          setUsingFallback(false);
-        } else {
-          setPlans(FALLBACK_PLANS);
-          setUsingFallback(true);
-        }
-      })
-      .catch((requestError) => {
-        if (!active) return;
-        setPlans(FALLBACK_PLANS);
-        setError(getErrorMessage(requestError));
-        setUsingFallback(true);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, [locale]);
+  if (error && plans.length === 0) {
+    return (
+      <CatalogUnavailable message={error} onRetry={() => window.location.reload()} />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
-      {/* Header */}
       <div className="py-16 px-4 text-center">
-        {loading && <p role="status" className="mb-4 text-sm text-gray-500">Chargement du catalogue…</p>}
-        {error && (
-          <div role="alert" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>Catalogue momentanément indisponible : {error}</span>
-          </div>
+        {loading && plans.length === 0 && (
+          <p role="status" className="mb-4 text-sm text-gray-500">
+            {t('pricing.loading')}
+          </p>
         )}
         {cancelled && (
-          <div role="status" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
-            Paiement annulé — votre plan actuel reste inchangé.
+          <div
+            role="status"
+            className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
+          >
+            {t('pricing.checkoutCancelled')}
           </div>
         )}
         {checkoutError && (
-          <div role="alert" className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          <div
+            role="alert"
+            className="mx-auto mb-4 flex max-w-2xl items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+          >
             <AlertCircle className="h-4 w-4 shrink-0" />
             {checkoutError}
           </div>
         )}
-        {!loading && !error && usingFallback && (
-          <p role="status" className="mb-4 text-sm text-amber-700">Catalogue de secours affiché ; les tarifs en vigueur seront confirmés lors de l'inscription.</p>
-        )}
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
-          Plans et Tarifs
-        </h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">{t('pricing.title')}</h1>
         <p className="mt-4 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-          Choisissez le plan qui correspond à la taille et aux besoins de votre église.
-          Tous les plans incluent l'assistant IA pastoral.
+          {t('pricing.subtitle')}
         </p>
+
+        <PricingSelectors
+          config={config}
+          currency={currency}
+          cycle={cycle}
+          currencies={currencies}
+          locale={locale}
+          onCurrency={setCurrency}
+          onCycle={setCycle}
+        />
       </div>
 
-      {/* Plans Grid */}
       <div className="max-w-6xl mx-auto px-4 pb-20">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {plans.map((plan) => (
-            <article
-              key={plan.id}
-              className={`relative rounded-2xl p-6 border-2 transition-all hover:shadow-xl ${
-                plan.popular
-                  ? 'border-violet-500 bg-gradient-to-b from-violet-50 to-white dark:from-violet-900/20 dark:to-gray-900'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-              }`}
-            >
-              {/* Badge Popular */}
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="px-4 py-1 rounded-full bg-violet-500 text-white text-xs font-semibold">
-                    Le plus populaire
-                  </span>
-                </div>
-              )}
-
-              {/* Plan Name & Price */}
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {tText(plan.name)}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {tText(plan.description)}
-                </p>
-                {plan.prices.length > 0 ? (
-                  <div className="mt-4 space-y-1">
-                    {plan.prices.map((price) => (
-                      <div key={price.currency} className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                          {formatPrice(price, locale)}
-                        </span>
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{price.currency}</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">{plan.period}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-lg text-gray-500">Tarif non communiqué</p>
-                )}
-              </div>
-
-              {/* Features */}
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-3 text-sm"
-                  >
-                    {feature.included ? (
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <X className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                    )}
-                    <span
-                      className={
-                        feature.included
-                          ? 'text-gray-700 dark:text-gray-300'
-                          : 'text-gray-400 dark:text-gray-500 line-through'
-                      }
-                    >
-                      {feature.text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA */}
-              <Link
-                to={`/register?plan=${encodeURIComponent(plan.id)}`}
-                className={`inline-flex w-full items-center justify-center py-3 px-6 rounded-xl font-semibold transition-all ${
-                  plan.popular
-                    ? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/25'
-                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                }`}
-              >
-                Choisir {tText(plan.name)}
-                <ArrowRight className="inline ml-2 w-4 h-4" />
-              </Link>
-              {/* Souscription par carte (Stripe) — visible si caisse activée + session admin */}
-              {stripeEnabled && isAuthenticated && plan.id !== 'discovery' && (
-                <button
-                  type="button"
-                  onClick={() => void subscribeWithStripe(plan.id)}
-                  disabled={checkoutBusy !== null}
-                  className="mt-3 inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
-                >
-                  {checkoutBusy === plan.id
-                    ? <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                    : <CreditCard className="mr-2 w-4 h-4" />}
-                  Souscrire en ligne
-                </button>
-              )}
-            </article>
-          ))}
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="mt-20 grid md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 dark:from-violet-500/20 dark:to-purple-500/20 border border-violet-200/50 dark:border-violet-500/20">
-            <div className="w-12 h-12 rounded-xl bg-violet-500 text-white flex items-center justify-center mb-4">
-              <Bot className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              IA Pastorale
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              L'assistant IA est inclus dans tous les plans. Il analyse vos données
-              en temps réel et vous aide à prendre des décisions éclairées.
-            </p>
+        {plans.length === 0 && !loading ? (
+          <p className="text-center text-sm text-gray-500">{t('pricing.empty')}</p>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {plans.map((plan) => (
+              <PlanCard
+                key={plan.key}
+                plan={plan}
+                cycle={cycle}
+                locale={locale}
+                stripeEnabled={stripeEnabled}
+                isAuthenticated={isAuthenticated}
+                busy={checkoutBusy}
+                onCheckout={() => void subscribeWithStripe(plan.key)}
+              />
+            ))}
           </div>
+        )}
 
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 dark:from-emerald-500/20 dark:to-green-500/20 border border-emerald-200/50 dark:border-emerald-500/20">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center mb-4">
-              <Zap className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Mobile Money
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Intégration native avec MTN MoMo, Orange Money et M-Pesa pour
-              recevoir les dons de vos membres.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 border border-blue-200/50 dark:border-blue-500/20">
-            <div className="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Sécurisé & Conforme
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Données chiffrées, authentification 2FA, audit trail complet.
-              Conforme RGPD pour protéger les données de vos membres.
-            </p>
-          </div>
-        </div>
-
-        {/* Testimonials */}
-        <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-            Rejoignez des centaines d'églises qui grandissent avec Discipolat
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-bold">
-                  P
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">Pasteur Martin</div>
-                  <div className="text-sm text-gray-500">Église de la Grâce, Cameroun</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                "Discipolat a transformé notre façon de suivre nos membres.
-                L'assistant IA nous aide à identifier les âmes qui ont besoin d'attention."
-              </p>
-            </div>
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                  S
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">Sophie K.</div>
-                  <div className="text-sm text-gray-500">Responsable Jeunesse, RDC</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                "La gamification motive nos jeunes. Ils s'engagent plus que jamais
-                grâce aux quêtes et badges."
-              </p>
-            </div>
-            <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-white font-bold">
-                  A
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">Pastor A.</div>
-                  <div className="text-sm text-gray-500">Mission Evangélique, France</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
-                "La gestion des finances et des dons est devenue simple et transparente.
-                Nos membres font plus de dons."
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* FAQ */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">
-            Questions Fréquentes
-          </h2>
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Puis-je changer de plan à tout moment ?
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Oui, vous pouvez passer à un plan supérieur à tout moment.
-                Le changement est effectif immédiatement et vous payez la différence
-                au prorata.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Quels modes de paiement acceptez-vous ?
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Nous acceptons les cartes bancaires (Stripe), SEPA pour l'Europe,
-                et Mobile Money (MTN MoMo, Orange Money, M-Pesa) pour l'Afrique.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Puis-je essayer gratuitement ?
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Oui ! Le plan Découverte est gratuit à vie avec jusqu'à 50 membres.
-                Pas de carte bancaire requise. Passez à un plan payant quand vous
-                êtes prêt.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Highlights />
+        <Testimonials />
+        <Faq />
       </div>
     </div>
   );
 }
+
+// ── Sélecteurs (devise + cycle) ─────────────────────────────────────────────
+
+function PricingSelectors({
+  config,
+  currency,
+  cycle,
+  currencies,
+  locale,
+  onCurrency,
+  onCycle,
+}: {
+  config: ReturnType<typeof usePricing>['config'];
+  currency: string;
+  cycle: BillingCycleName;
+  currencies: ReturnType<typeof usePricing>['currencies'];
+  locale: Locale;
+  onCurrency: (code: string) => void;
+  onCycle: (next: BillingCycleName) => void;
+}) {
+  const { t } = useI18n();
+
+  // Un sélecteur ne s'affiche que s'il est autorisé ET s'il a quelque chose à
+  // proposer. Un menu à une seule option est du bruit, pas une fonction.
+  const showCurrency = config?.allowCurrencyChoice === true && currencies.length > 1;
+  const showCycle =
+    config?.allowCycleChoice === true &&
+    (config?.allowMonthly !== false || config?.allowYearly !== false);
+
+  if (!showCurrency && !showCycle) return null;
+
+  return (
+    <div className="mt-8 flex flex-wrap items-center justify-center gap-3" role="group" aria-label={t('pricing.selectors')}>
+      {showCycle && (
+        <div className="inline-flex rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-1">
+          {config?.allowMonthly !== false && (
+            <CycleButton active={cycle === 'MONTHLY'} onClick={() => onCycle('MONTHLY')} label={t('pricing.cycle.monthly')} />
+          )}
+          {config?.allowYearly !== false && (
+            <CycleButton active={cycle === 'YEARLY'} onClick={() => onCycle('YEARLY')} label={t('pricing.cycle.yearly')} />
+          )}
+        </div>
+      )}
+      {showCurrency && (
+        <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
+          <label htmlFor="pricing-currency" className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            {t('pricing.currency')}
+          </label>
+          <select
+            id="pricing-currency"
+            value={currency}
+            onChange={(event) => onCurrency(event.target.value)}
+            className="bg-transparent text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded"
+          >
+            {currencies.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.code} — {CURRENCY_LABEL[locale]?.[option.code] ?? option.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CycleButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+        active
+          ? 'bg-violet-500 text-white shadow'
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ── Carte de plan ───────────────────────────────────────────────────────────
+
+function PlanCard({
+  plan,
+  cycle,
+  locale,
+  stripeEnabled,
+  isAuthenticated,
+  busy,
+  onCheckout,
+}: {
+  plan: PublicPlanView;
+  cycle: BillingCycleName;
+  locale: Locale;
+  stripeEnabled: boolean;
+  isAuthenticated: boolean;
+  busy: string | null;
+  onCheckout: () => void;
+}) {
+  const { t } = useI18n();
+  const display = plan.display;
+  const isFree = plan.seatsLimit != null && plan.seatsLimit > 0 && plan.key.toUpperCase() === 'DISCOVERY';
+  const popular = plan.key.toUpperCase() === 'STARTUP';
+
+  // Le prix affiché vient du serveur, déjà résolu pour la devise et la région.
+  const priceEntry = useMemo(() => {
+    if (display?.available && display.amountMinor != null) {
+      return {
+        amountMinor: display.amountMinor,
+        currency: display.currency,
+        decimals: display.decimals,
+      };
+    }
+    return null;
+  }, [display]);
+
+  const blurb = PLAN_BLURB[plan.key.toUpperCase()]?.[locale] ?? plan.description ?? t('pricing.genericBlurb');
+
+  return (
+    <article
+      className={`relative rounded-2xl p-6 border-2 transition-all hover:shadow-xl ${
+        popular
+          ? 'border-violet-500 bg-gradient-to-b from-violet-50 to-white dark:from-violet-900/20 dark:to-gray-900'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+      }`}
+    >
+      {popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="px-4 py-1 rounded-full bg-violet-500 text-white text-xs font-semibold">
+            {t('pricing.popular')}
+          </span>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{tText(plan.name)}</h3>
+        {blurb && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{blurb}</p>}
+
+        {priceEntry ? (
+          <div className="mt-4">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              {formatMinor(priceEntry.amountMinor, { code: priceEntry.currency, decimals: priceEntry.decimals }, locale)}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {cycle === 'YEARLY' ? t('pricing.perYear') : t('pricing.perMonth')}
+            </div>
+            {/* Le débit peut se faire dans une autre devise que l'affichage : le
+                dire explicitement vaut mieux qu'une surprise à l'écran de carte. */}
+            {display?.chargedInDifferentCurrency && display.checkoutCurrency && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {t('pricing.chargedIn', { currency: display.checkoutCurrency })}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4">
+            <p className="text-lg font-medium text-gray-500 dark:text-gray-400">{t('pricing.priceUnavailable')}</p>
+          </div>
+        )}
+      </div>
+
+      <ul className="space-y-3 mb-8">
+        <PlanFeature included label={formatSeats(plan, locale)} />
+        <PlanFeature included={plan.storageLimitMb != null} label={formatStorage(plan.storageLimitMb, locale)} />
+        <PlanFeature included={plan.aiCreditsLimit != null} label={formatCredits(plan.aiCreditsLimit, locale)} />
+      </ul>
+
+      <div className="space-y-2">
+        <Link
+          to={`/register?plan=${encodeURIComponent(plan.key.toLowerCase())}&currency=${encodeURIComponent(
+            display?.currency ?? '',
+          )}&cycle=${cycle.toLowerCase()}`}
+          className={`inline-flex w-full items-center justify-center py-3 px-6 rounded-xl font-semibold transition-all ${
+            popular
+              ? 'bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-500/25'
+              : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+          }`}
+        >
+          {t('pricing.choose')}
+          <ArrowRight className="inline ml-2 w-4 h-4" />
+        </Link>
+
+        {/* Souscription directe : reservee aux visiteurs connectes, aux plans
+            payants, et uniquement si la caisse est reellement active. */}
+        {stripeEnabled && isAuthenticated && !isFree && display?.selectable && (
+          <button
+            type="button"
+            onClick={onCheckout}
+            disabled={busy !== null}
+            className="mt-1 inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+          >
+            {busy === plan.key ? (
+              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+            ) : (
+              <CreditCard className="mr-2 w-4 h-4" />
+            )}
+            {t('pricing.subscribeOnline')}
+          </button>
+        )}
+
+        {!display?.available && (
+          <Link
+            to="/contact"
+            className="inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            {t('pricing.contactUs')}
+          </Link>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function PlanFeature({ included, label }: { included: boolean; label: string }) {
+  return (
+    <li className="flex items-start gap-3 text-sm">
+      {included ? (
+        <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+      ) : (
+        <Minus className="w-5 h-5 text-gray-300 dark:text-gray-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+      )}
+      <span
+        className={
+          included ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500 line-through'
+        }
+      >
+        {label}
+      </span>
+    </li>
+  );
+}
+
+// ── Blocs éditoriaux ────────────────────────────────────────────────────────
+
+function Highlights() {
+  const { t } = useI18n();
+  const items = [
+    { key: 'ai', Icon: Bot, tone: 'violet' },
+    { key: 'momo', Icon: Zap, tone: 'emerald' },
+    { key: 'security', Icon: Shield, tone: 'blue' },
+  ] as const;
+  return (
+    <div className="mt-20 grid md:grid-cols-3 gap-6">
+      {items.map(({ key, Icon, tone }) => (
+        <div
+          key={key}
+          className={`p-6 rounded-2xl border ${
+            tone === 'violet'
+              ? 'bg-gradient-to-br from-violet-500/10 to-purple-500/10 dark:from-violet-500/20 dark:to-purple-500/20 border-violet-200/50 dark:border-violet-500/20'
+              : tone === 'emerald'
+                ? 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 dark:from-emerald-500/20 dark:to-green-500/20 border-emerald-200/50 dark:border-emerald-500/20'
+                : 'bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 border-blue-200/50 dark:border-blue-500/20'
+          }`}
+        >
+          <div className="w-12 h-12 rounded-xl bg-violet-500 text-white flex items-center justify-center mb-4">
+            <Icon className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            {t(`pricing.highlight.${key}.title`)}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t(`pricing.highlight.${key}.body`)}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Testimonials() {
+  const { t } = useI18n();
+  return (
+    <div className="mt-16 text-center">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">{t('pricing.testimonials.title')}</h2>
+      <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        {[1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className={`w-12 h-12 rounded-full bg-gradient-to-br ${index === 1 ? 'from-orange-400 to-pink-500' : index === 2 ? 'from-blue-400 to-purple-500' : 'from-green-400 to-teal-500'} flex items-center justify-center text-white font-bold`}
+              >
+                {t(`pricing.testimonials.${index}.initial`)}
+              </div>
+              <div>
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  {t(`pricing.testimonials.${index}.name`)}
+                </div>
+                <div className="text-sm text-gray-500">{t(`pricing.testimonials.${index}.role`)}</div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 italic">{t(`pricing.testimonials.${index}.quote`)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Faq() {
+  const { t } = useI18n();
+  const entries = ['changePlan', 'paymentMethods', 'trial'] as const;
+  return (
+    <div className="mt-16 max-w-3xl mx-auto">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">{t('pricing.faq.title')}</h2>
+      <div className="space-y-4">
+        {entries.map((entry) => (
+          <div
+            key={entry}
+            className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+          >
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t(`pricing.faq.${entry}.title`)}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t(`pricing.faq.${entry}.body`)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CatalogUnavailable({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-center justify-center px-4">
+      <div
+        role="alert"
+        className="max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center dark:border-amber-500/30 dark:bg-amber-500/10"
+      >
+        <AlertCircle className="mx-auto h-8 w-8 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <h1 className="mt-4 text-lg font-semibold text-amber-900 dark:text-amber-200">{t('pricing.unavailableTitle')}</h1>
+        <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">{message}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+        >
+          <Loader2 className="h-4 w-4" /> {t('pricing.retry')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Formatage ───────────────────────────────────────────────────────────────
+
+function formatSeats(plan: PublicPlanView, locale: Locale): string {
+  if (plan.seatsLimit == null) return '—';
+  const count = new Intl.NumberFormat(locale).format(plan.seatsLimit);
+  return plan.seatsLimit >= 1000 ? `${count}+` : count;
+}
+
+function formatStorage(megabytes: number | null, locale: Locale): string {
+  if (megabytes == null) return '—';
+  if (megabytes >= 1024) {
+    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(megabytes / 1024)} Go`;
+  }
+  return `${new Intl.NumberFormat(locale).format(megabytes)} Mo`;
+}
+
+function formatCredits(credits: number | null, locale: Locale): string {
+  if (credits == null) return '—';
+  return new Intl.NumberFormat(locale).format(credits);
+}
+

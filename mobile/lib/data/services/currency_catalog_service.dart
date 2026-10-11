@@ -51,10 +51,11 @@ class CurrencyOption {
 }
 
 /// Repli documentaire : les devises que le produit sait formater.
-/// Filet de sécurité, pas une liste de référence.
+/// Filet de sécurité, pas une liste de référence — le serveur fait foi.
 const List<CurrencyOption> fallbackCurrencies = [
-  CurrencyOption(code: 'EUR', name: 'Euro', symbol: '€', decimals: 2),
   CurrencyOption(code: 'XAF', name: 'Franc CFA (BEAC)', symbol: 'FCFA', decimals: 0),
+  CurrencyOption(code: 'XOF', name: 'Franc CFA (UEM)', symbol: 'F CFA', decimals: 0),
+  CurrencyOption(code: 'EUR', name: 'Euro', symbol: '€', decimals: 2),
   CurrencyOption(code: 'USD', name: 'Dollar des États-Unis', symbol: r'$', decimals: 2),
 ];
 

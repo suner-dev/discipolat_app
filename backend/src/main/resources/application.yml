@@ -329,6 +329,17 @@ app:
     # URLs de retour post-checkout (face avant).
     success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/billing?checkout=success}
     cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/pricing?checkout=cancelled}
+    # Synchronisation automatique des Prices Stripe (T6.1). Les devises SANS unité
+    # mineure (XAF, XOF, JPY…) ne peuvent pas être facturées en « prix inline » :
+    # Stripe exige un Price créé au préalable. C'est ce service qui le crée, avec
+    # une clé d'idempotence — donc sans risque de doublon en cas de rejeu.
+    #
+    # false (défaut) = le super-admin déclenche ou saisit les Price IDs à la main.
+    # Le batch de rattrapage reste actif dans tous les cas : « ne pas créer tout
+    # seul » ne veut pas dire « ne jamais réessayer après un incident réseau ».
+    price-sync:
+      initial-delay-ms: ${STRIPE_PRICE_SYNC_INITIAL_DELAY_MS:60000}
+      interval-ms: ${STRIPE_PRICE_SYNC_INTERVAL_MS:300000}
   encryption:
     # Clé AES-256 (base64, 32 octets) pour le chiffrement au repos des données sensibles.
     # Générer avec : openssl rand -base64 32

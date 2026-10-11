@@ -1,5 +1,99 @@
 # Changelog
 
+## [Non publié] — Tarifs & paiements internationalisés (V245–V248)
+
+Le catalogue de prix quitte le modèle « trois colonnes figées » pour un modèle
+**multi-devises, multi-régions, multi-canaux, entièrement piloté par le
+super-admin**. Web **et** mobile. Le chantier est spécifié dans
+[`TODO_TARIFS_PAIEMENTS_INTERNATIONAL.md`](TODO_TARIFS_PAIEMENTS_INTERNATIONAL.md),
+l'API dans [`API_TARIFS.md`](API_TARIFS.md).
+
+### Ce qui bloquait la monétisation
+
+Cinq failles constatées pendant l'analyse, dont trois empêchaient factuellement
+de vendre :
+
+- **Facturation 100× trop basse.** `StripeBillingService` envoyait un montant
+  **majeur** dans `unit_amount`, qui attend des centimes : le plan CROISSANCE
+  était débité **0,29 € au lieu de 29 €**, RÉSEAU & CAMPUS **0,99 $ au lieu de
+  99 $**. Aucune commande réelle n'avait encore été passée — l'erreur serait
+  devenue un litige commercial à la première vente.
+- **STARTUP non souscriptable.** Stripe refuse le prix « inline » pour les devises
+  sans unité mineure (XAF, XOF). Le plan payé principal en Afrique exigeait donc
+  un Price créé à la main dans le dashboard Stripe — sans quoi le checkout
+  renvoyait `STRIPE_PRICE_ID_REQUIRED`. **C'est ce que `KNOWN_ISSUES.md:33`
+  signalait comme « bloquant monétisation ».**
+- **Les plans créés par le super-admin étaient invisibles.** Le catalogue public
+  était filtré deux fois par une liste fermée des quatre plans canoniques : une
+  offre créée avec `is_public = true` n'apparaissait jamais sur `/pricing`. La
+  fonction « créer une offre » était inopérante.
+- **La landing contredisait la page des tarifs.** Trois tiers « Sur devis » codés
+  en dur pendant que `/pricing` affichait quatre plans avec de vrais prix. Deux
+  vérités sur le même produit, et aucune modification du super-admin ne se
+  reflétait sur la page d'accueil.
+- **« FCFA » codé en dur dans l'administration.** Tout plan y était affiché en
+  « FCFA/mois », y compris les plans en euros et en dollars.
+
+### Ce qui est livré
+
+**Modèle de données** (V245–V248, toutes additives — aucune colonne existante
+n'est supprimée) : `saas_plan_prices` porte un prix par plan × devise × cycle ×
+région × canal ; `saas_pricing_settings` (singleton) porte toute la politique ;
+un backfill migre les colonnes legacy vers le nouveau modèle ; le prix est
+**figé à la souscription** (`tenant_subscriptions.price_snapshot_json`) pour
+qu'une hausse de tarif ne modifie jamais la facture d'un abonnement en cours.
+
+**Devises** : XOF, CAD, GBP et CHF s'ajoutent à EUR, XAF et USD, sans changer
+une migration de plus par devise. Le nombre de décimales vient partout de
+`Iso4217CurrencyValidator` — plus jamais de « ×100 » écrit à la main.
+
+**Prix affichés saisis en dur par devise**, plus une **grille régionale**
+optionnelle. Les deux sont activables indépendamment.
+
+**Trois canaux paramétrables pour les devises sans centimes** : création des
+Prices Stripe par l'API (avec clé d'idempotence et rattrapage automatique),
+Mobile Money, ou débit en devise forte. Un canal déclaré mais dont le
+prestataire n'est pas configuré n'est **pas** proposé — fail-closed assumé.
+
+**Paramétration** : sur `/platform/saas/plans`, un onglet « Tarification &
+devises » expose devises, mode d'affichage, choix accordé au visiteur, régions,
+canaux de paiement, synchronisation Stripe, essai/remise et comportement de la
+landing. Aucun interrupteur n'est figé dans le code.
+
+**Pages publiques** : la page des tarifs et la section landing lisent le même
+catalogue. La devise affichée et le cycle de facturation deviennent des choix du
+visiteur, dans la stricte limite de ce que le super-admin a autorisé. Traduit
+dans les six langues du produit.
+
+**Mobile** : nouveau service de consultation du catalogue (décodage strict,
+repli explicite) ; le franc CFA écrit en dur dans les dons (`XOF`) est remplacé
+par la devise primaire du tenant.
+
+### Garde-fous retenus
+
+- Un plan sans prix dans la devise demandée affiche « tarif non communiqué ».
+  **Jamais** un 0, qui se lirait comme un plan gratuit.
+- Un montant à décimales sur une devise sans centimes est **refusé** par le
+  serveur, pas arrondi.
+- Le changement de tarif crée un nouveau Price et **désactive** l'ancien : les
+  abonnements existants ne sont pas cassés.
+- Un abonnement créé par webhook fige son prix depuis le Price réellement
+  rattaché — Stripe étant l'autorité de fait de la facturation.
+
+### Vérifications
+
+2200 tests backend, 887 tests frontend, `tsc` et `eslint` sans erreur,
+`flutter analyze` sans erreur. 4 scénarios E2E Playwright ajoutés
+(`e2/specs/pricing-*.spec.ts`, `landing-pricing.spec.ts`). Un gel
+d'architecture a été **régelé** (+2 arêtes `→ currency`, de même famille que
+celles déjà admises) : en échange, le nombre de **cycles R6 a diminué de 1**, le
+contrôleur public des tarifs ayant quitté `tenants` pour `payments` — il
+annonce des canaux de paiement, il relève donc de ce module.
+
+**Reste à faire avant ouverture commerciale** : `KNOWN_ISQUISSUES.md:33` — un
+test Stripe en mode test (checkout EUR + XAF, changement de montant) reste
+nécessaire pour clore la monétisation.
+
 ## [Non publié] — Corrections post-audit V231
 
 Audit du code produit par un second passage : **8 failles** trouvées et

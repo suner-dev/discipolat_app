@@ -2,6 +2,8 @@ package com.discipolat.modules.platform.api;
 
 import com.discipolat.common.infrastructure.api.PageResponse;
 import com.discipolat.common.multitenancy.TenantContext;
+import com.discipolat.modules.currency.domain.CurrencyConfig;
+import com.discipolat.modules.currency.domain.CurrencyService;
 import com.discipolat.modules.tenants.domain.*;
 import com.discipolat.modules.tenants.enums.SubscriptionStatus;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/api/v1/admin/subscription")
@@ -25,13 +28,19 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
     private final SaasPlanRepository planRepository;
     private final TenantSubscriptionRepository subscriptionRepository;
+    private final PricingCatalogService catalogService;
+    private final CurrencyService currencyService;
 
     public SubscriptionController(SubscriptionService subscriptionService,
                                   SaasPlanRepository planRepository,
-                                  TenantSubscriptionRepository subscriptionRepository) {
+                                  TenantSubscriptionRepository subscriptionRepository,
+                                  PricingCatalogService catalogService,
+                                  CurrencyService currencyService) {
         this.subscriptionService = subscriptionService;
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.catalogService = catalogService;
+        this.currencyService = currencyService;
     }
 
     @GetMapping("/current")
@@ -40,25 +49,86 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.getSubscriptionDetails(tenantId));
     }
 
+    /**
+     * Catalogue des plans pour l'admin de l'église.
+     *
+     * <p>Les montants historiques ({@code priceMonthly}, {@code priceYearly},
+     * {@code currency}) restent là pour compatibilité, mais deux champs
+     * <b>complétés</b> sont ajoutés : {@code prices} (catalogue résolu, unités
+     * mineures, multi-devises) et {@code display} (le prix applicable à ce
+     * tenant). Sans cela, l'admin verrait un montant différent du visiteur —
+     * deux vérités sur le même tarif, ce qui est la pire façon de traiter de
+     * l'argent.</p>
+     *
+     * <p>La devise d'affichage suit la devise primaire du tenant quand elle est
+     * autorisée, sinon celle du catalogue : un administrateur camerounais doit
+     * lire « en FCFA », pas « en euros ».</p>
+     */
     @GetMapping("/plans")
     @PreAuthorize("@authz.isTenantAdmin()")
     public ResponseEntity<List<Map<String, Object>>> getAvailablePlans() {
-        List<Map<String, Object>> plans = planRepository.findByIsActiveTrueOrderBySortOrderAsc().stream()
-                .map(p -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("key", p.getKey());
-                    map.put("name", p.getName());
-                    map.put("description", p.getDescription());
-                    map.put("priceMonthly", p.getPriceMonthly());
-                    map.put("priceYearly", p.getPriceYearly());
-                    map.put("currency", p.getCurrency());
-                    map.put("limits", parseJson(p.getLimitsJson()));
-                    map.put("features", parseJson(p.getFeaturesJson()));
-                    map.put("isActive", p.getIsActive());
-                    return map;
-                })
-                .toList();
+        String displayCurrency = resolveTenantDisplayCurrency();
+
+        PricingCatalogService.PublicCatalog catalog =
+                catalogService.publicCatalog(displayCurrency, null, null);
+
+        List<Map<String, Object>> plans = catalog.plans().stream().map(publicPlan -> {
+            SaasPlan p = publicPlan.plan();
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("key", p.getKey());
+            map.put("name", p.getName());
+            map.put("description", p.getDescription());
+            // Champs historiques conservés (montants MAJEURS).
+            map.put("priceMonthly", p.getPriceMonthly());
+            map.put("priceYearly", p.getPriceYearly());
+            map.put("currency", p.getCurrency());
+            // Catalogue résolu : la source de vérité des montants.
+            map.put("prices", publicPlan.prices().stream().map(price -> {
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("currency", price.currency());
+                entry.put("cycle", price.cycle().name());
+                entry.put("amountMinor", price.amountMinor());
+                entry.put("amount", price.amount());
+                entry.put("decimals", price.decimals());
+                entry.put("region", price.regionCode());
+                entry.put("selectable", price.selectable());
+                entry.put("channels", price.channels().stream().map(Enum::name).toList());
+                entry.put("checkoutCurrency", price.checkoutCurrency());
+                return entry;
+            }).toList());
+            map.put("display", publicPlan.display() == null ? null
+                    : Map.of(
+                    "available", true,
+                    "amountMinor", publicPlan.display().amountMinor(),
+                    "amount", publicPlan.display().amount(),
+                    "currency", publicPlan.display().currency(),
+                    "decimals", publicPlan.display().decimals(),
+                    "cycle", publicPlan.display().cycle().name(),
+                    "channels", publicPlan.display().channels().stream().map(Enum::name).toList()));
+            map.put("limits", parseJson(p.getLimitsJson()));
+            map.put("features", parseJson(p.getFeaturesJson()));
+            map.put("isActive", p.getIsActive());
+            return map;
+        }).toList();
         return ResponseEntity.ok(plans);
+    }
+
+    /**
+     * Devise d'affichage de l'admin : la devise primaire du tenant si le
+     * catalogue l'autorise, sinon la devise par défaut de la plateforme.
+     *
+     * <p>Un administrateur camerounais doit lire « en FCFA ». Lui montrer « en
+     * euros » serait exact mais trompeur, et l'exactitude perçue compte autant
+     * que l'exactitude réelle quand on parle d'argent.</p>
+     */
+    private String resolveTenantDisplayCurrency() {
+        try {
+            CurrencyConfig primary = currencyService.getPrimaryCurrency();
+            return catalogService.resolveDisplayCurrency(primary.getCurrencyCode());
+        } catch (RuntimeException unavailable) {
+            // Devise du tenant illisible : on ne bloque pas l'écran pour autant.
+            return catalogService.resolveDisplayCurrency(null);
+        }
     }
 
     @PostMapping("/subscribe")

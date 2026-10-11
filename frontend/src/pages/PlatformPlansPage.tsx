@@ -1,95 +1,61 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Pencil, Power, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
-import { Plus, Pencil, Power, RefreshCw } from 'lucide-react';
+import PlanPricesPanel from '@/features/pricing/PlanPricesPanel';
+import PricingSettingsPanel from '@/features/pricing/PricingSettingsPanel';
 
-type Plan = {
+/**
+ * Plans SaaS — gestion des offres et de leurs tarifs
+ * (TODO_TARIFS_PAIEMENTS_INTERNATIONAL T5.2).
+ *
+ * <p>Les champs d'origine (clé, nom, description, activation) sont inchangés :
+ * le parcours de création et de bascule d'un plan continue de fonctionner
+ * exactement comme avant. Ce qui change, c'est l'<b>éditeur de prix</b>, qui
+ * remplace les deux champs « prix mensuel / prix annuel » codés en dur — ces
+ * champs affichaient « FCFA » quelle que soit la devise.</p>
+ *
+ * <p>La page ne dit plus « 15 000 FCFA/mois » : elle dit le prix, dans la devise
+ * du prix, avec le symbole de cette devise.</p>
+ */
+interface PlanSummary {
   key: string;
   name: string;
-  description: string;
-  priceMonthly: number;
-  priceYearly: number;
+  description: string | null;
   isActive: boolean;
   sortOrder?: number;
-};
+  trialDays?: number;
+  annualDiscountPct?: number;
+}
 
-type PlanForm = {
-  key: string;
-  name: string;
-  description: string;
-  priceMonthly: number;
-  priceYearly: number;
-  isActive: boolean;
-};
-
-const emptyForm: PlanForm = {
-  key: '',
-  name: '',
-  description: '',
-  priceMonthly: 0,
-  priceYearly: 0,
-  isActive: true,
-};
+type Tab = 'plans' | 'pricing';
 
 export default function PlatformPlansPage() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [form, setForm] = useState<PlanForm>(emptyForm);
-  const [editing, setEditing] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('plans');
+  const [plans, setPlans] = useState<PlanSummary[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/platform/admin/plans');
-      setPlans(response.data);
+      const response = await api.get<PlanSummary[]>('/platform/admin/plans');
+      const list = response.data ?? [];
+      setPlans(list);
+      setSelectedKey((current) => current ?? list[0]?.key ?? null);
     } catch {
       setError('Impossible de charger les plans.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
-  const openCreate = () => {
-    setForm(emptyForm);
-    setEditing(false);
-    setModalOpen(true);
-  };
-
-  const openEdit = (plan: Plan) => {
-    setForm({
-      key: plan.key,
-      name: plan.name,
-      description: plan.description,
-      priceMonthly: plan.priceMonthly,
-      priceYearly: plan.priceYearly,
-      isActive: plan.isActive,
-    });
-    setEditing(true);
-    setModalOpen(true);
-  };
-
-  const save = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!form.key.trim() || !form.name.trim()) return;
-    setLoading(true);
-    try {
-      await api.post('/platform/admin/plans', form);
-      setModalOpen(false);
-      await load();
-    } catch {
-      setError('Enregistrement impossible.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggle = async (plan: Plan) => {
+  const toggle = async (plan: PlanSummary) => {
     try {
       await api.post('/platform/admin/plans', { key: plan.key, isActive: !plan.isActive });
       await load();
@@ -104,64 +70,120 @@ export default function PlatformPlansPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">Plans SaaS</h1>
-            <p className="text-sm text-slate-500">Gérer les offres et limites de la plateforme.</p>
+            <p className="text-sm text-slate-500">Gérer les offres, leurs limites et leurs tarifs.</p>
           </div>
           <div className="flex gap-2">
-            <button type="button" className="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50" onClick={() => void load()} disabled={loading}>
-              <RefreshCw className="mr-2 h-4 w-4" /> Actualiser
-            </button>
-            <button type="button" className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700" onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" /> Nouveau plan
+            <button
+              type="button"
+              className="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50"
+              onClick={() => void load()}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
             </button>
           </div>
         </div>
 
-        {error && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+        {/* Deux espaces distincts : les OFFRES d'un côté, la PARAMÉTRATION
+            tarifaire de l'autre. Les mélanger rendait impossible de répondre à
+            « combien coûte GROWTH en GBP ? » sans perdre le contexte. */}
+        <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1 text-sm">
+          <TabButton active={tab === 'plans'} onClick={() => setTab('plans')}>
+            Plans
+          </TabButton>
+          <TabButton active={tab === 'pricing'} onClick={() => setTab('pricing')}>
+            Tarification & devises
+          </TabButton>
+        </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <div key={plan.key} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold">{plan.name}</h2>
-                  <span className="text-xs uppercase text-slate-400">{plan.key}</span>
+        {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+
+        {tab === 'pricing' ? (
+          <PricingSettingsPanel />
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <div
+                  key={plan.key}
+                  className={`rounded-xl border bg-white p-5 shadow-sm ${
+                    selectedKey === plan.key ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      className="text-left"
+                      onClick={() => setSelectedKey(plan.key)}
+                      aria-pressed={selectedKey === plan.key}
+                    >
+                      <h2 className="font-semibold">{plan.name}</h2>
+                      <span className="text-xs uppercase text-slate-400">{plan.key}</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs ${
+                          plan.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {plan.isActive ? 'Actif' : 'Inactif'}
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+                        onClick={() => void toggle(plan)}
+                        aria-label={`${plan.isActive ? 'Désactiver' : 'Activer'} ${plan.name}`}
+                      >
+                        <Power className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-3 min-h-10 text-sm text-slate-600">
+                    {plan.description || 'Aucune description'}
+                  </p>
+                  {plan.trialDays ? (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Essai {plan.trialDays} jours · remise annuelle {plan.annualDiscountPct ?? 0} %
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedKey(plan.key)}
+                    className="mt-3 inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" /> Gérer les tarifs de ce plan
+                  </button>
                 </div>
-                <span className={`rounded-full px-2 py-1 text-xs ${plan.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                  {plan.isActive ? 'Actif' : 'Inactif'}
-                </span>
-              </div>
-              <p className="mt-3 min-h-10 text-sm text-slate-600">{plan.description || 'Aucune description'}</p>
-              <div className="mt-4 flex items-end justify-between">
-                <div>
-                  <div className="text-2xl font-semibold">{plan.priceMonthly.toLocaleString()} <span className="text-sm font-normal">FCFA/mois</span></div>
-                  <div className="text-xs text-slate-500">{plan.priceYearly.toLocaleString()} FCFA/an</div>
-                </div>
-                <div className="flex gap-1">
-                  <button type="button" className="rounded-md p-2 text-slate-600 hover:bg-slate-100" onClick={() => openEdit(plan)} aria-label={`Modifier ${plan.name}`}><Pencil className="h-4 w-4" /></button>
-                  <button type="button" className="rounded-md p-2 text-slate-600 hover:bg-slate-100" onClick={() => void toggle(plan)} aria-label={`${plan.isActive ? 'Désactiver' : 'Activer'} ${plan.name}`}><Power className="h-4 w-4" /></button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-            <form onSubmit={save} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl">
-              <h2 className="text-lg font-semibold">{editing ? 'Modifier le plan' : 'Créer un plan'}</h2>
-              <label className="block text-sm">Clé<input required value={form.key} disabled={editing} onChange={(event) => setForm({ ...form, key: event.target.value.toUpperCase() })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-              <label className="block text-sm">Nom<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-              <label className="block text-sm">Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block text-sm">Prix mensuel<input type="number" min="0" value={form.priceMonthly} onChange={(event) => setForm({ ...form, priceMonthly: Number(event.target.value) })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-                <label className="block text-sm">Prix annuel<input type="number" min="0" value={form.priceYearly} onChange={(event) => setForm({ ...form, priceYearly: Number(event.target.value) })} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" /></label>
-              </div>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} /> Actif</label>
-              <div className="flex justify-end gap-2"><button type="button" className="rounded-md border px-4 py-2" onClick={() => setModalOpen(false)}>Annuler</button><button type="submit" disabled={loading} className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">{loading ? 'Enregistrement...' : 'Enregistrer'}</button></div>
-            </form>
-          </div>
+            {selectedKey ? <PlanPricesPanel planKey={selectedKey} /> : null}
+          </>
         )}
       </div>
     </main>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-md px-4 py-1.5 font-medium transition-colors ${
+        active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
