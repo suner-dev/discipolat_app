@@ -237,6 +237,14 @@ services:
         fromDatabase:
           name: discipolat-beta-db
           property: password
+      # Mot de passe des comptes de démonstration seedés par le profil beta.
+      # Le profil beta force seed-demo-accounts=true ; sur Render, la garde
+      # fail-closed de DataInitializer refuse de démarrer avec le mot de passe
+      # publié par défaut → cette valeur DOIT être définie dans le dashboard
+      # Render et différer de 'password123'. Sans elle : pas de boot, pas de
+      # comptes devinables (c'est le comportement volontaire, pas un bug).
+      - key: DEMO_PASSWORD
+        sync: false
       # Redis partagé avec la prod : uniquement des buckets de rate
       # limiting (clés éphémères `rl:*`, aucune donnée sensible).
       - key: REDIS_URL
