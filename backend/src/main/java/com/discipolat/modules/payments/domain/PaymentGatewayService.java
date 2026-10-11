@@ -344,6 +344,7 @@ public class PaymentGatewayService {
             case PROMESSE -> "PROMESSE";
             case PROJET_SPECIAL -> "PROJET_SPECIAL";
             case DON_DIASPORA -> "DON_DIASPORA";
+            case SAAS_SUBSCRIPTION -> "SAAS_SUBSCRIPTION";
         };
         // Pas de try/catch ici : toute erreur de comptabilisation doit faire
         // échouer le webhook (le paiement reste PENDING, l'opérateur renverra

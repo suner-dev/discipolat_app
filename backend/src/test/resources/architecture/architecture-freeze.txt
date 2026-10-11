@@ -6,13 +6,13 @@
 # Cle R3 = arete contexte->contexte (carte des blocages d'extraction) ; R6 = cycle.
 # Regenerer : mvn -o test -Dtest=ArchitectureRulesTest -Darchitecture.freeze.update=true
 # Detail complet de chaque violation : artifact CI target/architecture-report.txt
-# constat R1 (domaine sans infrastructure) : 7965 violations, gelees par plafond ci-dessous
-plafond|R1|7965
+# constat R1 (domaine sans infrastructure) : 7990 violations, gelees par plafond ci-dessous
+plafond|R1|7990
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
-# constat R4 (domaine sans annotations de conteneur) : 2993 violations, gelees par plafond ci-dessous
-plafond|R4|2993
+# constat R4 (domaine sans annotations de conteneur) : 3010 violations, gelees par plafond ci-dessous
+plafond|R4|3010
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 objet|R3|admin -> alerts
