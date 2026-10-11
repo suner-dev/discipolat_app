@@ -241,6 +241,7 @@ import 'tenant_config.dart';
 import 'presentation/screens/tenant/tenant_selection_screen.dart';
 import 'presentation/screens/tenant/tenant_admin_dashboard_screen.dart';
 import 'presentation/screens/tenant/branding_screen.dart';
+import 'presentation/screens/pricing/pricing_screen.dart';
 import 'presentation/screens/tenant/organizations_screen.dart';
 import 'presentation/screens/tenant/tenant_settings_screen.dart';
 import 'presentation/screens/tenant/modules_screen.dart';
@@ -2602,6 +2603,13 @@ final appRouter = GoRouter(
         path: '/platform/impersonation',
         name: 'platform-impersonation',
         builder: (ctx, s) => const PlatformImpersonationScreen()),
+    // Catalogue des tarifs — TODO_TARIFS_PAIEMENTS_INTERNATIONAL §T9.2.
+    // Route PUBLIQUE : on doit pouvoir comparer les plans avant de creer un
+    // compte, sinon le prix n'est consultable qu'apres inscription.
+    GoRoute(
+        path: '/pricing',
+        name: 'pricing',
+        builder: (ctx, s) => const PricingScreen()),
     GoRoute(
         path: '/tenant/branding',
         name: 'tenant-branding',

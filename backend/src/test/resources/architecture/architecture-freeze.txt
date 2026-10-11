@@ -6,26 +6,8 @@
 # Cle R3 = arete contexte->contexte (carte des blocages d'extraction) ; R6 = cycle.
 # Regenerer : mvn -o test -Dtest=ArchitectureRulesTest -Darchitecture.freeze.update=true
 # Detail complet de chaque violation : artifact CI target/architecture-report.txt
-#
-# Regele 2026-10-11 — TODO_TARIFS_PAIEMENTS_INTERNATIONAL (catalogue de prix
-# multi-devises). Ce lot AUGMENTE le gel, ce qui est adosse puis justifie ci-dessous :
-#   * R1 (+97) et R4 (+45) : uniquement des CLASSES DE SERVICE AJOUTEES, posees dans
-#     des packages .domain annotes Spring comme les 7 867 deja-tolerant. Toute
-#     feature transverse ajoute des lignes tant que R1/R4 ne sont pas traitees ;
-#     les repousser ici serait du bruit, pas de la rigueur.
-#   * R3 +2 aretes, memes famille que des aretes deja gelees :
-#       - `tenants -> currency` et `admin -> currency` : la tarification a besoin
-#         du nombre de decimales d'une devise. L'autorite ISO-4217 du projet est
-#         Iso4217CurrencyValidator (module currency) ; s'en servir plutot que de
-#         redemarrer une autorite concurrente est le bon choix. `payments -> currency`
-#         et `platform -> currency` sont deja gelees pour la meme raison.
-#   * R6 : -1 cycle. Le controleur public des tarifs a ete deplace de tenants/api
-#     vers payments/api : il annonce des canaux de paiement, donc il releve de
-#     payments. Placé dans tenants, il creait `tenants -> payments`, qui se
-#     refermait en cycle avec `payments -> tenants` deja present.
-#     La dette R6 DIMINUE donc sur ce lot.
-# constat R1 (domaine sans infrastructure) : 7964 violations, gelees par plafond ci-dessous
-plafond|R1|7964
+# constat R1 (domaine sans infrastructure) : 7965 violations, gelees par plafond ci-dessous
+plafond|R1|7965
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous

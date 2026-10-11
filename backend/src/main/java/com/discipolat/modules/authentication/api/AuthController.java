@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -148,16 +149,29 @@ public class AuthController {
                             // asso, orga, méga-asso). Null = CHURCH.
                             request.kind());
             AuthResponse session = toAuthResponse(authService.issueSession(creation.founder()));
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "session", session,
-                    "church", Map.of(
-                            "name", creation.tenant().name(),
-                            "slug", creation.tenant().slug(),
-                            "kind", creation.tenant().kind() == null
-                                    ? com.discipolat.modules.tenants.domain.TenantKind.CHURCH.name()
-                                    : creation.tenant().kind().name(),
-                            "joinCode", creation.joinCode() == null ? "" : creation.joinCode())
-            ));
+            // T8.4 — l'inscription en ligne n'encaisse rien : le tenant cree est
+            // donc sur le plan gratuit, meme si l'URL demandait un plan payant
+            // (cf. SelfServiceChurchService#resolveSelfServicePlan).
+            //
+            // On renvoie explicitement `pendingPlan` pour que le client puisse
+            // rediriger vers le checkout. Sans ce champ, l'interface afficherait
+            // « votre abonnement X est actif » alors qu'il n'a rien paye.
+            String requestedPlan = request.plan();
+            String grantedPlan = creation.tenant().plan();
+            boolean upgradePending = requestedPlan != null && !requestedPlan.isBlank()
+                    && !requestedPlan.equalsIgnoreCase(grantedPlan == null ? "" : grantedPlan);
+            java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+            response.put("session", session);
+            response.put("church", java.util.Map.of(
+                    "name", creation.tenant().name(),
+                    "slug", creation.tenant().slug(),
+                    "kind", creation.tenant().kind() == null
+                            ? com.discipolat.modules.tenants.domain.TenantKind.CHURCH.name()
+                            : creation.tenant().kind().name(),
+                    "joinCode", creation.joinCode() == null ? "" : creation.joinCode()));
+            response.put("grantedPlan", grantedPlan == null ? "" : grantedPlan);
+            response.put("pendingPlan", upgradePending ? requestedPlan.toUpperCase(Locale.ROOT) : null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
         if (hasJoinCode) {
             com.discipolat.modules.tenants.domain.TenantJoinService.RegisterOutcome outcome =

@@ -313,11 +313,11 @@ class PricingService {
 ///
 /// Le nombre de décimales vient du serveur : XAF et XOF n'en acceptent aucune,
 /// et afficher « 15 000,00 FCFA » serait une faute visible pour un client local.
-String formatMinor(int amountMinor, String currency, int decimals, {String? locale}) {
+String formatMinor(int amountMinor, String currency, int decimals) {
   final divisor = decimals == 0 ? 1 : _pow10(decimals);
   final value = amountMinor / divisor;
   final symbol = _symbolOf(currency);
-  final formatted = _formatNumber(value, decimals, locale);
+  final formatted = _formatNumber(value, decimals);
   // `value` porte déjà les décimales ; on n'ajoute le symbole qu'une fois.
   return symbol == null ? formatted : '$formatted $symbol';
 }
@@ -330,24 +330,34 @@ int _pow10(int exponent) {
   return result;
 }
 
-String _formatNumber(double value, int decimals, String? locale) {
-  // Formatage « maison » plutôt que NumberFormat : évite une dépendance
-  // intl supplémentaire et garantit un rendu stable sur les six plateformes.
+/// Met en forme un montant MAJEUR (pas d'unites mineures).
+///
+/// On repasse par l'entier : `value` est un double issu d'une division, et un
+/// arrondi en virgule flottante ferait perdre des centimes sur les grands
+/// montants — exactement ce qu'on ne veut pas sur une facture.
+String _formatNumber(double value, int decimals) {
   final negative = value < 0;
-  final absolute = value.abs();
   final divisor = decimals == 0 ? 1 : _pow10(decimals);
-  final units = (absolute / divisor).floor();
-  final cents = (absolute - units * divisor).round();
+  final scaled = (value.abs() * divisor).round();
+  final units = scaled ~/ divisor;
+  final cents = scaled % divisor;
   final grouped = _group(units.toString());
   final body = decimals == 0 ? grouped : '$grouped.${cents.toString().padLeft(decimals, '0')}';
   return negative ? '-$body' : body;
 }
 
+/// Séparateur de milliers : espace fine insécable (U+202F), usage typographique
+/// français et anglais correct. Nommé explicitement parce qu'il est invisible à
+/// la lecture dans le code — et qu'un caractère invisible non documenté devient
+/// un piège le jour où quelqu'un « corrige » une espace ordinaire sans voir que
+/// c'est celle-ci qui compte.
+const String _groupSeparator = '\u202f';
+
 String _group(String digits) {
   final buffer = StringBuffer();
   final count = digits.length;
   for (var i = 0; i < count; i++) {
-    if (i > 0 && (count - i) % 3 == 0) buffer.write(' ');
+    if (i > 0 && (count - i) % 3 == 0) buffer.write(_groupSeparator);
     buffer.write(digits[i]);
   }
   return buffer.toString();

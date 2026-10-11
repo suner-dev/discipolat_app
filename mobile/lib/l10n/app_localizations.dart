@@ -291,6 +291,23 @@ class AppLocalizations {
   String get statusCancelled => translate('statusCancelled');
   // ── Dons récurrents ──
   String get recurringTitle => translate('recurringTitle');
+  // ── Tarifs (TODO_TARIFS_PAIEMENTS_INTERNATIONAL §T9) ──
+  String get pricingTitle => translate('pricingTitle');
+  String get pricingMonthly => translate('pricingMonthly');
+  String get pricingYearly => translate('pricingYearly');
+  String get pricingPerMonth => translate('pricingPerMonth');
+  String get pricingPerYear => translate('pricingPerYear');
+  String get pricingNotPublished => translate('pricingNotPublished');
+  String get pricingUnavailable => translate('pricingUnavailable');
+  String pricingChargedIn(String currency) =>
+      translate('pricingChargedIn').replaceAll('{currency}', currency);
+  String pricingSeats(int count) =>
+      translate('pricingSeats').replaceAll('{count}', count.toString());
+  String pricingStorage(int mb) =>
+      translate('pricingStorage').replaceAll('{size}', mb.toString());
+  String pricingAiCredits(int count) =>
+      translate('pricingAiCredits').replaceAll('{count}', count.toString());
+
   String get recurringNew => translate('recurringNew');
   String get recurringHide => translate('recurringHide');
   String get recurringCreate => translate('recurringCreate');
@@ -2232,6 +2249,17 @@ class AppLocalizations {
     'statusCancelled': 'Annulé',
     // ── Dons récurrents ──
     'recurringTitle': 'Dons récurrents',
+    'pricingTitle': 'Plans et tarifs',
+    'pricingMonthly': 'Mensuel',
+    'pricingYearly': 'Annuel',
+    'pricingPerMonth': 'par mois',
+    'pricingPerYear': 'par an',
+    'pricingNotPublished': 'Tarif non communiqué',
+    'pricingUnavailable': 'Tarifs momentanément indisponibles',
+    'pricingChargedIn': 'Débité en {currency}',
+    'pricingSeats': '{count} membres',
+    'pricingStorage': '{size} Mo de stockage',
+    'pricingAiCredits': '{count} crédits IA / mois',
     'recurringNew': 'Nouveau don récurrent',
     'recurringHide': 'Masquer',
     'recurringCreate': 'Créer le don récurrent',
@@ -3830,6 +3858,17 @@ class AppLocalizations {
     'statusCancelled': 'Cancelled',
     // ── Recurring donations ──
     'recurringTitle': 'Recurring gifts',
+    'pricingTitle': 'Plans and pricing',
+    'pricingMonthly': 'Monthly',
+    'pricingYearly': 'Yearly',
+    'pricingPerMonth': 'per month',
+    'pricingPerYear': 'per year',
+    'pricingNotPublished': 'Price not published',
+    'pricingUnavailable': 'Pricing temporarily unavailable',
+    'pricingChargedIn': 'Charged in {currency}',
+    'pricingSeats': '{count} members',
+    'pricingStorage': '{size} MB storage',
+    'pricingAiCredits': '{count} AI credits / month',
     'recurringNew': 'New recurring gift',
     'recurringHide': 'Hide',
     'recurringCreate': 'Create recurring gift',
@@ -6169,6 +6208,17 @@ class AppLocalizations {
     'rejectAction': 'Rejeitar',
     'sendError': 'Falha ao enviar',
     'recurringTitle': 'Doações recorrentes',
+    'pricingTitle': 'Planos e preços',
+    'pricingMonthly': 'Mensal',
+    'pricingYearly': 'Anual',
+    'pricingPerMonth': 'por mês',
+    'pricingPerYear': 'por ano',
+    'pricingNotPublished': 'Preço não publicado',
+    'pricingUnavailable': 'Preços temporariamente indisponíveis',
+    'pricingChargedIn': 'Cobrado em {currency}',
+    'pricingSeats': '{count} membros',
+    'pricingStorage': '{size} MB de armazenamento',
+    'pricingAiCredits': '{count} créditos de IA / mês',
     'recurringNew': 'Nova doação recorrente',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Criar doação recorrente',
@@ -6846,6 +6896,17 @@ const Map<String, String> _spanish = {
     'statusFailed': 'Fallido',
     'statusCancelled': 'Cancelado',
     'recurringTitle': 'Donaciones recurrentes',
+    'pricingTitle': 'Planes y precios',
+    'pricingMonthly': 'Mensual',
+    'pricingYearly': 'Anual',
+    'pricingPerMonth': 'al mes',
+    'pricingPerYear': 'al año',
+    'pricingNotPublished': 'Precio no publicado',
+    'pricingUnavailable': 'Precios no disponibles por ahora',
+    'pricingChargedIn': 'Cobrado en {currency}',
+    'pricingSeats': '{count} miembros',
+    'pricingStorage': '{size} MB de almacenamiento',
+    'pricingAiCredits': '{count} créditos de IA / mes',
     'recurringNew': 'Nueva',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Crear donación recurrente',
@@ -8376,6 +8437,17 @@ const Map<String, String> _swahili = {
     'statusFailed': 'Imeshindikana',
     'statusCancelled': 'Imeghairiwa',
     'recurringTitle': 'Michango ya mara kwa mara',
+    'pricingTitle': 'Mipango na bei',
+    'pricingMonthly': 'Mwezi',
+    'pricingYearly': 'Mwaka',
+    'pricingPerMonth': 'kwa mwezi',
+    'pricingPerYear': 'kwa mwaka',
+    'pricingNotPublished': 'Bei haijatanguliwa',
+    'pricingUnavailable': 'Bei hazipatikani kwa sasa',
+    'pricingChargedIn': 'Inakutwa kwa {currency}',
+    'pricingSeats': 'Wana {count}',
+    'pricingStorage': 'Hifadhi ya {size} MB',
+    'pricingAiCredits': 'Mikopo {count} ya AI / mwezi',
     'recurringNew': 'Mpya',
     'recurringHide': 'Ficha',
     'recurringCreate': 'Unda mchango wa mara kwa mara',
@@ -9906,6 +9978,17 @@ const Map<String, String> _arabic = {
     'statusFailed': 'فشل',
     'statusCancelled': 'ملغى',
     'recurringTitle': 'تبرعات متكررة',
+    'pricingTitle': 'الخطط والأسعار',
+    'pricingMonthly': 'شهري',
+    'pricingYearly': 'سنوي',
+    'pricingPerMonth': 'شهريًا',
+    'pricingPerYear': 'سنويًا',
+    'pricingNotPublished': 'السعر غير منشور',
+    'pricingUnavailable': 'الأسعار غير متاحة مؤقتًا',
+    'pricingChargedIn': 'يتم الخصم بـ {currency}',
+    'pricingSeats': '{count} عضوًا',
+    'pricingStorage': '{size} ميغابايت تخزين',
+    'pricingAiCredits': '{count} رصيد ذكاء اصطناعي / شهر',
     'recurringNew': 'جديد',
     'recurringHide': 'إخفاء',
     'recurringCreate': 'إنشاء تبرع متكرر',

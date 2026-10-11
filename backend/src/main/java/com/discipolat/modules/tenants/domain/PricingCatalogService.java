@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Résolution des prix de catalogue (TODO_TARIFS_PAIEMENTS_INTERNATIONAL — T2).
@@ -172,13 +173,74 @@ public class PricingCatalogService {
                 .filter(plan -> !isDisabled(plan))
                 .toList();
 
+        // Chargement en une requête : sans cela, la page publique cout
+        // était plans x devises x (régional + mondial) requêtes. Le catalogue est
+        // public et mis en cache 60 s, mais une requête par plan et par devise
+        // reste un motif de timeout sous charge.
+        Map<String, List<SaasPlanPrice>> byPlan = priceRepository
+                .findByBillingCycleAndIsEnabledTrue(cycle).stream()
+                .filter(price -> settings.isCurrencyEnabled(price.getCurrency()))
+                .filter(price -> !price.getRegionCode().equals(SaasPlanPrice.GLOBAL_REGION)
+                        || !settings.isRegionPricingEnabled()
+                        || region == null || region.isBlank())
+                .collect(Collectors.groupingBy(SaasPlanPrice::getPlanKey));
+
         List<PublicPlan> publicPlans = new ArrayList<>(plans.size());
         for (SaasPlan plan : plans) {
-            Optional<ResolvedPrice> display = resolvePrice(plan.getKey(), currency, cycle, region);
-            List<ResolvedPrice> allPrices = resolveVisiblePrices(plan.getKey(), cycle, region);
+            List<SaasPlanPrice> candidates = byPlan.getOrDefault(plan.getKey(), List.of());
+            Optional<ResolvedPrice> display = pick(candidates, currency, region);
+            List<ResolvedPrice> allPrices = allVisible(candidates, currency, region, settings);
             publicPlans.add(new PublicPlan(plan, display.orElse(null), allPrices));
         }
         return new PublicCatalog(settings, currency, cycle, region, List.copyOf(publicPlans));
+    }
+
+    /** Prix régional exact s'il existe, sinon GLOBAL, pour une devise donnée. */
+    private Optional<ResolvedPrice> pick(List<SaasPlanPrice> candidates, String currency, String region) {
+        SaasPlanPricingSettings settings = settingsService.current();
+        if (region != null && !region.isBlank() && settings.isRegionPricingEnabled()) {
+            SaasPlanPrice regional = firstMatching(candidates, currency, normalizeRegion(region));
+            if (regional != null) {
+                return Optional.of(toResolved(regional, settings, true, false));
+            }
+        }
+        SaasPlanPrice global = firstMatching(candidates, currency, SaasPlanPrice.GLOBAL_REGION);
+        if (global != null) {
+            return Optional.of(toResolved(global, settings, false, false));
+        }
+        if (settings.isFallbackCurrencyAllowed()) {
+            String base = normalizeCurrency(settings.getBaseCurrency());
+            if (base != null && !base.equals(currency)) {
+                SaasPlanPrice fallback = firstMatching(candidates, base, SaasPlanPrice.GLOBAL_REGION);
+                if (fallback != null) {
+                    return Optional.of(toResolved(fallback, settings, false, true));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private SaasPlanPrice firstMatching(List<SaasPlanPrice> candidates, String currency, String regionCode) {
+        for (SaasPlanPrice price : candidates) {
+            if (price.getCurrency().equals(currency) && price.getRegionCode().equals(regionCode)
+                    && Boolean.TRUE.equals(price.getIsEnabled())) {
+                return price;
+            }
+        }
+        return null;
+    }
+
+    /** Tous les prix visibles d'un plan, dans l'ordre configuré. */
+    private List<ResolvedPrice> allVisible(List<SaasPlanPrice> candidates, String requestedCurrency,
+                                           String region, SaasPlanPricingSettings settings) {
+        Map<String, ResolvedPrice> byCurrency = new LinkedHashMap<>();
+        for (String currency : settings.currencySet()) {
+            pick(candidates, currency, region)
+                    .ifPresent(price -> byCurrency.putIfAbsent(price.currency(), price));
+        }
+        return byCurrency.values().stream()
+                .sorted(Comparator.comparingInt(ResolvedPrice::sortOrder).thenComparing(ResolvedPrice::currency))
+                .toList();
     }
 
     /**
@@ -256,6 +318,7 @@ public class PricingCatalogService {
                 price.effectiveCheckoutCurrency(),
                 Boolean.TRUE.equals(price.getIsSelectable()) && price.channels().contains(PaymentChannel.STRONG),
                 price.getStripePriceStatus() == null ? null : price.getStripePriceStatus().name(),
+                price.getStripePriceId(),
                 price.getSortOrder() == null ? 0 : price.getSortOrder(),
                 price.getId());
     }
@@ -320,6 +383,7 @@ public class PricingCatalogService {
             String checkoutCurrency,
             boolean strongCurrencyAvailable,
             String stripePriceStatus,
+            String stripePriceId,
             int sortOrder,
             java.util.UUID id) {
 
@@ -333,7 +397,7 @@ public class PricingCatalogService {
             return new ResolvedPrice(planKey, currency, cycle, regionCode, newAmountMinor,
                     major.toPlainString(), decimals, regional, fromFallback, selectable, visible,
                     channels, checkoutCurrency, strongCurrencyAvailable, stripePriceStatus,
-                    sortOrder, id);
+                    stripePriceId, sortOrder, id);
         }
     }
 

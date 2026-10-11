@@ -60,6 +60,8 @@ public class SelfServiceChurchService {
     private final AuditService auditService;
     private final CrossTenantScopeAccess crossTenant;
     private final EmailService emailService;
+    private final PricingSettingsService pricingSettingsService;
+    private final SaasPlanRepository planRepository;
     private final String frontendUrl;
 
     public SelfServiceChurchService(TenantService tenantService,
@@ -73,6 +75,8 @@ public class SelfServiceChurchService {
                                     AuditService auditService,
                                     CrossTenantScopeAccess crossTenant,
                                     EmailService emailService,
+                                    PricingSettingsService pricingSettingsService,
+                                    SaasPlanRepository planRepository,
                                     @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl) {
         this.tenantService = tenantService;
         this.tenantRepository = tenantRepository;
@@ -85,10 +89,48 @@ public class SelfServiceChurchService {
         this.auditService = auditService;
         this.crossTenant = crossTenant;
         this.emailService = emailService;
+        this.pricingSettingsService = pricingSettingsService;
+        this.planRepository = planRepository;
         this.frontendUrl = frontendUrl;
     }
 
     public record ChurchCreation(TenantResponse tenant, User founder, String joinCode, OrganizationNode rootChurch) {
+    }
+
+    /**
+     * Plan effectivement accordé à une inscription en ligne.
+     *
+     * <p>On compare le plan demandé au plan gratuit designated par le super-admin
+     * ({@code saas_pricing_settings.free_plan_key}). Tout plan différent est
+     * remplace : l'utilisateur sera ramene au gratuit, puis redirige vers le
+     * checkout s'il avait vise un plan payant — il ne perd donc rien de ce qu'il
+     * a choisi, il ne fait que payer avant d'en beneficier.</p>
+     *
+     * <p>Si le plan demande n'existe pas du tout, on retombe aussi sur le
+     * gratuit : une inscription ne doit jamais echouer sur un plan inconnu, et
+     * encore moins creer un tenant sans plan.</p>
+     */
+    private String resolveSelfServicePlan(String requestedPlan) {
+        String freePlan = pricingSettingsService.current().getFreePlanKey();
+        String free = freePlan == null || freePlan.isBlank()
+                ? TenantPlanPolicy.DEFAULT_FREE_PLAN : freePlan;
+        if (requestedPlan == null || requestedPlan.isBlank()) {
+            return free;
+        }
+        String canonical = TenantPlanPolicy.canonicalizePlanKey(requestedPlan);
+        if (canonical == null || canonical.equalsIgnoreCase(free)) {
+            return free;
+        }
+        boolean exists = planRepository.findById(canonical).isPresent();
+        if (!exists) {
+            log.info("[SelfService] plan demande inconnu ({}), inscription sur le plan gratuit {}",
+                    canonical, free);
+            return free;
+        }
+        log.info("[SelfService] plan payant {} demande sans paiement — inscription sur le plan gratuit {} ; "
+                        + "la souscription se fera par le checkout",
+                canonical, free);
+        return free;
     }
 
     /**
@@ -128,10 +170,20 @@ public class SelfServiceChurchService {
         String name = churchName.trim();
         String slug = uniqueSlug(name);
 
+        // T8.4 / F10 — une inscription en ligne n'encaisse rien. On ne peut donc
+        // pas poser un plan payant : le tenant serait alors « abonné » sans avoir
+        // jamais payé, et impossible à facturer ensuite puisque le système
+        // croirait le dossier réglé.
+        //
+        // Le provisionnement plateforme, lui, passe par TenantService.create
+        // directement et garde toute liberté de poser un plan payant — c'est un
+        // acte commercial délibéré. On ne le contraint donc pas ici.
+        String effectivePlan = resolveSelfServicePlan(plan);
+
         // 1) Tenant ACTIVE, abonnement initial, modules et dictionnaires (réutilise
         //    TenantService.create tel quel — même contrat que le provisioning plateforme).
         TenantResponse tenant = tenantService.create(new CreateTenantRequest(
-                name, slug, plan, country, null, null, null, null, null, null));
+                name, slug, effectivePlan, country, null, null, null, null, null, null));
         final UUID tenantId = tenant.id();
 
         // T-M3 (D2) — la nature demandée est posée sur l'organisation. La

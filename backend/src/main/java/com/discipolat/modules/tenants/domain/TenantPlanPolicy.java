@@ -14,6 +14,15 @@ import java.util.UUID;
 @Component
 public class TenantPlanPolicy {
 
+    /**
+     * Plan gratuit par défaut, lorsqu'aucun n'est configuré.
+     *
+     * <p>Valeur de repli technique, pas une règle commerciale : le plan gratuit
+     * effectif est {@code saas_pricing_settings.free_plan_key}, que le
+     * super-admin fixe depuis l'espace d'administration.</p>
+     */
+    public static final String DEFAULT_FREE_PLAN = "DISCOVERY";
+
     private static final Map<String, String> CANONICAL_KEYS = Map.of(
             "FREE", "DISCOVERY",
             "DISCOVERY", "DISCOVERY",

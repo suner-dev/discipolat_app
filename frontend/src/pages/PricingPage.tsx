@@ -257,7 +257,11 @@ function PlanCard({
 }) {
   const { t } = useI18n();
   const display = plan.display;
-  const isFree = plan.seatsLimit != null && plan.seatsLimit > 0 && plan.key.toUpperCase() === 'DISCOVERY';
+  // Un plan est gratuit parce que son prix est nul — pas parce qu'il s'appelle
+  // DISCOVERY. Le nommer « gratuit » parce que la clé a changé, c'est facturer
+  // l'inverse de ce qu'on affiche.
+  const isFree = display?.available === true && display.amountMinor === 0;
+  // Le badge « populaire » reste une convention d'écran, pas une règle métier.
   const popular = plan.key.toUpperCase() === 'STARTUP';
 
   // Le prix affiché vient du serveur, déjà résolu pour la devise et la région.

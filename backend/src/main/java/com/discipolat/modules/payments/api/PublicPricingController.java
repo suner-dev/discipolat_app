@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -70,13 +73,17 @@ public class PublicPricingController {
     private final PaymentChannelResolver channelResolver;
     private final StripeBillingProperties stripeProperties;
     private final Iso4217CurrencyValidator currencyValidator;
+    /** Injecté et réutilisé : la page publique l'appelle sur chaque réponse. */
+    private final ObjectMapper objectMapper;
 
-    public PublicPricingController(PricingCatalogService catalogService,
+    public PublicPricingController(ObjectMapper objectMapper,
+                                   PricingCatalogService catalogService,
                                    PricingSettingsService settingsService,
                                    PricingRegionResolver regionResolver,
                                    PaymentChannelResolver channelResolver,
                                    StripeBillingProperties stripeProperties,
                                    Iso4217CurrencyValidator currencyValidator) {
+        this.objectMapper = objectMapper;
         this.catalogService = catalogService;
         this.settingsService = settingsService;
         this.regionResolver = regionResolver;
@@ -292,7 +299,6 @@ public class PublicPricingController {
         return view;
     }
 
-    /** Canaux réellement disponibles, source de vérité serveur. */
     /**
      * Canaux réellement disponibles pour un prix résolu.
      *
@@ -304,8 +310,8 @@ public class PublicPricingController {
      */
     private List<String> availableChannels(PricingCatalogService.ResolvedPrice price) {
         return channelResolver
-                .available(price.currency(), price.checkoutCurrency(), null, price.stripePriceStatus(),
-                        price.channels())
+                .available(price.currency(), price.checkoutCurrency(), price.stripePriceId(),
+                        price.stripePriceStatus(), price.channels())
                 .stream()
                 .map(Enum::name)
                 .toList();
@@ -397,8 +403,7 @@ public class PublicPricingController {
     private Map<String, Object> parseJson(String raw) {
         if (raw == null || raw.isBlank()) return Map.of();
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(
-                    raw, new com.fasterxml.jackson.core.type.TypeReference<>() { });
+            return objectMapper.readValue(raw, new TypeReference<>() { });
         } catch (Exception ignored) {
             return Map.of();
         }
@@ -407,8 +412,7 @@ public class PublicPricingController {
     private List<Object> parseJsonArray(String raw) {
         if (raw == null || raw.isBlank()) return List.of();
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readValue(
-                    raw, new com.fasterxml.jackson.core.type.TypeReference<>() { });
+            return objectMapper.readValue(raw, new TypeReference<>() { });
         } catch (Exception ignored) {
             return List.of();
         }

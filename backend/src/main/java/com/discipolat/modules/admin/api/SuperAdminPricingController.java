@@ -115,6 +115,7 @@ public class SuperAdminPricingController {
         body.put("stripeSyncBatchSize", settings.getStripeSyncBatchSize());
         body.put("stripeSyncIntervalMs", settings.getStripeSyncIntervalMs());
         body.put("trialEnabled", settings.getTrialEnabled());
+        body.put("freePlanKey", settings.getFreePlanKey());
         body.put("annualDiscountDefault", settings.getAnnualDiscountDefault());
         body.put("landingPricingEnabled", settings.getLandingPricingEnabled());
         body.put("landingPricingSource", settings.getLandingPricingSource().name());
@@ -625,6 +626,9 @@ public class SuperAdminPricingController {
             Object value = request.get("stripeSyncIntervalMs");
             settings.setStripeSyncIntervalMs(value instanceof Number number ? number.longValue() : 300_000L);
         }
+        if (request.containsKey("freePlanKey")) {
+            settings.setFreePlanKey(stringOf(request.get("freePlanKey")));
+        }
         if (request.containsKey("trialEnabled")) {
             settings.setTrialEnabled(boolOf(request.get("trialEnabled"), true));
         }
@@ -682,6 +686,7 @@ public class SuperAdminPricingController {
         to.setStripePriceAutoSync(from.getStripePriceAutoSync());
         to.setStripeSyncBatchSize(from.getStripeSyncBatchSize());
         to.setStripeSyncIntervalMs(from.getStripeSyncIntervalMs());
+        to.setFreePlanKey(from.getFreePlanKey());
         to.setTrialEnabled(from.getTrialEnabled());
         to.setAnnualDiscountDefault(from.getAnnualDiscountDefault());
         to.setLandingPricingEnabled(from.getLandingPricingEnabled());

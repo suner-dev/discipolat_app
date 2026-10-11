@@ -76,7 +76,15 @@ export default function RegisterPage() {
     Boolean(searchParams.get('church'));
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [churchResult, setChurchResult] = useState<{ name: string; slug: string; joinCode: string } | null>(null);
+  // `pendingPlan` : plan payant demande mais NON encaisse. Le tenant est cree
+  // sur le plan gratuit (T8.4) ; on propose de finaliser par le checkout plutot
+  // que d'annoncer un abonnement actif qui n'existe pas.
+  const [churchResult, setChurchResult] = useState<{
+    name: string;
+    slug: string;
+    joinCode: string;
+    pendingPlan: string | null;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   /**
@@ -159,6 +167,8 @@ export default function RegisterPage() {
         church?: { name: string; slug: string; joinCode: string };
         status?: string;
         churchName?: string;
+        grantedPlan?: string;
+        pendingPlan?: string | null;
       };
       if (payload.session?.accessToken) {
         // Fondateur : session immédiatement établie (D1).
@@ -177,6 +187,7 @@ export default function RegisterPage() {
           // CONTRAT — sans lui, le fondateur n'a que le code à dicter.
           slug: payload.church?.slug ?? '',
           joinCode: payload.church?.joinCode ?? '',
+          pendingPlan: payload.pendingPlan ?? null,
         });
         return;
       }
@@ -248,6 +259,26 @@ export default function RegisterPage() {
                 {tText('Partager')}
               </a>
             </div>
+          </div>
+        )}
+        {/* Plan payant demande mais non paye : on ne pretend pas que l'abonnement
+            est actif, on propose de le finaliser. Le plan gratuit reste
+            immediatement utilisable entre-temps. */}
+        {churchResult.pendingPlan && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 text-left">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+              {tText('Finalisez votre abonnement')}
+            </p>
+            <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+              {tText('Votre église est créée sur le plan gratuit. Activez le plan demandé pour débloquer ses quotas.')}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(`/pricing?plan=${encodeURIComponent(churchResult.pendingPlan as string)}`)}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-medium text-white hover:bg-amber-700"
+            >
+              <ArrowRight className="w-3.5 h-3.5" /> {tText('Voir les tarifs')}
+            </button>
           </div>
         )}
         <button

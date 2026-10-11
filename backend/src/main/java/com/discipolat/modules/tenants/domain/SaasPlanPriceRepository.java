@@ -23,6 +23,13 @@ public interface SaasPlanPriceRepository extends JpaRepository<SaasPlanPrice, UU
 
     List<SaasPlanPrice> findByPlanKeyIn(Collection<String> planKeys);
 
+    /**
+     * Tous les prix actifs d'un cycle, tous plans confondus — utilisé pour
+     * résoudre le catalogue public en un nombre de requêtes constant plutôt
+     * qu'en une requête par plan et par devise.
+     */
+    List<SaasPlanPrice> findByBillingCycleAndIsEnabledTrue(BillingCycle cycle);
+
     Optional<SaasPlanPrice> findByPlanKeyAndCurrencyAndBillingCycleAndRegionCode(
             String planKey, String currency, BillingCycle cycle, String regionCode);
 

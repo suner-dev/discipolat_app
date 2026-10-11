@@ -164,6 +164,19 @@ public class SaasPlanPricingSettings {
     @Builder.Default
     private Long stripeSyncIntervalMs = 300_000L;
 
+    /**
+     * Plan attribue a une inscription en ligne SANS paiement.
+     *
+     * <p>Un visiteur qui s'inscrit depuis {@code /register?plan=startup} cree un
+     * compte, il n'a rien paye. Lui poser un plan payant produirait un tenant
+     * que le systeme croit deja abonne — donc impossible a facturer apres coup.
+     * On le ramene donc au plan gratuit, et la souscription se fait ensuite par
+     * le checkout, ou par le super-admin pour le provisionnement.</p>
+     */
+    @Column(name = "free_plan_key", nullable = false, length = 30)
+    @Builder.Default
+    private String freePlanKey = "DISCOVERY";
+
     // ── Essai et remise ───────────────────────────────────────────────────────
 
     @Column(name = "trial_enabled", nullable = false)
@@ -233,6 +246,9 @@ public class SaasPlanPricingSettings {
         }
         if (this.momoOperators == null) {
             this.momoOperators = new String[0];
+        }
+        if (this.freePlanKey == null || this.freePlanKey.isBlank()) {
+            this.freePlanKey = "DISCOVERY";
         }
     }
 

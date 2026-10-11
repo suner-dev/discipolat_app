@@ -95,6 +95,8 @@ public class PricingSettingsService {
         settings.setStripePriceAutoSync(requested.getStripePriceAutoSync());
         settings.setStripeSyncBatchSize(requested.getStripeSyncBatchSize());
         settings.setStripeSyncIntervalMs(requested.getStripeSyncIntervalMs());
+        settings.setFreePlanKey(requested.getFreePlanKey());
+        settings.setFreePlanKey(requested.getFreePlanKey());
         settings.setTrialEnabled(requested.getTrialEnabled());
         settings.setAnnualDiscountDefault(requested.getAnnualDiscountDefault());
         settings.setLandingPricingEnabled(requested.getLandingPricingEnabled());
