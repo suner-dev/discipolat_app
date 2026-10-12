@@ -1,0 +1,90 @@
+name: Render — diagnostic (lecture seule)
+
+# ============================================================
+# Lit l'état réel des jobs d'un service Render via l'API v1,
+# pour distinguer « build failed » de « crash runtime » sans
+# dependre du dashboard. Purement en LECTURE SEULE : aucun POST,
+# aucun déclenchement de déploiement.
+#
+# Exigences : secrets RENDER_API_KEY + RENDER_API_SERVICE_ID déjà
+# posés par `deploy-gate` (mêmes secrets, mêmes noms). Si le
+# format srv- est invalide, l'ID est résolu par nom comme dans
+# `ci.yml` (le piege « rnd_ colle dans SERVICE_ID » est connu).
+#
+# Hygiène : le log Render est épuré avant affichage — toute ligne
+# ressemblant à une valeur de secret (rnd_…, clés base64, mots de
+# passe d'env) est masquée. Le résultat est consigné dans le résumé
+# du run, pas dans les artifacts.
+# ============================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Nom du service Render à diagnostiquer
+        required: true
+        default: discipolat-beta-api
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    name: Jobs + dernier log (épuré)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Résoudre le service et lister ses jobs
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+        run: |
+          set -u
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "::error::RENDER_API_KEY absent du dépôt."
+            exit 1
+          fi
+          SID="$RENDER_SERVICE_ID"
+          if ! printf '%s' "$SID" | grep -qE '^srv-[0-9a-z]+$'; then
+            HTTP_LIST=$(curl -s -o /tmp/svc.json -w '%{http_code}' "https://api.render.com/v1/services?limit=100" -H "Authorization: Bearer $RENDER_API_KEY")
+            if [ "$HTTP_LIST" != "200" ]; then
+              echo "::error::GET /v1/services → HTTP $HTTP_LIST (401 = clé invalide)."
+              exit 1
+            fi
+            SID=$(jq -r --arg n "$SERVICE_NAME" '[.[] | .service | select(.name==$n) | .id] | last // empty' /tmp/svc.json)
+            [ -n "$SID" ] || { echo "::error::Service « $SERVICE_NAME » introuvable. Services : $(jq -r '[.[] | .service.name] | join(", ")' /tmp/svc.json)"; exit 1; }
+          fi
+          echo "SERVICE=$SID" >> "$GITHUB_ENV"
+          echo "::notice::Service diagnostiqué : $SID ($SERVICE_NAME)"
+
+          # 1) Les 10 derniers jobs : statut, erreur, commit.
+          curl -s "https://api.render.com/v1/services/$SID/jobs?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/jobs.json
+          {
+            echo "## Jobs Render — $SERVICE_NAME"
+            echo
+            echo "| Job | Type | Statut | CreatedAt | Commit | Erreur |"
+            echo "|---|---|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.[] | .job | "| \(.id // "?") | \(.type // "?") | **\(.status // "?")** | \(.createdAt // "?") | \(.commit // "-") | \((.error // "-") | gsub("[\n|]"; " ")) |"' /tmp/jobs.json | head -12 >> "$GITHUB_STEP_SUMMARY"
+          LAST_JOB=$(jq -r '[.[] | .job | select(.id)] | .[0].id // empty' /tmp/jobs.json)
+          echo "LAST_JOB=$LAST_JOB" >> "$GITHUB_ENV"
+
+          # 2) Log du dernier job, épuré (jamais de valeur de secret en clair).
+          if [ -n "$LAST_JOB" ]; then
+            curl -s "https://api.render.com/v1/services/$SID/jobs/$LAST_JOB/log" -H "Authorization: Bearer $RENDER_API_KEY" | jq -r '.content // "(pas de contenu)"' \
+              | sed -E 's/(rnd_[A-Za-z0-9_-]{4,})/***CLE***/g; s/([A-Za-z0-9_]*(PASSWORD|SECRET|KEY|TOKEN)[A-Za-z0-9_]*=)[^ ]+/\1***/gi' > /tmp/joblog.txt
+            {
+              echo
+              echo "## Dernier job ($LAST_JOB) — log épuré, 80 dernières lignes"
+              echo '```'
+              tail -80 /tmp/joblog.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "=== log épuré (dernières lignes) ==="
+            tail -40 /tmp/joblog.txt
+          fi
