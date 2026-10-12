@@ -74,7 +74,12 @@ jobs:
 
           # 1) Relire la liste courante (les 18 auto du blueprint) — rien n'est perdu.
           curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/current.json
-          jq '[.[] | {envVar: {key: (.envVar.key // .key), value: (.envVar.value // .value // "")}}]' /tmp/current.json > /tmp/base.json
+          # Normalisation tolérante : éléments {"envVar":{...}} ou bruts, et
+          # ÉVENTUELS fichiers-secrets ({"secretFile":...}) → exclus (ils ont
+          # leur propre endpoint ; sans ce filtre ils deviennent une entrée «
+          # clé vide » et Render refuse tout le PUT avec « empty environment
+          # variable key » — hypothèse mesurée run 38287).
+          jq '[.[] | (.envVar // .) | select((.key // "") | length > 0) | {envVar: {key: .key, value: (.value // "")}}]' /tmp/current.json > /tmp/base.json
           echo "Variables existantes réinjectées à l'identique : $(jq 'length' /tmp/base.json)"
 
           # 2) Les ajouts : uniquement les secrets réellement posés, valeurs non vides.
@@ -95,6 +100,15 @@ jobs:
           # en rotation de clés la valeur fraîche écrase l'ancienne relue.
           jq -s '(.[1] + .[0]) | unique_by(.envVar.key)' /tmp/base.json /tmp/add.json > /tmp/merged.json
           echo "Total après fusion : $(jq 'length' /tmp/merged.json) variables."
+
+          # Diagnostic pré-PUT :Render a refusé avec « empty environment
+          # variable key » alors que les compteurs étaient bons — on liste les
+          # clés triées, les lignes sans clé, les clés en double et les valeurs
+          # vides AVANT envoi (journalement aucun secret ne sort d'ici).
+          echo "Clés fusionnées : $(jq -r '[.[].envVar.key] | sort | join(", ")' /tmp/merged.json)"
+          echo "Entrées sans clé : $(jq '[.[] | select((.envVar.key // "") | length == 0)] | length' /tmp/merged.json)"
+          echo "Clés en double   : $(jq -r '[.[].envVar.key] | group_by(.) | map(select(length > 1) | .[0]) | join(", ")' /tmp/merged.json)"
+          echo "Valeurs vides    : $(jq -r '[.[] | select((.envVar.value // "") | length == 0) | .envVar.key] | join(", ")' /tmp/merged.json)"
 
           # 3) PUT = « updateEnvVarsToSameService » (remplacement intégral).
           # PATCH mesuré HTTP 405 (verrouillé en run 38286…) : la doc Render
