@@ -1,43 +1,63 @@
-# Discipolat — Render Blueprint (Free Tier Compatible)
-# Deploys: PostgreSQL DB, Spring Boot API, React Frontend + Nginx
+# Discipolat — Render Blueprint
+# Spec : https://render.com/docs/blueprint-spec
+#
+# Règles appliquées (erreurs Render corrigées) :
+#   • `databases:` = clé racine, champs name/plan/region/databaseName/user/
+#     postgresMajorVersion/ipAllowList. Le champ `version` n'existe pas.
+#   • Redis/Key Value = service `type: keyvalue` dans `services:`,
+#     `ipAllowList` OBLIGATOIRE. `ipAllowList: []` = réseau interne seul
+#     (l'API s'y connecte en Render Private Network, jamais en public).
+#   • `fromService` vers un Key Value : `type: keyvalue` +
+#     `property: connectionString` (format redis://…).
 
 databases:
+  # ── Base de données BÊTA (isolée de la prod) ──────────────────────────────
   - name: discipolat-beta-db
     databaseName: discipolat_beta
     user: discipolat_beta
     region: frankfurt
     plan: free
-    version: "16"
     postgresMajorVersion: "16"
-
-redis:
-  - name: discipolat-redis
-    region: frankfurt
-    plan: free
-    maxmemoryPolicy: allkeys-lru
+    # Connexions externes interdites : seule l'API Render (réseau privé) parle
+    # à la base. Ni psql depuis un laptop, ni scan depuis Internet.
     ipAllowList: []
 
 services:
-  # ============================================
-  # BÊTA-TESTING — API Spring Boot (profil beta)
-  # ============================================
+  # ══════════════════════════════════════════════════════════════════════════
+  # Key Value (ex-Redis) — rate limiting distribué
+  # ══════════════════════════════════════════════════════════════════════════
+  - type: keyvalue
+    name: discipolat-redis
+    region: frankfurt
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    # OBLIGATOIRE pour un Key Value. Liste vide = réseau privé uniquement,
+    # ce qui est le bon choix ici : Bucket4j n'a besoin que du réseau interne.
+    ipAllowList: []
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # API backend — image Docker pré-construite sur GHCR
+  # ══════════════════════════════════════════════════════════════════════════
   - type: web
     name: discipolat-beta-api
-    runtime: docker
+    runtime: image
     repo: https://github.com/suner-dev/discipolat_app
     region: frankfurt
     plan: free
     branch: main
-    autoDeploy: true
+    autoDeployTrigger: commit
     healthCheckPath: /actuator/health
-    dockerfilePath: ./backend/Dockerfile
+    image:
+      url: ghcr.io/suner-dev/discipolat_app/backend:latest
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: beta
       - key: APP_ENVIRONMENT
         value: beta
       - key: APP_VERSION
-        value: "1.1.0"
+        value: 1.1.0
+
+      # Base : reference dynamique aux secrets gérés par Render
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: discipolat-beta-db
@@ -50,13 +70,21 @@ services:
         fromDatabase:
           name: discipolat-beta-db
           property: password
-      - key: DEMO_PASSWORD
-        sync: false
+
+      # Rate limiting : format redis://red-xxx:6379
       - key: REDIS_URL
         fromService:
           name: discipolat-redis
-          type: redis
+          type: keyvalue
           property: connectionString
+
+      # ── Secrets : saisis dans le Dashboard Render après Apply ──────────────
+      # `sync: false` = Render affiche « Prompt for value », rien n'est
+      # committé. DEMO_PASSWORD est obligatoire : la garde fail-closed de
+      # DataInitializer refuse de démarrer si elle vaut encore `password123`
+      # sur un service exposé (protection E3 — voir KNOWN_ISSUES.md).
+      - key: DEMO_PASSWORD
+        sync: false
       - key: JWT_PRIVATE_KEY
         sync: false
       - key: JWT_PUBLIC_KEY
@@ -65,18 +93,20 @@ services:
         sync: false
       - key: PAYMENTS_WEBHOOK_SECRET
         sync: false
-      - key: MAIL_HOST
-        value: smtp.mailgun.org
-      - key: MAIL_PORT
-        value: "2525"
       - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+
+      # CORS + liens d'email → le frontend bêta
       - key: FRONTEND_URL
         value: https://discipolat-beta.onrender.com
       - key: FRONTEND_URL_BASE
         value: https://discipolat-beta.onrender.com
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: framework
+
+      # ── Connexion par identité externe (désactivée par défaut) ────────────
       - key: SOCIAL_GOOGLE_ENABLED
         value: "false"
       - key: SOCIAL_GOOGLE_WEB_CLIENT_ID
@@ -95,10 +125,14 @@ services:
         value: "false"
       - key: SOCIAL_FACEBOOK_APP_ID
         sync: false
+      - key: SOCIAL_ALLOW_ACCOUNT_LINKING
+        value: "true"
+      - key: SOCIAL_REQUIRE_VERIFIED_EMAIL
+        value: "true"
 
-  # ============================================
-  # BÊTA-TESTING — Frontend React (Static Site CDN)
-  # ============================================
+  # ══════════════════════════════════════════════════════════════════════════
+  # Frontend React — Static Site (CDN mondial, jamais endormi)
+  # ══════════════════════════════════════════════════════════════════════════
   - type: web
     name: discipolat-beta
     runtime: static
@@ -110,6 +144,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22.15.1"
+      # Évite le double `npm ci` (Render n'installe pas, le buildCommand gère).
       - key: SKIP_INSTALL_DEPS
         value: "true"
       - key: VITE_API_URL
@@ -138,9 +173,16 @@ services:
       - path: /*
         name: Strict-Transport-Security
         value: "max-age=31536000; includeSubDomains; preload"
+      - path: /
+        name: Cache-Control
+        value: "public, max-age=0, must-revalidate"
+      - path: /assets/*
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.facebook.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com https://accounts.google.com https://login.microsoftonline.com https://www.facebook.com; frame-src 'self' https://accounts.google.com https://www.facebook.com; frame-ancestors 'none';"
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.facebook.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com https://accounts.google.com https://login.microsoftonline.com https://www.facebook.com; frame-src 'self' https://accounts.google.com https://www.facebook.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';"
+    # Fallback SPA : react-router résout toutes les routes via index.html
     routes:
       - type: rewrite
         source: /*
