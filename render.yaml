@@ -5,12 +5,12 @@ services:
   # ============================================
   # PostgreSQL — Base de données beta (Free tier)
   # ============================================
-  # NOTE: databaseName et user sont auto-générés par Render (non configurables dans Blueprint)
+  # NOTE: Seuls name, region, plan sont supportés pour type: pserv
+  # databaseName, user, postgresMajorVersion sont gérés automatiquement par Render
   - type: pserv
     name: discipolat-beta-db
     region: frankfurt
     plan: free
-    postgresMajorVersion: "16"
 
   # ============================================
   # Redis — Rate limiting (Free tier)
