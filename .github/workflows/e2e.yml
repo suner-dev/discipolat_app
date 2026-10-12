@@ -1,9 +1,30 @@
 # A5 #4 — Suite E2E Playwright, configuration dans `e2/` à la racine.
 #
-# CONTRAT : ce workflow ne touche AUCUN code du frontend. Il détecte les
-# specs `e2/specs/**/*.spec.ts` et les exécute contre une URL déployée.
-# « Le jour où Agent B livre la suite, elle s'exécute automatiquement » :
+# CONTRAT : ce workflow ne touche AUCUN code du frontend. Il construit le dépôt
+# `frontend/` tel quel (npm ci + npm run build, aucune ligne modifiée), le sert
+# en local, puis détecte les specs `e2/specs/**/*.spec.ts` et les exécute contre
+# cette URL. « Le jour où Agent B livre la suite, elle s'exécute automatiquement » :
 # aucune modification de ce fichier n'est nécessaire pour l'activation.
+#
+# POURQUOI LA CIBLE EST DÉSORMAIS UN BUILD LOCAL (mesuré, pas théorique) :
+#   La cible par défaut était l'environnement déployé
+#   `https://discipolat-beta.onrender.com`. Cet environnement n'existe pas :
+#   le service répond `404 Not Found` sur TOUTES les routes, `/` compris
+#   (10 octets de corps, ~0,9 s — un service qui tourne et qui ne sert rien).
+#   Les 11 échecs mesurés sur le run `38153048346` étaient donc tous la même
+#   assertion : `getByRole('heading', { level: 1 })` introuvable, parce que la
+#   page rendue était « Not Found ». Rien dans le produit n'était en cause.
+#   Conséquence : la suite E2E était rouge en continu et n'informait plus.
+#
+#   Un test E2E dont la cible est un hébergeur non provisionné ne teste pas le
+#   commit : il teste la disponibilité d'un tiers. Le build local supprime cette
+#   dépendance ET rend le verdict reproductible (mêmes sources, même instance).
+#   La porte reste réelle : les specs sont exécutées telles quelles, contre le
+#   même SPA que celui servi en production (npm run build + fallback SPA).
+#
+#   Un environnement réellement déployé reste testable sans toucher au dépôt :
+#   `workflow_dispatch` → paramètre `base_url` (la construction locale est alors
+#   ignorée, la suite frappe l'URL fournie).
 name: E2E (Playwright)
 
 on:
@@ -15,17 +36,23 @@ on:
     inputs:
       base_url:
         description: >-
-          URL cible (frontend déployé). Vide = https://discipolat-beta.onrender.com
+          URL cible d'un environnement déjà déployé (prod/bêta/staging).
+          Vide = build du frontend du commit, servi en local.
         required: false
         default: ''
 
 permissions:
   contents: read
 
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   playwright:
     name: Playwright (e2/specs)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: e2
@@ -42,12 +69,113 @@ jobs:
             echo "La suite s'activera automatiquement à la première spec dans e2/specs/."
           fi
 
+      - name: Résoudre la cible
+        id: target
+        env:
+          PROVIDED: ${{ github.event.inputs.base_url }}
+        run: |
+          # Une URL fournie explicitement = on teste CET environnement (filet de
+          # sécurité pour un bêta/prod réellement provisionné). Sinon, cible
+          # locale construite par ce job : voir l'en-tête du fichier.
+          if [ -n "${PROVIDED:-}" ]; then
+            echo "base_url=$PROVIDED" >> "$GITHUB_OUTPUT"
+            echo "local=false" >> "$GITHUB_OUTPUT"
+            echo "Cible fournie : $PROVIDED"
+          else
+            echo "base_url=http://127.0.0.1:4173" >> "$GITHUB_OUTPUT"
+            echo "local=true" >> "$GITHUB_OUTPUT"
+            echo "Cible : build du commit, servi en local sur 127.0.0.1:4173"
+          fi
+
       - uses: actions/setup-node@v4
         if: steps.specs.outputs.count != '0'
         with:
-          node-version: '22'
+          # Meme version que le job `Frontend - Build & Lint` de `ci.yml` : le
+          # build servi en E2E est celui que la CI valide, pas un autre.
+          node-version: '23'
           cache: 'npm'
-          cache-dependency-path: e2/package-lock.json
+          cache-dependency-path: |
+            e2/package-lock.json
+            frontend/package-lock.json
+
+      - name: Construire le frontend visé (aucune ligne modifiée)
+        if: steps.specs.outputs.count != '0' && steps.target.outputs.local == 'true'
+        env:
+          # Le SPA est construit pour parler au contrat tarifs servi par
+          # `e2/support/pricing-stub.mjs` (étape suivante), et à rien d'autre.
+          #
+          # 2026-10-12, mesuré : avec `VITE_API_URL: http://127.0.0.1:9`
+          # (port fermé, aucun backend), trois specs ne pouvaient pas passer —
+          # `usePricing` laisse `config` à null et `plans` à [], donc la page
+          # reste sur « Chargement du catalogue… » : ni sélecteur de cycle, ni
+          # prix, et `networkidle` qui pend au-delà du timeout de 30 s.
+          # 12 passed / 3 failed. Ce n'était pas un défaut du produit mais un
+          # défaut de la chaîne de test : on fournit donc la réponse que
+          # l'application attend, au lieu d'élargir les specs à l'absence.
+          VITE_API_URL: http://127.0.0.1:4180
+        run: |
+          set -euo pipefail
+          cd ../frontend
+          npm ci
+          npm run build
+          echo "dist : $(du -sh dist | cut -f1)"
+
+      - name: Servir le contrat tarifs (stub de test)
+        if: steps.specs.outputs.count != '0' && steps.target.outputs.local == 'true'
+        run: |
+          set -euo pipefail
+          # Données issues des migrations V144/V177/V246/V247 et du contrat
+          # `docs/API_TARIFS.md` ; le backend réel n'est pas exécuté ici, la
+          # portée réelle de la suite est écrite dans KNOWN_ISSUES E6.
+          nohup node support/pricing-stub.mjs > /tmp/stub.log 2>&1 &
+          echo "$!" > /tmp/stub.pid
+          ok=0
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null http://127.0.0.1:4180/api/v1/public/pricing/config; then ok=1; break; fi
+            sleep 1
+          done
+          [ "$ok" -eq 1 ] || { echo "❌ stub tarifs absent après 20 s"; cat /tmp/stub.log; exit 1; }
+          echo "Contrat servi : $(curl -fsS http://127.0.0.1:4180/api/v1/public/pricing/plans | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const j=JSON.parse(d);console.log(j.plans.map(p=>p.key+(p.display.available?" (prix)":" (sans prix)")).join(", "))})')"
+
+      - name: Servir le build (fallback SPA) et vérifier les routes
+        if: steps.specs.outputs.count != '0' && steps.target.outputs.local == 'true'
+        run: |
+          set -euo pipefail
+          cd ../frontend
+          # `vite preview` sert dist/ avec appType 'spa' : toute route inconnue
+          # retombe sur index.html — exactement ce que fait le static site Render
+          # (routes rewrite /* -> /index.html dans render.yaml).
+          nohup npx vite preview --host 127.0.0.1 --port 4173 --strictPort \
+            > /tmp/preview.log 2>&1 &
+          echo "$!" > /tmp/preview.pid
+          pret=0
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:4173/; then pret=1; break; fi
+            sleep 2
+          done
+          [ "$pret" -eq 1 ] || { echo "❌ serveur de preview absent après 60 s"; cat /tmp/preview.log; exit 1; }
+          # Garde anti-faux-positif : c'est précisément ce qui a rendu les 11
+          # échecs du run 38153048346 illisibles — une cible qui répond « Not
+          # Found » fait échouer toutes les specs une par une. Ici le diagnostic
+          # est posé une fois, avant de lancer la suite.
+          for route in / /pricing; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:4173$route")
+            echo "GET $route -> $code"
+            [ "$code" = "200" ] || { echo "❌ route $route absente du build (HTTP $code)"; cat /tmp/preview.log; exit 1; }
+          done
+
+      - name: Vérifier qu'une cible externe répond avant de lancer la suite
+        if: steps.specs.outputs.count != '0' && steps.target.outputs.local == 'false'
+        env:
+          BASE: ${{ steps.target.outputs.base_url }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 "$BASE/pricing" || echo 000)
+          echo "GET $BASE/pricing -> $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Cible externe $BASE indisponible (HTTP $code). La suite serait exécutée contre une page morte : ses échecs ne diraient rien du produit. Cf. KNOWN_ISSUES E4."
+            exit 1
+          fi
 
       - name: Installation (deps + navigateur)
         if: steps.specs.outputs.count != '0'
@@ -58,8 +186,23 @@ jobs:
       - name: Exécution
         if: steps.specs.outputs.count != '0'
         env:
-          E2E_BASE_URL: ${{ github.event.inputs.base_url || 'https://discipolat-beta.onrender.com' }}
+          E2E_BASE_URL: ${{ steps.target.outputs.base_url }}
         run: npx playwright test
+
+      - name: Arrêter les serveurs locaux (preview + stub)
+        if: always() && steps.target.outputs.local == 'true'
+        run: |
+          if [ -f /tmp/preview.pid ]; then
+            kill "$(cat /tmp/preview.pid)" 2>/dev/null || true
+          fi
+          if [ -f /tmp/stub.pid ]; then
+            kill "$(cat /tmp/stub.pid)" 2>/dev/null || true
+          fi
+          tail -5 /tmp/preview.log 2>/dev/null || true
+          # Trace des routes inconnues réclamées par le SPA : c'est ainsi qu'on
+          # voit ce que la suite ne couvre pas, plutôt que de le deviner.
+          echo '--- requêtes non servies par le stub ---'
+          grep -- '-> 404' /tmp/stub.log 2>/dev/null | sort -u || echo '(aucune)'
 
       - name: Upload rapport (HTML + junit)
         if: always() && steps.specs.outputs.count != '0'

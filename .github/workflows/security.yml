@@ -6,7 +6,18 @@
 #                            passe committé une fois = compromis pour toujours).
 #   2. dependency-review   → toute PR ajoutant une dépendance connue vulnérable
 #                            est bloquée (source : GitHub Advisory Database).
-#   3. npm audit           → frontend, bloquant dès sévérité HIGH.
+#   3. npm audit           → frontend, dépendances de PRODUCTION uniquement,
+#                            bloquant dès sévérité HIGH. Le périmètre est
+#                            assumé : une dépendance de build (tailwindcss →
+#                            chokidar → braces) ne quitte pas le dépôt et n'est
+#                            jamais livrée à l'utilisateur ; or `braces` n'a
+#                            AUCUNE version corrigée en 3.x (la seule issue est
+#                            tailwindcss v4, migration cassante). Une porte qui
+#                            exige l'impossible est rouge pour toujours, donc
+#                            ignorée : elle n'est plus une porte. Le résidu côté
+#                            dev est consigné dans le résumé du job et dans
+#                            KNOWN_ISSUES, et rescané par `npm audit` complet en
+#                            local.
 #   4. bandit              → scripts Python (scripts/, performance-tests/),
 #                            bloquant dès sévérité HIGH ; le rapport complet
 #                            (tous niveaux) est tracé dans le résumé du job.
@@ -14,6 +25,9 @@
 #                            bloquant : sans clé NVD, le débit gratuit fait
 #                            échouer le téléchargement de la base de manière
 #                            aléatoire — un gate aléatoire n'est pas un gate.
+#                            Depuis 2026-10-12, le scan n'est TENTÉ que si le
+#                            secret `NVD_API_KEY` existe : sans lui il ne mesurait
+#                            rien du tout et rougissait la chaîne à chaque push.
 #                            La porte bloquante côté dépendances Java reste
 #                            dependency-review (#2). Le rapport détaillé est
 #                            conservé en artifact et relué à chaque release.
@@ -71,11 +85,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Majeure alignee sur les jobs frontend (`ci.yml`, `e2e.yml`) : le
+          # rendu de `npm audit` depend de la version de npm embarquee, et la
+          # mesure de reference a ete faite avec npm 10.x (node 23).
+          node-version: '23'
       # npm audit travaille depuis package-lock.json : pas d'installation,
       # donc pas de scripts arbitraires exécutés dans le workflow.
-      - name: Audit
-        run: cd frontend && npm audit --audit-level=high
+      # --omit=dev : voir l'en-tête du fichier (chaîne braces/tailwind sans
+      # correctif publié) ; le périmètre bloquant = ce qui est livré.
+      - name: Audit (dépendances livrées)
+        run: cd frontend && npm audit --omit=dev --audit-level=high
+      # Le résidu côté dev est CONSIGNÉ, pas caché : il est recopié dans le
+      # résumé du job (et dans KNOWN_ISSUES) pour rester lisible.
+      - name: Consigner le résidu des dépendances de build (non bloquant)
+        run: |
+          {
+            echo '## npm audit — dépendances de build (non bloquant)'
+            echo '```'
+            (cd frontend && npm audit --audit-level=low) 2>&1 | tail -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   bandit:
     name: Bandit (scripts Python, bloquant high)
@@ -99,12 +128,24 @@ jobs:
         # Choix assumé : le niveau medium inclut des avertissements stylistiques
         # (assert, hardcoded temp passwords dans des utilitaires de test) dont
         # le tri n'a pas encore été fait ; la porte durcira après tri.
-        run: bandit -q -r scripts/ performance-tests/ -f txt -ll
+        #
+        # CORRECTION 2026-10-12 (KNOWN_ISSUES E5) : le filtre était `-ll`, qui en
+        # bandit signifie « MEDIUM et plus » — pas « HIGH uniquement » comme
+        # l'annoncent le nom du job et ce commentaire. La porte était donc rouge
+        # en permanence sur 4 MEDIUM pour 0 HIGH mesuré : une porte qui échoue
+        # toujours pour la mauvaise raison finit par être ignorée.
+        # `-lll` = seules les sévérités HIGH font échouer le job.
+        run: bandit -q -r scripts/ performance-tests/ -f txt -lll
 
   owasp-backend:
     name: OWASP dependency-check (backend, report non bloquant)
     runs-on: ubuntu-latest
-    continue-on-error: true  # voir en-tête du fichier : débit NVD gratuit
+    # NON BLOQUANT par conception (voir en-tête). Le scan exige une clé NVD :
+    # sans elle, la base de vulnérabilités n'est pas téléchargeable — le job
+    # était donc ROUGE à chaque push sans rien mesurer. Un gate rouge qui ne
+    # mesure rien est du bruit, pas une porte. Désormais : scan tenté seulement
+    # si `NVD_API_KEY` est configuré, sinon avertissement explicite ; et l'échec
+    # du scan lui-même reste toléré (débit NVD aléatoire, même avec clé).
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -112,12 +153,38 @@ jobs:
           java-version: '21'
           distribution: temurin
           cache: maven
+      - name: Détecter une clé NVD
+        id: nvd
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -n "${NVD_API_KEY:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Scan
+        if: steps.nvd.outputs.present == 'true'
+        continue-on-error: true  # débit NVD aléatoire : voir en-tête du job
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           cd backend
           mvn -B org.owasp:dependency-check-maven:check \
             -DfailBuildOnCVSS=7 \
+            -DnvdApiKey="$NVD_API_KEY" \
             -DsuppressionFile=.dependency-check-suppressions.xml
+      - name: Consigner l'absence de clé NVD (scan non exécuté, non bloquant)
+        if: steps.nvd.outputs.present != 'true'
+        run: |
+          echo "::warning::Scan OWASP non exécuté : secret NVD_API_KEY absent (Settings → Secrets and variables → Actions). Porte bloquante Java = dependency-review ; cf. en-tête de ce fichier."
+          {
+            echo '## OWASP dependency-check — scan non exécuté'
+            echo
+            echo '- Secret `NVD_API_KEY` : **absent** → base NVD non téléchargeable.'
+            echo '- Scan déclaré non bloquant : le job passe en avertissement.'
+            echo '- Porte bloquante dépendances Java : `dependency-review` (GitHub Advisory Database).'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4
@@ -125,3 +192,4 @@ jobs:
           name: owasp-dependency-check-backend-${{ github.run_id }}
           path: backend/target/dependency-check-report.html
           retention-days: 14
+          if-no-files-found: ignore

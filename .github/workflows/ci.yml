@@ -324,21 +324,54 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # PORTE DE DÉPLOIEMENT — l'étape « Deploy to Render » était ROUGE à chaque push
+  # sur main, pour une raison de configuration GitHub et non de code : les secrets
+  # RENDER_API_KEY / RENDER_API_SERVICE_ID sont ABSENTS du dépôt (0 entrée dans
+  # `gh api repos/:owner/:repo/actions/secrets`), donc aucun déploiement n'est
+  # possible tant que Render n'est pas provisionné (KNOWN_ISSUES E4/T2).
+  #
+  # Un rouge permanent qui ne dit rien de la production est du bruit : il rend la
+  # CI de main illisible et finit par être ignoré. Le déploiement est donc
+  # explicitement SKIP (job gris, jamais « vert en trompe-l'œil » comme
+  # deploy-beta.yml) et l'état réel est énoncé par cette porte, qui écrit une
+  # annotation et le résumé du run. Remettre `exit 1` ici n'a pas de sens : ce
+  # qui manque est un secret, pas une étape.
+  deploy-gate:
+    name: Porte déploiement (Render provisionné ?)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      render_provisioned: ${{ steps.check.outputs.render_provisioned }}
+    steps:
+      - name: Détecter les secrets Render
+        id: check
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_API_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+        run: |
+          if [ -n "${RENDER_API_KEY:-}" ] && [ -n "${RENDER_API_SERVICE_ID:-}" ]; then
+            echo "render_provisioned=true" >> "$GITHUB_OUTPUT"
+            echo "Render provisionné : le déploiement va être déclenché."
+          else
+            echo "render_provisioned=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Aucun déploiement possible : secrets RENDER_API_KEY / RENDER_API_SERVICE_ID absents du dépôt (Settings → Secrets and variables → Actions). Image poussée sur ghcr.io, mais aucune instance Render ne la sert. Cf. KNOWN_ISSUES E4."
+            {
+              echo '## Déploiement Render — NON EXÉCUTÉ'
+              echo
+              echo '- Secrets `RENDER_API_KEY` / `RENDER_API_SERVICE_ID` : **absents** du dépôt.'
+              echo '- Job `Deploy to Render` : `skipped` (gris), pas `failed`.'
+              echo "- Conséquence : l'image ghcr.io construite par ce run n'est déployée nulle part."
+              echo '- Référence : KNOWN_ISSUES E4 (canal public absent) et T2 (environnements non provisionnés).'
+              echo '- À reprendre le jour du provisionnement : ajouter les deux secrets — la porte se rouvre seule.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   deploy-render:
     name: Deploy to Render
     runs-on: ubuntu-latest
-    needs: [docker]
-    if: github.ref == 'refs/heads/main'
+    needs: [docker, deploy-gate]
+    if: github.ref == 'refs/heads/main' && needs.deploy-gate.outputs.render_provisioned == 'true'
     steps:
-      - name: Check Render secrets
-        run: |
-          if [ -z "${{ secrets.RENDER_API_KEY }}" ] || [ -z "${{ secrets.RENDER_API_SERVICE_ID }}" ]; then
-            echo "::error::Secrets RENDER_API_KEY et RENDER_API_SERVICE_ID manquants."
-            echo "Ajoutez-les dans GitHub → Settings → Secrets and variables → Actions."
-            echo "- RENDER_API_KEY : Dashboard Render → Account Settings → API Keys"
-            echo "- RENDER_API_SERVICE_ID : Dashboard Render → discipolat-api → Settings → Service ID"
-            exit 1
-          fi
       - name: Trigger Render Deploy (API)
         run: |
           HTTP_CODE=$(curl -s -o /tmp/render_deploy.json -w '%{http_code}' \

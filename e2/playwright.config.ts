@@ -29,7 +29,15 @@ export default defineConfig({
   ],
   use: {
     // Environnement cible : surchargeable sans toucher au dépôt.
-    baseURL: process.env.E2E_BASE_URL ?? 'https://discipolat-beta.onrender.com',
+    //
+    // 2026-10-12 : le défaut était `https://discipolat-beta.onrender.com`, un
+    // environnement QUI N'EXISTE PAS (404 sur toutes les routes, cf.
+    // KNOWN_ISSUES E4). Un défaut mort faisait échouer toute exécution locale
+    // non initiée sur un « Not Found » illisible. Le défaut devient donc la
+    // cible construite et servie par le workflow `e2e.yml` (`npm run build` +
+    // `vite preview` sur 4173) : reproductible, hors ligne, et identique au
+    // pipeline. Une URL déployée reste atteignable par `E2E_BASE_URL=...`.
+    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

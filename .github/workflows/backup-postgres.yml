@@ -62,8 +62,12 @@ jobs:
           docker run --rm -e DB_URL="$DB_URL" postgres:16-alpine \
             sh -c 'pg_dump "$DB_URL" --no-owner --no-privileges' \
             > "discipolat_db_${DATE}.sql"
-          # Vérification : le dump doit commencer par l'en-tête pg_dump
-          head -1 "discipolat_db_${DATE}.sql" | grep -q "PostgreSQL database dump" \
+          # Vérification : le dump doit porter l'en-tête pg_dump.
+          # CORRECTION 2026-10-12 (KNOWN_ISSUES E7) : `head -1 | grep -q` etait faux —
+          # depuis PostgreSQL 12 pg_dump ecrit « -- » sur la premiere ligne et le
+          # libelle sur la DEUXIEME ; un dump valide etait donc rejete « Dump invalide ».
+          # grep -m1 sans tube evite aussi le SIGPIPE (exit 141) sous pipefail.
+          grep -q -m1 "PostgreSQL database dump" "discipolat_db_${DATE}.sql" \
             || { echo "❌ Dump invalide — vérifier l'External Database URL" ; exit 1; }
           echo "BACKUP_DATE=$DATE" >> "$GITHUB_ENV"
           echo "✅ Dump brut OK : discipolat_db_${DATE}.sql ($(du -h discipolat_db_${DATE}.sql | cut -f1))"

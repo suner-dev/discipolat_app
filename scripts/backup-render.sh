@@ -48,8 +48,14 @@ pg_dump "${DB_URL}" \
 echo ""
 echo "✅ Export terminé : ${BACKUP_FILE} ($(du -h "${BACKUP_FILE}" | cut -f1))"
 
-# Vérification : le fichier doit commencer par l'en-tête pg_dump
-if head -1 "${BACKUP_FILE}" | grep -q "PostgreSQL database dump"; then
+# Vérification : le fichier doit porter l'en-tête pg_dump.
+# CORRECTION 2026-10-12 (KNOWN_ISSUES E7) : le test `head -1 | grep -q` était faux.
+# Depuis PostgreSQL 12, pg_dump écrit « -- » sur la première ligne et le libellé
+# « PostgreSQL database dump » sur la DEUXIÈME : ce script rejetait donc chaque dump
+# valide avec « Le fichier ne ressemble pas à un dump PostgreSQL ». De plus, sous
+# `set -o pipefail`, un `head | grep -q` peut rendre 141 (SIGPIPE) : lecture du
+# fichier avec `grep -m1`, sans tube, donne un résultat déterministe.
+if grep -q -m1 "PostgreSQL database dump" "${BACKUP_FILE}"; then
     echo "✅ Contenu vérifié (dump PostgreSQL valide)"
 else
     echo "❌ Le fichier ne ressemble pas à un dump PostgreSQL — vérifier l'URL"

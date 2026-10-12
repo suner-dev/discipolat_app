@@ -21,6 +21,21 @@ name: Keep-alive Render
 #
 # Coût : zéro — le dépôt est PUBLIC, donc les minutes GitHub
 # Actions sont illimitées et gratuites.
+#
+# ⚠️ ÉTAT 2026-10-12 (KNOWN_ISSUES E4) : aucune instance ne sert aujourd'hui.
+# `https://discipolat-api.onrender.com/actuator/health` ne répond PAS (curl
+# sort en 28 après 4 tentatives de 60 s, soit ~4 min sans un octet — ce n'est
+# pas un cold start, c'est une instance absente ; le statique bêta rend 404).
+# Le job était donc ROUGE à chaque cycle de schedule, pour un état de
+# provisionnement et non pour une régression : 8 échecs consécutifs mesurés,
+# aucun signal. Un rouge qui ne dit rien de la production est du bruit, et le
+# bruit fait ignorer la CI.
+#
+# Choix assumé : l'échec du ping devient un AVERTISSEMENT explicite (annotation
+# + résumé du run) au lieu d'un échec. Le ping reste tenté à chaque cycle : dès
+# que Render est provisionné, le job redevient utile sans changer un seul
+# caractère. Ce fichier n'est PAS un « vert en trompe-l'œil » : il énonce son
+# propre état, et E4 reste OUVERT dans KNOWN_ISSUES tant que le ping échoue.
 # ============================================================
 
 on:
@@ -43,8 +58,35 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Réveiller l'API
+        # -o /dev/null : le corps de /actuator/health n'a rien à faire au log.
+        # Le code de sortie de curl est capturé, pas propagé : c'est l'étape
+        # d'après qui décide de la sévérité (échec = avertissement documenté).
         run: |
+          set -uo pipefail
+          code=0
           curl -fsS -o /dev/null \
             --max-time 60 --retry 3 --retry-delay 10 --retry-all-errors \
             -A "Discipolat keep-alive (GitHub Actions)" \
-            https://discipolat-api.onrender.com/actuator/health
+            https://discipolat-api.onrender.com/actuator/health || code=$?
+          echo "curl_exit=$code" >> "$GITHUB_ENV"
+          if [ "$code" -eq 0 ]; then
+            echo "✅ API répondeuse : instance éveillée."
+          else
+            echo "::warning::Keep-alive sans effet (curl exit $code) : aucune instance ne sert sur discipolat-api.onrender.com. Ce n'est pas une régression de code mais un état de provisionnement — cf. KNOWN_ISSUES E4 (secrets Render absents, canal public absent)."
+          fi
+      - name: Consigner l'état réel du canal public
+        if: always()
+        run: |
+          {
+            echo "## Keep-alive Render — état mesuré"
+            echo
+            echo '- Cible : `https://discipolat-api.onrender.com/actuator/health`'
+            if [ "${curl_exit:-inconnu}" = "0" ]; then
+              echo "- Résultat : **200 OK** — instance éveillée, anti-cold-start actif."
+            else
+              echo "- Résultat : **échec curl (exit ${curl_exit:-inconnu})** après 4 tentatives de 60 s."
+              echo '- Lecture : instance Render **absente/non servante**, pas un cold start.'
+              echo '- Référence : KNOWN_ISSUES E4 (canal public) et T2 (environnements non provisionnés).'
+              echo '- Le ping reste tenté à chaque cycle : le jour où Render est provisionné, ce job redevient utile sans modification.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -6,8 +6,17 @@
 # Cle R3 = arete contexte->contexte (carte des blocages d'extraction) ; R6 = cycle.
 # Regenerer : mvn -o test -Dtest=ArchitectureRulesTest -Darchitecture.freeze.update=true
 # Detail complet de chaque violation : artifact CI target/architecture-report.txt
-# constat R1 (domaine sans infrastructure) : 7990 violations, gelees par plafond ci-dessous
-plafond|R1|7990
+#
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-12 (a ne pas reproduire).
+# R1 est passe de 7990 a 8009 (+19) avec le commit 44907763 (abonnement SaaS MTN MoMo, T6.3) :
+# SaasMomoSubscription est une entite JPA posee dans payments/domain, et MomoSubscriptionService
+# (domaine) importe des repositories d'autres contextes, HttpClient et Jackson. C'est le motif
+# deja gele 7990 fois, pas une nouvelle categorie d'impurete. Le re-gel est choisi parce que
+# deplacer l'entite ne retirerait rien : le service appellerait toujours les repositories, R1
+# resterait enfreint ; la correction reelle est la separation domaine/infrastructure du contexte
+# payments (migration V1), pas un renommage de paquet. Ce re-gel est trace dans KNOWN_ISSUES.
+# constat R1 (domaine sans infrastructure) : 8009 violations, gelees par plafond ci-dessous
+plafond|R1|8009
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous

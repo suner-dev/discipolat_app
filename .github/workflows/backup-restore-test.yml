@@ -110,6 +110,30 @@ jobs:
           # psql aux versions exactement attendues par la base 16.
           echo "postgresql-client indisponible — utilisation de postgres:16-alpine"
 
+      - name: Créer la base source (idempotent)
+        run: |
+          set -euo pipefail
+          # CORRECTION 2026-10-12 — le job échouait depuis sa première exécution
+          # sur « FATAL: database "discipolat_backup_source" does not exist » : le
+          # service `postgres` de GitHub Actions ne crée QUE la base `postgres` par
+          # défaut, et Flyway ne sait pas créer une BASE (il sait créer des
+          # SCHÉMAS). Conséquence mesurée : la chaîne n'a JAMAIS dépassé cette
+          # étape — dump, chiffrement, restauration et contrôles d'intégrité
+          # n'ont jamais tourné une seule fois, alors que docs/RUNBOOK.md §4
+          # annonce un « test restauration : mensuel en staging ».
+          # Idempotent et sans tube : `psql | grep -q` sous `set -o pipefail` peut
+          # rendre 141 (SIGPIPE) et ferait recréer une base déjà présente.
+          EXISTS=$(psql -h localhost -U postgres -d postgres -tAc \
+            "SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB';")
+          if [ -z "$EXISTS" ]; then
+            psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 \
+              -c "CREATE DATABASE $POSTGRES_DB;"
+          fi
+          OK=$(psql -h localhost -U postgres -d postgres -tAc \
+            "SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB';")
+          [ -n "$OK" ] || { echo "❌ Base source indisponible après création"; exit 1; }
+          echo "✅ Base source prête : $POSTGRES_DB"
+
       - name: Appliquer la chaîne de migrations Flyway (base source)
         env:
           SPRING_PROFILES_ACTIVE: ci-backup
@@ -166,10 +190,16 @@ jobs:
 
       - name: pg_dump de la base source
         run: |
-          set -o pipefail
+          set -euo pipefail
           pg_dump -h localhost -U postgres -d discipolat_backup_source \
             --no-owner --no-privileges > Restore_Probe.sql
-          head -1 Restore_Probe.sql | grep -q "PostgreSQL database dump" \
+          # Garde d'en-tête : le dump doit être lisible comme un dump pg_dump.
+          # `head -1 | grep -q « PostgreSQL database dump »` était faux : pg_dump
+          # écrit « -- » sur la PREMIÈRE ligne et le libellé sur la DEUXIÈME
+          # (depuis PostgreSQL 12) — un dump parfaitement valide était donc
+          # rejeté. `grep -m1` sur le fichier (sans tube) évite aussi le SIGPIPE
+          # 141 que `set -o pipefail` aurait rendu aléatoire.
+          grep -q -m1 "PostgreSQL database dump" Restore_Probe.sql \
             || { echo "❌ En-tête pg_dump absent"; exit 1; }
           echo "✅ Dump clair : $(du -h Restore_Probe.sql | cut -f1)"
 
@@ -192,7 +222,9 @@ jobs:
           # le chiffrement ne protège rien et le test doit le dire.
           if ENC_KEY=mauvaise-cle openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
               -pass env:ENC_KEY -in Restore_Probe.sql.enc -out /tmp/indecommable.sql 2>/dev/null; then
-            if head -1 /tmp/indecommable.sql | grep -q "PostgreSQL database dump"; then
+            # Même garde que ci-dessus, sans tube : un SIGPIPE ferait passer ce
+            # contrôle de sécurité « dans le bon sens » pour une raison fausse.
+            if grep -q -m1 "PostgreSQL database dump" /tmp/indecommable.sql; then
               echo "❌ SÉCURITÉ : une mauvaise passphrase a produit un déchiffrement lisible"
               rm -f /tmp/indecommable.sql
               exit 1
