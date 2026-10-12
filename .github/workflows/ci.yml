@@ -387,12 +387,30 @@ jobs:
             exit 1
           fi
           echo "Service ID reçu : ${#RENDER_SERVICE_ID} caractères, préfixe '${RENDER_SERVICE_ID:0:4}…' (valeur non loguée)."
-          if ! printf '%s' "$RENDER_SERVICE_ID" | grep -qE '^srv-[0-9a-z]+$'; then
-            echo "::error::RENDER_API_SERVICE_ID n'a pas le format attendu « srv- » + minuscules/alphanumérique. Coller UNIQUEMENT l'identifiant visible dans l'URL du service (dashboard.render.com/web/srv-XXXX → « srv-XXXX »), pas l'URL complète, sans espace ni retour à la ligne."
-            exit 1
+          SERVICE_ID="$RENDER_SERVICE_ID"
+          if ! printf '%s' "$SERVICE_ID" | grep -qE '^srv-[0-9a-z]+$'; then
+            # Le piege etait prévisible : le secret s'appelle « RENDER_API_SERVICE_ID », on y
+            # colle la clé « rnd_… ». La clé sait lister les services ; l'ID « srv-… » n'est
+            # PAS un secret (visible dans l'URL du dashboard) → résolution par nom.
+            echo "::warning::Format srv- non respecté — résolution automatique de l'ID via GET /v1/services (par nom « discipolat-beta-api »)."
+            HTTP_LIST=$(curl -s -o /tmp/render_services.json -w '%{http_code}' "https://api.render.com/v1/services?limit=100" -H "Authorization: Bearer $RENDER_API_KEY") || {
+              echo "::error::Requête curl vers api.render.com impossible (exit $? — réseau ou URL)."
+              exit 1
+            }
+            if [ "$HTTP_LIST" != "200" ]; then
+              echo "::error::Render a refusé la liste des services (HTTP $HTTP_LIST). 401/403 = RENDER_API_KEY invalide : recoller la clé « rnd_… » (Account → API Keys) via gh secret set RENDER_API_KEY."
+              exit 1
+            fi
+            echo "Services du compte : $(jq -r '[.[] | .service.name] | join(", ")' /tmp/render_services.json)"
+            SERVICE_ID=$(jq -r '[.[] | .service | select(.name=="discipolat-beta-api") | .id] | last // empty' /tmp/render_services.json)
+            if [ -z "$SERVICE_ID" ]; then
+              echo "::error::Aucun service « discipolat-beta-api » sur ce compte (voir liste ci-dessus). Le Blueprint a-t-il créé l'API ?"
+              exit 1
+            fi
+            echo "::notice::Service ID résolu automatiquement : $SERVICE_ID"
           fi
           HTTP_CODE=$(curl -s -o /tmp/render_deploy.json -w '%{http_code}' \
-            -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{"clearCache": "do_not_clear"}') || {
