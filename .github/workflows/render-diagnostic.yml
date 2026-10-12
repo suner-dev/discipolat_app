@@ -69,6 +69,14 @@ jobs:
             | sed -E 's/(rnd_[A-Za-z0-9_-]{4,})/***CLE***/g' | head -c 900
           echo
 
+          # 0b) Les variables d'environnement RÉELLEMENT configurées sur ce
+          # service : noms + longueur uniquement (GET /env-vars rend les
+          # valeurs en clair → jamais loguées, on n'affine que la structure).
+          echo "=== Variables d'environnement du service (noms + longueurs) ==="
+          curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" \
+            | jq -r 'if type=="array" then (.[] | (.envVar // .)) | "\(.key) : \((.value // "") | length) car., lignes=\(((.value // "") | split("\n") | length))" else "(réponse inattendue)" end' \
+            | sed -E 's/[A-Za-z0-9+\/=_]{20,}/«masqué»/g'
+
           # 1) Les 10 derniers jobs : statut, erreur, commit. Les deux shapes
           # possibles de l'API v1 sont tolérés : [{"job":{...}}] ou [{...}] direct.
           curl -s "https://api.render.com/v1/services/$SID/jobs?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/jobs.json
