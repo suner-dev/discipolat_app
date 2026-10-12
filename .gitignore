@@ -34,6 +34,15 @@ docker/volumes/
 
 # JWT Keys (sensitive - generated locally)
 keys/*
+
+# Secrets de deploiement Render (beta) — JAMAIS versionnes.
+# Contient la cle privee JWT de signature : la committer permettrait de forger un
+# jeton superadmin sur l'instance. Regenereable a la demande :
+#   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048
+#   openssl rand -base64 32
+RENDER_*_SECRETS.local.md
+secrets/
+*.local.md
 !keys/.gitkeep
 
 # OS
