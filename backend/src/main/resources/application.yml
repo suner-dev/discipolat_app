@@ -548,6 +548,28 @@ spring:
   config:
     activate:
       on-profile: beta
+  mail:
+    # Mêmes règles que le profil `prod`, et pour la même raison : le plan Free
+    # Render bloque l'envoi SMTP sortant sur 25/465/587 et n'autorise que 2525,
+    # que Mailgun accepte en STARTTLS.
+    #
+    # Sans ce bloc, la bêta héritait du défaut global (`auth: false`,
+    # `starttls: false`) alors que MAIL_HOST/MAIL_PORT pointaient vers Mailgun :
+    # les identifiants seraient alors corrects mais refusés — échec d'envoi
+    # silencieux, dont la seule trace est un log.warn de sendWelcomeEmail.
+    host: ${MAIL_HOST:smtp.mailgun.org}
+    port: ${MAIL_PORT:2525}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
 
 app:
   environment: beta
