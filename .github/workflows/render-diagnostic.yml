@@ -62,9 +62,17 @@ jobs:
           echo "SERVICE=$SID" >> "$GITHUB_ENV"
           echo "::notice::Service diagnostiqué : $SID ($SERVICE_NAME)"
 
+          # 0) Le service lui-même : état, URL, raison de suspension. Le champ
+          # exact varie selon les versions d'API → dump brut épuré, tronqué.
+          echo "=== GET /v1/services/\$SID (brut épuré, 900 car.) ==="
+          curl -s "https://api.render.com/v1/services/$SID" -H "Authorization: Bearer $RENDER_API_KEY" \
+            | sed -E 's/(rnd_[A-Za-z0-9_-]{4,})/***CLE***/g' | head -c 900
+          echo
+
           # 1) Les 10 derniers jobs : statut, erreur, commit. Les deux shapes
           # possibles de l'API v1 sont tolérés : [{"job":{...}}] ou [{...}] direct.
           curl -s "https://api.render.com/v1/services/$SID/jobs?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/jobs.json
+          echo "=== /jobs?limit=10 → taille: $(wc -c < /tmp/jobs.json) octets ==="
           if ! jq -e 'type=="array" and length>0' /tmp/jobs.json >/dev/null 2>&1; then
             echo "::warning::Réponse /jobs inattendue (premières 400 caractères, épurées) :"
             head -c 400 /tmp/jobs.json | sed -E 's/(rnd_[A-Za-z0-9_-]{4,})/***CLE***/g'
