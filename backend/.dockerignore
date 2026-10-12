@@ -1,0 +1,49 @@
+# Contexte de build Docker = ./backend (cf. render.yaml → dockerContext).
+#
+# Ce fichier n'affecte QUE ce que Docker envoie au démon de build : il n'affecte
+# ni le dépôt, ni le developpeur. Son rôle est de réduire le contexte et
+# d'empêcher qu'un fichier local atterrisse dans une couche d'image.
+
+# Artefacts de compilation : le stage de build les régénère depuis les sources.
+# Les inclure ici n'accélère rien et ferait passer l'image en Spiral of Death
+# (chaque changement de .java invalidant la couche).
+target/
+
+# Secrets : .env est gitignoré, mais il existe sur les machines de dev et
+# docker-compose le monte. Sans cette ligne, un `docker build` local depuis la
+# racine du dépôt emballerait les identifiants dans une couche — invisible dans
+# l'historique git, mais présent dans l'image et dans le registre.
+.env
+.env.*
+!.env.example
+
+# Secrets d'exploitation jamais commités non plus, par défaut.
+*.pem
+*.key
+keys/
+
+# VCS et CI
+.git
+.gitignore
+.github/
+.gitlab-ci.yml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Docs et tests : rien de tout cela n'entre dans une image de runtime.
+*.md
+docs/
+tests/
+src/test/
+
+# OS / caches
+.DS_Store
+Thumbs.db
+**/node_modules/
+**/.cache/

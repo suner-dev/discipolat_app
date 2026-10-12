@@ -40,15 +40,20 @@ services:
   # ══════════════════════════════════════════════════════════════════════════
   - type: web
     name: discipolat-beta-api
-    runtime: image
+    # Build from source, not from a prebuilt image: no dependency on the CI
+    # having pushed to GHCR first. Requires repo+branch (the sources) and must
+    # NOT declare `image:` — the spec forbids both at once.
+    runtime: docker
     repo: https://github.com/suner-dev/discipolat_app
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    # Build context is ./backend so that the Dockerfile's COPY pom.xml / COPY src
+    # resolve inside backend/, not at the repository root.
+    dockerContext: ./backend
     region: frankfurt
     plan: free
-    branch: main
     autoDeployTrigger: commit
     healthCheckPath: /actuator/health
-    image:
-      url: ghcr.io/suner-dev/discipolat_app/backend:latest
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: beta
