@@ -110,12 +110,19 @@ jobs:
           echo "Clés en double   : $(jq -r '[.[].envVar.key] | group_by(.) | map(select(length > 1) | .[0]) | join(", ")' /tmp/merged.json)"
           echo "Valeurs vides    : $(jq -r '[.[] | select((.envVar.value // "") | length == 0) | .envVar.key] | join(", ")' /tmp/merged.json)"
 
-          # 3) PUT = « updateEnvVarsToSameService » (remplacement intégral).
-          # PATCH mesuré HTTP 405 (verrouillé en run 38286…) : la doc Render
-          # expose PUT (remplacement) et POST (upsert) — pas de verbe PATCH.
-          # Le corps ne passe jamais en argv.
+          # 3) PUT = remplacement intégral. VERBE ET BODY MESURÉS, pas devinés :
+          #    PATCH → 405 (run 38286) ; enveloppe {"envVar":{…}} → 400 « empty
+          #    environment variable key » (runs 38287-8 : payload de 23 clés
+          #    pourtant propres — le GET emballe, le PUT veut des EnvVar NUS).
+          #    Corps nu d'abord, second essai enveloppé si 400-clé-vide.
+          jq '[.[] | .envVar]' /tmp/merged.json > /tmp/body_nus.json
           HTTP_PATCH=$(curl -s -o /tmp/patch.out -w '%{http_code}' -X PUT "https://api.render.com/v1/services/$SID/env-vars" \
-            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" --data @/tmp/merged.json)
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" --data @/tmp/body_nus.json)
+          if [ "$HTTP_PATCH" = "400" ] && grep -q "empty environment variable key" /tmp/patch.out 2>/dev/null; then
+            echo "::warning::Corps nu refusé (400 clé vide) — second essai avec l'enveloppe {envVar:{…}}."
+            HTTP_PATCH=$(curl -s -o /tmp/patch.out -w '%{http_code}' -X PUT "https://api.render.com/v1/services/$SID/env-vars" \
+              -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" --data @/tmp/merged.json)
+          fi
           if [ "$HTTP_PATCH" != "200" ] && [ "$HTTP_PATCH" != "204" ]; then
             echo "::error::PUT env-vars refusé (HTTP $HTTP_PATCH) : $(head -c 300 /tmp/patch.out)"
             exit 1
