@@ -1,9 +1,10 @@
 name: Render — injection des variables manquantes (une fois + rotation)
 
 # ============================================================
-# ÉCRITURE sur Render : PATCH /v1/services/{id}/env-vars avec les
-# variables que le dashboard n'a pas retenues (JWT_*, AES, webhook,
-# mot de passe de démo), puis re-déploiement.
+# ÉCRITURE sur Render : PUT /v1/services/{id}/env-vars (remplacement
+# intégral, verbe mesuré — PATCH renvoie 405) avec les variables que
+# le dashboard n'a pas retenues (JWT_*, AES, webhook, mot de passe de
+# démo), puis re-déploiement.
 #
 # Le piège traité : la saisie du dashboard Render est silencieusement
 # perdue si « Save Changes » n'est pas cliqué, si l'écran Blueprint
@@ -22,8 +23,8 @@ name: Render — injection des variables manquantes (une fois + rotation)
 # puis : gh workflow run render-env-sync.yml -f service_name=discipolat-beta-api
 #
 # Les secrets sont lus via env:, jamais interpolés dans le script ;
-# seules les longueurs sont tracées. Le PATCH remplace la liste
-# ENTIRE : on relit d'abord les 18 variables existantes et on les
+# seules les longueurs sont tracées. Le PUT remplace la liste
+# ENTIRE : on relit d'abord les variables existantes et on les
 # réinjecte à l'identique (unique_by protège des doublons).
 # ============================================================
 
@@ -44,7 +45,7 @@ concurrency:
 
 jobs:
   sync:
-    name: PATCH env-vars + redeploy
+    name: PUT env-vars + redeploy
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
@@ -95,11 +96,14 @@ jobs:
           jq -s '(.[1] + .[0]) | unique_by(.envVar.key)' /tmp/base.json /tmp/add.json > /tmp/merged.json
           echo "Total après fusion : $(jq 'length' /tmp/merged.json) variables."
 
-          # 3) PATCH (remplacement intégral) — le corps ne passe jamais en argv.
-          HTTP_PATCH=$(curl -s -o /tmp/patch.out -w '%{http_code}' -X PATCH "https://api.render.com/v1/services/$SID/env-vars" \
+          # 3) PUT = « updateEnvVarsToSameService » (remplacement intégral).
+          # PATCH mesuré HTTP 405 (verrouillé en run 38286…) : la doc Render
+          # expose PUT (remplacement) et POST (upsert) — pas de verbe PATCH.
+          # Le corps ne passe jamais en argv.
+          HTTP_PATCH=$(curl -s -o /tmp/patch.out -w '%{http_code}' -X PUT "https://api.render.com/v1/services/$SID/env-vars" \
             -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" --data @/tmp/merged.json)
           if [ "$HTTP_PATCH" != "200" ] && [ "$HTTP_PATCH" != "204" ]; then
-            echo "::error::PATCH env-vars refusé (HTTP $HTTP_PATCH) : $(head -c 300 /tmp/patch.out)"
+            echo "::error::PUT env-vars refusé (HTTP $HTTP_PATCH) : $(head -c 300 /tmp/patch.out)"
             exit 1
           fi
           echo "::notice::env-vars appliquées (HTTP $HTTP_PATCH)."
