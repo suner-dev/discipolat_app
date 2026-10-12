@@ -7,159 +7,26 @@
 #   3. Render auto-detects render.yaml and creates all services
 #   4. Add secrets via Render Dashboard (or GitHub Actions)
 
-databases:
-  - name: discipolat-db
-    databaseName: discipolat
-    user: discipolat
+services:
+  # ============================================
+  # PostgreSQL — Base de données beta (Free tier)
+  # ============================================
+  - type: pserv
+    name: discipolat-beta-db
     region: frankfurt
-    # Plan Free : expire après 30 jours, pas de backup auto.
-    # Suffisant pour tester la beta. Pour production : plan: starter ($7/mois).
     plan: free
-    version: "16"
-    postgresMajorVersion: "16"
-
-  # BÊTA-TESTING PUBLIC — base ISOLÉE de la production
-  - name: discipolat-beta-db
     databaseName: discipolat_beta
     user: discipolat_beta
-    region: frankfurt
-    plan: free
-    version: "16"
     postgresMajorVersion: "16"
 
-redis:
-  - name: discipolat-redis
+  # ============================================
+  # Redis — Rate limiting (Free tier)
+  # ============================================
+  - type: redis
+    name: discipolat-redis
     region: frankfurt
     plan: free
     maxmemoryPolicy: allkeys-lru
-
-services:
-  # ============================================
-  # Backend — Spring Boot API (Docker)
-  # ============================================
-  - type: web
-    name: discipolat-api
-    runtime: docker
-    repo: https://github.com/suner-dev/discipolat_app
-    region: frankfurt
-    plan: free
-    branch: main
-    healthCheckPath: /actuator/health
-    dockerfilePath: ./backend/Dockerfile
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: prod
-      - key: APP_ENVIRONMENT
-        value: prod
-      - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: discipolat-db
-          property: connectionString
-      - key: SPRING_DATASOURCE_USERNAME
-        fromDatabase:
-          name: discipolat-db
-          property: user
-      - key: SPRING_DATASOURCE_PASSWORD
-        fromDatabase:
-          name: discipolat-db
-          property: password
-      - key: REDIS_URL
-        fromService:
-          name: discipolat-redis
-          type: redis
-          property: connectionString
-      - key: JWT_PRIVATE_KEY
-        sync: false
-      - key: JWT_PUBLIC_KEY
-        sync: false
-      - key: ENCRYPTION_AES_KEY
-        sync: false
-      - key: PAYMENTS_WEBHOOK_SECRET
-        sync: false
-      - key: MAIL_HOST
-        value: smtp.mailgun.org
-      - key: MAIL_PORT
-        value: "2525"
-      - key: MAIL_USERNAME
-        sync: false
-      - key: MAIL_PASSWORD
-        sync: false
-      - key: FRONTEND_URL
-        value: https://discipolat.onrender.com
-      - key: FRONTEND_URL_BASE
-        value: https://discipolat.onrender.com
-      - key: SOCIAL_GOOGLE_ENABLED
-        value: "false"
-      - key: SOCIAL_GOOGLE_WEB_CLIENT_ID
-        sync: false
-      - key: SOCIAL_GOOGLE_ANDROID_CLIENT_ID
-        sync: false
-      - key: SOCIAL_GOOGLE_IOS_CLIENT_ID
-        sync: false
-      - key: SOCIAL_MICROSOFT_ENABLED
-        value: "false"
-      - key: SOCIAL_MICROSOFT_CLIENT_ID
-        sync: false
-      - key: SOCIAL_MICROSOFT_TENANT_ID
-        value: common
-      - key: SOCIAL_FACEBOOK_ENABLED
-        value: "false"
-      - key: SOCIAL_FACEBOOK_APP_ID
-        sync: false
-      - key: SOCIAL_ALLOW_ACCOUNT_LINKING
-        value: "true"
-      - key: SOCIAL_REQUIRE_VERIFIED_EMAIL
-        value: "true"
-
-  # ============================================
-  # Frontend — React SPA (Static Site, CDN mondial)
-  # ============================================
-  - type: web
-    name: discipolat
-    runtime: static
-    repo: https://github.com/suner-dev/discipolat_app
-    branch: main
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: NODE_VERSION
-        value: "22.15.1"
-      - key: SKIP_INSTALL_DEPS
-        value: "true"
-      - key: VITE_API_URL
-        value: https://discipolat-api.onrender.com
-      - key: VITE_GOOGLE_CLIENT_ID
-        sync: false
-      - key: VITE_MICROSOFT_CLIENT_ID
-        sync: false
-      - key: VITE_MICROSOFT_TENANT_ID
-        value: common
-      - key: VITE_FACEBOOK_APP_ID
-        sync: false
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
-      - path: /*
-        name: Permissions-Policy
-        value: "camera=(), microphone=(), geolocation=(), payment=()"
-      - path: /*
-        name: Strict-Transport-Security
-        value: "max-age=31536000; includeSubDomains; preload"
-      - path: /*
-        name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://www.facebook.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.onrender.com https://accounts.google.com https://login.microsoftonline.com https://www.facebook.com; frame-src 'self' https://accounts.google.com https://www.facebook.com; frame-ancestors 'none';"
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
 
   # ============================================
   # BÊTA-TESTING — API Spring Boot (profil beta)
