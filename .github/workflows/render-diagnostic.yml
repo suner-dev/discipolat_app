@@ -73,9 +73,9 @@ jobs:
           # service : noms + longueur uniquement (GET /env-vars rend les
           # valeurs en clair → jamais loguées, on n'affine que la structure).
           echo "=== Variables d'environnement du service (noms + longueurs) ==="
-          curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" \
-            | jq -r 'if type=="array" then (.[] | (.envVar // .)) | "\(.key) : \((.value // "") | length) car., lignes=\(((.value // "") | split("\n") | length))" else "(réponse inattendue)" end' \
-            | sed -E 's/[A-Za-z0-9+\/=_]{20,}/«masqué»/g'
+          curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/envvars.json
+          echo "total: $(jq 'length' /tmp/envvars.json) variables"
+          jq -r '.[] | (.envVar // .) | "\(.key) : \((.value // "") | length) car., lignes=\(((.value // "") | split("\n") | length))"' /tmp/envvars.json
 
           # 1) Les 10 derniers jobs : statut, erreur, commit. Les deux shapes
           # possibles de l'API v1 sont tolérés : [{"job":{...}}] ou [{...}] direct.
