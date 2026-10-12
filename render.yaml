@@ -1,22 +1,15 @@
 # Discipolat — Render Blueprint (Free Tier Compatible)
 # Deploys: PostgreSQL DB, Spring Boot API, React Frontend + Nginx
-#
-# Usage:
-#   1. Push this file to GitHub
-#   2. Connect repo to Render (https://render.com)
-#   3. Render auto-detects render.yaml and creates all services
-#   4. Add secrets via Render Dashboard (or GitHub Actions)
 
 services:
   # ============================================
   # PostgreSQL — Base de données beta (Free tier)
   # ============================================
+  # NOTE: databaseName et user sont auto-générés par Render (non configurables dans Blueprint)
   - type: pserv
     name: discipolat-beta-db
     region: frankfurt
     plan: free
-    databaseName: discipolat_beta
-    user: discipolat_beta
     postgresMajorVersion: "16"
 
   # ============================================
