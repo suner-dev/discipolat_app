@@ -1,26 +1,23 @@
 # Discipolat — Render Blueprint (Free Tier Compatible)
 # Deploys: PostgreSQL DB, Spring Boot API, React Frontend + Nginx
 
-services:
-  # ============================================
-  # PostgreSQL — Base de données beta (Free tier)
-  # ============================================
-  # NOTE: Seuls name, region, plan sont supportés pour type: pserv
-  # databaseName, user, postgresMajorVersion sont gérés automatiquement par Render
-  - type: pserv
-    name: discipolat-beta-db
+databases:
+  - name: discipolat-beta-db
+    databaseName: discipolat_beta
+    user: discipolat_beta
     region: frankfurt
     plan: free
+    version: "16"
+    postgresMajorVersion: "16"
 
-  # ============================================
-  # Redis — Rate limiting (Free tier)
-  # ============================================
-  - type: redis
-    name: discipolat-redis
+redis:
+  - name: discipolat-redis
     region: frankfurt
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
+services:
   # ============================================
   # BÊTA-TESTING — API Spring Boot (profil beta)
   # ============================================
