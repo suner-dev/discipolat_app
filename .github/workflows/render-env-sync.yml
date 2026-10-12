@@ -1,0 +1,118 @@
+name: Render — injection des variables manquantes (une fois + rotation)
+
+# ============================================================
+# ÉCRITURE sur Render : PATCH /v1/services/{id}/env-vars avec les
+# variables que le dashboard n'a pas retenues (JWT_*, AES, webhook,
+# mot de passe de démo), puis re-déploiement.
+#
+# Le piège traité : la saisie du dashboard Render est silencieusement
+# perdue si « Save Changes » n'est pas cliqué, si l'écran Blueprint
+# ré-applique render.yaml, ou si les valeurs multi-lignes sont collées
+# sur le mauvais service. Ici les valeurs viennent des secrets GitHub,
+# elles-mêmes alimentées LOCALEMENT depuis keys/render-beta.env —
+# zéro copier-coller manuel d'une valeur.
+#
+# Utilisation (une seule bloc dans le terminal local, valeurs jamais
+# affichées) :
+#   cd /home/arise/discipolat/discipolat_app && \
+#   for K in JWT_PRIVATE_KEY JWT_PUBLIC_KEY ENCRYPTION_AES_KEY \
+#            PAYMENTS_WEBHOOK_SECRET DEMO_PASSWORD; do
+#     grep "^$K=" keys/render-beta.env | cut -d= -f2- | gh secret set RENDER_$K
+#   done
+# puis : gh workflow run render-env-sync.yml -f service_name=discipolat-beta-api
+#
+# Les secrets sont lus via env:, jamais interpolés dans le script ;
+# seules les longueurs sont tracées. Le PATCH remplace la liste
+# ENTIRE : on relit d'abord les 18 variables existantes et on les
+# réinjecte à l'identique (unique_by protège des doublons).
+# ============================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Service Render à configurer
+        required: true
+        default: discipolat-beta-api
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-env-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: PATCH env-vars + redeploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Injecter les variables puis redéployer
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+          V_JWT_PRIVATE_KEY: ${{ secrets.RENDER_JWT_PRIVATE_KEY }}
+          V_JWT_PUBLIC_KEY: ${{ secrets.RENDER_JWT_PUBLIC_KEY }}
+          V_ENCRYPTION_AES_KEY: ${{ secrets.RENDER_ENCRYPTION_AES_KEY }}
+          V_PAYMENTS_WEBHOOK_SECRET: ${{ secrets.RENDER_PAYMENTS_WEBHOOK_SECRET }}
+          V_DEMO_PASSWORD: ${{ secrets.RENDER_DEMO_PASSWORD }}
+        run: |
+          set -u
+          [ -n "$RENDER_API_KEY" ] || { echo "::error::RENDER_API_KEY absent."; exit 1; }
+
+          SID="$RENDER_SERVICE_ID"
+          if ! printf '%s' "$SID" | grep -qE '^srv-[0-9a-z]+$'; then
+            HTTP_LIST=$(curl -s -o /tmp/svc.json -w '%{http_code}' "https://api.render.com/v1/services?limit=100" -H "Authorization: Bearer $RENDER_API_KEY")
+            [ "$HTTP_LIST" = "200" ] || { echo "::error::GET /services → HTTP $HTTP_LIST (401 = clé invalide)."; exit 1; }
+            SID=$(jq -r --arg n "$SERVICE_NAME" '[.[] | .service | select(.name==$n) | .id] | last // empty' /tmp/svc.json)
+            [ -n "$SID" ] || { echo "::error::Service « $SERVICE_NAME » introuvable."; exit 1; }
+          fi
+          echo "::notice::Service : $SID ($SERVICE_NAME)"
+
+          # 1) Relire la liste courante (les 18 auto du blueprint) — rien n'est perdu.
+          curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/current.json
+          jq '[.[] | {envVar: {key: (.envVar.key // .key), value: (.envVar.value // .value // "")}}]' /tmp/current.json > /tmp/base.json
+          echo "Variables existantes réinjectées à l'identique : $(jq 'length' /tmp/base.json)"
+
+          # 2) Les ajouts : uniquement les secrets réellement posés, valeurs non vides.
+          jq -n --arg a "$V_JWT_PRIVATE_KEY" --arg b "$V_JWT_PUBLIC_KEY" --arg c "$V_ENCRYPTION_AES_KEY" \
+                --arg d "$V_PAYMENTS_WEBHOOK_SECRET" --arg e "$V_DEMO_PASSWORD" \
+            '[{key:"JWT_PRIVATE_KEY",value:$a},{key:"JWT_PUBLIC_KEY",value:$b},
+              {key:"ENCRYPTION_AES_KEY",value:$c},{key:"PAYMENTS_WEBHOOK_SECRET",value:$d},
+              {key:"DEMO_PASSWORD",value:$e}]
+             | map(select(.value != "")) | map({envVar:.})' > /tmp/add.json
+          ADDED=$(jq -r '[.[].envVar.key] | join(", ")' /tmp/add.json)
+          echo "Clés apportées par ce run : ${ADDED:-aucune}"
+          if [ "$ADDED" = "aucune" ]; then
+            echo "::error::Aucun secret RENDER_JWT_* posé — exécuter le bloc gh secret set (voir en-tête du workflow)."
+            exit 1
+          fi
+
+          # Ajouts EN PREMIER : unique_by garde la première occurrence, donc
+          # en rotation de clés la valeur fraîche écrase l'ancienne relue.
+          jq -s '(.[1] + .[0]) | unique_by(.envVar.key)' /tmp/base.json /tmp/add.json > /tmp/merged.json
+          echo "Total après fusion : $(jq 'length' /tmp/merged.json) variables."
+
+          # 3) PATCH (remplacement intégral) — le corps ne passe jamais en argv.
+          HTTP_PATCH=$(curl -s -o /tmp/patch.out -w '%{http_code}' -X PATCH "https://api.render.com/v1/services/$SID/env-vars" \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" --data @/tmp/merged.json)
+          if [ "$HTTP_PATCH" != "200" ] && [ "$HTTP_PATCH" != "204" ]; then
+            echo "::error::PATCH env-vars refusé (HTTP $HTTP_PATCH) : $(head -c 300 /tmp/patch.out)"
+            exit 1
+          fi
+          echo "::notice::env-vars appliquées (HTTP $HTTP_PATCH)."
+
+          # 4) ré-déployer avec la nouvelle configuration
+          HTTP_DEPLOY=$(curl -s -o /tmp/deploy.out -w '%{http_code}' -X POST "https://api.render.com/v1/services/$SID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d '{"clearCache": "do_not_clear"}')
+          if [ "$HTTP_DEPLOY" != "201" ] && [ "$HTTP_DEPLOY" != "202" ]; then
+            echo "::error::Redeploy refusé (HTTP $HTTP_DEPLOY)."
+            exit 1
+          fi
+          echo "::notice::Redeploy déclenché après injection des variables."
+
+          # 5) preuve : relire et lister noms + longueurs (jamais les valeurs).
+          curl -s "https://api.render.com/v1/services/$SID/env-vars?limit=100" -H "Authorization: Bearer $RENDER_API_KEY" \
+            | jq -r '.[] | (.envVar // .) | "\(.key) : \((.value // "") | length) car."' | sort
