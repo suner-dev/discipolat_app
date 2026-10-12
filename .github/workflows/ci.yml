@@ -373,16 +373,36 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.deploy-gate.outputs.render_provisioned == 'true'
     steps:
       - name: Trigger Render Deploy (API)
+        env:
+          # Secrets via `env:` et non interpolés dans le script : un caractère
+          # inattendu dans la valeur ne peut plus casser la syntaxe bash ni
+          # l'URL (run 38261375312 : curl sortait en exit 3 « URL malformée »,
+          # sans qu'aucun message ne dise pourquoi — diagnostic muet).
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_API_SERVICE_ID }}
         run: |
+          # Auto-diagnostic sans révéler la valeur : format + longueur seule.
+          if [ -z "$RENDER_SERVICE_ID" ] || [ -z "$RENDER_API_KEY" ]; then
+            echo "::error::Secret RENDER_API_KEY ou RENDER_API_SERVICE_ID vide côté GitHub (Settings → Secrets → Actions)."
+            exit 1
+          fi
+          echo "Service ID reçu : ${#RENDER_SERVICE_ID} caractères, préfixe '${RENDER_SERVICE_ID:0:4}…' (valeur non loguée)."
+          if ! printf '%s' "$RENDER_SERVICE_ID" | grep -qE '^srv-[0-9a-z]+$'; then
+            echo "::error::RENDER_API_SERVICE_ID n'a pas le format attendu « srv- » + minuscules/alphanumérique. Coller UNIQUEMENT l'identifiant visible dans l'URL du service (dashboard.render.com/web/srv-XXXX → « srv-XXXX »), pas l'URL complète, sans espace ni retour à la ligne."
+            exit 1
+          fi
           HTTP_CODE=$(curl -s -o /tmp/render_deploy.json -w '%{http_code}' \
-            -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_API_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d '{"clearCache": "do_not_clear"}')
+            -d '{"clearCache": "do_not_clear"}') || {
+            echo "::error::Requête curl vers api.render.com impossible (exit $? — réseau ou URL)."
+            exit 1
+          }
           echo "Render API responded with HTTP $HTTP_CODE"
           cat /tmp/render_deploy.json
           if [ "$HTTP_CODE" != "201" ] && [ "$HTTP_CODE" != "202" ]; then
-            echo "::error::Render a refusé le déploiement (HTTP $HTTP_CODE). Vérifiez la clé API et le Service ID."
+            echo "::error::Render a refusé le déploiement (HTTP $HTTP_CODE). 401/403 = clé API invalide (en recréer une) ; 404 = Service ID erroné ou service supprimé."
             exit 1
           fi
           echo "::notice::Déploiement Render déclenché avec succès"
