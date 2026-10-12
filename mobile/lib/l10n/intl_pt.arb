@@ -51,7 +51,7 @@
     "loading": "A carregar…",
     "offline": "Sem ligação"
   },
-  "churchPicker":   {
+  "churchPicker": {
     "label": "Sua igreja",
     "optional": "(opcional)",
     "placeholder": "Comece a digitar o nome…",
@@ -64,5 +64,25 @@
     "acceptHint": "Aceitar um convite",
     "createHint": "Criar minha igreja",
     "resultsSemantics": "Sugestões de igrejas"
+  },
+  "pricing": {
+    "title": "Preços",
+    "monthly": "Mensal",
+    "yearly": "Anual",
+    "perMonth": "/mês",
+    "perYear": "/ano",
+    "unavailable": "Preços indisponíveis",
+    "notPublished": "Preço não comunicado",
+    "chargedIn": "Debitado em {currency}",
+    "seats": "Membros: {count}",
+    "storage": "Armazenamento: {size}",
+    "aiCredits": "Créditos IA: {count}",
+    "subscribing": "A conectar…",
+    "subscribeOnline": "Subscrever online",
+    "contactUs": "Contacte-nos",
+    "momoPhoneTitle": "Número Mobile Money",
+    "momoPhoneLabel": "Insira o seu número MTN MoMo",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar"
   }
 }

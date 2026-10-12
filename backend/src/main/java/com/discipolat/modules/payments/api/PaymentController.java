@@ -3,6 +3,7 @@ package com.discipolat.modules.payments.api;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
 import com.discipolat.modules.payments.domain.TaxReceiptService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
+import com.discipolat.modules.payments.domain.MomoSubscriptionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +24,19 @@ public class PaymentController {
     private final PaymentGatewayService service;
     private final TaxReceiptService taxReceiptService;
     private final com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService;
+    private final MomoSubscriptionService momoSubscriptionService;
 
     /** Secret partagé du webhook opérateur (vide → endpoint fermé en 503, jamais ouvert). */
     @Value("${app.payments.webhook-secret:}")
     private String webhookSecret;
 
     public PaymentController(PaymentGatewayService service, TaxReceiptService taxReceiptService,
-                             com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService) {
+                             com.discipolat.modules.payments.domain.RecurringDonationService recurringDonationService,
+                             MomoSubscriptionService momoSubscriptionService) {
         this.service = service;
         this.taxReceiptService = taxReceiptService;
         this.recurringDonationService = recurringDonationService;
+        this.momoSubscriptionService = momoSubscriptionService;
     }
 
     /** P12 — Reçu fiscal PDF pour un paiement confirmé. */
@@ -63,6 +67,10 @@ public class PaymentController {
      * Webhook opérateur (M-Pesa / MTN / Orange...) : confirmation de paiement.
      * SÉCURITÉ: le secret webhook est OBLIGATOIRE. Sans secret configuré,
      * l'endpoint retourne 503 Service Unavailable.
+     *
+     * <p>Si le paiement concerne un abonnement SaaS (purpose = SAAS_SUBSCRIPTION),
+     * le webhook est également transmis à {@link MomoSubscriptionService} pour
+     * activer/renouveler l'abonnement récurrent.</p>
      */
     @PostMapping("/webhook")
     public ResponseEntity<?> webhook(
@@ -78,7 +86,16 @@ public class PaymentController {
         String reference = body.get("reference").toString();
         boolean success = Boolean.TRUE.equals(body.get("success"));
         String reason = body.containsKey("reason") ? body.get("reason").toString() : null;
-        return ResponseEntity.ok(service.handleWebhook(reference, success, reason));
+        String purpose = body.containsKey("purpose") ? body.get("purpose").toString() : null;
+
+        PaymentIntent paymentIntent = service.handleWebhook(reference, success, reason);
+
+        // Si c'est un abonnement SaaS, notifier aussi le service d'abonnement MoMo
+        if ("SAAS_SUBSCRIPTION".equals(purpose) && success) {
+            momoSubscriptionService.handleWebhook(reference, "SUCCESSFUL", reason);
+        }
+
+        return ResponseEntity.ok(paymentIntent);
     }
 
     /** Statut d'un paiement — polling mobile pendant le parcours (auteur ou super-utilisateur). */

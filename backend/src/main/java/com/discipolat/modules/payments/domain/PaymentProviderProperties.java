@@ -47,6 +47,12 @@ public class PaymentProviderProperties {
     private String mtnClientSecret;
     @Value("${app.mobilemoney.mtn.webhook-secret:}")
     private String mtnWebhookSecret;
+    @Value("${app.mobilemoney.mtn.callback-host:https://api.discipolat.com}")
+    private String mtnCallbackHost;
+
+    public String getMtnCallbackHost() {
+        return mtnCallbackHost;
+    }
 
     // ---- M-Pesa (Safaricom Daraja) ----
     @Value("${app.mobilemoney.mpesa.base-url:https://sandbox.safaricom.co.ke}")

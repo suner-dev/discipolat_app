@@ -69,6 +69,15 @@ public class SaasMomoSubscription {
     @Column(name = "provider_reference", length = 255)
     private String providerReference;
 
+    /** Nombre de tentatives de prélèvement échouées consécutives. */
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private Integer retryCount = 0;
+
+    /** Date de la dernière tentative de prélèvement. */
+    @Column(name = "last_retry_at")
+    private Instant lastRetryAt;
+
     @Column(name = "metadata", columnDefinition = "jsonb", nullable = false)
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Builder.Default
@@ -85,6 +94,7 @@ public class SaasMomoSubscription {
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
         if (this.status == null) this.status = MomoSubscriptionStatus.PENDING;
+        if (this.retryCount == null) this.retryCount = 0;
     }
 
     @PreUpdate

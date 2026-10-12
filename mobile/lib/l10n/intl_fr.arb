@@ -61,7 +61,7 @@
     "family": "Famille",
     "familySpaceTitle": "Espace Famille"
   },
-  "churchPicker":   {
+  "churchPicker": {
     "label": "Votre église",
     "optional": "(facultatif)",
     "placeholder": "Commencez à taper le nom…",
@@ -74,5 +74,25 @@
     "acceptHint": "Accepter une invitation",
     "createHint": "Créer mon église",
     "resultsSemantics": "Suggestions d’églises"
+  },
+  "pricing": {
+    "title": "Tarifs",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "perMonth": "/mois",
+    "perYear": "/an",
+    "unavailable": "Tarifs indisponibles",
+    "notPublished": "Tarif non communiqué",
+    "chargedIn": "Débit en {currency}",
+    "seats": "Membres : {count}",
+    "storage": "Stockage : {size}",
+    "aiCredits": "Crédits IA : {count}",
+    "subscribing": "Connexion…",
+    "subscribeOnline": "Souscrire en ligne",
+    "contactUs": "Nous contacter",
+    "momoPhoneTitle": "Numéro Mobile Money",
+    "momoPhoneLabel": "Entrez votre numéro MTN MoMo",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
   }
 }

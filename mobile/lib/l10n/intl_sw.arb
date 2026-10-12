@@ -51,7 +51,7 @@
     "loading": "Inapakia…",
     "offline": "Nje ya mtandao"
   },
-  "churchPicker":   {
+  "churchPicker": {
     "label": "Kanisa lako",
     "optional": "(si lazima)",
     "placeholder": "Anza kuandika jina…",
@@ -64,5 +64,25 @@
     "acceptHint": "Kubali mwaliko",
     "createHint": "Unda kanisa langu",
     "resultsSemantics": "Pendekezo za makanisa"
+  },
+  "pricing": {
+    "title": "Bei",
+    "monthly": "Kila Mwezi",
+    "yearly": "Kila Mwaka",
+    "perMonth": "/mwezi",
+    "perYear": "/mwaka",
+    "unavailable": "Bei haipatikani",
+    "notPublished": "Bei haijatajwa",
+    "chargedIn": "Kushughulikiwa kwa {currency}",
+    "seats": "Wanachama: {count}",
+    "storage": "Uhifadhi: {size}",
+    "aiCredits": "Mikopo ya AI: {count}",
+    "subscribing": "Inaunganisha…",
+    "subscribeOnline": "Jisajili mtandaoni",
+    "contactUs": "Wasiliana nasi",
+    "momoPhoneTitle": "Nambari ya Mobile Money",
+    "momoPhoneLabel": "Ingiza nambari yako ya MTN MoMo",
+    "cancel": "Ghairi",
+    "confirm": "Thibitisha"
   }
 }

@@ -59,6 +59,12 @@ export interface PricingConfig {
   regions: RegionOptionView[];
   channels: Record<PaymentChannelName, boolean>;
   landing: PricingLandingSettings;
+  // Canaux de paiement globaux (pour affichage alternatif si Stripe désactivé)
+  allowMomoChannel: boolean;
+  allowStrongChannel: boolean;
+  allowBankChannel: boolean;
+  allowContactChannel: boolean;
+  strongCurrency: string;
 }
 
 export interface PlanPriceView {
@@ -374,5 +380,11 @@ export function parsePricingConfig(payload: unknown): PricingConfig | null {
       showToggle: asBoolean(landing.showToggle, true),
       ctaLabel: asString(landing.ctaLabel),
     },
+    // Canaux de paiement globaux
+    allowMomoChannel: asBoolean(payload.allowMomoChannel, false),
+    allowStrongChannel: asBoolean(payload.allowStrongChannel, false),
+    allowBankChannel: asBoolean(payload.allowBankChannel, false),
+    allowContactChannel: asBoolean(payload.allowContactChannel, true),
+    strongCurrency: asString(payload.strongCurrency) ?? 'EUR',
   };
 }

@@ -51,7 +51,7 @@
     "loading": "جارٍ التحميل…",
     "offline": "غير متصل"
   },
-  "churchPicker":   {
+  "churchPicker": {
     "label": "كنيستك",
     "optional": "(اختياري)",
     "placeholder": "ابدأ بكتابة الاسم…",
@@ -64,5 +64,25 @@
     "acceptHint": "قبول دعوة",
     "createHint": "أنشئ كنيستي",
     "resultsSemantics": "اقتراحات الكنائس"
+  },
+  "pricing": {
+    "title": "الأسعار",
+    "monthly": "شهري",
+    "yearly": "سنوي",
+    "perMonth": "/شهر",
+    "perYear": "/سنة",
+    "unavailable": "الأسعار غير متاحة",
+    "notPublished": "السعر غير معلن",
+    "chargedIn": "مُحاسب بـ {currency}",
+    "seats": "الأعضاء: {count}",
+    "storage": "التخزين: {size}",
+    "aiCredits": "رصيد الذكاء الاصطناعي: {count}",
+    "subscribing": "جاري الاتصال…",
+    "subscribeOnline": "اشترك أونلاين",
+    "contactUs": "تواصل معنا",
+    "momoPhoneTitle": "رقم المحفظة المحمولة",
+    "momoPhoneLabel": "أدخل رقم MTN MoMo الخاص بك",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد"
   }
 }

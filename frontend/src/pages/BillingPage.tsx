@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Loader2, Receipt } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Loader2, Receipt, Smartphone, Euro } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePricing } from '@/features/pricing/usePricing';
 
 interface SubscriptionView {
   planKey: string | null;
@@ -31,11 +32,22 @@ const fmtDate = (iso: string | null): string => {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+interface AlternativeChannel {
+  type: 'MOMO' | 'STRONG';
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  action: () => void;
+}
+
 /**
  * Facturation du tenant : abonnement courant (synchronisé par les webhooks
  * Stripe) + portail client Stripe (moyen de paiement, factures, résiliation).
  * Les CTA sont masqués tant que STRIPE_SECRET_KEY n'est pas configurée
  * (GET /public/billing/status).
+ *
+ * Si Stripe est désactivé mais que le plan est payant, on affiche les canaux
+ * alternatifs (Mobile Money, devise forte) au lieu d'un écran vide.
  */
 export default function BillingPage() {
   const [searchParams] = useSearchParams();
@@ -46,6 +58,8 @@ export default function BillingPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const checkoutSuccess = searchParams.get('checkout') === 'success';
+
+  const { config, plans } = usePricing();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +93,50 @@ export default function BillingPage() {
   };
 
   const status = subscription?.status ? (STATUS_LABELS[subscription.status] ?? subscription.status) : 'Aucun abonnement';
+
+  // Déterminer les canaux alternatifs disponibles
+  const alternativeChannels = useCallback((): AlternativeChannel[] => {
+    if (!config || !subscription?.planKey || subscription.planKey === 'DISCOVERY') return [];
+
+    const plan = plans.find(p => p.key === subscription.planKey);
+    if (!plan?.display?.channels) return [];
+
+    const channels: AlternativeChannel[] = [];
+    const displayChannels = plan.display.channels;
+
+    if (!stripeEnabled) {
+      if (displayChannels.includes('MOMO') && config.allowMomoChannel) {
+        channels.push({
+          type: 'MOMO',
+          label: 'Mobile Money (MTN MoMo)',
+          description: 'Paiement récurrent via Mobile Money MTN',
+          icon: <Smartphone className="w-4 h-4" />,
+          action: () => {
+            // TODO: Implémenter le flux MoMo (redirection vers l'écran mobile ou ouverture USSD)
+            alert('Flux Mobile Money à implémenter — nécessite l\'application mobile');
+          },
+        });
+      }
+      if (displayChannels.includes('STRONG') && config.allowStrongChannel) {
+        channels.push({
+          type: 'STRONG',
+          label: `Débit en ${config.strongCurrency ?? 'EUR'}`,
+          description: `Affiché en ${plan.display?.currency ?? 'XAF'}, débité en devise forte`,
+          icon: <Euro className="w-4 h-4" />,
+          action: () => {
+            // Le canal STRONG utilise Stripe en interne mais avec une devise différente
+            // Si Stripe est désactivé, ce canal ne fonctionne pas non plus
+            alert('Canal devise forte nécessite Stripe activé');
+          },
+        });
+      }
+    }
+
+    return channels;
+  }, [config, plans, stripeEnabled, subscription?.planKey]);
+
+  const altChannels = alternativeChannels();
+  const showAlternatives = !stripeEnabled && altChannels.length > 0 && !isPlatformAdmin;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
@@ -175,9 +233,36 @@ export default function BillingPage() {
           </div>
 
           {!stripeEnabled && !isPlatformAdmin && (
-            <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-              Le paiement par carte (Stripe) sera activé très prochainement — votre plan actuel reste valable.
-            </p>
+            <div className="mt-4 space-y-3">
+              {showAlternatives ? (
+                <>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Le paiement par carte (Stripe) n'est pas activé. Canaux alternatifs disponibles :
+                  </p>
+                  <div className="space-y-2">
+                    {altChannels.map((channel, index) => (
+                      <button
+                        key={channel.type}
+                        onClick={channel.action}
+                        className="w-full inline-flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50/60 dark:bg-white/5 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary-500/10 border border-primary-500/20 text-primary-500">
+                          {channel.icon}
+                        </span>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white text-sm">{channel.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{channel.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Le paiement par carte (Stripe) sera activé très prochainement — votre plan actuel reste valable.
+                </p>
+              )}
+            </div>
           )}
         </section>
       )}

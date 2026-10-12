@@ -307,6 +307,11 @@ class AppLocalizations {
       translate('pricingStorage').replaceAll('{size}', mb.toString());
   String pricingAiCredits(int count) =>
       translate('pricingAiCredits').replaceAll('{count}', count.toString());
+  String get pricingSubscribing => translate('pricingSubscribing');
+  String get pricingSubscribeOnline => translate('pricingSubscribeOnline');
+  String get pricingContactUs => translate('pricingContactUs');
+  String pricingMomoPhoneTitle() => translate('pricingMomoPhoneTitle');
+  String pricingMomoPhoneLabel() => translate('pricingMomoPhoneLabel');
 
   String get recurringNew => translate('recurringNew');
   String get recurringHide => translate('recurringHide');
@@ -2260,6 +2265,11 @@ class AppLocalizations {
     'pricingSeats': '{count} membres',
     'pricingStorage': '{size} Mo de stockage',
     'pricingAiCredits': '{count} crédits IA / mois',
+    'pricingSubscribing': 'Connexion…',
+    'pricingSubscribeOnline': 'Souscrire en ligne',
+    'pricingContactUs': 'Nous contacter',
+    'pricingMomoPhoneTitle': 'Numéro Mobile Money',
+    'pricingMomoPhoneLabel': 'Entrez votre numéro MTN MoMo',
     'recurringNew': 'Nouveau don récurrent',
     'recurringHide': 'Masquer',
     'recurringCreate': 'Créer le don récurrent',
@@ -3869,6 +3879,11 @@ class AppLocalizations {
     'pricingSeats': '{count} members',
     'pricingStorage': '{size} MB storage',
     'pricingAiCredits': '{count} AI credits / month',
+    'pricingSubscribing': 'Connecting…',
+    'pricingSubscribeOnline': 'Subscribe online',
+    'pricingContactUs': 'Contact us',
+    'pricingMomoPhoneTitle': 'Mobile Money Number',
+    'pricingMomoPhoneLabel': 'Enter your MTN MoMo number',
     'recurringNew': 'New recurring gift',
     'recurringHide': 'Hide',
     'recurringCreate': 'Create recurring gift',
@@ -6219,6 +6234,11 @@ class AppLocalizations {
     'pricingSeats': '{count} membros',
     'pricingStorage': '{size} MB de armazenamento',
     'pricingAiCredits': '{count} créditos de IA / mês',
+    'pricingSubscribing': 'A conectar…',
+    'pricingSubscribeOnline': 'Subscrever online',
+    'pricingContactUs': 'Contacte-nos',
+    'pricingMomoPhoneTitle': 'Número Mobile Money',
+    'pricingMomoPhoneLabel': 'Insira o seu número MTN MoMo',
     'recurringNew': 'Nova doação recorrente',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Criar doação recorrente',
@@ -6907,6 +6927,11 @@ const Map<String, String> _spanish = {
     'pricingSeats': '{count} miembros',
     'pricingStorage': '{size} MB de almacenamiento',
     'pricingAiCredits': '{count} créditos de IA / mes',
+    'pricingSubscribing': 'Conectando…',
+    'pricingSubscribeOnline': 'Suscribirse online',
+    'pricingContactUs': 'Contáctenos',
+    'pricingMomoPhoneTitle': 'Número Mobile Money',
+    'pricingMomoPhoneLabel': 'Introduzca su número MTN MoMo',
     'recurringNew': 'Nueva',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Crear donación recurrente',
@@ -8448,6 +8473,11 @@ const Map<String, String> _swahili = {
     'pricingSeats': 'Wana {count}',
     'pricingStorage': 'Hifadhi ya {size} MB',
     'pricingAiCredits': 'Mikopo {count} ya AI / mwezi',
+    'pricingSubscribing': 'Inaunganisha…',
+    'pricingSubscribeOnline': 'Jisajili mtandaoni',
+    'pricingContactUs': 'Wasiliana nasi',
+    'pricingMomoPhoneTitle': 'Nambari ya Mobile Money',
+    'pricingMomoPhoneLabel': 'Ingiza nambari yako ya MTN MoMo',
     'recurringNew': 'Mpya',
     'recurringHide': 'Ficha',
     'recurringCreate': 'Unda mchango wa mara kwa mara',
@@ -9989,6 +10019,11 @@ const Map<String, String> _arabic = {
     'pricingSeats': '{count} عضوًا',
     'pricingStorage': '{size} ميغابايت تخزين',
     'pricingAiCredits': '{count} رصيد ذكاء اصطناعي / شهر',
+    'pricingSubscribing': 'جاري الاتصال…',
+    'pricingSubscribeOnline': 'اشترك أونلاين',
+    'pricingContactUs': 'تواصل معنا',
+    'pricingMomoPhoneTitle': 'رقم المحفظة المحمولة',
+    'pricingMomoPhoneLabel': 'أدخل رقم MTN MoMo الخاص بك',
     'recurringNew': 'جديد',
     'recurringHide': 'إخفاء',
     'recurringCreate': 'إنشاء تبرع متكرر',

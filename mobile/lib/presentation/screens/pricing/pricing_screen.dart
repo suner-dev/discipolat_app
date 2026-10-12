@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/services/api_service.dart';
 import '../../../../data/services/pricing_service.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -18,9 +19,8 @@ import '../../../../l10n/app_localizations.dart';
 ///    convertit, et il applique les décimales du serveur — ce qui évite
 ///    d'afficher « 15 000,00 FCFA ».
 ///
-/// Le CTA d'abonnement n'est volontairement pas implémenté : ouvrir une URL
-/// Stripe demande `url_launcher` côté mobile, ce qui n'est pas dans le
-/// `pubspec.yaml` aujourd'hui. C'est tracé en §0.1 du TODO plutôt que simulé.
+/// Le CTA d'abonnement lance le checkout Stripe via `url_launcher` pour les
+/// canaux CARD/STRONG, ou initie le flux Mobile Money natif pour le canal MOMO.
 class PricingScreen extends ConsumerStatefulWidget {
   const PricingScreen({super.key});
 
@@ -30,6 +30,7 @@ class PricingScreen extends ConsumerStatefulWidget {
 
 class _PricingScreenState extends ConsumerState<PricingScreen> {
   final PricingService _pricing = PricingService(ApiService());
+  final ApiService _api = ApiService();
 
   PricingConfigMobile? _config;
   PricingCatalog? _catalog;
@@ -38,6 +39,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
   bool _loading = true;
   String? _error;
+  String? _busyPlanKey;
 
   @override
   void initState() {
@@ -89,6 +91,116 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     if (cycle == _cycle) return;
     setState(() => _cycle = cycle);
     _load();
+  }
+
+  /// Lance le checkout pour un plan donné.
+  Future<void> _startCheckout(PricingPlan plan) async {
+    final config = _config;
+    final display = plan.display;
+    if (config == null || display == null || !display.available) return;
+
+    // Déterminer le canal par défaut (premier disponible)
+    final channels = display.channels;
+    String? selectedChannel;
+    if (channels.contains('CARD')) selectedChannel = 'CARD';
+    else if (channels.contains('STRONG')) selectedChannel = 'STRONG';
+    else if (channels.contains('MOMO')) selectedChannel = 'MOMO';
+    else if (channels.contains('BANK')) selectedChannel = 'BANK';
+
+    if (selectedChannel == null) return;
+
+    setState(() => _busyPlanKey = plan.key);
+
+    try {
+      if (selectedChannel == 'MOMO') {
+        await _startMomoCheckout(plan);
+      } else {
+        await _startStripeCheckout(plan, selectedChannel);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busyPlanKey = null);
+    }
+  }
+
+  /// Lance le checkout Stripe (CARD ou STRONG) et ouvre l'URL dans le navigateur.
+  Future<void> _startStripeCheckout(PricingPlan plan, String channel) async {
+    final cycleStr = _cycle == BillingCycleMobile.yearly ? 'yearly' : 'monthly';
+    final response = await _api.post(
+      '/billing/stripe/checkout',
+      data: {
+        'planKey': plan.key.toUpperCase(),
+        'billingCycle': cycleStr,
+        'currency': _currency,
+      },
+    );
+
+    final url = response.data?['url'] as String?;
+    if (url != null && url.isNotEmpty) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('Impossible d\'ouvrir l\'URL de paiement');
+      }
+    } else {
+      throw Exception('URL de checkout introuvable');
+    }
+  }
+
+  /// Initie le paiement Mobile Money (MTN MoMo) pour un abonnement récurrent.
+  Future<void> _startMomoCheckout(PricingPlan plan) async {
+    // Pour Mobile Money, on a besoin du numéro de téléphone de l'utilisateur.
+    // On ouvre un dialogue pour le saisir.
+    final phoneController = TextEditingController();
+    final phone = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context).pricingMomoPhoneTitle()),
+        content: TextField(
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).pricingMomoPhoneLabel(),
+            hintText: '+237 6xx xx xx xx',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, phoneController.text.trim()),
+            child: Text(AppLocalizations.of(context).confirm),
+          ),
+        ],
+      ),
+    );
+
+    if (phone == null || phone.isEmpty) return;
+
+    final cycleStr = _cycle == BillingCycleMobile.yearly ? 'yearly' : 'monthly';
+    final response = await _api.post(
+      '/billing/momo/subscribe',
+      data: {
+        'planKey': plan.key.toUpperCase(),
+        'billingCycle': cycleStr,
+        'phone': phone,
+      },
+    );
+
+    if (mounted) {
+      final message = response.data?['message'] as String? ?? 'Demande de paiement envoyée';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.primary),
+      );
+    }
   }
 
   @override
@@ -150,6 +262,8 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                           plan: plan,
                           cycle: _cycle,
                           l10n: l10n,
+                          isBusy: _busyPlanKey == plan.key,
+                          onSubscribe: () => _startCheckout(plan),
                         ),
                       )),
                 ],
@@ -193,11 +307,15 @@ class _PlanCard extends StatelessWidget {
     required this.plan,
     required this.cycle,
     required this.l10n,
+    required this.isBusy,
+    required this.onSubscribe,
   });
 
   final PricingPlan plan;
   final BillingCycleMobile cycle;
   final AppLocalizations l10n;
+  final bool isBusy;
+  final VoidCallback onSubscribe;
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +327,8 @@ class _PlanCard extends StatelessWidget {
     final hasPrice = display?.available == true && amountMinor != null;
     final currencyCode = display?.currency ?? 'XAF';
     final decimals = display?.decimals ?? 2;
+    final isFree = hasPrice && amountMinor == 0;
+    final canSubscribe = hasPrice && !isFree && display?.selectable == true;
 
     return Card(
       child: Padding(
@@ -255,12 +375,42 @@ class _PlanCard extends StatelessWidget {
             if (plan.storageLimitMb != null) _Feature(l10n.pricingStorage(plan.storageLimitMb!)),
             if (plan.aiCreditsLimit != null)
               _Feature(l10n.pricingAiCredits(plan.aiCreditsLimit!)),
+            if (canSubscribe) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: isBusy ? null : onSubscribe,
+                  icon: isBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.credit_card),
+                  label: Text(isBusy
+                      ? l10n.pricingSubscribing
+                      : l10n.pricingSubscribeOnline),
+                ),
+              ),
+            ] else if (!hasPrice) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: Ouvrir la page de contact
+                  },
+                  icon: const Icon(Icons.contact_support),
+                  label: Text(l10n.pricingContactUs),
+                ),
+              ),
+],
           ],
         ),
       ),
     );
   }
-
 }
 
 class _Feature extends StatelessWidget {

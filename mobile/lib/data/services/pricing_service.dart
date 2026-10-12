@@ -160,6 +160,7 @@ class PlanDisplay {
     required this.decimals,
     required this.channels,
     required this.checkoutCurrency,
+    this.selectable = true,
   });
 
   /// `false` = aucun prix dans la devise demandée. L'écran affiche alors
@@ -170,6 +171,7 @@ class PlanDisplay {
   final int decimals;
   final List<String> channels;
   final String? checkoutCurrency;
+  final bool selectable;
 
   /// Le débit se fait dans une autre devise que l'affichage (canal STRONG).
   bool get chargedInDifferentCurrency =>
@@ -190,6 +192,7 @@ class PlanDisplay {
           ? channelsRaw.whereType<String>().toList(growable: false)
           : const <String>[],
       checkoutCurrency: raw['checkoutCurrency'] is String ? raw['checkoutCurrency'] as String : null,
+      selectable: raw['selectable'] != false,
     );
   }
 }
