@@ -62,16 +62,23 @@ jobs:
           echo "SERVICE=$SID" >> "$GITHUB_ENV"
           echo "::notice::Service diagnostiqué : $SID ($SERVICE_NAME)"
 
-          # 1) Les 10 derniers jobs : statut, erreur, commit.
+          # 1) Les 10 derniers jobs : statut, erreur, commit. Les deux shapes
+          # possibles de l'API v1 sont tolérés : [{"job":{...}}] ou [{...}] direct.
           curl -s "https://api.render.com/v1/services/$SID/jobs?limit=10" -H "Authorization: Bearer $RENDER_API_KEY" > /tmp/jobs.json
+          if ! jq -e 'type=="array" and length>0' /tmp/jobs.json >/dev/null 2>&1; then
+            echo "::warning::Réponse /jobs inattendue (premières 400 caractères, épurées) :"
+            head -c 400 /tmp/jobs.json | sed -E 's/(rnd_[A-Za-z0-9_-]{4,})/***CLE***/g'
+            echo
+          fi
+          jq '[.[] | (.job // .)]' /tmp/jobs.json > /tmp/jobs_norm.json
           {
             echo "## Jobs Render — $SERVICE_NAME"
             echo
             echo "| Job | Type | Statut | CreatedAt | Commit | Erreur |"
             echo "|---|---|---|---|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
-          jq -r '.[] | .job | "| \(.id // "?") | \(.type // "?") | **\(.status // "?")** | \(.createdAt // "?") | \(.commit // "-") | \((.error // "-") | gsub("[\n|]"; " ")) |"' /tmp/jobs.json | head -12 >> "$GITHUB_STEP_SUMMARY"
-          LAST_JOB=$(jq -r '[.[] | .job | select(.id)] | .[0].id // empty' /tmp/jobs.json)
+          jq -r '.[] | "| \(.id // "?") | \(.type // "?") | **\(.status // "?")** | \(.createdAt // "?") | \(.commit // "-") | \((.error // "-") | tostring | gsub("[\n|]"; " ")) |"' /tmp/jobs_norm.json | tee -a "$GITHUB_STEP_SUMMARY" | head -12
+          LAST_JOB=$(jq -r '.[0].id // empty' /tmp/jobs_norm.json)
           echo "LAST_JOB=$LAST_JOB" >> "$GITHUB_ENV"
 
           # 2) Log du dernier job, épuré (jamais de valeur de secret en clair).
