@@ -62,11 +62,23 @@ services:
       - key: APP_VERSION
         value: 1.1.0
 
-      # Base : reference dynamique aux secrets gérés par Render
-      - key: SPRING_DATASOURCE_URL
+      # Base : Render expose `connectionString` au format « postgres://… » ;
+      # Spring/Hikari exige « jdbc:postgresql://… ». Injecter l'un dans l'autre
+      # fait crasher le démarrage AVANT Flyway (mesuré deploy Render du
+      # 2026-10-12 16:54 : IllegalArgumentException « URL must start with
+      # 'jdbc' », exit 1, Tomcat stoppé). L'URL est donc COMPOSÉE depuis
+      # host/port, et le nom de base reprend `databaseName` déclaré plus haut
+      # (statique par construction dans ce blueprint).
+      - key: DB_HOST
         fromDatabase:
           name: discipolat-beta-db
-          property: connectionString
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: discipolat-beta-db
+          property: port
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://${DB_HOST}:${DB_PORT}/discipolat_beta?sslmode=prefer
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: discipolat-beta-db
