@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { applyScopedBranding } from '@/lib/branding';
 
@@ -73,12 +73,19 @@ describe('LOT 2 §GLISE-D\'ABORD (T2.4) — ChurchLandingPage /e/:slug', () => {
     renderAt('bethel');
     await screen.findByText('Église Bethel');
 
-    const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
-    expect(robots).not.toBeNull();
-    expect(robots!.content).toContain('noindex');
-    // og:title suit le nom de l'église.
-    const ogTitle = document.head.querySelector<HTMLMetaElement>('meta[property="og:title"]');
-    expect(ogTitle?.getAttribute('content')).toBe('Église Bethel');
+    // Le <meta name=robots>/og:* est pose par un useEffect (passif) : sous
+    // contention CPU (CI), son flush peut arriver apres la resolution de
+    // findByText. On poll le resultat de l'effet plutôt que de le lire en
+    // synchro — l'invariant « noindex des l'origine » reste strictement
+    // asserte (waitFor echoue au timeout si le meta n'est jamais pose).
+    await waitFor(() => {
+      const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+      expect(robots).not.toBeNull();
+      expect(robots!.content).toContain('noindex');
+      // og:title suit le nom de l'église.
+      const ogTitle = document.head.querySelector<HTMLMetaElement>('meta[property="og:title"]');
+      expect(ogTitle?.getAttribute('content')).toBe('Église Bethel');
+    });
   });
 
   it('R4 — la palette est SCOPÉE au conteneur : aucune fuite sur :root (marque plateforme)', async () => {
@@ -87,17 +94,23 @@ describe('LOT 2 §GLISE-D\'ABORD (T2.4) — ChurchLandingPage /e/:slug', () => {
     await screen.findByText('Église Bethel');
 
     const landingRoot = container.querySelector('[data-testid="church-landing"]') as HTMLElement;
-    // La teinte de l'église est posée sur le conteneur…
-    expect(landingRoot.style.getPropertyValue('--color-primary-500')).not.toBe('');
-    // …mais JAMAIS sur documentElement (:root) — la plateforme garde sa marque.
-    expect(document.documentElement.style.getPropertyValue('--color-primary-500')).toBe('');
+    // Variables CSS posees par l'effet de marque (passif) : on poll le versant
+    // « pose » ; l'absence sur :root est une invariante permanente, donc verifiee
+    // dans le meme tour.
+    await waitFor(() => {
+      // La teinte de l'église est posée sur le conteneur…
+      expect(landingRoot.style.getPropertyValue('--color-primary-500')).not.toBe('');
+      // …mais JAMAIS sur documentElement (:root) — la plateforme garde sa marque.
+      expect(document.documentElement.style.getPropertyValue('--color-primary-500')).toBe('');
+    });
   });
 
   it('restaure le titre de la plateforme au démontage (aucune trace entre écrans)', async () => {
     mockFetch(200, PROJECTION);
     const view = renderAt('bethel');
     await screen.findByText('Église Bethel');
-    expect(document.title).toBe('Église Bethel');
+    // Titre pose par l'effet (passif) : poll jusqu'a ce qu'il reflète l'église.
+    await waitFor(() => expect(document.title).toBe('Église Bethel'));
 
     view.unmount();
     expect(document.title).toBe('Plateforme');
