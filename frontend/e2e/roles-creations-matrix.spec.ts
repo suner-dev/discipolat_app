@@ -407,3 +407,90 @@ test.describe.serial('SPEC C — flows réseau au-dessus des créations', () => 
     expect(ids).toContain(r.id);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SPEC D — ADHÉSION PAR LIEN `/register?tenant=<slug>` × JoinMode (D1/R1)
+//   Le slug est devinable (dérivé du nom) : la porte doit honorer le JoinMode
+//   de l'église, sinon une église qui « valide chaque demande » se franchirait
+//   par une simple URL et exposerait les âmes (RGPD art. 9). Rejoue la même
+//   résolution que le chemin par code (registre unique, pas de divergence).
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe.serial('SPEC D — adhésion par lien slug × JoinMode', () => {
+  /** Bascule le code PRINCIPAL d'une église (session fondateur) en APPROVAL. */
+  async function setPrimaryCodeApproval(headers: Record<string, string>) {
+    const list = await anon.get(`${API}/tenant/join-codes`, { headers });
+    expect(list.status()).toBe(200);
+    const primary = ((await list.json()) as Record<string, any>[]).find((c) => c.orgNodeId == null);
+    expect(primary, 'aucun code principal pour ce tenant').toBeTruthy();
+    const patch = await anon.patch(`${API}/tenant/join-codes/${primary.id}`, {
+      headers,
+      data: { joinMode: 'APPROVAL' },
+    });
+    expect(patch.status()).toBe(200);
+    expect((await patch.json()).joinMode).toBe('APPROVAL');
+  }
+
+  test('D[OPEN] — adhésion ouverte : le lien crée le compte MEMBRE, garde d’activation', async () => {
+    // Église auto-créée → code principal OPEN par défaut.
+    const { res, body } = await registerOrg(anon, { kind: 'CHURCH', churchName: `E2E Lien OPEN ${run}` });
+    expect(res.status()).toBe(201);
+    const slug = body.church.slug as string;
+
+    const email = `${stamp('adherent-open')}@e2e.matrix.com`;
+    const join = await anon.post(`${API}/auth/register`, {
+      data: {
+        email, password: PASSWORD, firstName: 'Adhé', lastName: 'Rent',
+        phone: `+336${Date.now().toString().slice(-8)}`, tenantSlug: slug,
+        consentCgu: true, consentPrivacy: true, consentArt9: true,
+      },
+    });
+    expect(join.status()).toBe(201);
+    const jb = await join.json();
+    expect(jb.role).toBe('MEMBRE');
+    expect(jb.churchName).toBe(`E2E Lien OPEN ${run}`);
+
+    // Compte créé mais non activé : aucune session avant l’email d’activation.
+    const login = await anon.post(`${API}/auth/login`, { data: { email, password: PASSWORD } });
+    expect(login.status()).toBe(401);
+  });
+
+  test('D[APPROVAL] — église qui valide chaque demande : le lien NE crée AUCUN compte (202)', async () => {
+    const { res, body } = await registerOrg(anon, { kind: 'CHURCH', churchName: `E2E Lien APPROVAL ${run}` });
+    expect(res.status()).toBe(201);
+    const slug = body.church.slug as string;
+    await setPrimaryCodeApproval(bearer(body));
+
+    const email = `${stamp('demandeur')}@e2e.matrix.com`;
+    const join = await anon.post(`${API}/auth/register`, {
+      data: {
+        email, password: PASSWORD, firstName: 'Demandeur', lastName: 'Approb',
+        phone: `+336${Date.now().toString().slice(-8)}`, tenantSlug: slug,
+        consentCgu: true, consentPrivacy: true, consentArt9: true,
+      },
+    });
+    // 202 Accepted — une DEMANDE est enregistrée, pas un compte.
+    expect(join.status()).toBe(202);
+    const jb = await join.json();
+    expect(jb.status).toBe('PENDING_APPROVAL');
+    expect(jb.churchName).toBe(`E2E Lien APPROVAL ${run}`);
+
+    // Fail-closed : aucun compte MEMBRE → login impossible (la porte ne s’ouvre pas).
+    const login = await anon.post(`${API}/auth/login`, { data: { email, password: PASSWORD } });
+    expect(login.status()).toBe(401);
+  });
+
+  test('D[anti-énumération] — slug inconnu : 404 JOIN_SLUG_NOT_FOUND, jamais de création', async () => {
+    const join = await anon.post(`${API}/auth/register`, {
+      data: {
+        email: `${stamp('fantome')}@e2e.matrix.com`, password: PASSWORD,
+        firstName: 'Fan', lastName: 'Tome', tenantSlug: `slug-inexistant-${run}`,
+        consentCgu: true, consentPrivacy: true, consentArt9: true,
+      },
+    });
+    expect(join.status()).toBe(404);
+    // ProblemDetail : le code domaine est porté par `title` (comme ORG_KIND_INVALID).
+    const eb = await join.json();
+    expect(eb.title).toBe('JOIN_SLUG_NOT_FOUND');
+    expect(String(eb.detail)).toContain('Aucune église');
+  });
+});
