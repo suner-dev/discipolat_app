@@ -94,9 +94,33 @@ describe("AcceptInvitationPage", () => {
       </AuthProvider>,
     );
 
-    expect(await screen.findByText("Invitation invalide")).toBeTruthy();
+    // L'absence de jeton n'est PAS une invitation falsifiée : l'écran l'énonce
+    // comme tel et dit quoi faire, tout en gardant les deux issues (code,
+    // connexion). Les invariants d'origine sont inchangés : aucun appel réseau,
+    // et un chemin vers /login toujours proposed.
+    expect(await screen.findByText("Ouvrez le lien reçu par email")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retour à la connexion" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Saisir un code d'entrée" })).toBeTruthy();
     expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("affiche « Invitation invalide » pour un jeton PRÉSENT mais rejeté par le serveur", async () => {
+    mockGet.mockResolvedValue({ data: { message: "Invitation expirée" } });
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={["/accept-invitation?token=jeton-perime"]}>
+          <AcceptInvitationPage />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+
+    // Cas distinct de l'arrivée sans jeton : ici le serveur a été interrogé et
+    // a tranché. L'écran d'origine reste le bon, il ne doit pas avoir été
+    // confondu avec le nouveau.
+    expect(await screen.findByText("Invitation invalide")).toBeTruthy();
+    expect(screen.getByText("Invitation expirée")).toBeTruthy();
+    expect(mockGet).toHaveBeenCalled();
   });
 
   it("posts the acceptance only after the form is submitted", async () => {

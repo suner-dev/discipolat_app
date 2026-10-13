@@ -232,6 +232,54 @@ export default function AcceptInvitationPage() {
     );
   }
 
+  /**
+   * Arrivée SANS jeton — cas à part entière d'une invitation invalide : rien
+   * n'a été falsifié ni expiré, le lien n'a simplement pas été ouvert depuis
+   * l'email. C'est exactement l'arrivée que produit le CTA « J'ai reçu un lien
+   * d'invitation » du sélecteur d'église, et l'écran d'avant annonçait
+   * « Invitation invalide / Token d'invitation manquant » : il accusait
+   * l'utilisateur d'une erreur qu'il n'avait pas commise, et ne disait pas quoi
+   * faire ensuite. Rien n'est retiré — on ajoute l'explication et les deux
+   * autres voies d'entrée.
+   */
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="max-w-md w-full mx-4 p-8 bg-white rounded-xl shadow-sm border">
+          <div className="text-center">
+            <svg className="mx-auto h-12 w-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l18-5v13L3 11V8zm0 3v5a2 2 0 002 2h14a2 2 0 002-2v-5m-18 5a2 2 0 012-2h14a2 2 0 012 2M7 15l1 3h3l-1-3" />
+            </svg>
+            <h1 className="mt-4 text-xl font-bold text-gray-900">Ouvrez le lien reçu par email</h1>
+            <p className="mt-2 text-gray-600">
+              L&apos;acceptation d&apos;une invitation passe par le lien envoyé à votre
+              adresse email. Ouvrez ce lien tel quel — il contient votre accès, et il
+              ne peut pas être deviné ni reconstruit.
+            </p>
+            <p className="mt-3 text-sm text-gray-500">
+              Vous n&apos;avez rien reçu, ou le lien est périmé&nbsp;? Un code d&apos;entrée
+              ou une recherche de votre église conviennent aussi.
+            </p>
+            <div className="mt-6 space-y-2">
+              <button
+                onClick={() => navigate("/join")}
+                className="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+              >
+                Saisir un code d&apos;entrée
+              </button>
+              <button
+                onClick={() => navigate("/login")}
+                className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Retour à la connexion
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error && !invitation) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

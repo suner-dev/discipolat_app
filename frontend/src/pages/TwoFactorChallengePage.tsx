@@ -1,17 +1,32 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api, { getErrorMessage } from '@/lib/api';
+import { safeInternalPath } from '@/lib/postAuthNavigation';
 import { Shield, Loader2, LogOut, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { tText } from '@/i18n';
 export default function TwoFactorChallengePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
+
+  /**
+   * LOT 1 §GLISE-D'ABORD — le challenge 2FA est une ÉTAPE de la connexion, pas
+   * sa destination. `LoginPage` relaie donc `?next=` jusqu'ici. Sans cette lecture,
+   * un compte protégé par 2FA qui venait de choisir son église (ou d'arriver via
+   * `/j/:slug` → « j'ai déjà un compte ») aboutissait quand même à `/dashboard` :
+   * même perte que sans 2FA, mais masquée par une étape de plus.
+   */
+  const nextPath = safeInternalPath(searchParams.get('next'));
+  const resolveTarget = useCallback(
+    () => nextPath ?? '/dashboard',
+    [nextPath],
+  );
 
   const verifyMutation = useMutation({
     mutationFn: async (value: string) => {
@@ -21,7 +36,7 @@ export default function TwoFactorChallengePage() {
     onSuccess: (data) => {
       if (data.valid) {
         toast.success(`Bienvenue, ${user?.firstName || user?.email}!`);
-        navigate('/dashboard', { replace: true });
+        navigate(resolveTarget(), { replace: true });
       } else {
         setError('Code invalide. Veuillez réessayer.');
       }
@@ -31,7 +46,7 @@ export default function TwoFactorChallengePage() {
 
   // Redirection hors du challenge, en useEffect (jamais pendant le rendu) :
   // - utilisateur déconnecté (user null, ex. « Retour à la connexion ») → /login
-  // - utilisateur sans 2FA → /dashboard
+  // - utilisateur sans 2FA → la destination attendue (elle aussi filtrée)
   // Avant ce correctif, le navigate() exécuté pendant le rendu écrasait la
   // navigation explicite « Retour à la connexion » (logout → /login) : la page
   // renvoyait alors vers /dashboard juste après la déconnexion.
@@ -39,9 +54,9 @@ export default function TwoFactorChallengePage() {
     if (!user) {
       navigate('/login', { replace: true });
     } else if (!user.twoFactorEnabled) {
-      navigate('/dashboard', { replace: true });
+      navigate(resolveTarget(), { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, resolveTarget]);
 
   if (!user || !user.twoFactorEnabled) {
     return null;

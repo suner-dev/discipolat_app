@@ -7,6 +7,7 @@ import { useAuth, roleLabels } from '@/contexts/AuthContext';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 import BetaBadge from '@/components/beta/BetaBadge';
 import api, { getErrorMessage } from '@/lib/api';
+import { safeInternalPath, rememberPostAuthPath } from '@/lib/postAuthNavigation';
 import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck, ArrowRight } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { SocialLoginButtons } from '@/features/auth/social/SocialLoginButtons';
@@ -66,21 +67,10 @@ const roleBg = (r: string) => {
  * `/login?next=/j/<slug>`, et la connexion renvoyait ensuite l'utilisateur au
  * tableau de bord : son église était perdue en cours de route.
  *
- * <p>On n'accepte qu'un chemin INTERNE. `//evil.example` et `/\evil.example` sont
- * des URL protocol-relative : le navigateur les traiterait comme absolues, donc
- * une open-redirect. Un schéma explicite après la racine est refusé aussi. Tout
- * le reste (`/j/x`, `/join?code=…`) passe et est renvoyé tel quel.
+ * <p>Le filtre de redirection lui-même vit dans `@/lib/postAuthNavigation` : il
+ * est aussi utilisé par le challenge 2FA et par la vérification du magic link,
+ * et un filtre défini à trois endroits est un filtre qu'on oubliera à un endroit.
  */
-function safeInternalPath(raw: string | null): string | null {
-  if (!raw) return null;
-  const path = raw.trim();
-  if (!path.startsWith('/')) return null;
-  // Protocol-relative : `//hôte` et `/\hôte` (les navigateurs acceptent `\`).
-  if (path.startsWith('//') || path.startsWith('/\\')) return null;
-  // Schéma explicite remonté en chemin : `/https://evil.example`.
-  if (/^\/[a-z][a-z0-9+.-]*:/i.test(path)) return null;
-  return path;
-}
 
 const DEMO_ACCOUNTS = [
   { role: 'Admin (multi-rôles)', email: 'admin@discipolat.com' },
@@ -134,6 +124,16 @@ export default function LoginPage() {
     [nextPath, pickedChurch],
   );
 
+  /**
+   * Même destination, à travers le chemin 2FA : `/verify-2fa` est une étape
+   * intermédiaire, pas une destination. Sans le relais, un compte 2FA qui venait
+   * de choisir son église atterrissait quand même sur `/dashboard`.
+   */
+  const twoFactorHref = useCallback(() => {
+    const target = postLoginPath();
+    return target ? `/verify-2fa?next=${encodeURIComponent(target)}` : '/verify-2fa';
+  }, [postLoginPath]);
+
   // ── Magic link (connexion sans mot de passe) ──
   const [showMagicLink, setShowMagicLink] = useState(false);
   const [magicEmail, setMagicEmail] = useState('');
@@ -144,6 +144,13 @@ export default function LoginPage() {
     e.preventDefault();
     if (!magicEmail.includes('@')) return;
     setMagicPending(true);
+    // Le lien est construit par le backend (`/auth/magic-link?token=…`) et ne peut
+    // donc pas embarquer de `next`. On pose un relais par onglet pour que le clic
+    // sur le lien ne fasse pas perdre l'église choisie ou l'étape reprise. Pose
+    // AVANT l'appel : l'email peut arriver et être cliqué très vite, et surtout
+    // l'API répond identiquement que l'adresse existe ou non — le relais ne doit
+    // pas dépendre de la réponse.
+    rememberPostAuthPath(postLoginPath());
     try {
       await api.post('/auth/magic-link', { email: magicEmail.trim() });
       // Réponse volontairement identique que l'email existe ou non (anti-énumération).
@@ -192,7 +199,8 @@ export default function LoginPage() {
       navigationHandledRef.current = true;
 
       if (result?.twoFactorEnabled) {
-        navigate('/verify-2fa');
+        // La 2FA est une ÉTAPE, pas une destination : elle relaie `next`.
+        navigate(twoFactorHref());
       } else {
         // Le super admin plateforme atterrit sur SON dashboard (gestion des tenants),
         // cohérent avec la HomeGate (/). Le tenant dashboard reste atteignable par

@@ -347,6 +347,49 @@ export default function JoinChurchPage() {
               {tText('Le code sert une seule fois : après la rejointure, vous entrez directement à chaque connexion.')}
             </p>
           </div>
+        ) : !looking ? (
+          /* Lien `/j/<slug>` que le serveur ne résout pas : l'église n'existe
+           * plus, son tenant n'est plus ACTIVE, ou le rate-limit (429) a coupé la
+           * résolution. AVANT ce bloc la page rendait `null` — l'utilisateur,
+           * venu ici depuis « Ouvrir la page de rejointure » (et désormais depuis
+           * la redirection post-connexion de `/login`), se retrouvait devant un
+           * cadre vide, sans bouton et sans issue. On nomme donc l'échec et on
+           * ouvre les trois issues restantes (code, annuaire, création) au lieu
+           * d'afficher une promesse muette. */
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <ShieldQuestion className="w-5 h-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {tText('Cette église n’est plus joignable par ce lien')}
+                </p>
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                  {tText('Son lien a peut-être changé. Un code d’entrée reste la voie la plus fiable.')}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Link
+                to="/join"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 text-white font-medium text-sm flex items-center justify-center gap-2"
+              >
+                <KeyRound className="w-4 h-4" />
+                {tText('Saisir mon code d’entrée')}
+              </Link>
+              <Link
+                to="/eglises"
+                className="block w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-white/10 text-sm font-medium text-gray-700 dark:text-gray-200 text-center hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                {tText('Parcourir l’annuaire des églises')}
+              </Link>
+              <Link
+                to="/register?mode=church"
+                className="block text-center text-xs text-gray-500 dark:text-gray-400 hover:underline"
+              >
+                {tText('Elle n’existe pas encore ? Créer mon église')}
+              </Link>
+            </div>
+          </div>
         ) : null}
 
         <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">

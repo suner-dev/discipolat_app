@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Loader2, CheckCircle2, AlertTriangle, LogIn } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
+import { safeInternalPath, takeRememberedPostAuthPath } from '@/lib/postAuthNavigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { tText } from '@/i18n';
@@ -9,6 +10,13 @@ import { tText } from '@/i18n';
  * Vérification d'un Magic Link (connexion sans mot de passe).
  * Le lien reçu par email pointe ici avec ?token=… ; le backend valide,
  * consomme le token et renvoie une session JWT.
+ *
+ * <p>LOT 1 §GLISE-D'ABORD — l'URL du lien est construite par le backend
+ * (`frontendUrl + "/auth/magic-link?token=" + …`) : elle ne peut donc pas
+ * porter de `?next=`. La destination est récupérée dans le relais posé par
+ * `LoginPage` à l'envoi. Le filtre `safeInternalPath` est appliqué deux fois :
+ * sur le `?next=` éventuellement présent dans l'URL, ET sur le relais — issu de
+ * `sessionStorage`, donc modifiable par un script tiers sur la même origine.
  */
 export default function MagicLinkVerifyPage() {
   const [searchParams] = useSearchParams();
@@ -16,6 +24,9 @@ export default function MagicLinkVerifyPage() {
   const { loginWithSocialToken } = useAuth();
   const [state, setState] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [message, setMessage] = useState('');
+  /** Destination retenue, affichée à l'utilisateur : « tableau de bord » ne
+   *  serait pas vrai s'il va rejoindre son église. */
+  const [target, setTarget] = useState<string | null>(null);
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -24,6 +35,10 @@ export default function MagicLinkVerifyPage() {
       setMessage('Lien incomplet : jeton manquant.');
       return;
     }
+    // `?next=` d'abord (lien construit côté client, ex. relance manuelle),
+    // sinon le relais de l'onglet qui a demandé le lien.
+    const resumeAt = safeInternalPath(searchParams.get('next')) ?? takeRememberedPostAuthPath();
+    setTarget(resumeAt);
     let cancelled = false;
     (async () => {
       try {
@@ -39,7 +54,7 @@ export default function MagicLinkVerifyPage() {
           role: d.user.role,
         }, d.refreshToken);
         setState('success');
-        setTimeout(() => navigate('/dashboard', { replace: true }), 900);
+        setTimeout(() => navigate(resumeAt ?? '/dashboard', { replace: true }), 900);
       } catch (e) {
         if (cancelled) return;
         setState('error');
@@ -75,7 +90,9 @@ export default function MagicLinkVerifyPage() {
           <CheckCircle2 className="w-12 h-12 text-green-500" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Connecté !</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {tText('Redirection vers votre tableau de bord…')}
+            {target && target !== '/dashboard'
+              ? tText('Redirection vers votre église…')
+              : tText('Redirection vers votre tableau de bord…')}
           </p>
         </div>
       )}
