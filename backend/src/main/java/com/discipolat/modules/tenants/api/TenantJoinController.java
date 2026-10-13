@@ -75,20 +75,65 @@ public class TenantJoinController {
         return ResponseEntity.ok(body);
     }
 
+    /**
+     * Demandes d'adhésion.
+     *
+     * <p>{@code ?status=} : absent ou {@code PENDING} = l'historique
+     * (comportement inchangé), {@code APPROVED} = les demandes validées dont
+     * <b>personne n'a encore ouvert le lien</b>, {@code ALL} = tout.
+     *
+     * <p><b>Pourquoi ce filtre existe.</b> Une demande approuvée sans compte ne
+     * crée aucun membre : elle émet un lien d'activation valable 7 jours. Passé
+     * ce délai la personne est coincée, et le responsable doit pouvoir la
+     * retrouver pour lui renvoyer le lien. Or la liste ne renvoyait que les
+     * PENDING : après approbation, la demande disparaissait de l'écran et
+     * personne ne pouvait plus rien faire pour elle.
+     */
     @GetMapping("/join-requests")
     @PreAuthorize("@authz.isTenantAdmin()")
-    public ResponseEntity<List<Map<String, Object>>> pendingRequests() {
+    public ResponseEntity<List<Map<String, Object>>> pendingRequests(
+            @RequestParam(required = false) String status) {
         UUID tenantId = TenantContext.requireTenantId();
-        List<Map<String, Object>> body = tenantJoinService.pendingRequests(tenantId).stream()
-                .map(r -> Map.<String, Object>of(
-                        "id", r.getId(),
-                        "code", r.getCode(),
-                        "email", r.getEmail() == null ? "" : r.getEmail(),
-                        "userId", r.getUserId() == null ? "" : r.getUserId().toString(),
-                        "status", r.getStatus().name(),
-                        "createdAt", r.getCreatedAt()))
+        TenantJoinRequest.Status filter = parseStatusFilter(status);
+        List<Map<String, Object>> body = tenantJoinService.joinRequests(tenantId, filter).stream()
+                .map(r -> {
+                    Map<String, Object> view = new java.util.LinkedHashMap<>();
+                    view.put("id", r.getId());
+                    view.put("code", r.getCode());
+                    view.put("email", r.getEmail() == null ? "" : r.getEmail());
+                    view.put("userId", r.getUserId() == null ? "" : r.getUserId().toString());
+                    view.put("status", r.getStatus().name());
+                    view.put("createdAt", r.getCreatedAt());
+                    // V253 : l'écran doit pouvoir dire si le lien est parti.
+                    // Une chaîne vide = aucune invitation émise, jamais `null`
+                    // (le front distingue l'absence d'une valeur vide).
+                    view.put("invitationId", r.getInvitationId() == null ? "" : r.getInvitationId().toString());
+                    view.put("invitationSentAt", r.getInvitationSentAt() == null ? "" : r.getInvitationSentAt().toString());
+                    view.put("resendable", tenantJoinService.isResendable(r));
+                    return view;
+                })
                 .toList();
         return ResponseEntity.ok(body);
+    }
+
+    /**
+     * Un filtre inconnu vaut {@code PENDING} : l'écran d'administration ne doit
+     * jamais se retrouver vide à cause d'un paramètre mal orthographié — un
+     * responsable y lirait qu'il n'a aucune demande.
+     */
+    private static TenantJoinRequest.Status parseStatusFilter(String raw) {
+        if (raw == null || raw.isBlank() || "PENDING".equalsIgnoreCase(raw.trim())) {
+            return TenantJoinRequest.Status.PENDING;
+        }
+        if ("ALL".equalsIgnoreCase(raw.trim())) {
+            return null;
+        }
+        for (TenantJoinRequest.Status candidate : TenantJoinRequest.Status.values()) {
+            if (candidate.name().equalsIgnoreCase(raw.trim())) {
+                return candidate;
+            }
+        }
+        return TenantJoinRequest.Status.PENDING;
     }
 
     @PostMapping("/join-requests/{id}/approve")
@@ -96,8 +141,47 @@ public class TenantJoinController {
     public ResponseEntity<Map<String, Object>> approve(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actor = TenantContext.getCurrentUserId();
-        TenantJoinService.JoinOutcome outcome = tenantJoinService.approveRequest(id, tenantId, actor);
-        return ResponseEntity.ok(Map.of("status", outcome.status()));
+        TenantJoinService.ApprovalOutcome outcome = tenantJoinService.approveRequest(id, tenantId, actor);
+        return ResponseEntity.ok(approvalView(outcome));
+    }
+
+    /**
+     * Renvoyer le lien d'activation d'une demande DÉJÀ approuvée.
+     *
+     * <p>Le token étant stocké haché, il n'est pas rejouable : on en génère un
+     * nouveau. C'est la seule sortie pour la personne dont le lien a expiré, et
+     * la seule façon pour l'église de ne pas laisser une adhésion qu'elle a
+     * validée devenir inaccessible au bout de 7 jours.
+     */
+    @PostMapping("/join-requests/{id}/resend-invitation")
+    @PreAuthorize("@authz.isTenantAdmin()")
+    public ResponseEntity<Map<String, Object>> resendInvitation(@PathVariable UUID id) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actor = TenantContext.getCurrentUserId();
+        TenantJoinService.ApprovalOutcome outcome =
+                tenantJoinService.resendInvitationForRequest(id, tenantId, actor);
+        return ResponseEntity.ok(approvalView(outcome));
+    }
+
+    /**
+     * Vue d'une approbation. Elle expose {@code emailSent} et l'échéance :
+     * afficher « Demande approuvée » alors que le mail est parti dans le vide
+     * serait un mensonge de plus — et le responsable n'aurait aucun moyen de
+     * savoir qu'il doit relancer.
+     */
+    private static Map<String, Object> approvalView(TenantJoinService.ApprovalOutcome outcome) {
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("status", outcome.status());
+        view.put("tenantName", outcome.tenantName() == null ? "" : outcome.tenantName());
+        view.put("applicantEmail", outcome.applicantEmail() == null ? "" : outcome.applicantEmail());
+        view.put("emailSent", outcome.emailSent());
+        view.put("invitationExpiresAt", outcome.invitationExpiresAt() == null
+                ? "" : outcome.invitationExpiresAt().toString());
+        if (outcome.hasSession()) {
+            view.put("accessToken", outcome.accessToken());
+            view.put("refreshToken", outcome.refreshToken() == null ? "" : outcome.refreshToken());
+        }
+        return view;
     }
 
     @PostMapping("/join-requests/{id}/reject")

@@ -16,6 +16,20 @@
 # resterait enfreint ; la correction reelle est la separation domaine/infrastructure du contexte
 # payments (migration V1), pas un renommage de paquet. Ce re-gel est trace dans KNOWN_ISSUES.
 #
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-13 (3e du jour, apres les deux autres).
+# R1 est passe de 8009 a 8011 (+2) avec le rattrapage d'une adhesion approuvee dont
+# le lien d'activation a expire (V253) : `TenantJoinRequest` a recu deux colonnes,
+# `invitation_id` et `invitation_sent_at`, donc deux annotations `@Column`.
+# Ce n'est PAS une nouvelle categorie d'impurete : `TenantJoinRequest` est deja
+# signalee comme entite JPA posee dans `domain` (son `@Entity` et son `@Table`
+# sont dans les 8009). On ne peut pas ajouter une colonne sans `@Column` — c'est
+# la definition meme d'une colonne JPA. La seule facon de ne pas crever ce
+# plafond serait de renoncer a memoriser le lien, c'est-a-dire de laisser
+# l'adhesion approuvee devenir introuvable et non relancable : echanger un plafond
+# de dette contre un cul-de-sac pour l'utilisateur n'est pas un nettoyage.
+# La correction reelle reste la sortie des entites du domaine (migration V1), comme
+# pour les 8009 precedentes.
+#
 # EXCEPTION CONSTATEE ET REGELEE - 2026-10-13 (a ne pas reproduire).
 # R4 est passe de 3010 a 3013 (+3) avec le correctif de l'inscription « au nom d'une
 # eglise » (faille JoinMode) : `TenantJoinService.registerWithSlug` porte `@Transactional`,
@@ -30,13 +44,39 @@
 # domaine (migration V1), pas un amenagement local.
 # La dette n'augmente que parce que la porte est enfin FERMEE : c'est le prix,
 # assume et borne, de l'application du JoinMode a l'inscription par lien.
-# constat R1 (domaine sans infrastructure) : 8009 violations, gelees par plafond ci-dessous
-plafond|R1|8009
+#
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-13 (2e du jour, apres la precedente).
+# R4 est passe de 3013 a 3022 (+9 = 3 methodes transactionnelles x 3 entrees
+# : Transactional + Propagation + Isolation) avec le rattrapage d'une adhesion
+# approuvee dont le lien d'activation a expire :
+#   1. `TenantJoinService.resendInvitationForRequest` — ECRIT (relance le jeton,
+#      horodate la demande, journalise). Sans transaction, une relance partie a
+#      moitie laisserait un jeton invalide en base alors que l'ecran annonce un
+#      email envoye : c'est-a-dire un lien que PERSONNE ne peut ouvrir, affiche
+#      comme valide. Exactement le piege qu'on ferme ici.
+#   2. `InvitationService.reissue` — ECRIT (nouveau token_hash, expiration,
+#      remise a zero de reminded_at). Memes raisons.
+#   3. `TenantJoinService.joinRequests` — LECTURE. `readOnly = true` n'est pas
+#      cosmetique : Hibernate passe en FlushMode.MANUAL et evite le dirty
+#      checking sur des listes d'ecrans d'administration.
+# Aucune de ces trois methodes n'est supprimable sans regression. Meme motif que
+# les 7 methodes `@Transactional` deja gelees dans `TenantJoinService`, et que
+# les 3013 entrees deja gelees ailleurs : la dette R4 est un constat V0.1 dont la
+# resolution est la sortie des annotations de conteneur du domaine (migration V1).
+#
+# Piege explicite pour le prochain : `pendingRequests` delegue a `joinRequests`,
+# mais son `@Transactional` NE PEUT PAS etre retire. L'appel interne est une
+# auto-invocation : le proxy Spring ne s'applique pas, donc c'est l'annotation du
+# delegateur qui ouvre la transaction. La retirer laisserait les lectures sans
+# transaction — un piege classique, invisible a la compilation et aux tests
+# unitaires.
+# constat R1 (domaine sans infrastructure) : 8011 violations, gelees par plafond ci-dessous
+plafond|R1|8011
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
-# constat R4 (domaine sans annotations de conteneur) : 3013 violations, gelees par plafond ci-dessous
-plafond|R4|3013
+# constat R4 (domaine sans annotations de conteneur) : 3022 violations, gelees par plafond ci-dessous
+plafond|R4|3022
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 objet|R3|admin -> alerts

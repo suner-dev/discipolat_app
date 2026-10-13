@@ -61,6 +61,21 @@ public class TenantJoinRequest {
     @Column(name = "handled_by")
     private UUID handledBy;
 
+    /**
+     * Invitation émise à l'approbation pour une demande SANS compte (V253).
+     *
+     * <p>{@code null} = aucune invitation : soit la demande concerne un compte
+     * déjà connecté, soit elle a été approuvée avant V253, soit l'émission a
+     * échoué. C'est ce lien qui rend la <b>relance</b> possible : on régénère le
+     * jeton sur CETTE invitation, et pas sur une invitation homonyme.
+     */
+    @Column(name = "invitation_id")
+    private UUID invitationId;
+
+    /** Dernier envoi du lien d'activation — permet de distinguer « jamais parti » d'« ancien ». */
+    @Column(name = "invitation_sent_at")
+    private java.time.Instant invitationSentAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();

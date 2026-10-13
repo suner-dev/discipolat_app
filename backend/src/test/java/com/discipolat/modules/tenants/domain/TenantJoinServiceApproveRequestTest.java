@@ -165,11 +165,48 @@ class TenantJoinServiceApproveRequestTest {
         givenPendingRequest(null, null);
         givenInvitationIssued();
 
-        TenantJoinService.JoinOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
+        TenantJoinService.ApprovalOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
 
-        assertThat(outcome.status()).isEqualTo("JOINED");
+        assertThat(outcome.status()).isEqualTo("INVITATION_SENT");
         assertThat(outcome.hasSession()).isFalse();
         verify(activeTenantService, never()).switchTenant(any(), any());
+    }
+
+    @Test
+    @DisplayName("Approbation sans compte : le lien est POSÉ sur la demande et l’envoi est horodaté")
+    void approvalStampsTheInvitationLinkOnTheRequest() {
+        TenantJoinRequest request = givenPendingRequest(null, null);
+        givenInvitationIssued();
+
+        TenantJoinService.ApprovalOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
+
+        // V253 : sans ce lien, la demande approuvée reste introuvable et sa
+        // relance impossible — c'est exactement le cul-de-sac qu'on ferme.
+        assertThat(request.getInvitationId()).isNotNull();
+        assertThat(request.getInvitationSentAt()).isNotNull();
+        assertThat(outcome.applicantEmail()).isEqualTo(EMAIL);
+        assertThat(outcome.emailSent()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Approbation sans compte, email parti dans le vide : le retour dit NON")
+    void approvalReportsEmailFailure() {
+        TenantJoinRequest request = givenPendingRequest(null, null);
+        when(invitationService.createInvitation(any(), any(), anyString(), anyString(),
+                any(), any(), any()))
+                .thenReturn(new InvitationService.InvitationCreationResult(
+                        InvitationService.InvitationCreationKind.INVITATION,
+                        UUID.randomUUID(), null, EMAIL, "MEMBRE", "TENANT", null,
+                        "jeton", "https://app/accept-invitation?token=jeton", false, false, false));
+
+        TenantJoinService.ApprovalOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
+
+        // L'invitation EXISTE (donc relance possible) mais personne ne l'a reçue :
+        // c'est au responsable de le savoir, sinon il croira avoir welcoming
+        // quelqu'un alors que la personne est encore outside.
+        assertThat(outcome.emailSent()).isFalse();
+        assertThat(request.getInvitationId()).isNotNull();
+        assertThat(request.getInvitationSentAt()).isNull();
     }
 
     // ---------- la sous-église ----------
@@ -210,7 +247,7 @@ class TenantJoinServiceApproveRequestTest {
         when(activeTenantService.switchTenant(any(), any()))
                 .thenReturn(new ActiveTenantService.SwitchOutcome(TENANT_ID, "a1", "r1", "MEMBRE"));
 
-        TenantJoinService.JoinOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
+        TenantJoinService.ApprovalOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
 
         // Ici le compte EXISTE : « connectez-vous » est vrai, et l'invitation
         // serait inutile.
@@ -231,9 +268,13 @@ class TenantJoinServiceApproveRequestTest {
                         org.springframework.http.HttpStatus.BAD_REQUEST, "INVITATION_ALREADY_PENDING"));
 
         // Ne doit PAS lever : l'admin reverrait sa demande repasser en attente.
-        TenantJoinService.JoinOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
+        TenantJoinService.ApprovalOutcome outcome = service.approveRequest(REQUEST_ID, TENANT_ID, ADMIN_ID);
 
-        assertThat(outcome.status()).isEqualTo("JOINED");
+        assertThat(outcome.status()).isEqualTo("INVITATION_SENT");
+        // Aucune invitation émise → aucune échéance : l'écran reçoit `null` et
+        // doit en faire un avertissement, pas un silence.
+        assertThat(outcome.invitationExpiresAt()).isNull();
+        assertThat(outcome.emailSent()).isFalse();
         assertThat(request.getStatus()).isEqualTo(TenantJoinRequest.Status.APPROVED);
 
         ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);

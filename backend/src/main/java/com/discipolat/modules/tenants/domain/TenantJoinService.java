@@ -139,6 +139,48 @@ public class TenantJoinService {
     }
 
     /**
+     * Issue d'une APPROBATION de demande d'adhésion.
+     *
+     * <p>Distinct de {@link JoinOutcome} : une approbation n'est pas une
+     * rejointure. Elle ne renvoie un statut qu'on ne peut pas confondre avec
+     * « la personne est membre ».
+     *
+     * @param status              {@code JOINED} si un compte existe et a été
+     *                            rattaché, {@code INVITATION_SENT} si un lien
+     *                            d'activation a été émis. <b>Jamais</b>
+     *                            {@code JOINED} sans rattachement réel.
+     * @param emailSent           pour {@code INVITATION_SENT} : {@code false}
+     *                            signifie que PERSONNE n'a reçu le lien. Ne
+     *                            jamais présenter cela comme un succès.
+     * @param invitationExpiresAt échéance du lien émis, ou {@code null}.
+     */
+    public record ApprovalOutcome(String status,
+                                  UUID tenantId,
+                                  String tenantName,
+                                  String accessToken,
+                                  String refreshToken,
+                                  String applicantEmail,
+                                  boolean emailSent,
+                                  Instant invitationExpiresAt) {
+
+        static ApprovalOutcome joined(UUID tenantId, String tenantName,
+                                       String accessToken, String refreshToken) {
+            return new ApprovalOutcome("JOINED", tenantId, tenantName,
+                    accessToken, refreshToken, null, false, null);
+        }
+
+        static ApprovalOutcome invitationSent(UUID tenantId, String tenantName, String email,
+                                               boolean emailSent, Instant expiresAt) {
+            return new ApprovalOutcome("INVITATION_SENT", tenantId, tenantName,
+                    null, null, email, emailSent, expiresAt);
+        }
+
+        public boolean hasSession() {
+            return accessToken != null && !accessToken.isBlank();
+        }
+    }
+
+    /**
      * Rejointure authentifiée (POST /api/v1/tenant/join). Le compte courant
      * devient MEMBRE de l'église du code — ou demande une approbation si le
      * code est en mode APPROVAL.
@@ -321,7 +363,7 @@ public class TenantJoinService {
 
     /** Validation par un admin tenant d'une demande PENDING (mode APPROVAL). */
     @Transactional
-    public JoinOutcome approveRequest(UUID requestId, UUID currentTenantId, UUID handledBy) {
+    public ApprovalOutcome approveRequest(UUID requestId, UUID currentTenantId, UUID handledBy) {
         TenantJoinRequest request = joinRequestRepository.findById(requestId)
                 .orElseThrow(() -> new DomainException("Demande introuvable",
                         HttpStatus.NOT_FOUND, "JOIN_REQUEST_NOT_FOUND"));
@@ -348,7 +390,6 @@ public class TenantJoinService {
         request.setStatus(TenantJoinRequest.Status.APPROVED);
         request.setHandledAt(Instant.now());
         request.setHandledBy(handledBy);
-        joinRequestRepository.save(request);
         if (request.getUserId() == null) {
             // Pré-inscription par email : AUCUN compte n'existe. C'est le cas
             // des deux portes APPROVAL — inscription par code ET inscription par
@@ -360,6 +401,7 @@ public class TenantJoinService {
                             + " » a été approuvée. Connectez-vous, vous y êtes maintenant membre.\n\n"
                             + "L'équipe Discipolat");
         }
+        joinRequestRepository.save(request);
         auditService.logSimple("JOIN_REQUEST_APPROVED", "TENANT", tenant.getId());
         // T-B0bis (F7) : même correction que joinWithCode — l'approbation peut
         // concerner un compte déjà connecté (request.userId renseigné), qui doit
@@ -370,10 +412,101 @@ public class TenantJoinService {
         if (request.getUserId() != null) {
             ActiveTenantService.SwitchOutcome session =
                     activeTenantService.switchTenant(request.getUserId(), tenant.getId());
-            return JoinOutcome.joinedWithSession(tenant.getId(), tenant.getName(), null,
+            return ApprovalOutcome.joined(tenant.getId(), tenant.getName(),
                     session.accessToken(), session.refreshToken());
         }
-        return JoinOutcome.joined(tenant.getId(), tenant.getName(), null);
+        // PAS de « JOINED » : personne n'a rejoint, une invitation a été émise.
+        // Renvoyer JOINED ici faisait dire à l'écran « Demande approuvée » sans
+        // que quiconque ne soit membre, et masquait le cas où le mail est parti
+        // dans le vide.
+        String email = request.getEmail() == null ? "" : request.getEmail();
+        boolean sent = request.getInvitationSentAt() != null;
+        return ApprovalOutcome.invitationSent(tenant.getId(), tenant.getName(), email,
+                sent, invitationExpiry(request, tenant));
+    }
+
+    /**
+     * Échéance du lien émis pour une demande, lue sur l'invitation liée.
+     * {@code null} si aucune invitation n'a pu être émise — c'est le signal
+     * que l'écran doit transformer en avertissement, pas en silence.
+     */
+    private Instant invitationExpiry(TenantJoinRequest request, Tenant tenant) {
+        if (request.getInvitationId() == null) {
+            return null;
+        }
+        return invitationService.peekExpiry(request.getInvitationId(), tenant.getId())
+                .orElse(null);
+    }
+
+    /**
+     * Relance le lien d'activation d'une demande approuvée.
+     *
+     * <p><b>Le cul-de-sac refermé.</b> Le lien expire 7 jours après l'émission
+     * et le token n'est stocké que haché : il n'est pas rejouable. La demande,
+     * elle, est {@code APPROVED} — donc invisible dans
+     * {@code GET /tenant/join-requests}, qui ne renvoie que les {@code PENDING}.
+     * Avant ce correctif, à J+8 la personne ne pouvait plus rien demander et le
+     * responsable n'avait aucun moyen de l'aider ; elle ne pouvait ressortir que
+     * par un effet de bord, en repassant par {@code /register} pour créer une
+     * NOUVELLE demande.
+     *
+     * <p>On rend donc le rejeu explicite et tracé. Ce n'est pas une
+     * fonctionnalité de confort : sans elle, l'approbation d'une église reste
+     * annulable par le calendrier.
+     */
+    @Transactional
+    public ApprovalOutcome resendInvitationForRequest(UUID requestId, UUID currentTenantId, UUID actorId) {
+        TenantJoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new DomainException("Demande introuvable",
+                        HttpStatus.NOT_FOUND, "JOIN_REQUEST_NOT_FOUND"));
+        if (!request.getTenantId().equals(currentTenantId)) {
+            throw new DomainException("Demande introuvable", HttpStatus.NOT_FOUND, "JOIN_REQUEST_NOT_FOUND");
+        }
+        if (request.getStatus() != TenantJoinRequest.Status.APPROVED) {
+            throw new DomainException(
+                    "Seule une demande approuvée peut être relancée", HttpStatus.CONFLICT, "JOIN_REQUEST_NOT_APPROVED");
+        }
+        if (request.getUserId() != null || request.getEmail() == null || request.getEmail().isBlank()) {
+            // Compte déjà rattaché : il n'y a pas de lien à renvoyer, et en
+            // inviter un compte existant le ferait entrer une seconde fois.
+            throw new DomainException("Aucun lien à relancer pour cette demande",
+                    HttpStatus.CONFLICT, "JOIN_REQUEST_NOT_RESENDABLE");
+        }
+        Tenant tenant = requireActiveTenant(request.getTenantId());
+
+        UUID invitationId = request.getInvitationId() != null
+                ? request.getInvitationId()
+                // Demande approuvée avant V253 : on retrouve l'invitation par
+                // l'email. `findFirst` peut en trouver plusieurs (une PENDING
+                // et une EXPIRED) : on privilégie la PENDING, c'est celle qui
+                // peut encore servir.
+                : findInvitableInvitationId(tenant.getId(), request.getEmail());
+        if (invitationId == null) {
+            // Aucune invitation n'existe (l'approbation d'avant V253, ou une
+            // émission en échec) : on en crée une plutôt que de laisser la
+            // demande sans issue.
+            issueActivationInvitationQuietly(request, tenant, actorId);
+            joinRequestRepository.save(request);
+            return ApprovalOutcome.invitationSent(tenant.getId(), tenant.getName(), request.getEmail(),
+                    request.getInvitationSentAt() != null, invitationExpiry(request, tenant));
+        }
+
+        InvitationService.ReissueResult result = invitationService.reissue(invitationId, tenant.getId(), actorId);
+        request.setInvitationId(result.invitationId());
+        if (result.emailSent()) {
+            request.setInvitationSentAt(Instant.now());
+        }
+        joinRequestRepository.save(request);
+        auditService.logSimple("JOIN_REQUEST_INVITATION_RESENT", "TENANT", tenant.getId());
+        return ApprovalOutcome.invitationSent(tenant.getId(), tenant.getName(), result.email(),
+                result.emailSent(), result.expiresAt());
+    }
+
+    /** Invitation encore susceptible d'être relancée pour cet email, ou {@code null}. */
+    private UUID findInvitableInvitationId(UUID tenantId, String email) {
+        UUID pending = invitationService.findInvitableInvitationId(tenantId, email, InvitationStatus.PENDING);
+        return pending != null ? pending
+                : invitationService.findInvitableInvitationId(tenantId, email, InvitationStatus.EXPIRED);
     }
 
     /**
@@ -417,6 +550,13 @@ public class TenantJoinService {
         try {
             InvitationService.InvitationCreationResult result = invitationService.createInvitation(
                     tenant.getId(), handledBy, email, MEMBER_ROLE_KEY, scopeType, orgNodeId, orgNodeId);
+            // V253 : le lien est désormais RELIÉ à la demande. C'est ce qui
+            // permet, 7 jours plus tard, de renvoyer le bon lien à la bonne
+            // personne — et à l'écran de dire si l'email est parti.
+            request.setInvitationId(result.invitationId());
+            if (result.emailSent()) {
+                request.setInvitationSentAt(Instant.now());
+            }
             auditService.logSimple("JOIN_REQUEST_APPROVED_INVITATION_ISSUED", "TENANT", tenant.getId());
             log.info("Adhésion approuvée pour {} (tenant {}) : invitation {} ({}, email envoyé={})",
                     email, tenant.getId(), result.invitationId(), result.kind(), result.emailSent());
@@ -471,6 +611,40 @@ public class TenantJoinService {
     public List<TenantJoinRequest> pendingRequests(UUID tenantId) {
         return joinRequestRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(
                 tenantId, TenantJoinRequest.Status.PENDING);
+    }
+
+    /**
+     * Demandes d'un tenant, filtrées par statut. {@code null} = tous statuts.
+     *
+     * <p>{@link #pendingRequests} est conservé tel quel et délègue ici : il reste
+     * utilisé ailleurs, et le comportement historique (PENDING seulement) doit
+     * être exactement le même.
+     */
+    @Transactional(readOnly = true)
+    public List<TenantJoinRequest> joinRequests(UUID tenantId, TenantJoinRequest.Status status) {
+        if (status == null) {
+            return joinRequestRepository.findByTenantIdOrderByCreatedAtDesc(tenantId);
+        }
+        return joinRequestRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status);
+    }
+
+    /**
+     * Cette demande peut-elle recevoir un nouveau lien ?
+     *
+     * <p>Réponse calculée ici et non dans l'écran : la règle est une règle
+     * serveur, et deux clients (web demain, mobile) doivent obtenir la même
+     * réponse sans la réimplémenter.
+     *
+     * <p>Vrai seulement pour une demande approuvée, sans compte et avec un
+     * email : c'est la seule situation où un lien a été — ou aurait dû être —
+     * émis. Une demande rejetée, ou une adhésion déjà effective, ne se relance
+     * pas.
+     */
+    public boolean isResendable(TenantJoinRequest request) {
+        return request.getStatus() == TenantJoinRequest.Status.APPROVED
+                && request.getUserId() == null
+                && request.getEmail() != null
+                && !request.getEmail().isBlank();
     }
 
     // ======================== INTERNAL ========================

@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  CheckCircle2, Copy, KeyRound, Link2, Loader2, Plus, RefreshCw, ShieldOff, Users, X,
+  CheckCircle2, Copy, KeyRound, Link2, Loader2, MailCheck, Plus, RefreshCw, ShieldOff, Users, X,
 } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
@@ -38,6 +38,23 @@ type JoinRequest = {
   userId: string;
   status: string;
   createdAt: string;
+  /** V253 — vide = aucune invitation émise (jamais `undefined`). */
+  invitationId: string;
+  /** V253 — vide = le lien n'a jamais été envoyé. */
+  invitationSentAt: string;
+  /** V253 — calculé par le serveur, pas recompté ici : deux clients doivent
+   *  obtenir la même réponse sans réimplémenter la règle. */
+  resendable: boolean;
+};
+
+/** Réponse de `POST /join-requests/{id}/approve` et `.../resend-invitation`. */
+type ApprovalResponse = {
+  status: 'JOINED' | 'INVITATION_SENT' | string;
+  tenantName: string;
+  applicantEmail: string;
+  emailSent: boolean;
+  /** Vide = aucune invitation, ou échéance inconnue. */
+  invitationExpiresAt: string;
 };
 
 type SubChurch = {
@@ -72,6 +89,18 @@ export default function TenantJoinManagementPage() {
   const { data: requests } = useQuery<JoinRequest[]>({
     queryKey: ['tenant', 'join-requests'],
     queryFn: async () => (await api.get('/tenant/join-requests')).data,
+  });
+
+  /**
+   * Demandes APPROUVÉES dont le lien n'a pas encore été ouvert.
+   *
+   * <p>Elles doivent être visibles : le lien expire 7 jours après l'approbation
+   * et n'est pas rejouable. Sans cette liste, une personne dont le lien a expiré
+   * disparaît de l'écran et le responsable n'a aucun moyen de l'aider.
+   */
+  const { data: approvedRequests } = useQuery<JoinRequest[]>({
+    queryKey: ['tenant', 'join-requests', 'approved'],
+    queryFn: async () => (await api.get('/tenant/join-requests', { params: { status: 'APPROVED' } })).data,
   });
 
   const refreshCodes = () => {
@@ -130,15 +159,65 @@ export default function TenantJoinManagementPage() {
     onError: (err) => setError(getErrorMessage(err)),
   });
 
+  /**
+   * Message d'une approbation, calculé sur ce que le serveur a RÉELLEMENT fait.
+   *
+   * <p>« Demande approuvée. » était dit dans tous les cas, y compris quand
+   * aucune invitation n'avait pu partir — et même, avant correction, quand la
+   * demande n'avait créé aucun membre. Le responsable pouvait croire avoir
+   * accueilli quelqu'un alors que la personne n'avait rien reçu. Le serveur
+   * distingue désormais {@code JOINED} d'{@code INVITATION_SENT} et dit si le
+   * mail est parti : on ne fait plus semblant.
+   */
+  const approvalNotice = (r: ApprovalResponse): string => {
+    if (r.status !== 'INVITATION_SENT') {
+      return tText('Demande approuvée. Le membre est rattaché.');
+    }
+    const who = r.applicantEmail ? ` <${r.applicantEmail}>` : '';
+    if (!r.emailSent) {
+      return tText(
+        `Demande approuvée, mais l’e-mail${who} n’a pas pu être envoyé : la personne n’a pas reçu son lien. Renvoyez-le ci-dessous.`,
+      );
+    }
+    const until = r.invitationExpiresAt
+      ? tText(` (lien valable jusqu’au ${new Date(r.invitationExpiresAt).toLocaleDateString()})`)
+      : '';
+    return tText(`Invitation envoyée${who} : la personne doit encore ouvrir son lien pour créer son compte${until}.`);
+  };
+
   const decideMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: 'approve' | 'reject' }) =>
       // audit-routes: /tenant/join-requests/{id}/approve, /tenant/join-requests/{id}/reject
       api.post(`/tenant/join-requests/${id}/${action}`),
-    onSuccess: (_d, vars) => {
-      setNotice(vars.action === 'approve' ? tText('Demande approuvée.') : tText('Demande rejetée.'));
+    onSuccess: (data, vars) => {
+      if (vars.action === 'reject') {
+        setNotice(tText('Demande rejetée.'));
+      } else {
+        // Le message doit refléter la réalité serveur ; une réponse illisible
+        // ne doit pas non plus faire annoncer une fausse réussite.
+        const body = (data as { data?: ApprovalResponse } | undefined)?.data;
+        setNotice(body?.status ? approvalNotice(body) : tText('Demande traitée.'));
+      }
       setError('');
       queryClient.invalidateQueries({ queryKey: ['tenant', 'join-requests'] });
       refreshCodes();
+    },
+    onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  /**
+   * Relance le lien d’activation. Le token étant stocké haché, le serveur en
+   * génère un nouveau : le bouton n'est PAS « renvoyer le même lien ».
+   */
+  const resendMutation = useMutation({
+    mutationFn: async (id: string) =>
+      // audit-routes: /tenant/join-requests/{id}/resend-invitation
+      api.post(`/tenant/join-requests/${id}/resend-invitation`),
+    onSuccess: (data) => {
+      const body = (data as { data?: ApprovalResponse } | undefined)?.data;
+      setNotice(body?.status ? approvalNotice(body) : tText('Lien renvoyé.'));
+      setError('');
+      queryClient.invalidateQueries({ queryKey: ['tenant', 'join-requests'] });
     },
     onError: (err) => setError(getErrorMessage(err)),
   });
@@ -372,6 +451,65 @@ export default function TenantJoinManagementPage() {
             ))
           ) : (
             <p className="px-5 py-8 text-center text-sm text-gray-400">{tText('Aucune demande en attente.')}</p>
+          )}
+        </div>
+      </section>
+
+      {/* Adhésions approuvées dont le lien n'a pas encore été ouvert. Section
+          distincte des « demandes en attente » : une demande approuvée n'est
+          plus à approuver, elle est à *relancer*. Les confondre fit croire au
+          responsable qu'il avait des demandes en attente alors qu'il n'en avait
+          plus, et l'empêchait de voir qui n'avait toujours pas rejoint. */}
+      <section
+        className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 overflow-hidden"
+        data-testid="join-approved"
+      >
+        <header className="px-5 py-3 border-b font-semibold text-sm text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <MailCheck className="w-4 h-4" />
+          {tText('Approuvées — en attente d’ouverture du lien')} ({approvedRequests?.length ?? 0})
+        </header>
+        <div className="divide-y divide-gray-100 dark:divide-white/5">
+          {approvedRequests?.length ? (
+            approvedRequests.map((r) => (
+              <div key={r.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                    {r.email || r.userId || tText('Compte')}
+                  </p>
+                  <p className="text-xs font-mono text-gray-400">
+                    {r.code} · {new Date(r.createdAt).toLocaleDateString()}
+                    {' · '}
+                    {r.invitationSentAt
+                      ? tText(`lien envoyé le ${new Date(r.invitationSentAt).toLocaleDateString()}`)
+                      : tText('lien jamais envoyé')}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  {r.resendable ? (
+                    <button
+                      type="button"
+                      onClick={() => resendMutation.mutate(r.id)}
+                      disabled={resendMutation.isPending}
+                      className="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-500 disabled:opacity-50"
+                    >
+                      {resendMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      <span className="ml-1">{tText('Renvoyer le lien')}</span>
+                    </button>
+                  ) : (
+                    // Règle calculée par le serveur : on ne la redérive pas ici.
+                    <span className="text-xs text-gray-400">{tText('Déjà effectif')}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="px-5 py-8 text-center text-sm text-gray-400">
+              {tText('Aucune adhésion en attente d’ouverture du lien.')}
+            </p>
           )}
         </div>
       </section>

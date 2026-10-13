@@ -28,6 +28,15 @@ public class InvitationService {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InvitationService.class);
 
+    /**
+     * Validité d'une invitation : 7 jours. Constante nommée plutôt que le
+     * littéral inline : la relance doit prolonger EXACTEMENT la même durée que
+     * l'émission initiale, sinon les paliers J-3/J-1 du scheduler
+     * ({@code InvitationReminderScheduler.INVITATION_VALIDITY_DAYS}) ne
+     * tomberaient plus juste après une relance.
+     */
+    static final long INVITATION_VALIDITY_SECONDS = 7L * 24 * 3600;
+
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
     private final TenantMembershipRepository membershipRepository;
@@ -325,7 +334,7 @@ public class InvitationService {
                 .inviterId(inviterId)
                 .tokenHash(InvitationTokenHasher.hash(token))
                 .status(InvitationStatus.PENDING)
-                .expiresAt(Instant.now().plusSeconds(7 * 24 * 3600))
+                .expiresAt(Instant.now().plusSeconds(INVITATION_VALIDITY_SECONDS))
                 .organizationNodeId(organizationNodeId)
                 .build();
         invitationRepository.save(invitation);
@@ -345,6 +354,102 @@ public class InvitationService {
      * Envoi de l'email d'invitation. Jamais bloquant (décision D10) : un SMTP non
      * configuré doit produire {@code emailSent = false}, pas une exception.
      */
+    /**
+     * Issue d'une <b>relance</b> : le jeton a été régénéré, l'ancien ne
+     * fonctionne plus.
+     *
+     * @param emailSent {@code false} si le SMTP a échoué — l'invitation reste
+     *                  valable et relanceable, mais PERSONNE ne l'a reçue. Ne
+     *                  jamais présenter cela comme un succès.
+     */
+    public record ReissueResult(UUID invitationId,
+                                String email,
+                                Instant expiresAt,
+                                boolean emailSent,
+                                String status) {
+    }
+
+    /** Invitation encore susceptible d'être relancée pour cet email, ou {@code null}. */
+    UUID findInvitableInvitationId(UUID tenantId, String email, InvitationStatus status) {
+        return invitationRepository.findFirstByTenantIdAndEmailAndStatus(tenantId, email, status)
+                .map(Invitation::getId)
+                .orElse(null);
+    }
+
+    /**
+     * Échéance d'une invitation, filtrée sur le tenant.
+     *
+     * <p>Existe pour que l'écran d'administration affiche une date RÉELLE
+     * plutôt qu'une durée devinée. Renvoie un {@code Optional} vide — jamais
+     * d'exception — parce que l'appelant s'en sert pour deciding s'il doit
+     * avertir, et non pour contrôler l'accès : l'accès, lui, est vérifié en
+     * amont, sur la demande.
+     */
+    Optional<Instant> peekExpiry(UUID invitationId, UUID tenantId) {
+        return invitationRepository.findById(invitationId)
+                .filter(invitation -> invitation.getTenantId().equals(tenantId))
+                .map(Invitation::getExpiresAt);
+    }
+
+    /**
+     * Relance une invitation en régénérant son jeton.
+     *
+     * <p><b>Pourquoi régénérer et pas renvoyer.</b> Le token n'est stocké que
+     * HACHÉ (V173/V175) : il n'est pas reconstructible, et un lien « reconstruit »
+     * serait un lien qui ne fonctionne pas. Le scheduler de relances
+     * ({@code InvitationReminderScheduler}) le dit explicitement et se contente
+     * donc de rappeler à l'invité de repasser par l'écran — ce qui ne sert
+     * personne quand on n'a pas encore de compte. Ici on refait un jeton
+     * <b>réellement valide</b>.
+     *
+     * <p><b>Ce qu'on refuse, et pourquoi.</b>
+     * <ul>
+     *   <li>{@code ACCEPTED} : la personne est déjà membre. Relancer
+     *       lui renverrait un lien qui la ferait entrer une seconde fois.</li>
+     *   <li>{@code REVOKED} : décision délibérée d'une église.</li>
+     *   <li>un tenant différent : la relance est un acte d'administration.</li>
+     * </ul>
+     *
+     * <p>Une invitation {@code EXPIRED} redevient {@code PENDING} avec une
+     * nouvelle échéance : c'est précisément le cas que ce correctif traite.
+     */
+    @Transactional
+    public ReissueResult reissue(UUID invitationId, UUID tenantId, UUID actorId) {
+        Invitation invitation = invitationRepository.findByIdForUpdate(invitationId)
+                .orElseThrow(() -> new DomainException("Invitation introuvable",
+                        HttpStatus.NOT_FOUND, "INVITATION_NOT_FOUND"));
+        if (!invitation.getTenantId().equals(tenantId)) {
+            throw new DomainException("Invitation introuvable",
+                    HttpStatus.NOT_FOUND, "INVITATION_NOT_FOUND");
+        }
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+            throw new DomainException("Cette invitation a déjà été acceptée",
+                    HttpStatus.CONFLICT, "INVITATION_ALREADY_ACCEPTED");
+        }
+        if (invitation.getStatus() == InvitationStatus.REVOKED) {
+            throw new DomainException("Cette invitation a été révoquée",
+                    HttpStatus.CONFLICT, "INVITATION_REVOKED");
+        }
+
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 32);
+        invitation.setTokenHash(InvitationTokenHasher.hash(token));
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setExpiresAt(Instant.now().plusSeconds(INVITATION_VALIDITY_SECONDS));
+        // Le compteur de paliers repart de zéro : sinon `alreadyRemindedFor`
+        // comparerait le nouveau rappel à l'ancienne échéance et n'enverrait
+        // plus jamais rien.
+        invitation.setRemindedAt(null);
+        invitation.setUpdatedAt(Instant.now());
+        invitationRepository.save(invitation);
+
+        String link = frontendUrl + "/accept-invitation?token=" + token;
+        boolean emailSent = sendInvitationEmail(
+                invitation.getEmail(), invitation.getRole(), tenantId, link);
+        auditService.logSimple("INVITATION_REISSUED", "INVITATION", invitation.getId());
+        return new ReissueResult(invitation.getId(), invitation.getEmail(),
+                invitation.getExpiresAt(), emailSent, invitation.getStatus().name());
+    }
+
     private boolean sendInvitationEmail(String email, String roleKey, UUID tenantId, String invitationLink) {
         try {
             String tenantName = tenantRepository.findById(tenantId)
