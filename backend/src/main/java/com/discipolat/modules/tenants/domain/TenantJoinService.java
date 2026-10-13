@@ -60,6 +60,7 @@ public class TenantJoinService {
     private final UserRepository userRepository;
     private final ActiveTenantService activeTenantService;
     private final AuthServiceBridge authServiceBridge;
+    private final InvitationService invitationService;
     private final AuditService auditService;
     private final CrossTenantScopeAccess crossTenant;
     private final EmailService emailService;
@@ -74,6 +75,7 @@ public class TenantJoinService {
                              UserRepository userRepository,
                              ActiveTenantService activeTenantService,
                              AuthServiceBridge authServiceBridge,
+                             InvitationService invitationService,
                              AuditService auditService,
                              CrossTenantScopeAccess crossTenant,
                              EmailService emailService,
@@ -87,6 +89,7 @@ public class TenantJoinService {
         this.userRepository = userRepository;
         this.activeTenantService = activeTenantService;
         this.authServiceBridge = authServiceBridge;
+        this.invitationService = invitationService;
         this.auditService = auditService;
         this.crossTenant = crossTenant;
         this.emailService = emailService;
@@ -346,16 +349,24 @@ public class TenantJoinService {
         request.setHandledAt(Instant.now());
         request.setHandledBy(handledBy);
         joinRequestRepository.save(request);
-        sendEmailQuietly(request.getEmail(), "Votre adhésion à " + tenant.getName() + " est validée",
-                "Bonjour,\n\nVotre demande d'adhésion à « " + tenant.getName()
-                        + " » a été approuvée. Connectez-vous, vous y êtes maintenant membre.\n\n"
-                        + "L'équipe Discipolat");
+        if (request.getUserId() == null) {
+            // Pré-inscription par email : AUCUN compte n'existe. C'est le cas
+            // des deux portes APPROVAL — inscription par code ET inscription par
+            // lien, désormais protégée elle aussi par le JoinMode.
+            issueActivationInvitationQuietly(request, tenant, handledBy);
+        } else {
+            sendEmailQuietly(request.getEmail(), "Votre adhésion à " + tenant.getName() + " est validée",
+                    "Bonjour,\n\nVotre demande d'adhésion à « " + tenant.getName()
+                            + " » a été approuvée. Connectez-vous, vous y êtes maintenant membre.\n\n"
+                            + "L'équipe Discipolat");
+        }
         auditService.logSimple("JOIN_REQUEST_APPROVED", "TENANT", tenant.getId());
         // T-B0bis (F7) : même correction que joinWithCode — l'approbation peut
         // concerner un compte déjà connecté (request.userId renseigné), qui doit
         // donc repartir avec un jeton portant la nouvelle organisation plutôt
-        // qu'avec son jeton périmé. Sans compte connecté (pré-inscription par
-        // email), aucune session n'est à émettre : l'utilisateur se connectera.
+        // qu'avec son jeton périmé. Sans compte connecté, aucune session n'est à
+        // émettre : la personne n'a rien à ouvrir tant qu'elle n'a pas fixé son
+        // mot de passe, ce que le lien d'activation lui permet de faire.
         if (request.getUserId() != null) {
             ActiveTenantService.SwitchOutcome session =
                     activeTenantService.switchTenant(request.getUserId(), tenant.getId());
@@ -363,6 +374,79 @@ public class TenantJoinService {
                     session.accessToken(), session.refreshToken());
         }
         return JoinOutcome.joined(tenant.getId(), tenant.getName(), null);
+    }
+
+    /**
+     * Émet une VRAIE invitation à l'approbation d'une demande sans compte.
+     *
+     * <p><b>Le trou refermé.</b> L'approbation d'une pré-inscription envoyait
+     * « Votre demande a été approuvée. <b>Connectez-vous</b>, vous y êtes
+     * maintenant membre » — alors qu'aucun compte n'avait jamais été créé. Le
+     * chemin APPROVAL ne crée volontairement aucun compte avant la décision de
+     * l'église (c'est tout l'intérêt du mode) ; il n'en créait pas davantage
+     * après. La personne est donc invitée à « se connecter », n'a pas de compte,
+     * et l'approbation devient une impasse : l'église a validé, et rien ne
+     * s'ouvre.
+     *
+     * <p>On réutilise le mécanisme DÉJÀ livré par le produit
+     * ({@link InvitationService}) : jeton à usage unique, hashé en base, valable
+     * 7 jours, email contenant {@code /accept-invitation?token=…}. Aucune
+     * invitation parallèle, aucun second écran d'activation, aucun mot de passe
+     * posé par le serveur : la personne le choisit elle-même en ouvrant le lien,
+     * comme pour toute invitation du produit.
+     *
+     * <p><b>Jamais bloquant pour l'approbation.</b> L'église a décidé, la
+     * décision est enregistrée et auditée quoi qu'il arrive. Si l'invitation ne
+     * peut pas être émise, on ne remet PAS l'approbation en cause (l'admin
+     * reverrait sa demande repasser en attente) — on prévient la personne de ce
+     * qui s'est réellement passé, pour ne pas retomber dans le mensonge
+     * d'origine.
+     */
+    private void issueActivationInvitationQuietly(TenantJoinRequest request, Tenant tenant,
+                                                  UUID handledBy) {
+        String email = request.getEmail();
+        if (email == null || email.isBlank()) {
+            // Ni compte ni adresse : il n'y a personne à convoquer. On le journalise
+            // au lieu d'envoyer un email à une adresse vide.
+            log.warn("Demande d'adhésion {} approuvée sans email ni compte : "
+                    + "aucune invitation émise (tenant {})", request.getId(), tenant.getId());
+            return;
+        }
+        UUID orgNodeId = request.getOrgNodeId();
+        MembershipScopeType scopeType = scopeTypeForJoinRequest(orgNodeId);
+        try {
+            InvitationService.InvitationCreationResult result = invitationService.createInvitation(
+                    tenant.getId(), handledBy, email, MEMBER_ROLE_KEY, scopeType, orgNodeId, orgNodeId);
+            auditService.logSimple("JOIN_REQUEST_APPROVED_INVITATION_ISSUED", "TENANT", tenant.getId());
+            log.info("Adhésion approuvée pour {} (tenant {}) : invitation {} ({}, email envoyé={})",
+                    email, tenant.getId(), result.invitationId(), result.kind(), result.emailSent());
+        } catch (RuntimeException failure) {
+            // INVITATION_ALREADY_PENDING, INVITATION_NODE_INVALID, rôle absent…
+            // L'approbation reste valide : on le dit à la personne, sans promettre
+            // un lien qui n'a pas pu être produit.
+            log.warn("Adhésion approuvée pour {} (tenant {}) mais invitation impossible : {}",
+                    email, tenant.getId(), failure.getMessage());
+            sendEmailQuietly(email, "Votre adhésion à " + tenant.getName() + " est validée",
+                    "Bonjour,\n\nVotre demande d'adhésion à « " + tenant.getName()
+                            + " » a été approuvée. Un responsable doit vous renvoyer votre lien "
+                            + "d'accès par e-mail : le lien reçu plus tôt a peut-être expiré.\n\n"
+                            + "L'équipe Discipolat");
+        }
+    }
+
+    /**
+     * Portée de l'invitation émise à l'approbation : l'église entière, ou le
+     * nœud qui était visé par la demande. Même lecture que
+     * {@link #grantMembership}, pour que la demande et l'invitation ne
+     * repartent pas sur deux périmètres différents.
+     */
+    private MembershipScopeType scopeTypeForJoinRequest(UUID orgNodeId) {
+        if (orgNodeId == null) {
+            return MembershipScopeType.TENANT;
+        }
+        return organizationNodeRepository.findById(orgNodeId)
+                .map(node -> scopeFor(node.getType()))
+                .orElse(MembershipScopeType.SUB_CHURCH);
     }
 
     @Transactional
