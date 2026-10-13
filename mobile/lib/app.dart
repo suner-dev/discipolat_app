@@ -1371,13 +1371,14 @@ const _publicRoutes = {
 /// la landing publique d'une église (R3 : réponse indistinguable pour
 /// slug inconnu / non listée / landing éteinte, mais la navigation elle-
 /// même reste autorisée à un visiteur non authentifié).
-const _publicRoutePrefixes = <String>['/e/'];
+const _publicRoutePrefixes = <String>['/e/', '/j/'];
 
 /// Helper pur — la même logique est appliquée aux deux interceptions
 /// (`firstRunExemptRoutes` et `_publicRoutes`), pour éviter qu'un deeplink
-/// `/e/bethel` soit dévié vers `/onboarding` puis `/login` sur une première
-/// exécution. La garde est volontairement restrictive : uniquement les
-/// préfixes explicitement listés, pas « tout ce qui n'est pas reconnu ».
+/// `/e/bethel` — ou `/j/bethel`, le lien d'invitation — soit dévié vers
+/// `/onboarding` puis `/login` sur une première exécution. La garde est
+/// volontairement restrictive : uniquement les préfixes explicitement listés,
+/// pas « tout ce qui n'est pas reconnu ».
 bool _isPublicLocation(String location) =>
     _publicRoutes.contains(location) ||
     _publicRoutePrefixes.any(location.startsWith);
@@ -1532,6 +1533,19 @@ final appRouter = GoRouter(
       name: 'join',
       builder: (context, state) => JoinChurchScreen(
         initialCode: state.uri.queryParameters['code'],
+      ),
+    ),
+    // SPEC_ONBOARDING_FLOWS — le LIEN d'invitation `/j/<slug>`, que
+    // `RegisterScreen` affiche au fondateur et qui est transmis par email ou
+    // WhatsApp. L'application ne servait AUCUNE route pour ce chemin : ouvrir le
+    // lien dans l'application menait à un écran inexistant. La route est publique
+    // comme `/join` (la décision se prend dans l'écran, qui vérifie lui-même la
+    // session), et la résolution passe par la même API publique que le web.
+    GoRoute(
+      path: '/j/:slug',
+      name: 'joinBySlug',
+      builder: (context, state) => JoinChurchScreen(
+        initialSlug: state.pathParameters['slug'],
       ),
     ),
     // SPEC_ORGANISATION_DENOMINATION_V2 §7.3 / T-M2 — transfert de membre.

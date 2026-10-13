@@ -124,6 +124,14 @@ export default function RegisterPage() {
     return `https://wa.me/?text=${encodeURIComponent(lines.filter(Boolean).join('\n'))}`;
   };
   const [approvalInfo, setApprovalInfo] = useState<string | null>(null);
+  /**
+   * Église pour laquelle un compte MEMBRE vient d'être CRÉÉ et rattaché
+   * (inscription `?tenant=<slug>` / `?tenant=` validée immédiatement par une
+   * église en adhésion ouverte). Distinct d'`approvalInfo` : là, aucun compte
+   * n'existe et c'est l'église qui décide. Confondre les deux affichait un
+   * Super Admin inexistant et taisait le mail d'activation.
+   */
+  const [churchActivationInfo, setChurchActivationInfo] = useState<string | null>(null);
   const { versionOf, legalVersion } = useLegalVersions();
 
   const {
@@ -167,6 +175,8 @@ export default function RegisterPage() {
         church?: { name: string; slug: string; joinCode: string };
         status?: string;
         churchName?: string;
+        /** Rôle du compte créé — absent d'une simple demande d'organisation. */
+        role?: string;
         grantedPlan?: string;
         pendingPlan?: string | null;
       };
@@ -192,7 +202,12 @@ export default function RegisterPage() {
         return;
       }
       if (payload.status === 'PENDING_APPROVAL') {
+        // L'église valide chaque adhésion : AUCUN compte n'a été créé, la
+        // demande part vers ses responsables.
         setApprovalInfo(payload.churchName || '');
+      } else if (payload.churchName && payload.role === 'MEMBRE') {
+        // Compte créé et rattaché : le mail d'activation est ce qui ouvre l'accès.
+        setChurchActivationInfo(payload.churchName);
       }
       setSuccess(true);
     } catch (err) {
@@ -292,20 +307,34 @@ export default function RegisterPage() {
   }
 
   if (success) {
+    // Trois issues DISTINCTES, et non deux. Le bandeau affichait « Votre demande
+    // d'église sera examinée par un Super Admin avant toute création de compte »
+    // pour l'inscription `?tenant=<slug>` alors que le compte venait d'être créé
+    // et rattaché : l'écran annonçait un Super Admin là où il n'y en a aucun, et
+    // ne mentionnait pas le mail d'activation qui débloque le compte. Le même
+    // mensonge existait sur mobile.
+    const isChurchApproval = Boolean(approvalInfo);
+    const isChurchActivation = Boolean(churchActivationInfo);
     return (
       <div className="space-y-6 text-center animate-slide-up">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/20 mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white font-display">
-          {approvalInfo ? tText('Demande transmise') : tText('Demande reçue')}
+          {isChurchApproval
+            ? tText('Demande transmise')
+            : isChurchActivation
+              ? tText('Compte créé')
+              : tText('Demande reçue')}
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {approvalInfo
+          {isChurchApproval
             ? tText(`Votre demande de rejoindre ${approvalInfo} a été enregistrée. Un responsable vous contactera après validation.`)
-            : joinCode
-              ? tText('Compte créé. Vérifiez votre email pour activer le compte et rejoindre définitivement le groupe de la nouvelle église.')
-              : tText('Votre demande d\'église sera examinée par un Super Admin avant toute création de compte.')}
+            : isChurchActivation
+              ? tText(`Compte créé. Vérifiez votre email pour activer votre compte et rejoindre ${churchActivationInfo}.`)
+              : joinCode
+                ? tText('Compte créé. Vérifiez votre email pour activer le compte et rejoindre définitivement le groupe de la nouvelle église.')
+                : tText('Votre demande d\'église sera examinée par un Super Admin avant toute création de compte.')}
         </p>
         <button
           onClick={() => navigate('/login')}

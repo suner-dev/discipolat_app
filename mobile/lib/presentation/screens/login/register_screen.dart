@@ -22,11 +22,18 @@ class RegisterScreen extends StatefulWidget {
     this.createChurch = false,
     this.joinCode,
     this.joinChurchName,
+    this.apiService,
   });
 
   final bool createChurch;
   final String? joinCode;
   final String? joinChurchName;
+
+  /// Injection optionnelle du client HTTP — même convention que
+  /// `ChurchPicker`. Absente, l'écran construit son propre `ApiService` :
+  /// comportement inchangé. Elle rend surtout le bandeau de confirmation
+  /// testable, car ses trois issues se lisent sur la RÉPONSE du serveur.
+  final ApiService? apiService;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -54,13 +61,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
     (value: 'MEGA_ASSOCIATION', label: 'Méga-association'),
   ];
   String _orgKind = 'CHURCH';
-  final _apiService = ApiService();
+  /// Client HTTP : celui injecté par le test s'il y en a un, sinon le nôtre.
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _success = false;
   String? _error;
   // Fondateur : session immédiatement établie (D1) → on affiche le code de l'église.
   Map<String, dynamic>? _churchResult;
+
+  /// Les TROIS issues d'une inscription, et non deux.
+  ///
+  /// Le bandeau de confirmation ne connaît que « Super Admin » ou « valideur de
+  /// l'église », sur la seule présence d'un `joinCode`. Or l'inscription au nom
+  /// d'une église (`tenantId`) répond 201 + `role: MEMBRE` + `churchName` quand
+  /// le serveur a réellement CRÉÉ un compte — et l'écran annonçait alors « Aucun
+  /// compte ne sera créé avant approbation » par un Super Admin qui n'intervient
+  /// nulle part dans ce chemin. Le message ne nommait pas non plus l'activation
+  /// par email, qui est la seule chose qui débloque le compte.
+  ///
+  /// Le serveur distingue désormais les cas par champs explicites : on les lit
+  /// au lieu de les déduire du paramètre d'URL.
+  String? _pendingApprovalChurch;
+  String? _activationChurch;
+
+  /// Titre du bandeau de confirmation. Les trois cas sont lus sur la RÉPONSE.
+  String _successTitle() {
+    if (_pendingApprovalChurch != null) return 'Demande de rejointure transmise';
+    if (_activationChurch != null) return 'Compte créé';
+    return 'Demande reçue. Elle sera examinée par un Super Admin.';
+  }
+
+  String _successDetail() {
+    final church = _pendingApprovalChurch ?? _activationChurch;
+    if (_pendingApprovalChurch != null) {
+      return 'Un responsable de l\'église « $church » validera votre entrée '
+          'puis vous contactera. Aucun compte n\'est créé avant sa décision.';
+    }
+    if (_activationChurch != null) {
+      return 'Vérifiez votre email pour activer le compte, puis rejoignez '
+          '« $church ». Le compte est déjà rattaché à cette église.';
+    }
+    return 'Aucun compte ne sera créé avant approbation.';
+  }
+
   // RGPD art. 7/9 : consentements explicites, non pré-cochés, obligatoires.
   bool _consentCgu = false;
   bool _consentPrivacy = false;
@@ -148,7 +192,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
         return;
       }
-      // Rejointure sur validation (APPROVAL) ou inscription classique.
+      // Rejointure sur validation (APPROVAL), rattachement à une église, ou
+      // demande d'organisation simple : trois réponses distinctes, lues sur les
+      // CHAMPS renvoyés par le serveur et non déduites du paramètre d'URL.
+      final status = data['status'] as String?;
+      final churchName = data['churchName'] as String?;
+      final role = data['role'] as String?;
+      if (status == 'PENDING_APPROVAL') {
+        // Aucune église ne tranche ici : soit l'église valide (elle est
+        // nommée), soit c'est une demande d'organisation (elle ne l'est pas).
+        _pendingApprovalChurch = (churchName != null && churchName.isNotEmpty)
+            ? churchName
+            : null;
+      } else if (role == 'MEMBRE' && churchName != null && churchName.isNotEmpty) {
+        // Compte créé et rattaché : c'est l'email d'activation qui l'ouvre.
+        _activationChurch = churchName;
+      }
       if (mounted) setState(() => _success = true);
     } on DioException catch (e) {
       final message = e.response?.data?['detail'] as String?
@@ -325,17 +384,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
                       const SizedBox(height: 12),
                       Text(
-                         (widget.joinCode != null && widget.joinCode!.isNotEmpty)
-                            ? 'Demande de rejointure transmise'
-                            : 'Demande reçue. Elle sera examinée par un Super Admin.',
+                        _successTitle(),
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                         (widget.joinCode != null && widget.joinCode!.isNotEmpty)
-                            ? 'Un responsable de l\'église validera votre entrée puis vous contactera.'
-                            : 'Aucun compte ne sera créé avant approbation.',
+                        _successDetail(),
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
                       ),
                       const SizedBox(height: 24),

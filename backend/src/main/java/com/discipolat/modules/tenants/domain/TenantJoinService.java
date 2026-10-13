@@ -31,6 +31,12 @@ import java.util.UUID;
  *     membership MEMBRE créé (scope du nœud si code de sous-église), tenant
  *     actif basculé (D7 : le code ne sera plus jamais redemandé), mode
  *     APPROVAL → demande PENDING + email non bloquant aux admins.</li>
+ *   <li>{@link #registerWithSlug} — inscription « au nom d'une église » par
+ *     lien ({@code /register?tenant=<slug>} web, {@code tenantId} mobile) :
+ *     elle appelle le MÊME noyau que {@link #registerWithCode}, donc elle
+ *     respecte le même {@link JoinMode#APPROVAL}. Elle existait auparavant sous
+ *     la forme d'un appel direct à {@code AuthService.registerInChurch}, qui
+ *     ignorait le mode de l'église — voir le détail sur la méthode.</li>
  * </ol>
  *
  * <p>Toutes les lectures/écritures de {@code tenant_memberships} et
@@ -148,20 +154,9 @@ public class TenantJoinService {
      */
     @Transactional
     public JoinOutcome joinBySlug(UUID userId, String slug) {
-        Tenant tenant = tenantRepository.findBySlug(slug == null ? "" : slug.trim().toLowerCase())
-                .orElseThrow(() -> new DomainException("Aucune église trouvée pour ce lien",
-                        HttpStatus.NOT_FOUND, "JOIN_SLUG_NOT_FOUND"));
-        if (tenant.getStatus() != TenantStatus.ACTIVE) {
-            throw new DomainException("Aucune église trouvée pour ce lien",
-                    HttpStatus.NOT_FOUND, "JOIN_SLUG_NOT_FOUND");
-        }
+        Tenant tenant = resolveActiveTenantForSlug(slug, null);
         TenantJoinCode primary = joinCodeService.findPrimaryActiveCode(tenant.getId())
-                .orElseGet(() -> {
-                    TenantJoinCode synthetic = new TenantJoinCode();
-                    synthetic.setTenantId(tenant.getId());
-                    synthetic.setJoinMode(JoinMode.OPEN);
-                    return synthetic;
-                });
+                .orElseGet(() -> syntheticOpenCode(tenant.getId()));
         return joinWithCode(userId, primary);
     }
 
@@ -205,6 +200,64 @@ public class TenantJoinService {
                                             String lastName, String phone, String rawCode) {
         TenantJoinCode code = resolveActiveCode(rawCode);
         Tenant tenant = requireActiveTenant(code.getTenantId());
+        return registerAgainstResolvedCode(email, rawPassword, firstName, lastName, phone,
+                code, tenant, "JOIN_REQUEST_CREATED_BY_CODE");
+    }
+
+    /**
+     * <p>Inscription « au nom d'une église » — lien web {@code /register?tenant=<slug>}
+     * et variante mobile {@code tenantId}. Elle passe par EXACTEMENT le même chemin
+     * que {@link #registerWithCode}, donc elle respecte le même
+     * {@link JoinMode#APPROVAL} que l'inscription par code.
+     *
+     * <p><b>Faille refermée (D1/R1).</b> Ce chemin appelait directement
+     * {@code AuthService.registerInChurch}, qui résout le tenant puis crée le
+     * compte sans jamais consulter le {@code JoinMode} de l'église. Conséquence
+     * mesurée : une église en {@code APPROVAL} — celle dont l'interface affiche
+     * « Cette église valide chaque demande d'adhésion avant l'entrée » — se
+     * voyait franchir quand même par une simple URL, sans invitation ni code, et
+     * le compte MEMBRE obtenu lisait {@code GET /api/v1/souls} (données de
+     * conviction, RGPD art. 9). Le slug étant dérivé mécaniquement du nom de
+     * l'église ({@code SelfServiceChurchService#uniqueSlug}), il est devinable :
+     * la porte n'était pas une porte.
+     *
+     * <p>Aucune intention produit nouvelle : une église en {@code OPEN} — le cas
+     * par défaut, sans code configuré — se comporte exactement comme avant.
+     *
+     * <p><b>Anti-énumération.</b> Slug inconnu et église suspendue répondent
+     * le MÊME message et le MÊME code ({@code JOIN_SLUG_NOT_FOUND}), comme le fait
+     * déjà {@link #joinBySlug} : distinguer les deux revenait à offrir un oracle
+     * permettant de sonder quelles églises existent.
+
+     */
+    @Transactional
+    public RegisterOutcome registerWithSlug(String email, String rawPassword, String firstName,
+                                            String lastName, String phone, String rawSlug,
+                                            UUID tenantId) {
+        Tenant tenant = resolveActiveTenantForSlug(rawSlug, tenantId);
+        // Même résolution que joinBySlug : le code principal actif porte le
+        // JoinMode de la politique d'adhésion ; à défaut de code, l'adhésion est
+        // ouverte (mode OPEN historique, jamais APPROVAL sur un code synthétique).
+        TenantJoinCode primary = joinCodeService.findPrimaryActiveCode(tenant.getId())
+                .orElseGet(() -> syntheticOpenCode(tenant.getId()));
+        return registerAgainstResolvedCode(email, rawPassword, firstName, lastName, phone,
+                primary, tenant, "JOIN_REQUEST_CREATED_BY_LINK");
+    }
+
+    /**
+     * Noyau commun aux inscriptions par code et par lien : c'est ICI que la
+     * politique {@link JoinMode} de l'église est appliquée, une seule fois pour
+     * les deux portes. Les extraire était indispensable — c'est précisément
+     * parce que la branche « par lien » avait sa propre implémentation qu'elle
+     * a pu diverger et ne plus rien vérifier.
+     *
+     * @param auditEvent libellé d'audit propre à la porte d'entrée, pour qu'un
+     *                  journal permette encore de distinguer les deux après coup.
+     */
+    private RegisterOutcome registerAgainstResolvedCode(String email, String rawPassword,
+                                                        String firstName, String lastName, String phone,
+                                                        TenantJoinCode code, Tenant tenant,
+                                                        String auditEvent) {
         String normalizedEmail = email.trim().toLowerCase(java.util.Locale.ROOT);
 
         if (code.getJoinMode() == JoinMode.APPROVAL) {
@@ -218,7 +271,7 @@ public class TenantJoinService {
                         .code(code.getCode())
                         .build());
                 notifyAdminsQuietly(tenant, null, code);
-                auditService.logSimple("JOIN_REQUEST_CREATED_BY_CODE", "TENANT", tenant.getId());
+                auditService.logSimple(auditEvent, "TENANT", tenant.getId());
             }
             return new RegisterOutcome("PENDING_APPROVAL", null, tenant.getName(), "false");
         }
@@ -229,6 +282,38 @@ public class TenantJoinService {
             grantMembership(code, user);
         }
         return new RegisterOutcome("ACTIVATION_EMAIL_SENT", user.getId(), tenant.getName(), "true");
+    }
+
+    /** Code d'entrée OPEN de substitution : aucune église n'a de code, l'adhésion
+     *  reste ouverte. Jamais APPROVAL — un code synthétique ne doit pas pouvoir
+     *  fabriquer une politique d'approbation qui n'a jamais été choisie. */
+    private TenantJoinCode syntheticOpenCode(UUID tenantId) {
+        TenantJoinCode synthetic = new TenantJoinCode();
+        synthetic.setTenantId(tenantId);
+        synthetic.setJoinMode(JoinMode.OPEN);
+        return synthetic;
+    }
+
+    /**
+     * Résolution « église à qui on veut s'inscrire » par slug (web) ou par id
+     * (mobile). Inconnue, suspendue ou non-ACTIVE : réponse strictement
+     * identique — sinon l'endpoint devenait un oracle d'existence.
+     */
+    private Tenant resolveActiveTenantForSlug(String rawSlug, UUID tenantId) {
+        Tenant tenant = null;
+        if (tenantId != null) {
+            tenant = tenantRepository.findById(tenantId).orElse(null);
+        } else if (rawSlug != null && !rawSlug.isBlank()) {
+            String normalized = rawSlug.trim();
+            tenant = tenantRepository.findBySlug(normalized.toLowerCase())
+                    .or(() -> tenantRepository.findBySlug(normalized))
+                    .orElse(null);
+        }
+        if (tenant == null || tenant.getStatus() != TenantStatus.ACTIVE) {
+            throw new DomainException("Aucune église trouvée pour ce lien",
+                    HttpStatus.NOT_FOUND, "JOIN_SLUG_NOT_FOUND");
+        }
+        return tenant;
     }
 
     /** Validation par un admin tenant d'une demande PENDING (mode APPROVAL). */
@@ -450,12 +535,20 @@ public class TenantJoinService {
             String who = user != null
                     ? (user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")")
                     : (code != null && code.getLabel() != null ? "Une personne (" + code.getLabel() + ")" : "Une personne");
+            // Une église sans code actif reçoit une adhésion par son lien : le code
+            // est alors INEXISTANT (code de substitution). Écrire « avec le code
+            // null » dans un email destiné à un responsable était faux et
+            // injouable — on nomme donc le canal réellement utilisé.
+            boolean viaCode = code != null && code.getCode() != null && !code.getCode().isBlank();
+            String how = viaCode
+                    ? "avec le code " + code.getCode()
+                    : "via le lien d'invitation de l'église";
             for (TenantMembership admin : admins) {
                 userRepository.findById(admin.getUserId())
                         .ifPresent(adminUser -> sendEmailQuietly(adminUser.getEmail(),
                                 "Demande de rejoindre " + tenant.getName(),
                                 "Bonjour,\n\n" + who + " souhaite rejoindre « " + tenant.getName()
-                                        + " » avec le code " + code.getCode()
+                                        + " » " + how
                                         + ". Validez ou refusez cette demande dans votre espace admin.\n\n"
                                         + "L'équipe Discipolat"));
             }
