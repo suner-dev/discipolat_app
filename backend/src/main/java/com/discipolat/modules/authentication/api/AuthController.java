@@ -192,17 +192,42 @@ public class AuthController {
         }
 
         // PORT Develop1 (§G3.1) — « s'inscrire AU NOM D'UNE église » : le lien web
-        // /register?tenant=<slug> et le mobile (tenantId) créent directement un
-        // compte MEMBRE rattaché au tenant demandé, avec email d'activation.
-        // Sans rattachement, on reste sur le flux de main : demande d'organisation
-        // approuvée par un Super Admin (aucune église créée automatiquement).
+        // /register?tenant=<slug> et le mobile (tenantId) rattachent le compte au
+        // tenant demandé, avec email d'activation.
+        //
+        // SÉCURITÉ (D1/R1) : ce passage passe désormais par
+        // `TenantJoinService.registerWithSlug`, qui applique le JoinMode de
+        // l'église. Il appelait directement `authService.registerInChurch`, qui
+        // se limitait à vérifier « tenant existe et ACTIVE » : une église en
+        // APPROVAL — dont l'interface promet « Cette église valide chaque
+        // demande d'adhésion avant l'entrée » — se voyait donc franchir par une
+        // simple URL, sans code ni invitation, et le compte MEMBRE obtenu
+        // lisait les âmes de l'église (RGPD art. 9). Le slug étant devinable,
+        // ce n'était pas une porte.
+        //
+        // Comportement inchangé pour une église en OPEN (cas par défaut) : 201
+        // + email d'activation. Une église en APPROVAL répond 202 PENDING_APPROVAL
+        // comme le fait déjà l'inscription par code, et AUCUN compte n'est créé.
         if (request.tenantSlug() != null && !request.tenantSlug().isBlank()
                 || request.tenantId() != null) {
-            authService.registerInChurch(request.email(), request.password(), request.firstName(),
-                    request.lastName(), request.phone(), request.tenantSlug(), request.tenantId());
+            com.discipolat.modules.tenants.domain.TenantJoinService.RegisterOutcome outcome =
+                    tenantJoinService.registerWithSlug(request.email(), request.password(),
+                            request.firstName(), request.lastName(), request.phone(),
+                            request.tenantSlug(), request.tenantId());
+            if ("PENDING_APPROVAL".equals(outcome.status())) {
+                return ResponseEntity.accepted().body(Map.of(
+                        "status", "PENDING_APPROVAL",
+                        "churchName", outcome.churchName() == null ? "" : outcome.churchName(),
+                        "message", "Demande enregistrée. Un responsable de l'église vous contactera."
+                ));
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Account created. Check your email to activate it.",
-                    "role", "MEMBRE"
+                    "role", "MEMBRE",
+                    // Ajouté : le client affiche déjà ce champ pour les autres
+                    // portes (demande d'église, code). Sans lui, l'écran de
+                    // confirmation ne pouvait pas nommer l'église rejointe.
+                    "churchName", outcome.churchName() == null ? "" : outcome.churchName()
             ));
         }
 

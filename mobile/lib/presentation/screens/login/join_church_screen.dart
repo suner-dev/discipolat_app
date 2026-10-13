@@ -12,9 +12,21 @@ import '../../widgets/glass_theme.dart';
 ///    code aux connexions suivantes — D7) ;
 ///  • non connecté → inscription avec le code pré-transmis, ou connexion.
 class JoinChurchScreen extends StatefulWidget {
-  const JoinChurchScreen({super.key, this.initialCode});
+  const JoinChurchScreen({super.key, this.initialCode, this.initialSlug, this.apiService});
 
   final String? initialCode;
+
+  /// Injection optionnelle du client HTTP — même convention que
+  /// `ChurchPicker`. Absente, l'écran construit son propre `ApiService`.
+  final ApiService? apiService;
+
+  /// SPEC_ONBOARDING_FLOWS — variante `/j/<slug>`, le lien d'invitation que le
+  /// fondateur distribue. L'application ne servait aucune route pour ce chemin :
+  /// le lien produit par `RegisterScreen` (`${Uri.base.origin}/j/<slug>`)
+  /// s'ouvrait donc sur un écran inexistant. La résolution se fait par
+  /// `GET /public/join/resolve` — la même résolution que celle du web, donc le
+  /// même mode d'adhésion (OPEN / APPROVAL) et le même bandeau de validation.
+  final String? initialSlug;
 
   @override
   State<JoinChurchScreen> createState() => _JoinChurchScreenState();
@@ -22,7 +34,8 @@ class JoinChurchScreen extends StatefulWidget {
 
 class _JoinChurchScreenState extends State<JoinChurchScreen> {
   final _codeController = TextEditingController();
-  final _apiService = ApiService();
+  /// Client HTTP : celui injecté par le test s'il y en a un, sinon le nôtre.
+  late final ApiService _apiService = widget.apiService ?? ApiService();
 
   bool _looking = false;
   bool _joining = false;
@@ -34,6 +47,12 @@ class _JoinChurchScreenState extends State<JoinChurchScreen> {
   @override
   void initState() {
     super.initState();
+    final slug = widget.initialSlug?.trim();
+    if (slug != null && slug.isNotEmpty) {
+      // Lien vanity : on résout le slug, aucun code n'est saisi.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _resolveSlug());
+      return;
+    }
     final seed = widget.initialCode?.trim();
     if (seed != null && seed.isNotEmpty) {
       _codeController.text = seed.toUpperCase();
@@ -45,6 +64,41 @@ class _JoinChurchScreenState extends State<JoinChurchScreen> {
   void dispose() {
     _codeController.dispose();
     super.dispose();
+  }
+
+  /// `/j/<slug>` → résolution publique du lien d'invitation.
+  Future<void> _resolveSlug() async {
+    final slug = widget.initialSlug?.trim() ?? '';
+    if (slug.isEmpty) return;
+    setState(() { _looking = true; _error = null; });
+    try {
+      final res = await _apiService.get('/public/join/resolve',
+          queryParameters: {'slug': slug});
+      final data = res.data as Map<String, dynamic>? ?? const <String, dynamic>{};
+      if (!mounted) return;
+      if (data['found'] == true) {
+        setState(() {
+          _lookup = data;
+          _error = null;
+        });
+      } else {
+        setState(() {
+          _lookup = null;
+          _error = 'Ce lien d\'invitation n\'est plus valable. '
+              'Demandez un code d\'entrée à votre église.';
+        });
+      }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final status = e.response?.statusCode;
+      setState(() {
+        _error = status == 429
+            ? 'Trop de tentatives. Réessayez dans une minute.'
+            : 'Ce lien d\'invitation est momentanément inaccessible.';
+      });
+    } finally {
+      if (mounted) setState(() => _looking = false);
+    }
   }
 
   Future<void> _lookupCode() async {
@@ -91,8 +145,14 @@ class _JoinChurchScreenState extends State<JoinChurchScreen> {
   Future<void> _joinAuthenticated() async {
     setState(() { _joining = true; _error = null; });
     try {
-      final res = await _apiService.post('/tenant/join',
-          data: {'code': _codeController.text.trim()});
+      // Code saisi prioritaire ; sinon lien vanity → le backend résout par slug.
+      // Sans ce « sinon », `/j/<slug>` était un cul-de-sac pour un compte déjà
+      // connecté : on envoyait un code vide.
+      final code = _codeController.text.trim();
+      final joinPayload = code.isNotEmpty
+          ? <String, dynamic>{'code': code}
+          : <String, dynamic>{'slug': _lookup?['slug']?.toString() ?? widget.initialSlug};
+      final res = await _apiService.post('/tenant/join', data: joinPayload);
       final body = (res.data as Map<String, dynamic>?) ?? const <String, dynamic>{};
       final status = body['status'] as String?;
       if (!mounted) return;
@@ -133,8 +193,17 @@ class _JoinChurchScreenState extends State<JoinChurchScreen> {
 
   void _registerWithCode() {
     final church = Uri.encodeComponent(_lookup?['churchName']?.toString() ?? '');
-    final code = Uri.encodeComponent(_codeController.text.trim());
-    context.go('/register?joinCode=$code&church=$church');
+    final code = _codeController.text.trim();
+    if (code.isEmpty) {
+      // Lien vanity `/j/<slug>` : aucun code saisi. On transmet le slug, que
+      // `RegisterScreen` n'honore pas directement — on passe donc par le même
+      // chemin public que le web (`?tenant=`), et le serveur applique la
+      // politique d'adhésion de l'église (OPEN ou APPROVAL).
+      final slug = Uri.encodeComponent(_lookup?['slug']?.toString() ?? widget.initialSlug ?? '');
+      context.go('/register?tenant=$slug&church=$church');
+      return;
+    }
+    context.go('/register?joinCode=${Uri.encodeComponent(code)}&church=$church');
   }
 
   @override

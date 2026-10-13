@@ -15,13 +15,28 @@
 # deplacer l'entite ne retirerait rien : le service appellerait toujours les repositories, R1
 # resterait enfreint ; la correction reelle est la separation domaine/infrastructure du contexte
 # payments (migration V1), pas un renommage de paquet. Ce re-gel est trace dans KNOWN_ISSUES.
+#
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-13 (a ne pas reproduire).
+# R4 est passe de 3010 a 3013 (+3) avec le correctif de l'inscription « au nom d'une
+# eglise » (faille JoinMode) : `TenantJoinService.registerWithSlug` porte `@Transactional`,
+# ce qui compte 3 entrees R4 (Transactional + Propagation + Isolation).
+# Ce n'est pas une nouvelle categorie d'impurete : la classe voisine possede deja
+# 5 methodes `@Transactional` gelees pour la meme raison (`join`, `joinBySlug`,
+# `registerWithCode`, `approveRequest`, `pendingRequests`). Retirer l'annotation
+# serait un REGRESSION fonctionnelle et non un nettoyage : la methode ecrit une
+# demande de rejointure puis notifie les responsables, et sans transaction un
+# echec au milieu laisserait une demande tracee sans l'email correspondant (et
+# l'inverse). La correction reelle reste la sortie des annotations de conteneur du
+# domaine (migration V1), pas un amenagement local.
+# La dette n'augmente que parce que la porte est enfin FERMEE : c'est le prix,
+# assume et borne, de l'application du JoinMode a l'inscription par lien.
 # constat R1 (domaine sans infrastructure) : 8009 violations, gelees par plafond ci-dessous
 plafond|R1|8009
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
-# constat R4 (domaine sans annotations de conteneur) : 3010 violations, gelees par plafond ci-dessous
-plafond|R4|3010
+# constat R4 (domaine sans annotations de conteneur) : 3013 violations, gelees par plafond ci-dessous
+plafond|R4|3013
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 objet|R3|admin -> alerts
