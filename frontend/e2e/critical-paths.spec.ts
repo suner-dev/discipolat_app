@@ -27,10 +27,26 @@ async function uiLogin(page: Page, email: string, password: string) {
   await page.goto('/login');
   await page.fill('input[type="email"]', email);
   await page.fill('input[name="password"]', password);
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 }),
-    page.click('button[type="submit"]'),
-  ]);
+  await page.click('button[type="submit"]');
+  // Comptes multi-rôles (ex. admin@ = ADMIN + PASTEUR) restent sur /login tant
+  // qu'aucun rôle n'est choisi — c'est le contrat réel de LoginPage. On honore
+  // les deux issues : navigation directe (mono-rôle) ou sélecteur → 1re carte.
+  const navigated = page
+    .waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 })
+    .then(() => 'nav' as const)
+    .catch(() => null);
+  const selector = page
+    .getByText('Choisissez un rôle')
+    .waitFor({ state: 'visible', timeout: 20_000 })
+    .then(() => 'selector' as const)
+    .catch(() => null);
+  const outcome = await Promise.race([navigated, selector]);
+  if (outcome === 'selector') {
+    await page.locator('div.space-y-3.animate-slide-up button').first().click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 20_000 });
+  } else if (outcome !== 'nav') {
+    throw new Error(`uiLogin(${email}) : ni navigation ni sélecteur de rôle détectés`);
+  }
 }
 
 let adminApi: APIRequestContext;
