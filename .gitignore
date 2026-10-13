@@ -105,3 +105,9 @@ audit/*
 
 # Worktrees jetables de recette E2E (base « main-base » détachée, revues comparatives)
 .e2e-tmp/
+
+# Documents de PASSATION entre agents (état réel du chantier, trous connus,
+# décisions non arbitrées). Hors historique git volontairement : ils décrivent
+# ce qui n'est PAS fait et les raisons, ce qui n'a rien à faire dans un dépôt
+# public. Un TODO vit dans le dépôt (TODO_*.md) ; une passation, non.
+TODO_PASSATION_*.md

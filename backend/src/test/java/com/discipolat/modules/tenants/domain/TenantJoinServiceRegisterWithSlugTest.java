@@ -67,6 +67,7 @@ class TenantJoinServiceRegisterWithSlugTest {
     @Mock private RoleRepository roleRepository;
     @Mock private UserRepository userRepository;
     @Mock private ActiveTenantService activeTenantService;
+    @Mock private com.discipolat.modules.tenants.domain.InvitationService invitationService;
     @Mock private AuditService auditService;
     @Mock private CrossTenantScopeAccess crossTenant;
     @Mock private EmailService emailService;
@@ -86,7 +87,8 @@ class TenantJoinServiceRegisterWithSlugTest {
         };
         service = new TenantJoinService(joinCodeService, tenantRepository, membershipRepository,
                 joinRequestRepository, organizationNodeRepository, roleRepository, userRepository,
-                activeTenantService, bridge, auditService, crossTenant, emailService, peopleService);
+                activeTenantService, bridge, invitationService, auditService, crossTenant, emailService,
+                peopleService);
 
         // CrossTenantScopeAccess : on neutralise le filtre, on exécute le bloc.
         when(crossTenant.call(any())).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
