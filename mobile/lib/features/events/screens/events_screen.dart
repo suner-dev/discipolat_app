@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 import 'package:discipolat_mobile/features/events/services/events_service.dart';
+import 'package:discipolat_mobile/presentation/widgets/app_shell.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/events/widgets/event_card.dart';
 import 'package:discipolat_mobile/features/events/widgets/event_filter_chips.dart';
@@ -42,95 +43,85 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
     final eventsAsync = ref.watch(_eventsProvider((_filterStatus, _filterType)));
     final upcomingAsync = ref.watch(_upcomingEventsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.surfaceDark,
-      appBar: AppBar(
-        title: const Text('Événements & Calendrier'),
-        backgroundColor: AppColors.cardDark,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.surface.withOpacity(0.7),
-          tabs: const [
-            Tab(text: 'Liste'),
-            Tab(text: 'Calendrier'),
-            Tab(text: 'Mes événements'),
+    return AppShell(
+      title: 'Événements & Calendrier',
+      leading: const BackButton(),
+      actions: [
+        PopupMenuButton<EventStatus?>(
+          icon: const Icon(Icons.filter_list_rounded),
+          onSelected: (value) => setState(() => _filterStatus = value),
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: null, child: Text('Tous les statuts')),
+            ...EventStatus.values.map((s) => PopupMenuItem(value: s, child: Text(s.displayName))),
           ],
         ),
-        actions: [
-          PopupMenuButton<EventStatus?>(
-            icon: const Icon(Icons.filter_list_rounded),
-            onSelected: (value) => setState(() => _filterStatus = value),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: null, child: Text('Tous les statuts')),
-              ...EventStatus.values.map((s) => PopupMenuItem(value: s, child: Text(s.displayName))),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () => context.push('/events/create'),
-            tooltip: 'Nouvel événement',
-          ),
+        IconButton(
+          icon: const Icon(Icons.add_rounded),
+          onPressed: () => context.push('/events/create'),
+          tooltip: 'Nouvel événement',
+        ),
+      ],
+      bottom: TabBar(
+        controller: _tabController,
+        indicatorColor: AppColors.primary,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: AppColors.surface.withOpacity(0.7),
+        tabs: const [
+          Tab(text: 'Liste'),
+          Tab(text: 'Calendrier'),
+          Tab(text: 'Mes événements'),
         ],
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // List tab
-          Column(
-            children: [
-              EventFilterChips(
-                selectedStatus: _filterStatus,
-                selectedType: _filterType,
-                onStatusChanged: (s) => setState(() => _filterStatus = s),
-                onTypeChanged: (t) => setState(() => _filterType = t),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () => ref.refresh(_eventsProvider((_filterStatus, _filterType)).future),
-                  child: eventsAsync.when(
-                    data: (events) {
-                      if (events.isEmpty) {
-                        return _buildEmptyState();
-                      }
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: events.length,
-                        itemBuilder: (context, index) {
-                          final event = events[index];
-                          return EventCard(
-                            event: event,
-                            onTap: () => context.push('/events/${event.id}'),
-                            onRegister: event.isRegistered || event.statut != EventStatus.published
-                                ? null
-                                : () => _handleRegister(event),
-                            onCheckIn: event.isCheckedIn || event.statut != EventStatus.live
-                                ? null
-                                : () => _handleCheckIn(event),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text('Erreur: $error')),
-                  ),
+                // List tab
+                Column(
+                  children: [
+                    EventFilterChips(
+                      selectedStatus: _filterStatus,
+                      selectedType: _filterType,
+                      onStatusChanged: (s) => setState(() => _filterStatus = s),
+                      onTypeChanged: (t) => setState(() => _filterType = t),
+                    ),
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () => ref.refresh(_eventsProvider((_filterStatus, _filterType)).future),
+                        child: eventsAsync.when(
+                          data: (events) {
+                            if (events.isEmpty) {
+                              return _buildEmptyState();
+                            }
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: events.length,
+                              itemBuilder: (context, index) {
+                                final event = events[index];
+                                return EventCard(
+                                  event: event,
+                                  onTap: () => context.push('/events/${event.id}'),
+                                  onRegister: event.isRegistered || event.statut != EventStatus.published
+                                      ? null
+                                      : () => _handleRegister(event),
+                                  onCheckIn: event.isCheckedIn || event.statut != EventStatus.live
+                                      ? null
+                                      : () => _handleCheckIn(event),
+                                );
+                              },
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (error, _) => Center(child: Text('Erreur: $error')),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          // Calendar tab
-          _buildCalendarTab(),
-          // My events tab
-          _buildMyEventsTab(upcomingAsync),
+                // Calendar tab
+                _buildCalendarTab(),
+                // My events tab
+                _buildMyEventsTab(upcomingAsync),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/events/create'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nouvel événement'),
-        backgroundColor: AppColors.primary,
       ),
     );
   }

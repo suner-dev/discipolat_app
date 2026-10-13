@@ -15,7 +15,8 @@ import 'presentation/screens/transfer/transfer_screen.dart';
 import 'presentation/screens/invitations/accept_invitation_screen.dart';
 import 'presentation/screens/invitations/invitation_management_screen.dart';
 import 'core/invitation_token.dart';
-import 'presentation/screens/main_scaffold.dart';
+import 'presentation/screens/main_shell.dart';
+import 'presentation/screens/more_screen.dart';
 import 'presentation/screens/dashboard/pasteur_dashboard_screen.dart';
 import 'presentation/screens/dashboard/chef_famille_dashboard_screen.dart';
 import 'presentation/screens/dashboard/responsable_dashboard_screen.dart';
@@ -477,6 +478,14 @@ Map<String, List<String>> _routeRoles = {
     'FAISEUR',
     'MEMBRE'
   ],
+  // Branches du shell d'onglets (MainShell) : réservées aux espaces ADMIN /
+  // PASTEUR, comme l'ancien MainScaffold. Sans entrée EXACTE, le garde retomberait
+  // sur basePath '/dashboard' (tous rôles) et le bloc d'isolation ne teste que la
+  // stricte égalité location == '/dashboard' → fuite pour les sous-chemins.
+  '/dashboard/requests': ['ADMIN', 'PASTEUR'],
+  '/dashboard/prayers': ['ADMIN', 'PASTEUR'],
+  '/dashboard/messages': ['ADMIN', 'PASTEUR'],
+  '/dashboard/more': ['ADMIN', 'PASTEUR'],
   '/dashboard/membre': ['ADMIN', 'PASTEUR', 'MEMBRE'],
   '/dashboard/pasteur': ['ADMIN', 'PASTEUR'],
   '/dashboard/chef-famille': ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE'],
@@ -1574,10 +1583,51 @@ final appRouter = GoRouter(
         slug: state.pathParameters['slug'] ?? '',
       ),
     ),
-    GoRoute(
-      path: '/dashboard',
-      name: 'dashboard',
-      builder: (context, state) => const MainScaffold(),
+    // Onglets racine (ADMIN / PASTEUR) : un seul shell ([MainShell]) possède le
+    // pied de page ; chaque onglet garde sa pile de navigation et son état. Les
+    // écrans détaillés restent des routes racine (au-dessus du shell) → sans
+    // footer, conformément aux applications mobiles de référence.
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          MainShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard',
+            name: 'dashboard',
+            builder: (context, state) =>
+                const DashboardScreen(showBottomNav: false),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard/requests',
+            name: 'dashboard-requests',
+            builder: (context, state) => const MemberRequestsScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard/prayers',
+            name: 'dashboard-prayers',
+            builder: (context, state) => const PrayersListScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard/messages',
+            name: 'dashboard-messages',
+            builder: (context, state) => const MessagesScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: '/dashboard/more',
+            name: 'dashboard-more',
+            builder: (context, state) => const MoreScreen(),
+          ),
+        ]),
+      ],
     ),
     GoRoute(
       path: '/admin/dashboard',

@@ -7,7 +7,12 @@ import '../../widgets/app_drawer.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ApiService? apiService;
-  const DashboardScreen({super.key, this.apiService});
+  /// Quand l'écran est hébergé par le shell d'onglets [MainShell] (branch 0),
+  /// le footer est fourni par le shell : on masque la [GlassBottomNav] interne
+  /// pour éviter un double pied de page. En usage autonome (ex. '/dashboard/main'),
+  /// on la conserve (valeur par défaut).
+  final bool showBottomNav;
+  const DashboardScreen({super.key, this.apiService, this.showBottomNav = true});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -213,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                 ),
               ),
             ),
-      bottomNavigationBar: GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
+      bottomNavigationBar: !widget.showBottomNav ? null : GlassBottomNav(currentIndex: _currentNavIndex, onTap: (i) {
         setState(() => _currentNavIndex = i);
         final role = AuthState().activeRole;
         final List<String> routes;
