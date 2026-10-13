@@ -42,6 +42,24 @@
 
 ---
 
+## 0.0ter Cycle — E2E pleine stack « rôles × créations » + sécurisation dépendance (clos le 13/10/2026)
+
+> Tests navigateur sur la VRAIE stack (PostgreSQL :5433 + jar beta seedé :8080 + Vite :5173), pilotés
+> par le workflow CI dédié `.github/workflows/e2e-fullstack.yml`. Politique : **additif** (specs + 1
+> correctif BE + 1 durcissement de harnais + 1 override de dépendance).
+
+| Tâche | Statut | Preuve (commande → résultat) |
+|---|---|---|
+| Matrice créations × 5 `TenantKind` (SPEC A) + fail-closed | `DONE` | `roles-creations-matrix.spec.ts` — kind/plan/parent/racine/joinCode/permissions + (kind inconnu, consent RGPD, nom vide, email dupliqué) |
+| Matrice rôles × 6 `UserRole` API+UI (SPEC B) | `DONE` | login+claims ; garde tenant-admin (ADMIN/PASTEUR 200, autres 403) ; switch-role ; 401 sans token |
+| Flows réseau par-dessus les créations (SPEC C) | `DONE` | sous-église autonome ; refus mode léger ; code rejointure + garde §G3.1 ; lien public `/j/:slug` ; slug unique |
+| Correctif `/register` renvoie le vrai `kind` | `DONE` | commit `82661923` (`SelfServiceChurchService`) ; avant : réponse `kind="CHURCH"` pour une dénomination |
+| Durcissement `uiLogin` critical-paths (comptes multi-rôles) | `DONE` | commit `7a1290c4` ; CP2 échouait sous `admin@` (sélecteur de rôle) ; `pasteur@` → 8/8 |
+| **Suite pleine stack complète** | `DONE` | `.e2e-tmp/run-matrix-browser.sh` → **`38 passed (1.7m)`**, `statut : ✅ VERT` |
+| Dependabot #14 `postcss-selector-parser` < 7.1.6 (medium, DoS CPU) | `DONE` | `overrides ^7.1.6` (aucun patch 6.x) ; `npm audit` : package non plus signalé ; `tsc -b && vite build` exit 0 |
+
+---
+
 ## 0. CONVENTIONS
 
 ### 0.1 Statuts (utiliser exactement ces libellés)
