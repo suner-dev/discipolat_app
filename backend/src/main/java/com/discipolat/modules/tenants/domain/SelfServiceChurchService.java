@@ -190,12 +190,20 @@ public class SelfServiceChurchService {
         // hiérarchie (parent/racine) reste neutre : une organisation isolée est
         // sa propre racine (cf. Tenant.effectiveRootTenantId()), et une
         // dénomination greeting ses enfants via TenantOrganizationService.
+        //
+        // Constat E2E 2026-10-12 : la réponse de tenantService.create() est
+        // construite AVANT cette écriture — un « register kind=DENOMINATION »
+        // répondait donc church.kind="CHURCH" alors que la ligne en base était
+        // juste. On matérialise la réponse depuis l'entité à jour : ce que
+        // l'API dit est ce que la base contient (kind, plan, racine résolue).
         if (kind != TenantKind.CHURCH) {
-            tenantRepository.findById(tenantId).ifPresent(t -> {
+            tenant = tenantRepository.findById(tenantId).map(t -> {
                 t.setKind(kind);
-                tenantRepository.save(t);
-            });
+                return TenantResponse.from(tenantRepository.saveAndFlush(t));
+            }).orElse(tenant);
         }
+        // La réponse définitive, capture pour les lambdas ci-dessous.
+        final TenantResponse created = tenant;
 
         // 2) Fondateur = compte ACTIVE, rôle legacy ADMIN (l'éditeur moderne
         //    TENANT_OWNER est posé par le membership ci-dessous).
@@ -227,7 +235,7 @@ public class SelfServiceChurchService {
                 ensureOwnerMembership(tenantId, founder.getId());
                 TenantJoinCode code = joinCodeService.generate(tenantId, null, name, JoinMode.OPEN, founder.getId());
                 joinCodeRef.set(code.getCode());
-                sendWelcomeEmail(founder, name, code.getCode(), tenant.slug());
+                sendWelcomeEmail(founder, name, code.getCode(), created.slug());
                 return church;
             } finally {
                 if (previousTenantId != null) {
@@ -241,7 +249,7 @@ public class SelfServiceChurchService {
         auditService.log(founder.getId(), tenantId, "TENANT_SELF_SERVICE_CREATED", "TENANT", tenantId,
                 "SUCCESS", Payloads.of("slug", slug, "founderId", founder.getId().toString()),
                 null, null, null);
-        return new ChurchCreation(tenant, founder, joinCodeRef.get(), rootChurch);
+        return new ChurchCreation(created, founder, joinCodeRef.get(), rootChurch);
     }
 
     /** Copie du pattern {@code TenantOwnerProvisioningService.ensureOwnerMembership} (FK role NOT NULL). */
