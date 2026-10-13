@@ -78,6 +78,8 @@ app-debug.apk
 frontend/test-results/
 test-results/
 playwright-report/
+# Sortie du reporter JSON de Playwright (reporter 'json' -> e2e/results.json dans playwright.config.ts)
+frontend/e2e/results.json
 
 # Large reference documents (keep locally, not in repo)
 docs/PRMPT.pdf
