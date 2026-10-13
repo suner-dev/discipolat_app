@@ -497,27 +497,52 @@ public class DataInitializer implements CommandLineRunner {
     private void seedUser(String email, String firstName, String lastName,
                           UserRole primaryRole, Set<UserRole> roles,
                           UserRole activeRole, boolean estChefDeFamille) {
-        if (userRepository.findFirstByEmail(email).isPresent()) return;
-        
+        // Idempotent : si un compte ACTIF portant cet email existe déjà, on n'y
+        // touche pas (base déjà seedée, ou redémarrage du runtime de démonstration).
+        if (userRepository.findByEmailIgnoreCase(email).isPresent()) return;
+
         // Get the default tenant (first active tenant)
         UUID tenantId = tenantRepository.findFirstByStatusOrderByCreatedAtAsc(TenantStatus.ACTIVE)
                 .map(Tenant::getId)
                 .orElseThrow(() -> new IllegalStateException("No active tenant found for seeding demo accounts"));
-        
-        User user = User.builder()
-                .tenantId(tenantId)
-                .email(email)
-                .passwordHash(passwordEncoder.encode(demoPassword))
-                .firstName(firstName)
-                .lastName(lastName)
-                .role(primaryRole)
-                .roles(roles)
-                .activeRole(activeRole)
-                .statut(UserStatus.ACTIVE)
-                .estChefDeFamille(estChefDeFamille)
-                .build();
+
+        // V192__neutralize_demo_accounts.sql désactive pasteur@ (et consorts) sur
+        // TOUTE base construite par les migrations : la ligne existe mais en statut
+        // INACTIVE/deleted. L'ancien « return si email présent » laissait alors ces
+        // comptes hors service et AuthService renvoyait 401 au login (échec de la
+        // matrice de rôles pleine stack, visible seulement en CI où la base est
+        // fraîche). On réactive et rescelle la ligne existante plutôt que d'en
+        // créer une seconde (le partage actif/archivé tromperait l'identifiant).
+        User user = userRepository.findFirstByEmail(email)
+                .map(existing -> {
+                    existing.setDeleted(false);
+                    existing.setStatut(UserStatus.ACTIVE);
+                    existing.setTenantId(tenantId);
+                    existing.setPasswordHash(passwordEncoder.encode(demoPassword));
+                    existing.setRole(primaryRole);
+                    // Collection gérée par Hibernate : ne jamais remplacer la
+                    // référence par le Set.of(...) immuable de l'appelant (le flush
+                    // lve une UnsupportedOperationException). On fournit une copie
+                    // mutable, sans lire l'ancienne collection (entité détachée).
+                    existing.setRoles(new java.util.LinkedHashSet<>(roles));
+                    existing.setActiveRole(activeRole);
+                    existing.setEstChefDeFamille(estChefDeFamille);
+                    return existing;
+                })
+                .orElseGet(() -> User.builder()
+                        .tenantId(tenantId)
+                        .email(email)
+                        .passwordHash(passwordEncoder.encode(demoPassword))
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .role(primaryRole)
+                        .roles(roles)
+                        .activeRole(activeRole)
+                        .statut(UserStatus.ACTIVE)
+                        .estChefDeFamille(estChefDeFamille)
+                        .build());
         userRepository.save(user);
-        log.info("✅ Created {} (roles={}) user: {}", primaryRole, roles, email);
+        log.info("✅ Seeded {} (roles={}) user: {}", primaryRole, roles, email);
     }
 
     /**
