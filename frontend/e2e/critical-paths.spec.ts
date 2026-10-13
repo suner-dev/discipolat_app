@@ -61,6 +61,12 @@ test.describe.serial('Parcours critiques §G6.4', () => {
     if (await confirm.count()) await confirm.fill('Password123!');
     const phone = page.locator('input[name="phone"]');
     if (await phone.count()) await phone.fill('+33600000000');
+    // Consentements RGPD explicites (art. 7 & 9) — cases vides par défaut : sans
+    // les cocher, la validation Zod du formulaire bloque la soumission (le champ
+    // email ne disparaît jamais). Le contrat réel exige les trois (cf. RegisterPage).
+    await page.check('#consentCgu');
+    await page.check('#consentPrivacy');
+    await page.check('#consentArt9');
     await page.click('button[type="submit"]');
     // Écran de succès : le formulaire a disparu (plus de champ email).
     await expect(page.locator('input[type="email"]')).toHaveCount(0, { timeout: 15_000 });

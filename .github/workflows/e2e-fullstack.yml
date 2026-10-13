@@ -1,0 +1,185 @@
+# E2E « pleine stack » — matrice rôles × créations × flows (Playwright).
+#
+# CONTRÔLE RÉEL : contrairement à `e2e.yml` (suite tarifs sans backend, servie
+# par un stub), ce job démarre la VRAIE stack et exécute les specs
+# `frontend/e2e/` qui touchent l'API de production :
+#   - critical-paths.spec.ts      (CP1…CP8 — parcours critiques existants)
+#   - roles-creations-matrix.spec.ts (SPEC A/B/C — la matrice demandée :
+#     les 5 TenantKind × les 6 UserRoles × hiérarchie réseau, codes de
+#     rejointure, lien public /j/:slug).
+#
+# Pourquoi un backend réel est indispensable ici : la matrice assert des
+# invariants côté serveur (kind posé sur l'organisation, parentTenantId/
+# rootTenantId d'un sous-tenant, garde d'activation §G3.1, recalcul des
+# permissions par rôle). Aucun stub ne peut prouver cela.
+#
+# Reproduction exacte du recipe local validé le 2026-10-12 (38/38 verts) :
+# PostgreSQL 16 + Redis + jar Spring (profil beta, comptes semés) + vite dev
+# pointant sur :8080 via le proxy Vite (VITE_API_URL vide).
+name: E2E pleine stack (rôles × créations)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/e2e/**'
+      - 'frontend/src/**'
+      - 'backend/src/**'
+      - '.github/workflows/e2e-fullstack.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-fullstack-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    name: Playwright pleine stack (PostgreSQL + backend + UI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    # Mêmes bases que le job `backend` de ci.yml (Redis) + une vraie PostgreSQL
+    # pour le profil beta (le profil de test H2 de ci.yml ne convient pas :
+    # la matrice s'appuie sur les migrations Flyway V222…V252 et la contrainte
+    # tenants_kind_check, qui sont spécifiques PostgreSQL).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: discipolat
+          POSTGRES_USER: discipolat
+          POSTGRES_PASSWORD: discipolat_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U discipolat -d discipolat"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Générer les clés JWT (2048 bits, une ligne — comme setup-keys.sh)
+        run: |
+          set -euo pipefail
+          mkdir -p keys
+          openssl genpkey -algorithm RSA -out keys/private.pem -pkeyopt rsa_keygen_bits:2048
+          openssl pkey -in keys/private.pem -pubout -out keys/public.pem
+
+      - name: Construire le jar backend (profil de prod, sans tests)
+        working-directory: backend
+        run: mvn -B -DskipTests package
+
+      - name: Démarrer le backend seedé (profil beta) et attendre /actuator/health
+        working-directory: ${{ github.workspace }}
+        env:
+          AES_KEY: ${{ secrets.E2E_AES_KEY }}
+        run: |
+          set -euo pipefail
+          # AES : secret dédié si fourni, sinon une clé locale de test (32 octets
+          # b64) — la matrice ne teste pas le déchiffrement au repos, mais le
+          # SecurityStartupAudit refuse une AES clé vide en beta (fail-closed).
+          if [ -z "${AES_KEY:-}" ]; then
+            AES_KEY=$(openssl rand -base64 32)
+          fi
+          nohup java -Xmx1g -jar backend/target/discipolat-backend-1.0.0.jar \
+            --spring.profiles.active=beta \
+            --spring.datasource.url=jdbc:postgresql://localhost:5432/discipolat \
+            --spring.datasource.username=discipolat \
+            --spring.datasource.password=discipolat_secret \
+            --app.beta-testing.seed-demo-accounts=true \
+            --app.beta-testing.demo-accounts-enabled=true \
+            --app.environment=beta \
+            --app.jwt.private-key-path=keys/private.pem \
+            --app.jwt.public-key-path=keys/public.pem \
+            --app.encryption.aes-key="$AES_KEY" \
+            --app.payments.webhook-secret="ci-e2e-webhook-secret-0123456789abcdef" \
+            --app.rate-limiting.login-capacity=300 --app.rate-limiting.login-refill=300 \
+            --app.rate-limiting.register-capacity=120 --app.rate-limiting.register-refill=120 \
+            --app.rate-limiting.refresh-capacity=300 --app.rate-limiting.refresh-refill=300 \
+            </dev/null >/tmp/backend.log 2>&1 &
+          echo "$!" > /tmp/backend.pid
+          ok=0
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null http://localhost:8080/actuator/health; then ok=1; break; fi
+            sleep 3
+          done
+          if [ "$ok" -ne 1 ]; then echo "❌ backend absent après 180 s"; tail -80 /tmp/backend.log; exit 1; fi
+          echo "✅ backend UP — vérif du seed (login admin@discipolat.com)"
+          curl -fsS -X POST http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@discipolat.com","password":"password123"}' \
+            -o /dev/null -w 'login=%{http_code}\n'
+
+      - name: Installer Playwright (deps + chromium)
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Exécuter la matrice + parcours critiques (VRAIE stack)
+        working-directory: frontend
+        env:
+          # VITE_API_URL vide → le SPA parle en relatif /api/v1, proxifié par
+          # Vite vers :8080 (apiProxyTarget par défaut). C'est ce qui a rendu
+          # les login UI verts en local ; .env.local (8085) est gitignoré, donc
+          # absent du checkout CI.
+          VITE_API_URL: ''
+          E2E_API: http://localhost:8080/api/v1
+          E2E_BASE: http://localhost:5173
+          E2E_EMAIL: admin@discipolat.com
+          E2E_PASSWORD: password123
+        run: |
+          set -euo pipefail
+          npx playwright test \
+            e2e/roles-creations-matrix.spec.ts \
+            e2e/critical-paths.spec.ts \
+            --reporter=line,html
+
+      - name: Journal backend (diagnostic si échec)
+        if: failure()
+        run: |
+          echo '--- backend.log (dernières 120 lignes) ---'
+          tail -120 /tmp/backend.log 2>/dev/null || echo '(aucun log backend)'
+
+      - name: Upload rapport Playwright (preuve)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-fullstack-report-${{ github.run_id }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            frontend/e2e/results.json
+          if-no-files-found: warn
+          retention-days: 14
