@@ -29,9 +29,11 @@ const en: Record<string, string> = {
   'churchPicker.ctaCreate': 'Create my church',
   'churchPicker.error': 'Search temporarily unavailable — please continue with the form.',
   'churchPicker.loginLabel': 'Looking for your church?',
-  'churchPicker.joinHint': 'Sign in normally — to join {name} you need proof (a code or an invitation).',
+  'churchPicker.joinHint': 'After signing in, you will be taken to the join page for {name} — proof (a code or an invitation) will be required.',
   'churchPicker.openJoin': 'Open the join page',
   'churchPicker.cancel': 'Cancel',
+  'churchPicker.signupHere': 'Sign up for this church',
+  'churchPicker.returnHint': 'After signing in, you will be returned to the previous step.',
   // LOT 2 §CHURCH-FIRST (T2.5) — admin "Public page" tab.
   'landingAdmin.tab': 'Public page',
   'landingAdmin.title': 'Church public page',

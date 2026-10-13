@@ -29,9 +29,11 @@ const fr = {
   'churchPicker.ctaCreate': 'Créer mon église',
   'churchPicker.error': 'Recherche temporairement indisponible — continuez le formulaire.',
   'churchPicker.loginLabel': 'Vous cherchez votre église ?',
-  'churchPicker.joinHint': 'Connectez-vous normalement — pour rejoindre {name}, il faut une preuve (code ou invitation).',
+  'churchPicker.joinHint': 'Après connexion, vous serez ramené à la page de rejointure de {name} — une preuve (code ou invitation) vous sera demandée.',
   'churchPicker.openJoin': 'Ouvrir la page de rejointure',
   'churchPicker.cancel': 'Annuler',
+  'churchPicker.signupHere': 'S\'inscrire dans cette église',
+  'churchPicker.returnHint': 'Après connexion, vous serez ramené à l\'étape précédente.',
   // LOT 2 §GLISE-D'ABORD (T2.5) — onglet admin « Page publique ».
   'landingAdmin.tab': 'Page publique',
   'landingAdmin.title': 'Page publique de l\'église',

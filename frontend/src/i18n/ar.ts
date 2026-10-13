@@ -29,9 +29,11 @@ const ar: Record<string, string> = {
   'churchPicker.ctaCreate': 'إنشاء كنيستي',
   'churchPicker.error': 'البحث غير متاح مؤقتًا — تابع ملء النموذج.',
   'churchPicker.loginLabel': 'هل تبحث عن كنيستك؟',
-  'churchPicker.joinHint': 'سجّل الدخول كالمعتاد — للانضمام إلى {name} تحتاج إلى إثبات (رمز أو دعوة).',
+  'churchPicker.joinHint': 'بعد تسجيل الدخول، ستنتقل إلى صفحة الانضمام إلى {name} — وسيُطلب منك إثبات (رمز أو دعوة).',
   'churchPicker.openJoin': 'افتح صفحة الانضمام',
   'churchPicker.cancel': 'إلغاء',
+  'churchPicker.signupHere': 'سجّل في هذه الكنيسة',
+  'churchPicker.returnHint': 'بعد تسجيل الدخول، ستعود إلى الخطوة السابقة.',
   // LOT 2 §الكنيسة أولاً (T2.5) — تبويب المشرف «صفحة عامة».
   'landingAdmin.tab': 'الصفحة العامة',
   'landingAdmin.title': 'الصفحة العامة للكنيسة',

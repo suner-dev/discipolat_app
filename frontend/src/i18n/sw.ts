@@ -29,9 +29,11 @@ const sw: Record<string, string> = {
   'churchPicker.ctaCreate': 'Unda kanisani yangu',
   'churchPicker.error': 'Tafutaji haipatikani kwa muda — endelea na fomu.',
   'churchPicker.loginLabel': 'Unatafuta kanisani yako?',
-  'churchPicker.joinHint': 'Jiungee kwa kawaida — ili kujiunga na {name} unahitaji ushuhuda (msimbo au mwaliko).',
+  'churchPicker.joinHint': 'Baada ya kuingia, utarudiwa kwenye ukurasa wa kujiunga wa {name} — ushahidi (msimbo au mwaliko) utahitajika.',
   'churchPicker.openJoin': 'Fungua ukurasa wa kujiunga',
   'churchPicker.cancel': 'Ghairi',
+  'churchPicker.signupHere': 'Jisajili katika kanisani hili',
+  'churchPicker.returnHint': 'Baada ya kuingia, utarudiwa hatua iliyotangulia.',
   // LOT 2 §KANISA-KWANZA (T2.5) — kichaka cha admin "Ukurasa wa umma".
   'landingAdmin.tab': 'Ukurasa wa umma',
   'landingAdmin.title': 'Ukurasa wa umma wa kanisa',

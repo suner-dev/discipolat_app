@@ -30,6 +30,8 @@ const PICKER_KEYS = [
   'churchPicker.joinHint',
   'churchPicker.openJoin',
   'churchPicker.cancel',
+  'churchPicker.signupHere',
+  'churchPicker.returnHint',
 ] as const;
 
 describe("LOT 1 §GLISE-D'ABORD (T1.5) — parité i18n du sélecteur d'église", () => {

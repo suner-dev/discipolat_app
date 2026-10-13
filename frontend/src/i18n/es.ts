@@ -29,9 +29,11 @@ const es: Record<string, string> = {
   'churchPicker.ctaCreate': 'Crear mi iglesia',
   'churchPicker.error': 'Búsqueda no disponible por el momento — continúa con el formulario.',
   'churchPicker.loginLabel': '¿Buscas tu iglesia?',
-  'churchPicker.joinHint': 'Inicia sesión normalmente — para unirte a {name} necesitas una prueba (código o invitación).',
+  'churchPicker.joinHint': 'Tras iniciar sesión, irás a la página de unión de {name} — se te pedirá una prueba (código o invitación).',
   'churchPicker.openJoin': 'Abrir la página de unión',
   'churchPicker.cancel': 'Cancelar',
+  'churchPicker.signupHere': 'Regístrate en esta iglesia',
+  'churchPicker.returnHint': 'Tras iniciar sesión, volverás al paso anterior.',
   // LOT 2 §IGLESIA-PRIMERO (T2.5) — pestaña de admin "Página pública".
   'landingAdmin.tab': 'Página pública',
   'landingAdmin.title': 'Página pública de la iglesia',

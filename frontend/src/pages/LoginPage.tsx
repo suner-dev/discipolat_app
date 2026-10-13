@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,7 +7,7 @@ import { useAuth, roleLabels } from '@/contexts/AuthContext';
 import { usePlatformMeta } from '@/contexts/MetaContext';
 import BetaBadge from '@/components/beta/BetaBadge';
 import api, { getErrorMessage } from '@/lib/api';
-import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, LogIn, HelpCircle, Shield, RotateCw, ShieldCheck, FlaskConical, Wand2, MailCheck, ArrowRight } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import { SocialLoginButtons } from '@/features/auth/social/SocialLoginButtons';
 import ChurchPicker from '@/components/auth/ChurchPicker';
@@ -60,6 +60,28 @@ const roleBg = (r: string) => {
   }
 };
 
+/**
+ * LOT 1 §GLISE-D'ABORD — `?next=` n'était ÉMIS par personne et lu par personne :
+ * `/j/:slug` proposait « J'ai déjà un compte — me connecter » qui produisait
+ * `/login?next=/j/<slug>`, et la connexion renvoyait ensuite l'utilisateur au
+ * tableau de bord : son église était perdue en cours de route.
+ *
+ * <p>On n'accepte qu'un chemin INTERNE. `//evil.example` et `/\evil.example` sont
+ * des URL protocol-relative : le navigateur les traiterait comme absolues, donc
+ * une open-redirect. Un schéma explicite après la racine est refusé aussi. Tout
+ * le reste (`/j/x`, `/join?code=…`) passe et est renvoyé tel quel.
+ */
+function safeInternalPath(raw: string | null): string | null {
+  if (!raw) return null;
+  const path = raw.trim();
+  if (!path.startsWith('/')) return null;
+  // Protocol-relative : `//hôte` et `/\hôte` (les navigateurs acceptent `\`).
+  if (path.startsWith('//') || path.startsWith('/\\')) return null;
+  // Schéma explicite remonté en chemin : `/https://evil.example`.
+  if (/^\/[a-z][a-z0-9+.-]*:/i.test(path)) return null;
+  return path;
+}
+
 const DEMO_ACCOUNTS = [
   { role: 'Admin (multi-rôles)', email: 'admin@discipolat.com' },
   { role: 'Pasteur', email: 'pasteur@discipolat.com' },
@@ -72,6 +94,7 @@ const DEMO_ACCOUNTS = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, roles, user, switchRole, isAuthenticated, loginWithSocialToken } = useAuth();
   const { meta } = usePlatformMeta();
   const { t } = useI18n();
@@ -90,6 +113,26 @@ export default function LoginPage() {
   // raccourci de découverte : une église listée sélectionnée propose les flux de
   // PREUVE déjà là (/j/:slug, /join) — jamais une adhésion auto-déclarée (D1/R1).
   const [pickedChurch, setPickedChurch] = useState<{ name: string; slug?: string } | null>(null);
+
+  // Reprise d'une étape interrompue : `/j/:slug` → « J'ai déjà un compte »
+  // émet `/login?next=/j/<slug>`. Cette cible prime sur TOUT autre
+  // destination, y compris l'église choisie dans le picker ci-dessus.
+  const nextPath = safeInternalPath(searchParams.get('next'));
+
+  /**
+   * Destination après authentification, dans l'ordre de priorité :
+   *   1. `?next=` explicite (reprise d'un flux déjà commencé) ;
+   *   2. l'église sélectionnée dans le picker — l'utilisateur vient de dire à
+   *      quelle église il appartient, l'envoyer ailleurs effacerait son choix ;
+   *   3. le tableau de bord (comportement historique).
+   *
+   * <p>Rien n'est joint automatiquement : `/j/:slug` exige toujours un clic
+   * « Rejoindre maintenant », donc la PREUVE (D1/R1) reste obligatoire.
+   */
+  const postLoginPath = useCallback(
+    () => nextPath ?? (pickedChurch?.slug ? `/j/${encodeURIComponent(pickedChurch.slug)}` : null),
+    [nextPath, pickedChurch],
+  );
 
   // ── Magic link (connexion sans mot de passe) ──
   const [showMagicLink, setShowMagicLink] = useState(false);
@@ -121,9 +164,10 @@ export default function LoginPage() {
   // Already authenticated (and not in the middle of choosing a role) → go to dashboard
   useEffect(() => {
     if (isAuthenticated && !showRoleSelector && !navigationHandledRef.current) {
-      navigate(user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard', { replace: true });
+      const target = postLoginPath();
+      navigate(target ?? (user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard'), { replace: true });
     }
-  }, [isAuthenticated, showRoleSelector, navigate, user]);
+  }, [isAuthenticated, showRoleSelector, navigate, user, postLoginPath]);
 
   const {
     register,
@@ -153,7 +197,10 @@ export default function LoginPage() {
         // Le super admin plateforme atterrit sur SON dashboard (gestion des tenants),
         // cohérent avec la HomeGate (/). Le tenant dashboard reste atteignable par
         // ailleurs (impersonation / navigation), comme pour tout admin.
-        navigate(result?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard');
+        // Sauf si l'utilisateur a choisi son église ou repris un flux : alors c'est
+        // cette église qui l'attend, pas un tableau de bord vide.
+        const target = postLoginPath();
+        navigate(target ?? (result?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -165,7 +212,8 @@ export default function LoginPage() {
     setRoleLoading(true);
     try {
       await switchRole(role);
-      navigate(user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard');
+      const target = postLoginPath();
+      navigate(target ?? (user?.platformSuperAdmin ? '/platform/dashboard' : '/dashboard'));
     } catch {
       setError('Échec de la sélection du rôle');
       setRoleLoading(false);
@@ -254,6 +302,21 @@ export default function LoginPage() {
                     {t('churchPicker.openJoin')}
                   </Link>
                 )}
+                {/* Inscription DIRECTE dans CETTE église : `/register?tenant=` est
+                    le contrat déjà implémenté par JoinChurchPage et RegisterPage —
+                    le compte créé est rattaché à l'église, sans passer par la page
+                    de rejointure ni par une demande d'adhésion à valider. */}
+                {pickedChurch.slug && (
+                  <>
+                    <span className="text-gray-300 dark:text-white/20">·</span>
+                    <Link
+                      to={`/register?tenant=${encodeURIComponent(pickedChurch.slug)}&church=${encodeURIComponent(pickedChurch.name)}`}
+                      className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline"
+                    >
+                      {t('churchPicker.signupHere')}
+                    </Link>
+                  </>
+                )}
                 <span className="text-gray-300 dark:text-white/20">·</span>
                 <Link to="/join" className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline">
                   {t('churchPicker.ctaCode')}
@@ -265,6 +328,18 @@ export default function LoginPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* Reprise de flux : `/j/:slug` → « J'ai déjà un compte » émet
+          `/login?next=…`. Sans ce bandeau, la page est indiscernable d'une
+          connexion ordinaire et l'utilisateur ignore qu'il va revenir à l'étape
+          de rejointure — d'où le sentiment que son église a été oubliée. */}
+      {nextPath && !showRoleSelector && (
+        <div className="animate-slide-up flex items-start gap-2 rounded-xl border border-primary-500/20 bg-primary-500/5 px-3 py-2.5">
+          <ArrowRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary-500" />
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            {t('churchPicker.returnHint')}
+          </p>
         </div>
       )}
       {/* Header */}
@@ -484,7 +559,9 @@ export default function LoginPage() {
               },
               refreshToken
             );
-            navigate('/dashboard', { replace: true });
+            // Même contrat que le formulaire : une reprise de flux (`?next=`) ou
+            // l'église choisie dans le picker priment sur le tableau de bord.
+            navigate(postLoginPath() ?? '/dashboard', { replace: true });
           }}
         />
       </div>
