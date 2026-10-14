@@ -102,7 +102,7 @@ export default function AutomationsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Actives', value: stats.totalRègles, color: 'text-green-600', icon: Play },
           { label: 'En pause', value: stats.règlesEnPause, color: 'text-amber-600', icon: Pause },

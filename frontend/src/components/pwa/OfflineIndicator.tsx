@@ -67,14 +67,16 @@ export function OfflineIndicator() {
         </div>
       )}
 
-      {/* Install PWA button */}
+      {/* Install PWA button — bas-GAUCHE : en bas à droite il recouvrait le
+          widget de feedback bêta (« Un retour ? »), surtout sur petits écrans. */}
       {showInstall && (
         <div
           style={{
             position: 'fixed',
             bottom: 24,
-            right: 24,
+            left: 24,
             zIndex: 9998,
+            maxWidth: 'calc(100vw - 3rem)',
           }}
         >
           <button

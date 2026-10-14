@@ -96,7 +96,7 @@ export default function DisciplinePage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: 'Total', value: events.length, icon: Gavel, color: 'text-blue-500', bg: 'bg-blue-500/10' },
           { label: 'En cours', value: enCours, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },

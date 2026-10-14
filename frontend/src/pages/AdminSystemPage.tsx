@@ -196,7 +196,7 @@ export default function AdminSystemPage() {
                 <p className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{health.uptime || health.jvm.uptime}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-800/30 text-center">
                 <p className="text-[10px] text-gray-400">Threads actifs</p>
                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{health.jvm.threads}</p>

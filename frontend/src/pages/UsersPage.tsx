@@ -569,7 +569,7 @@ export default function UsersPage() {
               className="input pl-9"
             />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Filter className="w-4 h-4 text-gray-400" />
             <select
               value={statusFilter}

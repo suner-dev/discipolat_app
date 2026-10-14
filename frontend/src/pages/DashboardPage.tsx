@@ -524,7 +524,7 @@ export default function DashboardPage() {
               </Link>
             </div>
             {spaces.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {spaces.slice(0, 6).map((s) => (
                   <Link
                     key={s.id}

@@ -46,7 +46,7 @@ function renderSidebar(open = false) {
   return render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Sidebar open={open} onClose={vi.fn()} />
+        <Sidebar open={open} onClose={vi.fn()} collapsed={false} onCollapsedChange={vi.fn()} />
       </BrowserRouter>
     </QueryClientProvider>
   );

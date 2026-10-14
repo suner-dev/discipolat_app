@@ -181,7 +181,7 @@ export default function SpiritualJourneyPage() {
           </div>
 
           {journalStats && (
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {[
                 { label: 'Total', value: journalStats.totalEntries ?? 0, color: 'text-violet-600' },
                 { label: 'Favoris', value: journalStats.favorites ?? 0, color: 'text-amber-600' },

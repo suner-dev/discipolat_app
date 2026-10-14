@@ -574,7 +574,7 @@ export default function ReportsPage() {
                 </div>
               )}
               {detailType === 'family' && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl bg-gray-50/50 dark:bg-gray-800/30 text-center">
                     <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{(detailReport as FamilyReportEntry).nbFaiseurs ?? '—'}</p>
                     <p className="text-[10px] text-gray-400">Faiseurs</p>

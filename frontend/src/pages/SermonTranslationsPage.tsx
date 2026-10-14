@@ -88,7 +88,7 @@ export default function SermonTranslationsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: translations.length, color: 'text-blue-600' },
           { label: 'Terminées', value: translations.filter((t) => t.statut === 'TERMINE').length, color: 'text-green-600' },

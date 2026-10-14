@@ -87,7 +87,7 @@ export default function RewardsClaimsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total réclamations', value: claims.length, color: 'from-primary-500 to-primary-600' },
           { label: 'En attente', value: claims.filter((c) => c.status === 'PENDING').length, color: 'from-yellow-500 to-amber-500' },

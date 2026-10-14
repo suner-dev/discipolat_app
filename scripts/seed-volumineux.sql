@@ -427,11 +427,11 @@ BEGIN
                 v_statut := 'PLANIFIE';
                 v_date := CURRENT_TIMESTAMP + (5 + i * 12) * INTERVAL '1 day';
             END IF;
-            INSERT INTO events (id, organisateur_id, department_id, type_evenement, titre, description, lieu,
-                                date_debut, date_fin, nb_inscrits, statut, created_at, updated_at)
+            INSERT INTO event (id, organizer_id, department_id, type, title, description, lieu,
+                               start_at, end_at, status, created_at, updated_at)
             VALUES (v_id, d.responsable_id, d.id, v_type, v_titre, 'Événement ' || v_type || ' du département ' || d.nom,
                     (ARRAY['Temple principal','Salle polyvalente','Champ de prière','Centre de conférences'])[1 + (i % 4)],
-                    v_date, v_date + INTERVAL '3 hours', 0, v_statut, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    v_date, v_date + INTERVAL '3 hours', v_statut, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (id) DO NOTHING;
         END LOOP;
     END LOOP;
@@ -444,7 +444,7 @@ DECLARE
     v_id UUID;
     v_soul UUID;
 BEGIN
-    FOR e IN SELECT id, department_id, titre FROM events WHERE statut = 'TERMINE' ORDER BY created_at LIMIT 16 LOOP
+    FOR e IN SELECT id, department_id, title AS titre FROM event WHERE status = 'TERMINE' ORDER BY created_at LIMIT 16 LOOP
         v_id := md5('seed:team:event:' || e.id)::uuid;
         v_soul := (SELECT soul_id FROM soul_departments WHERE department_id = e.department_id AND actif ORDER BY date_affectation LIMIT 1);
         INSERT INTO department_teams (id, department_id, parent_id, date_debut, date_fin, created_at, updated_at,
@@ -470,7 +470,7 @@ DECLARE
 BEGIN
     SELECT count(*) INTO n_faiseurs FROM users WHERE role = 'FAISEUR';
     IF n_faiseurs < 8 THEN n_faiseurs := 8; END IF;
-    FOR e IN SELECT id, department_id FROM events WHERE statut IN ('TERMINE', 'EN_COURS') LOOP
+    FOR e IN SELECT id, department_id FROM event WHERE status IN ('TERMINE', 'EN_COURS') LOOP
         i := 0;
         FOR s IN SELECT soul_id FROM soul_departments WHERE department_id = e.department_id AND actif ORDER BY date_affectation LOOP
             i := i + 1;
@@ -486,7 +486,7 @@ BEGIN
     END LOOP;
 
     -- Inscriptions aux événements à venir
-    FOR e IN SELECT id, department_id, organisateur_id FROM events WHERE statut = 'PLANIFIE' LIMIT 24 LOOP
+    FOR e IN SELECT id, department_id, organizer_id AS organisateur_id FROM event WHERE status = 'PLANIFIE' LIMIT 24 LOOP
         FOR i IN 1..8 LOOP
             v_id := md5('seed:reg:' || e.id || ':' || i)::uuid;
             SELECT id INTO v_user FROM users WHERE role = 'FAISEUR'
@@ -607,7 +607,7 @@ BEGIN
             v_id := md5('seed:checklist:' || d.id || ':' || i)::uuid;
             INSERT INTO department_checklists (id, department_id, created_by, created_at, updated_at, cible_id, titre, cible_type, statut)
             VALUES (v_id, d.id, admin_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
-                    CASE i WHEN 1 THEN NULL WHEN 2 THEN (SELECT id FROM department_teams WHERE department_id = d.id LIMIT 1) ELSE (SELECT id FROM events WHERE department_id = d.id LIMIT 1) END,
+                    CASE i WHEN 1 THEN NULL WHEN 2 THEN (SELECT id FROM department_teams WHERE department_id = d.id LIMIT 1) ELSE (SELECT id FROM event WHERE department_id = d.id LIMIT 1) END,
                     CASE i WHEN 1 THEN 'Préparation du culte' WHEN 2 THEN 'Réunion d''équipe' ELSE 'Organisation de l''événement' END,
                     CASE i WHEN 1 THEN 'GENERAL' WHEN 2 THEN 'EQUIPE' ELSE 'EVENEMENT' END,
                     CASE WHEN i = 3 THEN 'TERMINEE' ELSE 'OUVERTE' END)
@@ -696,7 +696,7 @@ UNION ALL SELECT 'department_teams', count(*) FROM department_teams
 UNION ALL SELECT 'department_positions', count(*) FROM department_positions
 UNION ALL SELECT 'department_tasks', count(*) FROM department_tasks
 UNION ALL SELECT 'department_assignments', count(*) FROM department_assignments
-UNION ALL SELECT 'events', count(*) FROM events
+UNION ALL SELECT 'events', count(*) FROM event
 UNION ALL SELECT 'event_attendance', count(*) FROM department_event_attendance
 UNION ALL SELECT 'event_registrations', count(*) FROM event_registrations
 UNION ALL SELECT 'member_presences', count(*) FROM member_presences

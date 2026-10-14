@@ -197,7 +197,7 @@ export default function PasteurAlertsTab() {
 
       {/* Stats */}
       {alertStats && (
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div className="glass-card p-4 text-center cursor-pointer hover:shadow-md transition-shadow" onClick={() => { setFilter(filter === 'ACTIVE' ? '' : 'ACTIVE'); setPage(0); }}>
             <p className={`text-2xl font-bold ${filter === 'ACTIVE' ? 'text-red-600' : 'text-red-500'}`}>{alertStats.actives}</p>
             <p className="text-[10px] text-gray-400">Actives</p>

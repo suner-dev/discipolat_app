@@ -170,7 +170,7 @@ export default function PasteurPrayersTab() {
           <div className="space-y-4">
             <div><label className="label">Titre *</label><input className="input" value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })} placeholder="Titre de la demande" /></div>
             <div><label className="label">Message *</label><textarea className="input" rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Détail de la prière..." /></div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><label className="label">{tText('Priorité')}</label><select className="input" value={form.priorite} onChange={e => setForm({ ...form, priorite: e.target.value })}>
                 <option value="BASSE">Basse</option><option value="MOYENNE">Moyenne</option><option value="HAUTE">Haute</option><option value="URGENTE">Urgente</option>
               </select></div>

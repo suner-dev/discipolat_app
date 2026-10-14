@@ -53,7 +53,7 @@ export default function ReferralsStatusPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {statuses.map((s) => (
           <div key={s} className="stat-card">
             <p className="stat-value">{referrals.filter((r) => r.status === s).length}</p>

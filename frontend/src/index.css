@@ -809,7 +809,8 @@ html {
   }
 
   /* Conteneur plein écran sans marges */
-  .lg\:ml-64 {
+  .lg\:ml-64,
+  .lg\:ml-20 {
     margin-left: 0 !important;
   }
 

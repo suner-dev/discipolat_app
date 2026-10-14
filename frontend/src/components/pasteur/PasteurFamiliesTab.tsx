@@ -367,7 +367,7 @@ export default function PasteurFamiliesTab() {
 
       {/* === COPILOT IA FLOTTANT === */}
       {aiOpen && (
-        <div className="fixed bottom-20 right-4 z-40 w-[380px] max-h-[500px] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col animate-slide-up overflow-hidden">
+        <div className="fixed bottom-20 right-4 z-40 w-[380px] max-w-[calc(100vw-2rem)] max-h-[500px] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col animate-slide-up overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-violet-500/10 to-purple-500/10 dark:from-violet-500/5 dark:to-purple-500/5">
             <div className="flex items-center gap-2">

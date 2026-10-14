@@ -151,7 +151,7 @@ export default function AdminPaymentDashboardPage() {
       </div>
 
       {/* Amount Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6 animate-slide-up">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 animate-slide-up">
         <div className="glass-card p-4 text-center">
           <DollarSign className="w-5 h-5 mx-auto text-primary-500 mb-1" />
           <p className="text-xs text-gray-500 dark:text-gray-400">{t('paymentDashboard.avgAmount')}</p>

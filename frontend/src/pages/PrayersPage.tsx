@@ -57,6 +57,16 @@ const _PRIORITE_COLORS: Record<PrioritePriere, string> = {
   HAUTE: 'text-red-500',
 };
 
+// §démo — l'API renvoie `createdAt`, le front attendait `dateCreation` :
+// sans repli, `new Date(undefined)` affichait « Invalid Date » sur toutes les
+// lignes. On résout les deux noms et on garde une valeur sûre (null si absente).
+function prayerDate(prayer: Prayer): Date | null {
+  const raw = prayer.createdAt ?? prayer.dateCreation;
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 interface PrayerFormState {
   titre: string;
   contenu: string;
@@ -364,7 +374,10 @@ export default function PrayersPage() {
     },
     {
       header: 'Date',
-      cell: (prayer) => new Date(prayer.dateCreation).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }),
+      cell: (prayer) => {
+        const d = prayerDate(prayer);
+        return d ? d.toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short' }) : '—';
+      },
     },
     {
       header: 'Actions',
@@ -412,13 +425,14 @@ export default function PrayersPage() {
   const exportCsv = () => {
     const rows = [['Titre', 'Catégorie', 'Priorité', 'Visibilité', 'Statut', 'Date']];
     allPrayers.forEach((p) => {
+      const dcsv = prayerDate(p);
       rows.push([
         p.titre,
         categorieLabel(p.categorie),
         prioriteLabel(p.priorite),
         p.visibilite,
         p.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours',
-        new Date(p.dateCreation).toLocaleDateString(getI18nLocale()),
+        dcsv ? dcsv.toLocaleDateString(getI18nLocale()) : '',
       ]);
     });
     const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');

@@ -55,7 +55,7 @@ export default function SpiritualChallengesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total', value: challenges.length, color: 'text-orange-600' },
           { label: 'Actifs', value: active.length, color: 'text-red-600' },

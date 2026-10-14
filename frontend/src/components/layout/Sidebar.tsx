@@ -1,6 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { X, ChevronLeft, Church, Star as StarIcon } from 'lucide-react';
@@ -29,6 +28,11 @@ interface NavSectionData {
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
+  /** Rail replié (icônes seules). État remonté au MainLayout : la colonne de
+      contenu suit la largeur réelle de la barre (ml-64 ↔ ml-20) au lieu de
+      laisser un couloir mort de 176 px quand le rail est replié. */
+  collapsed: boolean;
+  onCollapsedChange: (next: boolean) => void;
 }
 
 function NavItem({ item, collapsed = false, onClick, t }: { item: NavItemData; collapsed?: boolean; onClick?: () => void; t: (key: string) => string }) {
@@ -88,10 +92,9 @@ function NavItem({ item, collapsed = false, onClick, t }: { item: NavItemData; c
   );
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose, collapsed, onCollapsedChange }: SidebarProps) {
   const { user } = useAuth();
   const { branding } = useSettings();
-  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -181,7 +184,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
           {/* Collapse toggle */}
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => onCollapsedChange(!collapsed)}
             className="absolute -right-3 top-[8.5rem] z-10 w-6 h-6 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
                        flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200
                        hover:scale-110 active:scale-95"

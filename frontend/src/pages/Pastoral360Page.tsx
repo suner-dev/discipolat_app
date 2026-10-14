@@ -105,7 +105,7 @@ export default function Pastoral360Page() {
         <div className="animate-fade-in space-y-4">
           <div className="skeleton h-8 w-64 rounded-lg" />
           <div className="skeleton h-64 w-full rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function Pastoral360Page() {
           <Activity className="w-5 h-5 text-primary-500" />
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{tText('Indices de santé')}</h2>
         </div>
-        <div className="grid grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           {Object.entries(INDICE_LABELS).map(([key, label]) => (
             <IndiceGauge
               key={key}

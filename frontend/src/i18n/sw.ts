@@ -87,6 +87,7 @@ const sw: Record<string, string> = {
   'nav.settings': 'Mipangilio',
   'nav.admin': 'Usimamizi',
   'nav.logout': 'Ondoka',
+  'nav.tenantSwitcher': 'Badilisha kanisa',
 
   // Command palette (G5.1)
   'commandPalette.title': "Tafuta kote",

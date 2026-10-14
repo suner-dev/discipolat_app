@@ -65,7 +65,7 @@ export default function FamilyCohesionPage() {
             </div>
 
             {/* Indicators */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 text-center">
                 <Users className="w-5 h-5 mx-auto mb-1 text-blue-500" />
                 <div className="text-2xl font-bold text-blue-600">{(cohesion.tauxParticipation * 100).toFixed(0)}%</div>

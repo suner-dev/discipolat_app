@@ -87,6 +87,7 @@ const ar: Record<string, string> = {
   'nav.settings': 'الإعدادات',
   'nav.admin': 'الإدارة',
   'nav.logout': 'تسجيل الخروج',
+  'nav.tenantSwitcher': 'تغيير الكنيسة',
 
   // Command palette (G5.1)
   'commandPalette.title': "بحث شامل",

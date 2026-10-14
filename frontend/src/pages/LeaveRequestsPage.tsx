@@ -53,7 +53,7 @@ export default function LeaveRequestsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: requests.length, color: 'text-blue-600' },
           { label: 'En attente', value: pending.length, color: 'text-yellow-600' },

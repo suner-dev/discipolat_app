@@ -608,6 +608,10 @@ export interface Prayer {
   temoignage?: string;
   dateReponse?: string;
   dateCreation: string;
+  // L'API /prayers sérialise la date de création sous `createdAt` (convention
+  // JPA), alors que le front historiquement lit `dateCreation`. Les deux sont
+  // acceptés côté affichage pour éviter un « Invalid Date ».
+  createdAt?: string;
   updatedAt: string;
 }
 
@@ -1740,12 +1744,15 @@ export interface FeedbackStats {
   parCategorie: Record<string, number>;
 }
 
-// Pagination
+// Pagination — forme renvoyée par le backend (PageResponse.java) : { page, size,
+// totalElements, totalPages }. Les champs Spring (number/first/last/empty) sont
+// dérivés côté client par l'intercepteur api.ts ; ils restent optionnels ici.
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
   size: number;
+  page?: number;
   number: number;
   first: boolean;
   last: boolean;

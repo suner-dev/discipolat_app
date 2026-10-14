@@ -70,7 +70,7 @@ export default function PersonalObjectivesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: stats.total, color: 'text-emerald-600' },
           { label: 'En cours', value: stats.enCours, color: 'text-amber-600', icon: Clock },

@@ -75,7 +75,7 @@ export default function ContentModerationPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {FILTERS.map(({ key, label, active, idle }) => (
           <button key={key} onClick={() => setFilter(key)}
             className={`p-3 rounded-xl text-sm font-medium transition ${filter === key ? active : idle}`}>

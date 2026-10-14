@@ -51,7 +51,7 @@ export default function VisitNotesVerifyPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: notes.length, color: 'text-teal-600' },
           { label: 'Non vérifiées', value: unverified.length, color: 'text-yellow-600' },

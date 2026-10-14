@@ -830,7 +830,7 @@ export default function AdminTenantsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/40 dark:border-blue-700/30 text-center">
                   <Users className="w-4 h-4 text-blue-500 mx-auto mb-1" />
                   <p className="text-[10px] text-blue-500 font-semibold uppercase">ID</p>

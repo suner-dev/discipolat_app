@@ -88,7 +88,7 @@ export default function PasteurEvaluationsTab() {
 
       {/* Stats résumé */}
       {allEvals.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div className="glass-card p-4 text-center">
             <div className="flex items-center justify-center gap-0.5 mb-2">{stars(Math.round(Number(avgNote)))}</div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avgNote}</p>

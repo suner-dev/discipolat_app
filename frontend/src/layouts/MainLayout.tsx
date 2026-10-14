@@ -21,6 +21,7 @@ import Breadcrumbs from '@/components/navigation/Breadcrumbs';
 import { useUiCustomizationLoader } from '@/config/useUiCustomization';
 
 const TESTER_BANNER_KEY = 'discipolat:tester-banner-dismissed';
+const SIDEBAR_COLLAPSED_KEY = 'discipolat:sidebar-collapsed';
 
 export default function MainLayout() {
   const { t } = useI18n();
@@ -30,6 +31,16 @@ export default function MainLayout() {
   const { activeRole, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Rail latéral : l'état de repli vit ICI (et non dans Sidebar) pour que la
+  // colonne de contenu suive la largeur réelle de la barre (256 px ↔ 80 px).
+  // Sans ça, replier le menu laissait un couloir mort de 176 px.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1',
+  );
+  const handleSidebarCollapsedChange = (next: boolean) => {
+    setSidebarCollapsed(next);
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0');
+  };
   const [paletteOpen, setPaletteOpen] = useState(false);
   const openPalette = useMemo(() => () => setPaletteOpen(true), []);
   // §G5.1 — Ctrl/Cmd+K ouvre la palette de commandes (même depuis les champs de saisie)
@@ -62,10 +73,10 @@ export default function MainLayout() {
       {/* PORT Develop1 (G5.1/#57) — bus temps réel WebSocket + badge d'activité. */}
       <RealtimeBus />
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} collapsed={sidebarCollapsed} onCollapsedChange={handleSidebarCollapsedChange} />
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-64 transition-all duration-300">
+      {/* Main content area — la gouttière gauche suit le rail (ml-64 / ml-20) */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         <Navbar onMenuClick={() => setSidebarOpen(true)} openPalette={openPalette} />
 
         {/* B2 — Bannière d'onboarding (D8 : informative, jamais bloquante) */}
@@ -101,8 +112,10 @@ export default function MainLayout() {
 
         {/* LOT 2 §BK — retour arrière + fil d'Ariane, montés ICI une seule fois
             pour que TOUTES les pages en profitent, au lieu des 16 boutons
-            « Retour » copiés-collés qui divergeaient entre eux. */}
-        <div className="px-4 sm:px-6 lg:px-8 pt-4 flex items-center gap-3 flex-wrap">
+            « Retour » copiés-collés qui divergeaient entre eux.
+            Gouttière = padding du <main> + celui du .page-container : sans ça,
+            le fil d'Ariane restait 32 px plus à gauche que le titre de la page. */}
+        <div className="px-8 sm:px-12 lg:px-16 pt-4 flex items-center gap-3 flex-wrap">
           <BackButton />
           <Breadcrumbs />
         </div>

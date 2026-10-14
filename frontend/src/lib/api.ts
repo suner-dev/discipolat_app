@@ -42,8 +42,32 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+// Interception de succès — normalisation de la pagination.
+// Le backend (PageResponse, record commun) renvoie { content, page, size,
+// totalElements, totalPages } alors que les pages front lisent la convention
+// Spring { number, first, last, empty }. Sans number, l'affichage « page / totales »
+// donnait NaN et les boutons Précédent/Suivant ne se désactivaient jamais.
+// On complète la réponse ici, une seule fois, pour tous les endpoints listés.
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const d = response.data as Record<string, unknown> | null;
+    if (
+      d &&
+      Array.isArray(d.content) &&
+      typeof d.totalPages === 'number' &&
+      d.number === undefined
+    ) {
+      const number = typeof d.page === 'number' ? d.page : 0;
+      response.data = {
+        ...d,
+        number,
+        first: number === 0,
+        last: number >= (d.totalPages as number) - 1,
+        empty: (d.content as unknown[]).length === 0,
+      };
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;

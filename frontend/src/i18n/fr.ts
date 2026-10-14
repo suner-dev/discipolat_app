@@ -87,6 +87,7 @@ const fr = {
   'nav.settings': 'Paramètres',
   'nav.admin': 'Administration',
   'nav.logout': 'Déconnexion',
+  'nav.tenantSwitcher': 'Changer d\'église',
 
   // Command palette (G5.1)
   'commandPalette.title': "Recherche globale",

@@ -108,7 +108,7 @@ export default function PrayerJournalPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: stats.total, color: 'text-purple-600' },
           { label: 'En cours', value: stats.enCours, color: 'text-amber-600' },

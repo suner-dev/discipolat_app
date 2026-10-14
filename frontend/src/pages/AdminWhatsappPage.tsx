@@ -130,7 +130,7 @@ export default function AdminWhatsappPage() {
       </div>
 
       {/* Statistiques */}
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: 'Messages reçus', value: stats?.inbound ?? 0, icon: Inbox },
           { label: 'Messages envoyés', value: stats?.outbound ?? 0, icon: Send },

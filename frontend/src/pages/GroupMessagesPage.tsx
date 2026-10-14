@@ -161,7 +161,7 @@ export default function GroupMessagesPage() {
 
         {showStats && stats && (
           <div className="p-4 border-b border-white/10 bg-white/5">
-            <div className="grid grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div><div className="text-lg font-bold text-white">{stats.totalMessages}</div><div className="text-xs text-gray-400">Messages</div></div>
               <div><div className="text-lg font-bold text-white">{stats.activeMembers}</div><div className="text-xs text-gray-400">Membres actifs</div></div>
               <div><div className="text-lg font-bold text-white">{stats.messagesThisWeek}</div><div className="text-xs text-gray-400">{tText('Cette semaine')}</div></div>

@@ -66,7 +66,7 @@ export default function PastoralVisitsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: visits.length, color: 'text-blue-600' },
           { label: 'Planifiées', value: scheduled.length, color: 'text-amber-600' },

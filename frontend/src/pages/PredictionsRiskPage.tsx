@@ -68,7 +68,7 @@ export default function PredictionsRiskPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: 'Total', value: risks.length, color: 'text-orange-600' },
           { label: 'Élevé', value: risks.filter((r) => r.level === 'HIGH').length, color: 'text-red-600' },

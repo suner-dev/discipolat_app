@@ -87,6 +87,7 @@ const en: Record<string, string> = {
   'nav.settings': 'Settings',
   'nav.admin': 'Administration',
   'nav.logout': 'Logout',
+  'nav.tenantSwitcher': 'Switch church',
 
   // Command palette (G5.1)
   'commandPalette.title': "Global search",

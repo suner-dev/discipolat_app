@@ -66,7 +66,7 @@ export default function UrgentAidPage() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: 'En attente', value: untreated.length, color: 'from-red-500 to-rose-500' },
           { label: 'Traitées', value: treated.length, color: 'from-emerald-500 to-green-500' },

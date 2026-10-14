@@ -437,7 +437,7 @@ export default function PasteurDashboardTab({ onNavigateToTab }: Props) {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Taux de présence')}</h3>
                 <span className="badge-info text-[10px]">Semaine en cours</span>
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                   <p className="text-2xl font-bold text-primary-500">{presences.tauxGlobal ?? 0}%</p>
                   <p className="text-[10px] text-gray-400">Global</p>

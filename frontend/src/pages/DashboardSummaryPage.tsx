@@ -87,7 +87,7 @@ export default function DashboardSummaryPage() {
             Risques familiaux
           </h3>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             {[
               { label: 'Normales', value: risk.normal, color: 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' },
               { label: 'Sous surveillance', value: risk.underSurveillance, color: 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400' },

@@ -43,7 +43,7 @@ export function VoiceAssistantPanel() {
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-80 max-w-[calc(100vw-3rem)] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 bg-indigo-600 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

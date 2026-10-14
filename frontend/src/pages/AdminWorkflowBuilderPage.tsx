@@ -270,7 +270,7 @@ export default function AdminWorkflowBuilderPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="stat-card p-4 text-center">
           <span className="stat-label text-[10px]">Workflows actifs</span>
           <p className="stat-value text-xl">{activeCount}</p>

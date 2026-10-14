@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Layers } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import type { GroupedNavNode, NavEntry } from '@/navigation/grouping';
@@ -49,16 +49,31 @@ export function NavGroupSection({
   const location = useLocation();
   const isActiveBranch = useMemo(() => containsHref(node, location.pathname), [node, location.pathname]);
 
-  // Un groupe qui contient la page courante reste ouvert : c'est le seul moyen
-  // de garder le repère quand la navigation est repliée.
+  // Un groupe qui contient la page courante s'ouvre automatiquement à chaque
+  // navigation : c'est le repère « je suis ici ». Mais ce n'est qu'une valeur
+  // par défaut : un clic explicite de l'utilisateur (persisté dans openState)
+  // doit pouvoir refermer le groupe actif — sinon l'onglet « Discipolat »
+  // restait définitivement ouvert, dérobé à tout essai de repli.
   const forcedOpen = isActiveBranch;
   const persisted = openState?.[node.id];
   const [internalOpen, setInternalOpen] = useState(
     persisted ?? (node.collapsedByDefault ? false : true),
   );
-  // Le réglage explicite de l'utilisateur l'emporte ; sinon on suit l'état
-  // interne ; la branche active force l'ouverture dans tous les cas.
-  const open = forcedOpen || (persisted !== undefined ? persisted : internalOpen);
+  // Le réglage explicite de l'utilisateur l'emporte ; à défaut, la branche
+  // active force l'ouverture, puis l'état interne prend le relais.
+  const open = persisted !== undefined ? persisted : (forcedOpen || internalOpen);
+
+  // Quand on change réellement de route et que cette branche devient active,
+  // on rouvre le groupe (même s'il avait été replié sur une autre page).
+  const previousPathRef = useRef(location.pathname);
+  useEffect(() => {
+    if (previousPathRef.current !== location.pathname) {
+      previousPathRef.current = location.pathname;
+      if (isActiveBranch && persisted === false) {
+        onToggle?.(node.id, true);
+      }
+    }
+  }, [location.pathname, isActiveBranch, node.id, onToggle, persisted]);
 
   const toggle = () => {
     if (openState && onToggle) {
