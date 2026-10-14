@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, Layers } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import type { GroupedNavNode, NavEntry } from '@/navigation/grouping';
 import { containsHref, countNodes } from '@/navigation/grouping';
@@ -34,6 +35,9 @@ interface NavGroupSectionProps {
   onNavigate?: () => void;
   /** Mode rail (sidebar repliée en icônes) : on n'affiche que les icônes. */
   rail?: boolean;
+  /** Rail : un clic sur une pastille développe la barre (libellés visibles) —
+      sans callback, le pasteur resterait sur des icônes muettes. */
+  onRailExpand?: () => void;
   depth?: number;
 }
 
@@ -44,6 +48,7 @@ export function NavGroupSection({
   onToggle,
   onNavigate,
   rail = false,
+  onRailExpand,
   depth = 0,
 }: NavGroupSectionProps) {
   const location = useLocation();
@@ -83,7 +88,21 @@ export function NavGroupSection({
     setInternalOpen(!open);
   };
 
-  const Icon = useMemo(() => (node.icon ? resolveIcon(node.icon) : Layers), [node.icon]);
+  const Icon = useMemo<LucideIcon>(() => {
+    if (node.icon) return resolveIcon(node.icon);
+    // Groupe sans icône configurée : on emprunte l'icône du premier onglet de
+    // sa sous-arborescence — sinon toutes les pastilles du rail affichent le
+    // même cercle générique, impossibles à distinguer.
+    const pick = (n: GroupedNavNode): LucideIcon | undefined => {
+      if (n.items.length) return n.items[0].icon;
+      for (const c of n.children) {
+        const r = pick(c);
+        if (r) return r;
+      }
+      return undefined;
+    };
+    return pick(node) ?? Layers;
+  }, [node]);
   const total = countNodes(node);
   const showHeader = !rail;
 
@@ -93,7 +112,7 @@ export function NavGroupSection({
       <div className="mb-1 flex justify-center">
         <button
           type="button"
-          onClick={toggle}
+          onClick={() => { toggle(); onRailExpand?.(); }}
           title={node.label}
           aria-label={node.label}
           className={`relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-200 ease-smooth

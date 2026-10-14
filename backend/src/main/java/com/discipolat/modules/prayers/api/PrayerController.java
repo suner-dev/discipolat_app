@@ -68,10 +68,11 @@ public class PrayerController {
             prayers = prayerService.findByFamilleIdAndCategorie(familleId, categorie, pageable);
         } else if (familleId != null) {
             prayers = prayerService.findByFamilleId(familleId, pageable);
-        } else if (auteurId != null) {
-            prayers = prayerService.findByAuteurId(auteurId, pageable);
-        } else if (visibilite != null) {
-            prayers = prayerService.findByVisibilite(visibilite, pageable);
+        } else if (statut != null || categorie != null || visibilite != null || auteurId != null) {
+            // Filtres combinés — auparavant ignorés hors contexte famille : les
+            // segments « Exaucées » ou catégories de la page Prières étaient
+            // décoratifs (liste inchangée, total trompeur).
+            prayers = prayerService.searchFiltered(statut, categorie, visibilite, auteurId, pageable);
         } else {
             prayers = prayerService.findAll(pageable);
         }
@@ -79,6 +80,12 @@ public class PrayerController {
         return ResponseEntity.ok(PageResponse.of(
                 response.getContent(), response.getNumber(), response.getSize(),
                 response.getTotalElements(), response.getTotalPages()));
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    public ResponseEntity<Map<String, Object>> stats() {
+        return ResponseEntity.ok(prayerService.stats());
     }
 
     @GetMapping("/by-ame/{ameId}")

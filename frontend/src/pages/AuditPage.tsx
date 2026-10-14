@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import api from '@/lib/api';
+import { humanizeAuditAction } from '@/lib/auditLabels';
 import toast from 'react-hot-toast';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { PageResponse, User } from '@/types';
@@ -501,7 +502,7 @@ export default function AuditPage() {
                   const cat = actionCategory(entry.action);
                   const ActionIcon = ACTION_ICONS[cat];
                   const entiteLabel = dictionaries.label('AUDIT_ENTITY', entry.entiteType) || ENTITY_FALLBACK[entry.entiteType] || entry.entiteType;
-                  const userName = entry.emailUtilisateur || userMap.get(entry.utilisateurId) || entry.utilisateurId?.slice(0, 8);
+                  const userName = entry.emailUtilisateur || userMap.get(entry.utilisateurId) || (entry.utilisateurId ? 'Compte supprimé' : 'Système');
                   return (
                     <tr key={entry.id}>
                       <td className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -523,9 +524,9 @@ export default function AuditPage() {
                         </div>
                       </td>
                       <td className="whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${ACTION_STYLES[cat]}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${ACTION_STYLES[cat]}`} title={entry.action}>
                           <ActionIcon className="w-3 h-3" />
-                          {entry.action}
+                          {humanizeAuditAction(entry.action, entry.entiteType)}
                         </span>
                       </td>
                       <td className="whitespace-nowrap">

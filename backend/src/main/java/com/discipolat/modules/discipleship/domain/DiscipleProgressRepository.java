@@ -38,9 +38,9 @@ public interface DiscipleProgressRepository extends JpaRepository<DiscipleProgre
     @Query("""
             SELECT p FROM DiscipleProgress p
             WHERE p.tenantId = :tenantId
-              AND (:journeyId IS NULL OR p.journeyId = :journeyId)
-              AND (:discipleId IS NULL OR p.discipleId = :discipleId)
-              AND (:status IS NULL OR p.status = :status)
+              AND (CAST(:journeyId AS long) IS NULL OR p.journeyId = :journeyId)
+              AND (CAST(:discipleId AS uuid) IS NULL OR p.discipleId = :discipleId)
+              AND (CAST(:status AS string) IS NULL OR p.status = :status)
             """)
     Page<DiscipleProgress> findAll(@Param("tenantId") UUID tenantId,
                                    @Param("journeyId") Long journeyId,

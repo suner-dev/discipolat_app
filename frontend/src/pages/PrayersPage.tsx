@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
+import { isPriereExaucee } from '@/lib/prayerStatus';
 import { useAuth } from '@/contexts/AuthContext';
 import DataTable from '@/components/shared/DataTable';
 import { useDictionaries } from '@/hooks/useDictionaries';
@@ -306,7 +307,7 @@ export default function PrayersPage() {
             {prayer.contenu && (
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{prayer.contenu}</p>
             )}
-            {prayer.statut === 'EXAUCEE' && prayer.temoignage && (
+            {isPriereExaucee(prayer.statut) && prayer.temoignage && (
               <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 italic">
                 <MessageSquare className="w-3 h-3" />
                 "{prayer.temoignage.slice(0, 60)}{prayer.temoignage.length > 60 ? '...' : ''}"
@@ -367,8 +368,8 @@ export default function PrayersPage() {
     {
       header: 'Statut',
       cell: (prayer) => (
-        <span className={prayer.statut === 'EXAUCEE' ? 'badge-success' : 'badge-warning'}>
-          {prayer.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours'}
+        <span className={isPriereExaucee(prayer.statut) ? 'badge-success' : 'badge-warning'}>
+          {isPriereExaucee(prayer.statut) ? 'Exaucé' : 'En cours'}
         </span>
       ),
     },
@@ -431,7 +432,7 @@ export default function PrayersPage() {
         categorieLabel(p.categorie),
         prioriteLabel(p.priorite),
         p.visibilite,
-        p.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours',
+        isPriereExaucee(p.statut) ? 'Exaucé' : 'En cours',
         dcsv ? dcsv.toLocaleDateString(getI18nLocale()) : '',
       ]);
     });
@@ -445,21 +446,58 @@ export default function PrayersPage() {
     URL.revokeObjectURL(url);
   };
 
+  // Totaux GLOBAUX du tenant via /prayers/stats — avant, les cartes KPI et la
+  // répartition comptaient la seule page de 20 affichées (ex. « Exaucés : 3 »
+  // au lieu de 61). Repli sur la page si les stats ne sont pas encore là.
+  const { data: globalStats } = useQuery({
+    queryKey: ['prayers', 'stats'],
+    queryFn: async () => {
+      const res = await api.get('/prayers/stats');
+      return res.data as {
+        total: number;
+        parStatut: Record<string, number>;
+        parCategorie: Record<string, number>;
+        parPriorite: Record<string, number>;
+      };
+    },
+    staleTime: 30_000,
+  });
+
   // Compute stats from all loaded data
   const allPrayers = data?.content || [];
   const stats = useMemo(() => ({
-    total: data?.totalElements ?? allPrayers.length,
-    enCours: allPrayers.filter(p => p.statut === 'EN_COURS').length,
-    exauces: allPrayers.filter(p => p.statut === 'EXAUCEE').length,
-    haute: allPrayers.filter(p => p.priorite === 'HAUTE').length,
-  }), [data, allPrayers]);
+    total: globalStats?.total ?? data?.totalElements ?? allPrayers.length,
+    enCours: globalStats?.parStatut?.EN_COURS ?? allPrayers.filter(p => p.statut === 'EN_COURS').length,
+    exauces: globalStats
+      ? Object.entries(globalStats.parStatut)
+          .filter(([k]) => k === 'EXAUCE' || k === 'EXAUCEE')
+          .reduce((acc, [, v]) => acc + v, 0)
+      : allPrayers.filter(p => isPriereExaucee(p.statut)).length,
+    haute: globalStats?.parPriorite?.HAUTE ?? allPrayers.filter(p => p.priorite === 'HAUTE').length,
+  }), [data, globalStats, allPrayers]);
 
-  // Category distribution
+  // Category distribution (globale dès que /prayers/stats répond)
   const catDistribution = useMemo(() => {
+    if (globalStats?.parCategorie) {
+      return Object.entries(globalStats.parCategorie).sort((a, b) => b[1] - a[1]);
+    }
     const dist: Record<string, number> = {};
     allPrayers.forEach((p) => { dist[p.categorie] = (dist[p.categorie] || 0) + 1; });
     return Object.entries(dist).sort((a, b) => b[1] - a[1]);
-  }, [allPrayers]);
+  }, [globalStats, allPrayers]);
+
+  // Actions de grâce : vue dédiée servie par /prayers/actions-de-grace (liste
+  // complète, tri par date d'exaucement) — avant, on filtrait la seule page
+  // courante avec l'orthographe « EXAUCEE » : la vue était structurellement vide.
+  const { data: gracePrayers = [] } = useQuery({
+    queryKey: ['prayers', 'actions-de-grace'],
+    queryFn: async () => {
+      const res = await api.get('/prayers/actions-de-grace');
+      return res.data as Prayer[];
+    },
+    enabled: viewMode === 'grace',
+    staleTime: 30_000,
+  });
 
   const hasActiveFilters = Boolean(catFilter || statutFilter || visibiliteFilter || search);
 
@@ -493,7 +531,7 @@ export default function PrayersPage() {
         {[
           { label: 'Total', value: stats.total, icon: Heart, color: 'from-primary-500 to-primary-600', filterVal: '' },
           { label: 'En cours', value: stats.enCours, icon: Clock, color: 'from-amber-500 to-orange-500', filterVal: 'EN_COURS' },
-          { label: 'Exaucés', value: stats.exauces, icon: CheckCircle2, color: 'from-emerald-500 to-green-500', filterVal: 'EXAUCEE' },
+          { label: 'Exaucés', value: stats.exauces, icon: CheckCircle2, color: 'from-emerald-500 to-green-500', filterVal: 'EXAUCE' },
           { label: 'Haute priorité', value: stats.haute, icon: Flame, color: 'from-red-500 to-rose-500', filterVal: '' },
         ].map((s, i) => (
           <button
@@ -636,7 +674,7 @@ export default function PrayersPage() {
             <select value={statutFilter} onChange={(e) => { setStatutFilter(e.target.value); setPage(0); }} className="input w-auto">
               <option value="">{tText('Tous statuts')}</option>
               <option value="EN_COURS">En cours</option>
-              <option value="EXAUCEE">{tText('Exaucé')}</option>
+              <option value="EXAUCE">{tText('Exaucé')}</option>
             </select>
             <select value={visibiliteFilter} onChange={(e) => { setVisibiliteFilter(e.target.value as VisibilitePriere | ''); setPage(0); }} className="input w-auto">
               <option value="">{tText('Toutes visibilités')}</option>
@@ -653,9 +691,9 @@ export default function PrayersPage() {
       {/* Actions de grâce view */}
       {viewMode === 'grace' && (
         <div className="space-y-4 mb-6">
-          {allPrayers.filter(p => p.statut === 'EXAUCEE').length > 0 ? (
+          {gracePrayers.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {allPrayers.filter(p => p.statut === 'EXAUCEE').map((prayer) => (
+              {gracePrayers.map((prayer) => (
                 <div key={prayer.id} className="card p-5 border-l-4 border-green-400 animate-slide-up">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-5 h-5 text-green-500" />

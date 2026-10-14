@@ -143,6 +143,7 @@ export default function Sidebar({ open, onClose, collapsed, onCollapsedChange }:
           onToggle={onToggleGroup}
           onNavigate={onNavigate}
           rail={collapsed}
+          onRailExpand={() => onCollapsedChange(false)}
         />
       ))}
     </nav>

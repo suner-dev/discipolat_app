@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { isPriereExaucee } from '@/lib/prayerStatus';
 import type { PageResponse } from '@/types';
 import {
   BookOpen, Plus, Search, Trash2, Loader2, Filter,
@@ -85,7 +86,7 @@ export default function PasteurPrayersTab() {
 
   const statutIcon = (s: string) => {
     if (s === 'ACTIVE' || s === 'EN_COURS') return <Clock className="w-4 h-4 text-amber-500" />;
-    if (s === 'EXAUCEE' || s === 'RESOLUE') return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (isPriereExaucee(s)) return <CheckCircle className="w-4 h-4 text-green-500" />;
     return <BookOpen className="w-4 h-4 text-blue-500" />;
   };
 
@@ -118,7 +119,7 @@ export default function PasteurPrayersTab() {
               <div className="flex items-center gap-2 mt-2">
                 {prioriteBadge(selectedPrayer.priorite)}
                 <span className="badge-info text-[10px]">{selectedPrayer.visibilite}</span>
-                <span className={`badge text-[10px] ${selectedPrayer.statut === 'EXAUCEE' || selectedPrayer.statut === 'RESOLUE' ? 'badge-success' : 'badge-warning'}`}>{selectedPrayer.statut}</span>
+                <span className={`badge text-[10px] ${isPriereExaucee(selectedPrayer.statut) ? 'badge-success' : 'badge-warning'}`}>{isPriereExaucee(selectedPrayer.statut) ? tText('Exaucée') : selectedPrayer.statut}</span>
               </div>
             </div>
             <div className="flex gap-2">
@@ -142,7 +143,7 @@ export default function PasteurPrayersTab() {
             <span>Par {selectedPrayer.auteurNom || '—'}</span>
             <span>{new Date(selectedPrayer.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
-          {selectedPrayer.statut !== 'EXAUCEE' && selectedPrayer.statut !== 'RESOLUE' && (
+          {!isPriereExaucee(selectedPrayer.statut) && (
             <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{tText('Marquer comme exaucée')}</h4>
               <textarea className="input mb-2" rows={2} value={answerForm} onChange={e => setAnswerForm(e.target.value)} placeholder="Témoignage (optionnel)..." />
@@ -232,7 +233,7 @@ export default function PasteurPrayersTab() {
                 <option value="">{tText('Tous statuts')}</option>
                 <option value="ACTIVE">Active</option>
                 <option value="EN_COURS">En cours</option>
-                <option value="EXAUCEE">{tText('Exaucée')}</option>
+                <option value="EXAUCE">{tText('Exaucée')}</option>
               </select>
               <select value={prioriteFilter} onChange={e => { setPrioriteFilter(e.target.value); setPage(0); }} className="input w-auto text-sm">
                 <option value="">{tText('Toutes priorités')}</option>
@@ -259,11 +260,11 @@ export default function PasteurPrayersTab() {
         <div className="space-y-3">
           {displayData.map((p: any) => (
             <div key={p.id} className={`glass-card p-4 hover:bg-white/60 dark:hover:bg-gray-800/20 transition-colors ${
-              p.statut === 'EXAUCEE' || p.statut === 'RESOLUE' ? 'border-l-4 border-l-green-500' : ''
+              isPriereExaucee(p.statut) ? 'border-l-4 border-l-green-500' : ''
             }`}>
               <div className="flex items-start gap-4">
                 <div className={`p-2.5 rounded-xl flex-shrink-0 ${
-                  p.statut === 'EXAUCEE' || p.statut === 'RESOLUE' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'
+                  isPriereExaucee(p.statut) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'
                 }`}>{statutIcon(p.statut)}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
+import { isPriereExaucee } from '@/lib/prayerStatus';
 import {
   Heart, Users, FileText, Bell, Star, TrendingUp, ChevronRight, AlertTriangle, CheckCircle, MessageSquare,
   Calendar, Phone, BookOpen,
@@ -391,8 +392,8 @@ export default function CrmFaiseurPage() {
               <div className="space-y-2">
                 {crm.prieres.slice(0, 5).map((p: any) => (
                   <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${p.statut === 'EXAUCEE' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
-                      {p.statut === 'EXAUCEE' ? <CheckCircle className="w-4 h-4 text-green-500" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isPriereExaucee(p.statut) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
+                      {isPriereExaucee(p.statut) ? <CheckCircle className="w-4 h-4 text-green-500" /> : <BookOpen className="w-4 h-4 text-indigo-500" />}
                     </div>
                     <div className="min-w-0 flex-1"><p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{p.titre}</p><p className="text-[9px] text-gray-400">{p.priorite} · {p.auteurNom || '—'}</p></div>
                   </div>

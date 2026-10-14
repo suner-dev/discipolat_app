@@ -437,11 +437,21 @@ export default function EventsPage() {
     },
     {
       header: 'Statut',
-      cell: (evt) => (
-        <span className="badge badge-info">
-          {statusLabel(evt.statut)}
-        </span>
-      ),
+      cell: (evt) => {
+        // Couleur porteur du statut : dictionnaire EVENT_STATUS (admin),
+        // repli sur le badge neutre si aucune couleur configurée.
+        const c = dictionaries.color('EVENT_STATUS', evt.statut);
+        return c ? (
+          <span
+            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+            style={{ backgroundColor: `${c}22`, color: c }}
+          >
+            {statusLabel(evt.statut)}
+          </span>
+        ) : (
+          <span className="badge badge-info">{statusLabel(evt.statut)}</span>
+        );
+      },
     },
     {
       header: 'Pièces',
@@ -449,11 +459,14 @@ export default function EventsPage() {
     },
     {
       header: 'Actions',
+      // w-px + whitespace-nowrap : la colonne prend exactement sa largeur
+      // contenu — les boutons ne sont plus rognés quand le tableau est étroit.
+      className: 'w-px whitespace-nowrap',
       cell: (evt) => {
         const isOrganizer = evt.organisateurId === user?.id;
         const canManage = isOrganizer || user?.role === 'PASTEUR' || user?.role === 'RESPONSABLE';
         return (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-nowrap">
             {evt.statut === 'PLANIFIE' && (
               <button
                 onClick={() => registerMutation.mutate(evt.id)}

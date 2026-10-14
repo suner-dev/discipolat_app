@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, LoginRequest, AuthResponse, UserRole } from '@/types';
-import api from '@/lib/api';
+import api, { silentRefresh } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 import { tText } from '@/i18n';
@@ -228,46 +228,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toast.success(tText('Déconnexion réussie'));
   }, []);
 
-  // Auto-logout when JWT expires
+  // Keep-alive de session : le token d'accès est RAFRAÎCHI proactivement
+  // avant son expiration (rotation silencieuse via /auth/refresh), et le
+  // logout ne reste qu'un filet quand le refresh est impossible. Avant ceci,
+  // une déconnexion brutale était programmée 30 s avant l'expiration d'un
+  // token pourtant renouvelable sans interaction — très visible sur une démo
+  // où le pasteur lit une page longtemps sans cliquer.
   useEffect(() => {
     let logoutTimer: ReturnType<typeof setTimeout> | undefined;
+    let proactiveAttemptedFor: string | null = null;
 
-    const checkTokenExpiry = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);        const token = localStorage.getItem('accessToken');
-        if (!token) return;
-        try {
-          // JWT payload is base64url-encoded: convert to standard base64 before decoding
-          const base64 = (token.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/');
-          const payload = JSON.parse(atob(base64));
+    const checkTokenExpiry = async () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+      try {
+        // JWT payload is base64url-encoded: convert to standard base64 before decoding
+        const base64 = (token.split('.')[1] || '').replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
         const expiresAt = payload.exp * 1000;
         const now = Date.now();
         const timeUntilExpiry = expiresAt - now;
 
         if (timeUntilExpiry <= 0) {
+          // Expiration atteinte : dernière tentative de renouvellement avant
+          // de déconnecter (le refresh réactif de l'interceptor reste en filet
+          // pour les requêtes concurrentes déjà parties).
+          const ok = await silentRefresh();
+          if (ok) return; // le prochain tick évaluerá le nouveau token
           logout();
           return;
         }
 
-        // Warn 2 minutes before expiry (between 60s and 120s remaining)
-        if (timeUntilExpiry > 60000 && timeUntilExpiry < 120000) {
-          toast('Votre session expire bientôt. Reconnectez-vous.', { icon: '⚠️' });
+        // Fenêtre proactive : à moins de 4 minutes de l'expiration, on
+        // renouvelle une seule fois par token (pas de boucle de requêtes).
+        if (timeUntilExpiry < 240_000 && proactiveAttemptedFor !== token) {
+          proactiveAttemptedFor = token;
+          const ok = await silentRefresh();
+          if (!ok && !localStorage.getItem('refreshToken')) {
+            toast('Votre session expire bientôt. Reconnectez-vous.', { icon: '⚠️' });
+          }
+          return;
         }
 
-        // Auto-logout 30 seconds before expiry if no refresh happened
+        // Filet : si le token courant atteint son expiration sans qu'aucun
+        // refresh (proactif ou réactif) n'ait abouti, on tente encore une
+        // fois en silence, puis on déconnecte.
         logoutTimer = setTimeout(() => {
           const currentToken = localStorage.getItem('accessToken');
           if (currentToken === token) {
-            logout();
+            void silentRefresh().then((ok) => {
+              if (!ok) logout();
+            });
           }
-        }, Math.max(timeUntilExpiry - 30000, 0));
+        }, Math.max(timeUntilExpiry, 1000));
       } catch {
         // Token absent, malformé ou non-JWT : on ne déconnecte PAS ici.
         // Un token invalide sera rejeté par l'API (401) qui gère la déconnexion.
       }
     };
 
-    checkTokenExpiry();
-    const interval = setInterval(checkTokenExpiry, 60000);
+    void checkTokenExpiry();
+    const interval = setInterval(() => void checkTokenExpiry(), 60000);
 
     return () => {
       clearInterval(interval);

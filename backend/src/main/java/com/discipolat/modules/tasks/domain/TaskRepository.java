@@ -45,18 +45,18 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("""
             SELECT t FROM Task t
             WHERE t.tenantId = :tenantId
-              AND (:status IS NULL OR t.status = :status)
-              AND (:priority IS NULL OR t.priority = :priority)
-              AND (:type IS NULL OR t.type = :type)
-              AND (:assignedToId IS NULL OR t.assignedToId = :assignedToId)
-              AND (:projectId IS NULL OR t.projectId = :projectId)
-              AND (:departmentId IS NULL OR t.departmentId = :departmentId)
-              AND (:currentUserId IS NULL OR t.assignedToId = :currentUserId)
+              AND (CAST(:status AS string) IS NULL OR t.status = :status)
+              AND (CAST(:priority AS string) IS NULL OR t.priority = :priority)
+              AND (CAST(:type AS string) IS NULL OR t.type = :type)
+              AND (CAST(:assignedToId AS uuid) IS NULL OR t.assignedToId = :assignedToId)
+              AND (CAST(:projectId AS long) IS NULL OR t.projectId = :projectId)
+              AND (CAST(:departmentId AS long) IS NULL OR t.departmentId = :departmentId)
+              AND (CAST(:currentUserId AS uuid) IS NULL OR t.assignedToId = :currentUserId)
               AND (:overdueOnly = false OR (t.dueDate IS NOT NULL
                                             AND t.dueDate < :now
                                             AND t.status <> :doneStatus))
-              AND (:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))
-                                 OR LOWER(t.description) LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (CAST(:search AS string) IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                                 OR LOWER(t.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
             """)
     Page<Task> findAll(@Param("tenantId") UUID tenantId,
                        @Param("status") Task.TaskStatus status,

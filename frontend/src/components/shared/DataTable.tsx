@@ -137,7 +137,7 @@ export default function DataTable<T extends { id: string }>({
               {columns.map((col, i) => (
                 <th
                   key={i}
-                  className={`px-4 sm:px-6 py-3.5 ${sortable && col.accessor ? 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-300 transition-colors' : ''}`}
+                  className={`px-4 sm:px-6 py-3.5 ${col.className ?? ''} ${sortable && col.accessor ? 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-300 transition-colors' : ''}`}
                   onClick={() => handleSort(col.accessor)}
                 >
                   <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function DataTable<T extends { id: string }>({
                 style={{ animationDelay: `${Math.min(idx, 20) * 30}ms` }}
               >
                 {columns.map((col, i) => (
-                  <td key={i} className="px-4 sm:px-6 py-4">
+                  <td key={i} className={`px-4 sm:px-6 py-4 ${col.className ?? ''}`}>
                     {col.cell ? col.cell(row) : String((row as Record<string, unknown>)[col.accessor as string] ?? '')}
                   </td>
                 ))}

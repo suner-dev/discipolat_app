@@ -201,6 +201,17 @@ public class AuditService {
         return userEmailPort.emailsOf(ids);
     }
 
+    private Map<UUID, String> resolveNames(List<AuditLog> logs) {
+        Set<UUID> ids = logs.stream()
+                .map(AuditLog::getUtilisateurId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return userEmailPort.displayNamesOf(ids);
+    }
+
     private String details(AuditLog log) {
         StringBuilder sb = new StringBuilder();
         if (log.getAncienValeur() != null && !log.getAncienValeur().isEmpty()) {
@@ -227,6 +238,10 @@ public class AuditService {
     public List<Map<String, Object>> getRecentActivity(int limit) {
         Page<AuditLog> page = auditLogRepository.findAll(
                 PageRequest.of(0, Math.min(limit, 50), Sort.by(Sort.Direction.DESC, "createdAt")));
+        // Nom d'affichage d'abord, email ensuite, jamais d'UUID brut dans le fil —
+        // le tableau de bord du pasteur doit rester lisible même pour un acteur
+        // supprimé de la base.
+        Map<UUID, String> names = resolveNames(page.getContent());
         Map<UUID, String> emails = resolveEmails(page.getContent());
         List<Map<String, Object>> activities = new ArrayList<>();
         for (AuditLog log : page.getContent()) {
@@ -234,7 +249,8 @@ public class AuditService {
             entry.put("id", log.getId());
             entry.put("utilisateurId", log.getUtilisateurId());
             entry.put("utilisateurNom", log.getUtilisateurId() != null
-                    ? emails.getOrDefault(log.getUtilisateurId(), log.getUtilisateurId().toString())
+                    ? names.getOrDefault(log.getUtilisateurId(),
+                          emails.getOrDefault(log.getUtilisateurId(), "Utilisateur inconnu"))
                     : "Système");
             entry.put("action", log.getAction());
             entry.put("entiteType", log.getEntiteType());

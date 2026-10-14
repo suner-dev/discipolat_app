@@ -28,8 +28,8 @@ public interface WebhookLogRepository extends JpaRepository<WebhookLog, UUID> {
                                              Pageable pageable);
 
     @Query("SELECT w FROM WebhookLog w WHERE w.tenantId = :tenantId " +
-           "AND (:provider IS NULL OR w.provider = :provider) " +
-           "AND (:status IS NULL OR w.statusLabel = :status) " +
+           "AND (CAST(:provider AS string) IS NULL OR w.provider = :provider) " +
+           "AND (CAST(:status AS string) IS NULL OR w.statusLabel = :status) " +
            "AND w.createdAt >= :since ORDER BY w.createdAt DESC")
     Page<WebhookLog> search(@Param("tenantId") UUID tenantId,
                              @Param("provider") String provider,

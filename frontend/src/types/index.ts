@@ -591,7 +591,10 @@ export interface NotificationTemplateAdmin {
 // Prayer types
 export type CategoriePriere = 'SANTE' | 'FAMILLE' | 'TRAVAIL' | 'SPIRITUEL' | 'AUTRE';
 export type PrioritePriere = 'BASSE' | 'MOYENNE' | 'HAUTE';
-export type StatutPriere = 'EN_COURS' | 'EXAUCEE';
+// Orthographe canonique backend : « EXAUCE ». « EXAUCEE » (2 E) reste dans
+// l'union : c'est la valeur historiquement émise par l'API et encodée dans
+// l'UI ; comparer via isPriereExaucee() pour tolérer les deux.
+export type StatutPriere = 'EN_COURS' | 'EXAUCE' | 'EXAUCEE';
 export type VisibilitePriere = 'PRIVEE' | 'PARTAGEE' | 'GENERALE' | 'PASTEUR_RESPONSABLE' | 'FAISEUR';
 
 export interface Prayer {

@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,19 +26,38 @@ import java.util.regex.Pattern;
 public class JwtTokenProvider {
 
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
-    private static final long ACCESS_TOKEN_VALIDITY_MINUTES = 15;
-    private static final long REFRESH_TOKEN_VALIDITY_DAYS = 7;
+    // Valeurs par défaut identiques aux constantes historiques (15 min / 7 j) ;
+    // surchargeables via app.jwt.access-token-expiration-minutes /
+    // refresh-token-expiration-days (vars d'env APP_JWT_… pour les démos où
+    // un visiteur explore l'application sans interaction pendant de longues
+    // minutes ; la rotation côté front garde malgré tout la session vivante).
+    private static final long DEFAULT_ACCESS_TOKEN_VALIDITY_MINUTES = 15;
+    private static final long DEFAULT_REFRESH_TOKEN_VALIDITY_DAYS = 7;
     private static final Pattern PEM_KEY_PATTERN = Pattern.compile("-+BEGIN\\s+.*KEY-+\\s*([\\s\\S]*?)\\-+END\\s+.*KEY-+");
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
+    private final long accessTokenValidityMinutes;
+    private final long refreshTokenValidityDays;
 
+    /** Constructions de test / utilitaires : TTL historiques (15 min / 7 j). */
+    public JwtTokenProvider(String privateKeyBase64, String publicKeyBase64,
+                            String privateKeyPath, String publicKeyPath) {
+        this(privateKeyBase64, publicKeyBase64, privateKeyPath, publicKeyPath,
+                DEFAULT_ACCESS_TOKEN_VALIDITY_MINUTES, DEFAULT_REFRESH_TOKEN_VALIDITY_DAYS);
+    }
+
+    @Autowired
     public JwtTokenProvider(
             @Value("${app.jwt.private-key:}") String privateKeyBase64,
             @Value("${app.jwt.public-key:}") String publicKeyBase64,
             @Value("${app.jwt.private-key-path:}") String privateKeyPath,
-            @Value("${app.jwt.public-key-path:}") String publicKeyPath
+            @Value("${app.jwt.public-key-path:}") String publicKeyPath,
+            @Value("${app.jwt.access-token-expiration-minutes:15}") long accessTokenValidityMinutes,
+            @Value("${app.jwt.refresh-token-expiration-days:7}") long refreshTokenValidityDays
     ) {
+        this.accessTokenValidityMinutes = accessTokenValidityMinutes > 0 ? accessTokenValidityMinutes : DEFAULT_ACCESS_TOKEN_VALIDITY_MINUTES;
+        this.refreshTokenValidityDays = refreshTokenValidityDays > 0 ? refreshTokenValidityDays : DEFAULT_REFRESH_TOKEN_VALIDITY_DAYS;
         try {
             String privKeyContent = readKey(privateKeyBase64, privateKeyPath);
             String pubKeyContent = readKey(publicKeyBase64, publicKeyPath);
@@ -101,7 +121,7 @@ public class JwtTokenProvider {
                 .claims(claims)
                 .subject(userId.toString())
                 .issuedAt(Date.from(Instant.now()))
-                .expiration(Date.from(Instant.now().plus(Duration.ofMinutes(ACCESS_TOKEN_VALIDITY_MINUTES))))
+                .expiration(Date.from(Instant.now().plus(Duration.ofMinutes(accessTokenValidityMinutes))))
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
@@ -133,7 +153,7 @@ public class JwtTokenProvider {
                 .subject(userId.toString())
                 .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(Instant.now()))
-                .expiration(Date.from(Instant.now().plus(Duration.ofDays(REFRESH_TOKEN_VALIDITY_DAYS))))
+                .expiration(Date.from(Instant.now().plus(Duration.ofDays(refreshTokenValidityDays))))
                 .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }

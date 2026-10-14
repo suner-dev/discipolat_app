@@ -70,13 +70,31 @@
 # delegateur qui ouvre la transaction. La retirer laisserait les lectures sans
 # transaction — un piege classique, invisible a la compilation et aux tests
 # unitaires.
-# constat R1 (domaine sans infrastructure) : 8011 violations, gelees par plafond ci-dessous
-plafond|R1|8011
+#
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-14 (experience pasteur, priere).
+# R1 8011 -> 8025 (+14) et R4 3022 -> 3028 (+6) avec la recherche filtrable
+# des prieres (statut « exaucée » + totaux par categorie/priorite, correction
+# du filtre EXAUCE/EXAUCEE qui cachait les sujettes exaucees au pasteur) :
+#   1. `PrayerRepository.searchFiltered/countGroupByStatut/countGroupByCategorie/
+#      countGroupByPriorite` — methodes `@Query` portees par la meme interface
+#      deja gele 8011 fois : ajouter une requete ne cree pas une nouvelle
+#      categorie d'impurete, cela ajoute 2 a 3 entrees R1 par methode (Query +
+#      QueryRewriter + Pageable/Page) la ou la signature les impose.
+#   2. `PrayerService.searchFiltered/stats` — memes motifs que les methodes
+#      transactionnelles voisines deja gelees : `@Transactional` (x3 entrees
+#      R4) et Pageable/Page traversent la couche application (x2 entrees R1).
+# Retirer ces annotations serait une REGRESSION : sans `@Transactional`, pas de
+# transaction pour les requetes d'agregats ; sans `@Query`, pas de filtre cote
+# serveur et la liste « Exaucee » du pasteur redeviendrait vide.
+# La correction reelle reste la sortie des entites/repos JPA du domaine
+# (migration V1), comme pour les 8011 precedentes.
+# constat R1 (domaine sans infrastructure) : 8025 violations, gelees par plafond ci-dessous
+plafond|R1|8025
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
-# constat R4 (domaine sans annotations de conteneur) : 3022 violations, gelees par plafond ci-dessous
-plafond|R4|3022
+# constat R4 (domaine sans annotations de conteneur) : 3028 violations, gelees par plafond ci-dessous
+plafond|R4|3028
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 objet|R3|admin -> alerts

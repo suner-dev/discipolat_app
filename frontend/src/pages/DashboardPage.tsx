@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
+import { humanizeAuditAction, humanizeEntite, relativeTimeFr } from '@/lib/auditLabels';
 import { useExportReport } from '@/hooks/useExportReport';
 import type { DashboardKPI, Alert, AuditRecentActivity } from '@/types';
 import {
@@ -597,10 +598,10 @@ export default function DashboardPage() {
                     <div className="min-w-0">
                       <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
                         <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
-                        {' '}{a.action?.toLowerCase().replace(/_/g, ' ')}
+                        {' '}{humanizeAuditAction(a.action, a.entiteType)}
                       </p>
                       <p className="text-[9px] text-gray-400">
-                        {a.entiteType} · {new Date(a.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {humanizeEntite(a.entiteType) || 'action'} · {relativeTimeFr(a.createdAt)}
                       </p>
                     </div>
                   </div>

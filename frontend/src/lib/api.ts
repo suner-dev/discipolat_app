@@ -42,6 +42,41 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+// Rafraîchissement PROACTIF du token d'accès, déclenché par AuthContext avant
+// l'expiration (et non subit après un 401). Réutilise le même verrou
+// isRefreshing/failedQueue que le refresh réactif : deux refresh parallèles
+// feraient rejouer un refresh token déjà roté, le backend révoque la famille
+// entière (reuse detection) → déconnexion brutale du visiteur.
+export async function silentRefresh(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) return false;
+  if (isRefreshing) {
+    // Un refresh est déjà en vol : on attend son issue au lieu d'en émettre
+    // un second (mêmes sémaphores que la file du 401).
+    return new Promise<boolean>((resolve) => {
+      failedQueue.push({
+        resolve: () => resolve(true),
+        reject: () => resolve(false),
+      });
+    });
+  }
+  isRefreshing = true;
+  try {
+    const response = await axios.post(`${API_URL}/api/v1/auth/refresh`, { refreshToken });
+    const { accessToken, refreshToken: newRefreshToken } = response.data;
+    if (!accessToken) throw new Error('refresh : réponse sans accessToken');
+    localStorage.setItem('accessToken', accessToken);
+    if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+    processQueue(null, accessToken);
+    return true;
+  } catch {
+    processQueue(new Error('silentRefresh'), null);
+    return false;
+  } finally {
+    isRefreshing = false;
+  }
+}
+
 // Interception de succès — normalisation de la pagination.
 // Le backend (PageResponse, record commun) renvoie { content, page, size,
 // totalElements, totalPages } alors que les pages front lisent la convention

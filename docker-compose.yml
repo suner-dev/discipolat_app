@@ -58,6 +58,10 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      # Stack de démo locale/tunnel : access token allongé (2 h) pour qu'un
+      # pasteur qui explore l'application sans interaction ne soit jamais
+      # déconnecté à blanc. Le par défaut applicatif reste 15 min (prod).
+      APP_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES: "120"
       MAIL_HOST: mailhog
       MAIL_PORT: "1025"
       MAIL_USERNAME: noreply@discipolat.com

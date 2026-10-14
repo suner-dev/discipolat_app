@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { isPriereExaucee } from '@/lib/prayerStatus';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import DataTable from '@/components/shared/DataTable';
 import type { Prayer, PageResponse, CategoriePriere, PrioritePriere, VisibilitePriere } from '@/types';
@@ -148,7 +149,7 @@ export default function PrayerSpacesPage() {
 
   // Stats per space
   const totalPrayers = allPrayers?.totalElements || 0;
-  const answeredCount = allPrayers?.content.filter((p) => p.statut === 'EXAUCEE').length || 0;
+  const answeredCount = allPrayers?.content.filter((p) => isPriereExaucee(p.statut)).length || 0;
   const activeCount = totalPrayers - answeredCount;
 
   const columns: ColumnDef<Prayer>[] = [
@@ -161,7 +162,7 @@ export default function PrayerSpacesPage() {
             {prayer.contenu && (
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">{prayer.contenu}</p>
             )}
-            {prayer.statut === 'EXAUCEE' && prayer.temoignage && (
+            {isPriereExaucee(prayer.statut) && prayer.temoignage && (
               <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 italic">
                 <MessageSquare className="w-3 h-3" />
                 "{prayer.temoignage.slice(0, 60)}{prayer.temoignage.length > 60 ? '...' : ''}"
@@ -203,8 +204,8 @@ export default function PrayerSpacesPage() {
     {
       header: 'Statut',
       cell: (prayer) => (
-        <span className={prayer.statut === 'EXAUCEE' ? 'badge-success' : 'badge-warning'}>
-          {prayer.statut === 'EXAUCEE' ? 'Exaucé' : 'En cours'}
+        <span className={isPriereExaucee(prayer.statut) ? 'badge-success' : 'badge-warning'}>
+          {isPriereExaucee(prayer.statut) ? 'Exaucé' : 'En cours'}
         </span>
       ),
     },

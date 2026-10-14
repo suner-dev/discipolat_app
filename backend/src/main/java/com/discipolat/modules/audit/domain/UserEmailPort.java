@@ -42,4 +42,17 @@ public interface UserEmailPort {
      * aucun comportement observable modifié par V0).
      */
     Map<UUID, String> emailsOf(Collection<UUID> userIds);
+
+    /**
+     * Nom d'affichage (« Prénom Nom ») par identifiant utilisateur — destiné au
+     * fil d'activité du tableau de bord : un pasteur lit des noms, pas des emails
+     * ni a fortiori des UUID. Repli : l'email quand le nom est incomplet ; absent
+     * du map quand l'utilisateur n'existe plus (l'appelant choisit le libellé
+     * de dernier recours).
+     *
+     * <p>Lecture en lot, même contrat que {@link #emailsOf}.
+     */
+    default Map<UUID, String> displayNamesOf(Collection<UUID> userIds) {
+        return Map.of();
+    }
 }

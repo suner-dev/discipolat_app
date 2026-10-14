@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 import { tText } from '@/i18n';
 /**
@@ -21,7 +22,11 @@ export function OfflineIndicator() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstall(true);
+      // Le pasteur a fermé l'onglet « Installer » pendant cette session :
+      // ne plus le faire réapparaître (pas de rappel tenace sur la carte user).
+      if (sessionStorage.getItem('pwaInstallDismissed') !== '1') {
+        setShowInstall(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -41,6 +46,11 @@ export function OfflineIndicator() {
       setShowInstall(false);
     }
     setDeferredPrompt(null);
+  };
+
+  const dismissInstall = () => {
+    setShowInstall(false);
+    sessionStorage.setItem('pwaInstallDismissed', '1');
   };
 
   return (
@@ -67,37 +77,28 @@ export function OfflineIndicator() {
         </div>
       )}
 
-      {/* Install PWA button — bas-GAUCHE : en bas à droite il recouvrait le
-          widget de feedback bêta (« Un retour ? »), surtout sur petits écrans. */}
+      {/* Install PWA — bas-GAUCHE en décalant la barre latérale (lg:left-[17.5rem]
+          = sidebar 256 px + marge) : en fix left:24 la pill recouvrait la carte
+          utilisateur du bas de sidebar. Repli feedback : le widget « Un retour ? »
+          vit en bas à droite. Fermeture possible, tenue sur la session. */}
       {showInstall && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            left: 24,
-            zIndex: 9998,
-            maxWidth: 'calc(100vw - 3rem)',
-          }}
-        >
-          <button
-            onClick={handleInstall}
-            style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 12,
-              padding: '12px 20px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            📱 Installer l'application
-          </button>
+        <div className="fixed bottom-6 left-6 lg:left-[17.5rem] z-[9998] max-w-[calc(100vw-3rem)] animate-slide-up">
+          <div className="flex items-center gap-1 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-[0_4px_16px_rgba(99,102,241,0.4)] pl-4 pr-1.5 py-1.5">
+            <button
+              onClick={handleInstall}
+              className="text-sm font-semibold whitespace-nowrap cursor-pointer"
+            >
+              📱 {tText("Installer l'application")}
+            </button>
+            <button
+              onClick={dismissInstall}
+              aria-label={tText('Fermer')}
+              title={tText('Fermer')}
+              className="p-1.5 rounded-lg hover:bg-white/15 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
     </>

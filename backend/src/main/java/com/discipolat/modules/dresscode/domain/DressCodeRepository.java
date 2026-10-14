@@ -35,8 +35,8 @@ public interface DressCodeRepository extends JpaRepository<DressCode, UUID> {
 
     @Query("SELECT dc FROM DressCode dc WHERE dc.tenantId = :tenantId " +
            "AND dc.archived = false " +
-           "AND (:spaceId IS NULL OR dc.spaceId = :spaceId) " +
-           "AND (:eventId IS NULL OR dc.eventId = :eventId)")
+           "AND (CAST(:spaceId AS uuid) IS NULL OR dc.spaceId = :spaceId) " +
+           "AND (CAST(:eventId AS uuid) IS NULL OR dc.eventId = :eventId)")
     List<DressCode> findFiltered(@Param("tenantId") UUID tenantId,
                                  @Param("spaceId") UUID spaceId,
                                  @Param("eventId") UUID eventId);

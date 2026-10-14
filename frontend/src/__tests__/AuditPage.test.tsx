@@ -100,8 +100,8 @@ describe('AuditPage — filtres et export', () => {
     renderPage();
 
     expect(await screen.findByText("Journal d'audit")).toBeInTheDocument();
-    expect(await screen.findByText('CREER_SOUL')).toBeInTheDocument();
-    expect(screen.getByText('MODIFIER_FAMILLE')).toBeInTheDocument();
+    expect(await screen.findByText('a créé une âme')).toBeInTheDocument();
+    expect(screen.getByText('a modifié une famille')).toBeInTheDocument();
     expect(screen.getByText(/tous les utilisateurs/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Date de début')).toBeInTheDocument();
     expect(screen.getByLabelText('Date de fin')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('AuditPage — filtres et export', () => {
   it('filtre par utilisateur et entité en ajoutant les paramètres API', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('CREER_SOUL');
+    await screen.findByText('a créé une âme');
 
     await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
     await user.selectOptions(screen.getByText(/toutes les entités/i).closest('select') as HTMLSelectElement, 'SOUL');
@@ -135,23 +135,23 @@ describe('AuditPage — filtres et export', () => {
   it('filtre par catégorie d’action (Transferts) et affiche le badge', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('CREER_SOUL');
+    await screen.findByText('a créé une âme');
 
     // Toutes les entrées (y compris le transfert) sont visibles au départ.
-    expect(screen.getByText('TRANSFERT_SOUL')).toBeInTheDocument();
+    expect(screen.getByText('a transféré une âme')).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText("Filtrer par type d'action"), 'TRANSFER');
 
     // Seule l'entrée TRANSFERT_SOUL reste après le filtre client-side.
-    expect(screen.getByText('TRANSFERT_SOUL')).toBeInTheDocument();
-    expect(screen.queryByText('CREER_SOUL')).not.toBeInTheDocument();
-    expect(screen.queryByText('MODIFIER_FAMILLE')).not.toBeInTheDocument();
+    expect(screen.getByText('a transféré une âme')).toBeInTheDocument();
+    expect(screen.queryByText('a créé une âme')).not.toBeInTheDocument();
+    expect(screen.queryByText('a modifié une famille')).not.toBeInTheDocument();
   });
 
   it('filtre par plage de dates (debut/fin ISO)', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('CREER_SOUL');
+    await screen.findByText('a créé une âme');
 
     await user.type(screen.getByLabelText('Date de début'), '2026-08-01');
     await user.type(screen.getByLabelText('Date de fin'), '2026-08-07');
@@ -167,7 +167,7 @@ describe('AuditPage — filtres et export', () => {
   it('réinitialise les filtres', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('CREER_SOUL');
+    await screen.findByText('a créé une âme');
 
     await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
     expect(await screen.findByRole('button', { name: /réinitialiser/i })).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe('AuditPage — filtres et export', () => {
 
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('CREER_SOUL');
+    await screen.findByText('a créé une âme');
 
     await user.selectOptions(screen.getByText(/tous les utilisateurs/i).closest('select') as HTMLSelectElement, 'u-pasteur');
     await user.click(screen.getByRole('button', { name: /exporter csv/i }));
@@ -250,7 +250,7 @@ describe('AuditPage — chaîne d’intégrité et historique métier', () => {
   it('vérifie la chaîne et affiche la bannière verte', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('MODIFIER_SOUL');
+    await screen.findByText('a modifié une âme');
 
     await user.click(screen.getByRole('button', { name: /vérifier l'intégrité de la chaîne/i }));
 
@@ -269,7 +269,7 @@ describe('AuditPage — chaîne d’intégrité et historique métier', () => {
     });
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('MODIFIER_SOUL');
+    await screen.findByText('a modifié une âme');
 
     await user.click(screen.getByRole('button', { name: /vérifier l'intégrité de la chaîne/i }));
 
@@ -279,7 +279,7 @@ describe('AuditPage — chaîne d’intégrité et historique métier', () => {
   it('ouvre l’historique métier d’une entité depuis la ligne', async () => {
     const user = userEvent.setup();
     renderPage();
-    await screen.findByText('MODIFIER_SOUL');
+    await screen.findByText('a modifié une âme');
 
     const btn = await screen.findByRole('button', { name: /historique/i });
     await user.click(btn);

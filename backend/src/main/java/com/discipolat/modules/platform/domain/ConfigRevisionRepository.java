@@ -16,6 +16,6 @@ public interface ConfigRevisionRepository extends JpaRepository<ConfigRevision, 
      * Liste paginée des révisions, filtrées optionnellement par type d'entité.
      * Tri décroissant par date de création (le plus récent d'abord).
      */
-    @Query("SELECT r FROM ConfigRevision r WHERE (:entityType IS NULL OR r.entityType = :entityType)")
+    @Query("SELECT r FROM ConfigRevision r WHERE (CAST(:entityType AS string) IS NULL OR r.entityType = :entityType)")
     Page<ConfigRevision> findFiltered(@Param("entityType") String entityType, Pageable pageable);
 }

@@ -64,7 +64,7 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
     @Query("SELECT CASE WHEN COUNT(tm) > 0 THEN true ELSE false END FROM TenantMembership tm " +
             "WHERE tm.userId = :userId AND tm.tenantId = :tenantId AND tm.role.id = :roleId " +
             "AND tm.status = :status AND tm.scopeType = :scopeType " +
-            "AND ((:scopeId IS NULL AND tm.scopeId IS NULL) OR tm.scopeId = :scopeId)")
+            "AND ((CAST(:scopeId AS uuid) IS NULL AND tm.scopeId IS NULL) OR tm.scopeId = :scopeId)")
     boolean existsExactActiveMembership(
             @Param("userId") UUID userId,
             @Param("tenantId") UUID tenantId,

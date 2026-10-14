@@ -43,4 +43,25 @@ public class UserEmailAdapter implements UserEmailPort {
         return userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, User::getEmail));
     }
+
+    /** Nom d'affichage pour le fil d'activité : « Prénom Nom », repli sur l'email. */
+    @Override
+    public Map<UUID, String> displayNamesOf(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, String> names = new java.util.HashMap<>();
+        for (User u : userRepository.findAllById(userIds)) {
+            String first = u.getFirstName() == null ? "" : u.getFirstName().trim();
+            String last = u.getLastName() == null ? "" : u.getLastName().trim();
+            String display = (first + " " + last).trim();
+            if (display.isEmpty()) {
+                display = u.getEmail();
+            }
+            if (display != null && !display.isBlank()) {
+                names.put(u.getId(), display);
+            }
+        }
+        return names;
+    }
 }

@@ -22,13 +22,18 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
      * suppression, transfert... → voir les actions « CREER_* », « MODIFIER_* »,
      * « SUPPRIMER_* », « TRANSFERT_* », etc.).
      */
+    // CAST(...) IS NULL : sans typage explicite, PostgreSQL ne peut pas inférer
+    // le type d'un paramètre JDBC null employé seul dans « ? IS NULL »
+    // (erreur « could not determine data type of parameter » → 500). H2 l'ignore,
+    // d'où un défaut invisible en tests H2 mais rouge en prod PG (même motif
+    // que InvitationRepository).
     @Query("""
             SELECT a FROM AuditLog a
-            WHERE (:utilisateurId IS NULL OR a.utilisateurId = :utilisateurId)
-              AND (:entiteType IS NULL OR a.entiteType = :entiteType)
-              AND (:action IS NULL OR a.action = :action)
-              AND (:debut IS NULL OR a.createdAt >= :debut)
-              AND (:fin IS NULL OR a.createdAt <= :fin)
+            WHERE (CAST(:utilisateurId AS uuid) IS NULL OR a.utilisateurId = :utilisateurId)
+              AND (CAST(:entiteType AS string) IS NULL OR a.entiteType = :entiteType)
+              AND (CAST(:action AS string) IS NULL OR a.action = :action)
+              AND (CAST(:debut AS timestamp) IS NULL OR a.createdAt >= :debut)
+              AND (CAST(:fin AS timestamp) IS NULL OR a.createdAt <= :fin)
             """)
     Page<AuditLog> findFiltered(@Param("utilisateurId") UUID utilisateurId,
                                 @Param("entiteType") String entiteType,

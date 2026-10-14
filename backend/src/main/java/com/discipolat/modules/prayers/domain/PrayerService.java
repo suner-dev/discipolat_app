@@ -100,6 +100,26 @@ public class PrayerService {
         return prayerRepository.findByVisibiliteInAndDeletedFalse(List.of(visibilite), pageable);
     }
 
+    /**
+     * Recherche combinée : chaque critère est facultatif (null/blanc = non
+     * filtré). Permet au contrôleur d'honorer statut/catégorie/visibilité sans
+     * contexte famille — contrairement à l'ancien acheminage qui les ignorait.
+     * Les valeurs « EXAUCE »/« EXAUCEE » sont normalisées : l'orthographe
+     * historique du front (2 E) doit continuer de trouver les prières exaucées.
+     */
+    @Transactional(readOnly = true)
+    public Page<Prayer> searchFiltered(String statut, String categorie, String visibilite,
+                                       UUID auteurId, Pageable pageable) {
+        String st = blankToNull(statut);
+        if ("EXAUCEE".equals(st)) st = "EXAUCE";
+        return prayerRepository.searchFiltered(st, blankToNull(categorie),
+                blankToNull(visibilite), auteurId, null, pageable);
+    }
+
+    private static String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
+    }
+
     @Transactional(readOnly = true)
     public Page<Prayer> findByAuteurId(UUID auteurId, Pageable pageable) {
         return prayerRepository.findByAuteurIdAndDeletedFalse(auteurId, pageable);
@@ -124,6 +144,36 @@ public class PrayerService {
     @Transactional(readOnly = true)
     public List<Prayer> findByAmeId(UUID ameId) {
         return prayerRepository.findByAmeIdAndDeletedFalse(ameId);
+    }
+
+    /**
+     * Totaux agrégés par statut / catégorie / priorité, sur TOUTE la collection
+     * du tenant (et non la seule page affichée) — alimente les cartes KPI de
+     * {@code /prayers}. Les compteurs frontaux calculés sur {@code data.content}
+     * étaient systématiquement sous-évalués (page de 20 sur 155+). L'agrégation
+     * porte sur le tenant entier : le sous-élagage par visibilité du rôle
+     * (cf. {@link #findAll}) ne s'applique pas aux compteurs globaux.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> stats() {
+        Map<String, Long> parStatut = groupCount(prayerRepository.countGroupByStatut());
+        Map<String, Long> parCategorie = groupCount(prayerRepository.countGroupByCategorie());
+        Map<String, Long> parPriorite = groupCount(prayerRepository.countGroupByPriorite());
+        long total = parStatut.values().stream().mapToLong(Long::longValue).sum();
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("total", total);
+        out.put("parStatut", parStatut);
+        out.put("parCategorie", parCategorie);
+        out.put("parPriorite", parPriorite);
+        return out;
+    }
+
+    private static Map<String, Long> groupCount(List<Object[]> rows) {
+        Map<String, Long> m = new java.util.LinkedHashMap<>();
+        for (Object[] r : rows) {
+            m.put(String.valueOf(r[0]), ((Number) r[1]).longValue());
+        }
+        return m;
     }
 
     // ======================== US-48: ACTIONS DE GRÂCE ========================

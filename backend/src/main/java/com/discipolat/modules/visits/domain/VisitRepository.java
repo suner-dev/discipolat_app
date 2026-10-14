@@ -20,11 +20,16 @@ public interface VisitRepository extends JpaRepository<Visit, UUID> {
     long countByStatutAndDatePrevueBefore(Visit.StatutVisite statut, LocalDate date);
     long countByVisiteurId(UUID visiteurId);
 
-    /** Recherche paginée des visites avec filtres optionnels (statut + texte). */
-    @Query("SELECT v FROM Visit v WHERE (:statut IS NULL OR v.statut = :statut) AND (" +
-            ":search IS NULL OR LOWER(COALESCE(v.motif, '')) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(COALESCE(v.objectif, '')) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(COALESCE(v.compteRendu, '')) LIKE LOWER(CONCAT('%', :search, '%')))")
+    /** Recherche paginée des visites avec filtres optionnels (statut + texte).
+     *  CAST obligatoire et porté jusqu'à CHAQUE usage du paramètre : sur
+     *  PostgreSQL, un paramètre null rendu dans « '%' || ? || '%' » reste
+     *  typé bytea par inférence (le CAST de garde ne typant que sa propre
+     *  occurrence, chaque `:search` étant un marqueur JDBC distinct)
+     *  → 500 « function lower(bytea) does not exist ». */
+    @Query("SELECT v FROM Visit v WHERE (CAST(:statut AS string) IS NULL OR v.statut = :statut) AND (" +
+            "CAST(:search AS string) IS NULL OR LOWER(COALESCE(v.motif, '')) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(COALESCE(v.objectif, '')) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
+            "OR LOWER(COALESCE(v.compteRendu, '')) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     Page<Visit> search(@Param("statut") Visit.StatutVisite statut,
                        @Param("search") String search,
                        Pageable pageable);

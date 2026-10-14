@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
+import { isPriereExaucee } from '@/lib/prayerStatus';
 import toast from 'react-hot-toast';
 import type {
   MemberDashboard,
@@ -843,15 +844,15 @@ export default function MemberDashboardPage() {
         <div className="space-y-2">
           {((dashboard as any)?.prieres?.slice(0, 5) || []).map((p: any) => (
             <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${p.statut === 'EXAUCEE' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
-                {p.statut === 'EXAUCEE' ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Church className="w-4 h-4 text-indigo-500" />}
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isPriereExaucee(p.statut) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
+                {isPriereExaucee(p.statut) ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Church className="w-4 h-4 text-indigo-500" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{p.titre}</p>
                 <p className="text-[10px] text-gray-400">{p.priorite} · {p.visibilite} · {p.auteurNom || '—'}</p>
               </div>
-              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${p.statut === 'EXAUCEE' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
-                {p.statut === 'EXAUCEE' ? 'Exaucée' : 'En cours'}
+              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${isPriereExaucee(p.statut) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+                {isPriereExaucee(p.statut) ? 'Exaucée' : 'En cours'}
               </span>
             </div>
           ))}
