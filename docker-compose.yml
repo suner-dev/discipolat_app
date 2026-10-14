@@ -108,6 +108,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # Démo/tunnel : API relative (""), servie via nginx same-origin.
+      # Sinon le SPA rappellerait http://localhost:8080 depuis le navigateur
+      # du testeur (hors tunnel) → échec. Vide → baseURL = /api/v1 → proxy nginx.
+      args:
+        VITE_API_URL: ""
     container_name: discipolat-web
     ports:
       - "3000:80"

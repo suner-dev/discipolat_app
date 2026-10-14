@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -71,6 +72,27 @@ class SecurityHeadersTest {
     @DisplayName("Le endpoint debug ne doit pas être exposé sans authentification")
     void shouldNotExposeDebugEndpoints() throws Exception {
         mockMvc.perform(get("/actuator/env"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Démo temps réel — le handshake WebSocket /ws-church ne doit PAS être rejeté 401 par le filtre")
+    void shouldPermitWebsocketHandshakeWithoutAuth() throws Exception {
+        // L'upgrade HTTP ne peut pas porter d'en-tête Authorization (navigateur).
+        // Le handshake doit atteindre la couche STOMP (auth réelle sur CONNECT).
+        // Sous MockMvc, on ne peut pas négocier un vrai upgrade ; le point
+        // d'entrée SockJS /info suffit à prouver que le filtre n'exige plus
+        // d'authentification sur ce chemin (avant correctif : 401 systématique).
+        mockMvc.perform(get("/ws-church/info"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus())
+                        .as("/ws-church/info ne doit pas être bloqué par auth (401)")
+                        .isNotEqualTo(401));
+    }
+
+    @Test
+    @DisplayName("Démo temps réel — le permitAll reste cantonné à /ws : /api protégé renvoie bien 401")
+    void shouldStillProtectApiWithoutAuth() throws Exception {
+        mockMvc.perform(get("/api/v1/souls"))
                 .andExpect(status().isUnauthorized());
     }
 

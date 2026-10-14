@@ -106,6 +106,18 @@ public class SecurityConfig {
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");
 
+                // Temps réel (STOMP over WebSocket) — /ws et /ws-church (+ sous-chemins
+                // SockJS : /info, /xhr_streaming, etc.). L'upgrade HTTP NE PEUT PAS
+                // porter d'en-tête Authorization (le navigateur ne le peut pas) : on
+                // autorise donc le handshake au niveau filtre, et l'AUTHENTIFICATION
+                // RÉELLE est appliquée plus tard sur la frame STOMP CONNECT par
+                // WebSocketAuthInterceptor (token en en-tête de frame). Ce matcher ne
+                // rend RIEN public : sans CONNECT-authentifié, aucun SUBSCRIBE n'est
+                // possible, et authorizeSubscribe verrouille les canaux par tenant.
+                // Sans ce permitAll, toute la stack temps réel renvoyait 401 au
+                // handshake → badge « Temps réel déconnecté ».
+                auth.requestMatchers("/ws", "/ws/**", "/ws-church", "/ws-church/**").permitAll();
+
                 // Swagger: public in dev/docker, restricted to ADMIN/PASTEUR in prod/beta
                 if ("dev".equals(environment) || "docker".equals(environment)) {
                     auth.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
