@@ -40,6 +40,7 @@ public final class TestPermissionMatrix {
             "db/migration/V258__parametrisation_permissions_par_eglise.sql",
             "db/migration/V259__parametrisation_permissions_suite_phase3.sql",
             "db/migration/V260__parametrisation_admin_events_read.sql",
+            "db/migration/V261__parametrisation_cles_ui_routes.sql",
     };
 
     /**

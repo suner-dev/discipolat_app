@@ -270,7 +270,19 @@ public class DataInitializer implements CommandLineRunner {
      * Seed les roles systeme et permissions par defaut (Sections 21-24 du prompt).
      */
     private void seedDefaultRolesAndPermissions() {
-        if (roleRepository.count() > 0) return;
+        // PARAMÉTRISATION PAR ÉGLISE — le marqueur d'idempotence n'est PAS le
+        // volume de la table : sous H2/test, import.sql remplit désormais
+        // `roles` avec les 18 clés système de la matrice V258-V260, donc un
+        // « count() > 0 » sautait CE seed et privait les tests des rôles
+        // système anglais (MEMBER, GUEST, MENTOR, DISCIPLE_MAKER, …) et des
+        // 22 permissions miroir V135/V136 (Flyway coupé sous H2) —
+        // MultiTenantSecurityTests mourait sur findByTenantIdIsNullAndKey(
+        // "MEMBER"). On teste la présence du catalogue système LUI-MÊME :
+        // une base passée par les migrations contient déjà MEMBER → retour
+        // immédiat, aucun lien role_permissions n'est rélargi (une église qui
+        // a RETIRÉ une capacité via surcouche locale la garde : seul le
+        // premier seed insère, les redémarrages ne re-insèrent jamais).
+        if (roleRepository.findByTenantIdIsNullAndKey("MEMBER").isPresent()) return;
 
         String[][] systemRoles = {
             {"PLATFORM_SUPER_ADMIN", "Super Admin Plateforme", "Administration complete de la plateforme"},

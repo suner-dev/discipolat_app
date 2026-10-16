@@ -63,7 +63,8 @@ class TestPermissionMatrixSeedGuardTest {
         for (String res : new String[]{
                 "db/migration/V258__parametrisation_permissions_par_eglise.sql",
                 "db/migration/V259__parametrisation_permissions_suite_phase3.sql",
-                "db/migration/V260__parametrisation_admin_events_read.sql"}) {
+                "db/migration/V260__parametrisation_admin_events_read.sql",
+                "db/migration/V261__parametrisation_cles_ui_routes.sql"}) {
             String sql = read(res);
             // 1) rôles créés par ces migrations : tuples ('KEY','Label',N) des blocs INSERT INTO roles
             Matcher rm = Pattern.compile("\\(\\s*'([A-Z][A-Z0-9_]*)'\\s*,\\s*'[^']*'\\s*,\\s*\\d+\\s*\\)")
