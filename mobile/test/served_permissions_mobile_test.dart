@@ -67,7 +67,8 @@ void main() {
   });
 
   group('routePermissions — registre servi (miroir du web)', () {
-    test('la tranche convertie est adressée par les clés exactes V258', () {
+    test('la tranche MEMBERS (Phase 2) est adressée par les clés exactes V258',
+        () {
       // Contrat partagé avec frontend/src/lib/routeAccess.ts (ROUTE_PERMISSIONS)
       // et le catalogue V258 — une divergence casse l'alignement UI/serveur.
       expect(permissionsForRoute('/members/requests'), ['MEMBERS_EXECUTE']);
@@ -75,7 +76,35 @@ void main() {
       expect(permissionsForRoute('/qr-checkin'),
           ['MEMBERS_EXECUTE_QRCHECKIN']);
       expect(permissionsForRoute('/geofencing'), ['MEMBERS_EXECUTE_R4A']);
-      expect(permissionsForRoute('/audit'), isNull);
+    });
+
+    test('Phase 5 — les modules convertis portent la même clé que le web', () {
+      // Chaque clé ci-dessous n'a été câblée que parce que l'ensemble de rôles
+      // littéraux mobile est EXACTEMENT la matrice serveur de la clé (catalogue
+      // V258-V261). Le verrou fige l'alignement mobile ≡ web ≡ serveur.
+      expect(permissionsForRoute('/audit'), ['AUDIT_EXECUTE']);
+      expect(permissionsForRoute('/souls'), ['SOULS_EXECUTE']);
+      expect(permissionsForRoute('/souls/:id'), ['SOULS_EXECUTE']);
+      expect(permissionsForRoute('/events'), ['EVENTS_EXECUTE_R6A']);
+      expect(permissionsForRoute('/families'), ['FAMILIES_EXECUTE_R5A']);
+      expect(permissionsForRoute('/departments/:id'), ['DEPARTMENTS_EXECUTE']);
+      expect(permissionsForRoute('/admin'), ['ADMIN_EXECUTE']);
+      expect(permissionsForRoute('/search'), ['SEARCH_EXECUTE']);
+      expect(permissionsForRoute('/alerts'), ['ALERTS_EXECUTE']);
+    });
+
+    test(
+        'Phase 5 — toute entrée du registre sert au moins une clé non vide',
+        () {
+      // Invariant « rien de figé mais jamais de route aveugle » : une clé vide
+      // ferait passer TOUTES les permissions (le any-of ne filtre plus), ce qui
+      // serait un élargissement silencieux. On le interdit structurellement.
+      for (final e in routePermissions.entries) {
+        expect(e.value, isNotEmpty, reason: 'route ${e.key} sans clé servie');
+        for (final k in e.value) {
+          expect(k.trim(), isNotEmpty, reason: 'clé vide sur ${e.key}');
+        }
+      }
     });
 
     test('(1) widening : une clé servie admise sans rôle littéral élargit',
@@ -86,15 +115,22 @@ void main() {
       expect(routeAdmittedByServedKeys('/qr-checkin', hasQrKey), isTrue);
     });
 
-    test('(2) narrowing : ensemble servi vide refuse la route convertie', () {
+    test('(2) narrowing : ensemble servi vide refuse une route convertie', () {
       const none = _alwaysFalse;
       expect(routeAdmittedByServedKeys('/members/requests', none), isFalse);
+      // Phase 5 : les modules convertis obéissent désormais au servi.
+      expect(routeAdmittedByServedKeys('/events', none), isFalse);
+      expect(routeAdmittedByServedKeys('/audit', none), isFalse);
     });
 
     test('(4) route non convertie : le filtre servi ne change rien', () {
       const none = _alwaysFalse;
-      expect(routeAdmittedByServedKeys('/audit', none), isTrue);
+      // '/dashboard' (tous rôles, non servi) et '/souls/:id/qr' (route propre
+      // au mobile, absente du web) restent governés par le littéral par rôle.
+      expect(permissionsForRoute('/dashboard'), isNull);
+      expect(permissionsForRoute('/souls/:id/qr'), isNull);
       expect(routeAdmittedByServedKeys('/dashboard', none), isTrue);
+      expect(routeAdmittedByServedKeys('/souls/:id/qr', none), isTrue);
     });
   });
 
