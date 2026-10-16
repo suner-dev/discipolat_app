@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/ai/credits")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.can('AI_EXECUTE_R3A', 'TENANT', null)")
 public class AiCreditsController {
 
     private final AiCreditsService aiCreditsService;

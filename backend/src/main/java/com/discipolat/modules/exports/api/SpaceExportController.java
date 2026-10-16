@@ -63,7 +63,7 @@ public class SpaceExportController {
     }
 
     @GetMapping("/api/v1/tenant/export")
-    @PreAuthorize("@authz.isPlatformSuperAdmin() or hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('EXPORTS_EXPORT', 'TENANT', null)")
     public ResponseEntity<ByteArrayResource> exportTenant() {
         UUID tenant = tenantId();
         SpaceExportBundle bundle = exportService.exportTenant(tenant);

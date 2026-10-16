@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/whatsapp")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('WHATSAPP_EXECUTE', 'TENANT', null)")
 public class WhatsAppAdminController {
 
     private final WhatsAppService whatsAppService;

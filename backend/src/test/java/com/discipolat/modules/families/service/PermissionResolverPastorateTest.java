@@ -6,6 +6,7 @@ import com.discipolat.modules.families.domain.PastorateAppointment;
 import com.discipolat.modules.families.repository.PastorateAppointmentRepository;
 import com.discipolat.modules.people.repository.RoleAssignmentRepository;
 import com.discipolat.modules.people.repository.SpaceMembershipRepository;
+import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.Permission;
 import com.discipolat.modules.tenants.domain.Role;
 import com.discipolat.modules.tenants.domain.RoleRepository;
@@ -43,6 +44,7 @@ class PermissionResolverPastorateTest {
     @Mock private RoleRepository roleRepository;
     @Mock private PermissionVersionRepository permissionVersionRepository;
     @Mock private OutboxPublisher outboxPublisher;
+    @Mock private AuthorizationService authorizationService;
 
     private PermissionResolver resolver;
     private UUID tenantId;
@@ -52,7 +54,7 @@ class PermissionResolverPastorateTest {
     void setUp() {
         resolver = new PermissionResolver(roleAssignmentRepository, spaceMembershipRepository,
                 pastorateAppointmentRepository, tenantMembershipRepository, roleRepository,
-                permissionVersionRepository, outboxPublisher);
+                permissionVersionRepository, outboxPublisher, authorizationService);
         tenantId = UUID.randomUUID();
         userId = UUID.randomUUID();
     }
@@ -103,6 +105,21 @@ class PermissionResolverPastorateTest {
 
         Set<String> perms = resolver.resolvePermissions(tenantId, userId);
         assertFalse(perms.contains("PEOPLE_CAMPUS_READ"));
+    }
+
+    @Test
+    void activeAuthorityBridgeKeys_areServedToClients() {
+        // PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — le set SERVI doit inclure
+        // les clés du pont d'équivalence (autorités actives), sinon l'UI cacherait
+        // des actions que @authz.can admet côté serveur.
+        stubEmptyOtherSources();
+        when(pastorateAppointmentRepository.findByTenantIdAndPastorIdAndDeletedAtIsNull(tenantId, userId))
+                .thenReturn(List.of());
+        when(authorizationService.permissionKeysForActiveAuthorities(tenantId))
+                .thenReturn(Set.of("MEMBERS_EXECUTE_QRCHECKIN"));
+
+        Set<String> perms = resolver.resolvePermissions(tenantId, userId);
+        assertTrue(perms.contains("MEMBERS_EXECUTE_QRCHECKIN"));
     }
 
     @Test

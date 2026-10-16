@@ -59,7 +59,7 @@ public class CompetenceMatchingController {
     }
 
     @PostMapping("/match")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> match(
             @RequestBody List<String> requiredCompetences,
             @RequestParam(defaultValue = "2") int minLevel) {

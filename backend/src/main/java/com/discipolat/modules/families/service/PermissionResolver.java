@@ -10,6 +10,7 @@ import com.discipolat.modules.people.domain.RoleAssignment;
 import com.discipolat.modules.people.domain.SpaceMembership;
 import com.discipolat.modules.people.repository.RoleAssignmentRepository;
 import com.discipolat.modules.people.repository.SpaceMembershipRepository;
+import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.Permission;
 import com.discipolat.modules.tenants.domain.Role;
 import com.discipolat.modules.tenants.domain.RoleRepository;
@@ -35,6 +36,7 @@ public class PermissionResolver {
     private final RoleRepository roleRepository;
     private final PermissionVersionRepository permissionVersionRepository;
     private final OutboxPublisher outboxPublisher;
+    private final AuthorizationService authorizationService;
 
     /**
      * Calcule l'ensemble complet des permissions pour un utilisateur.
@@ -82,6 +84,15 @@ public class PermissionResolver {
                 addRolePermissions(permissions, appt.getRoleCode(), tenantId);
             }
         }
+
+        // 5. Pont d'équivalence (PARAMÉTRISATION PAR ÉGLISE, Phase 2-client) —
+        //    MIROIR du pont de AuthorizationService : les permissions accordées
+        //    par les AUTORITÉS ACTIVES du jeton (rôles legacy sans appartenance,
+        //    surcouche tenant si l'église en a une) doivent être SERVIS au
+        //    client, sinon l'UI cacherait des actions que le serveur admet depuis
+        //    la conversion des gardes en @authz.can('<CLÉ>'). Vide hors requête
+        //    authentifiée (job, nomination) → no-op strictement additif.
+        permissions.addAll(authorizationService.permissionKeysForActiveAuthorities(tenantId));
 
         return permissions;
     }

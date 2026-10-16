@@ -31,7 +31,7 @@ public class BulkImportController {
      * Retourne les erreurs par ligne pour affichage côté UI.
      */
     @PostMapping("/validate/families")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<BulkImportValidationResult> validateFamilies(
             @RequestBody List<Map<String, String>> rows) {
         List<BulkImportRow> importRows = toImportRows(rows);
@@ -40,7 +40,7 @@ public class BulkImportController {
     }
 
     @PostMapping("/validate/users")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<BulkImportValidationResult> validateUsers(
             @RequestBody List<Map<String, String>> rows) {
         List<BulkImportRow> importRows = toImportRows(rows);
@@ -49,7 +49,7 @@ public class BulkImportController {
     }
 
     @PostMapping("/validate/souls")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<BulkImportValidationResult> validateSouls(
             @RequestBody List<Map<String, String>> rows) {
         List<BulkImportRow> importRows = toImportRows(rows);
@@ -60,7 +60,7 @@ public class BulkImportController {
     // ======================== IMPORT ========================
 
     @PostMapping("/families")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> importFamilies(@RequestBody List<Map<String, String>> families) {
         // Pre-validation
         List<BulkImportRow> importRows = toImportRows(families);
@@ -77,7 +77,7 @@ public class BulkImportController {
     }
 
     @PostMapping("/users")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> importUsers(@RequestBody List<Map<String, String>> users) {
         // Pre-validation
         List<BulkImportRow> importRows = toImportRows(users);
@@ -94,7 +94,7 @@ public class BulkImportController {
     }
 
     @PostMapping("/souls")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> importSouls(@RequestBody List<Map<String, String>> souls) {
         // Pre-validation
         List<BulkImportRow> importRows = toImportRows(souls);

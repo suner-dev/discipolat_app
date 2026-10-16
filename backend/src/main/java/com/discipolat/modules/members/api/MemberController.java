@@ -102,14 +102,14 @@ public class MemberController {
 
     /** Boîte de réception scopée : pasteur/admin tout, responsable ses départements, chef de famille sa famille. */
     @GetMapping("/requests/inbox")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<MemberRequestResponse>> inbox() {
         return ResponseEntity.ok(memberService.getRequestsInbox());
     }
 
     /** Traitement d'une demande (statut + réponse) par le récepteur autorisé. */
     @PatchMapping("/requests/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MemberRequestResponse> updateRequestStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateMemberRequestStatus request) {
@@ -118,7 +118,7 @@ public class MemberController {
 
     /** Présences récentes des membres sous la responsabilité du rôle courant. */
     @GetMapping("/presences/recent")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<MemberPresenceResponse>> scopedPresences() {
         return ResponseEntity.ok(memberService.getScopedPresences());
     }
@@ -129,7 +129,7 @@ public class MemberController {
 
     /** Fiche de présence du département : membres + présence de la semaine (saisie responsable). */
     @GetMapping("/departments/{deptId}/presences")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_DEPARTMENTPRESENCESHEET', 'TENANT', null)")
     public ResponseEntity<List<DepartmentPresenceRecord>> departmentPresenceSheet(
             @PathVariable UUID deptId,
             @RequestParam(required = false) LocalDate semaine) {
@@ -138,7 +138,7 @@ public class MemberController {
 
     /** Saisie groupée des présences du département pour la semaine. */
     @PostMapping("/departments/{deptId}/presences")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_SUBMITDEPARTMENTPRESENCES', 'TENANT', null)")
     public ResponseEntity<List<MemberPresenceResponse>> submitDepartmentPresences(
             @PathVariable UUID deptId,
             @Valid @RequestBody SubmitDepartmentPresenceRequest request) {
@@ -148,7 +148,7 @@ public class MemberController {
     /** Enregistre la présence via scan QR code (dispo pour tous les rôles).
      *  Accepte {@code soulId} (UUID) ou {@code code} (contenu scanné {@code discipolat:soul:<uuid>}). */
     @PostMapping("/qr-checkin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_QRCHECKIN', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> qrCheckin(@RequestBody Map<String, String> body) {
         String raw = body.getOrDefault("soulId", body.get("code"));
         UUID soulId = parseSoulCode(raw);
@@ -161,7 +161,7 @@ public class MemberController {
 
     /** Scan terrain : la photo du QR du membre est remontée, décodée (ZXing) puis convertie en présence. */
     @PostMapping("/qr-checkin/scan")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_QRCHECKINSCAN', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> qrCheckinScan(@RequestParam("file") MultipartFile file) throws IOException {
         java.util.Optional<String> decoded = qrImageService.decodeQrImage(file.getBytes());
         if (decoded.isEmpty()) {
@@ -194,7 +194,7 @@ public class MemberController {
      * de « l'âme », G5.6) — sans enregistrer de présence.
      */
     @PostMapping("/qr-resolve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_QRRESOLVE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> qrResolve(@RequestParam("file") MultipartFile file) throws IOException {
         java.util.Optional<String> decoded = qrImageService.decodeQrImage(file.getBytes());
         if (decoded.isEmpty()) {

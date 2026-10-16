@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/v1/benchmark")
-@PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN')")
+@PreAuthorize("@authz.can('ADMIN_EXECUTE', 'TENANT', null)")
 @RequiredArgsConstructor
 public class BenchmarkController {
 

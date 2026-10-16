@@ -40,7 +40,7 @@ public class HierarchyController {
 
     /** Hiérarchie d'un membre — même garde que la fiche /users/{id}/detail. */
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('RELATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> hierarchyOf(@PathVariable UUID userId) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.getHierarchy(tenantId, userId, SecurityUtils.getCurrentUserId()));

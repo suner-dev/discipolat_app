@@ -105,7 +105,7 @@ public class EntityChangeSseController {
      * jamais leurs identifiants (évite toute fuite d'informations cross-tenant).
      */
     @GetMapping("/entity-changes/stats")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("@authz.can('COMMON_EXECUTE', 'TENANT', null)")
     public Map<String, Object> stats() {
         return Map.of(
                 "totalConnectedClients", broadcaster.getTotalConnectedCount(),

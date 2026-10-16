@@ -22,7 +22,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/data-migration")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+@PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE_R2A', 'TENANT', null)")
 public class DataMigrationController {
 
              private final DataMigrationService service;

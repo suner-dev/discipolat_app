@@ -33,7 +33,7 @@ public class EvaluationController {
      * sur le commentaire et catégorie. L'évaluateur reste anonyme.
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE_GETALL', 'TENANT', null)")
     public ResponseEntity<PageResponse<Map<String, Object>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -53,7 +53,7 @@ public class EvaluationController {
      * Submit an anonymous evaluation.
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> submit(@Valid @RequestBody SubmitEvaluationRequest request) {
         CategorieEvaluation categorie = request.categorie() != null
                 ? CategorieEvaluation.valueOf(request.categorie()) : null;
@@ -70,7 +70,7 @@ public class EvaluationController {
      * La catégorie est optionnelle : dérivée du rôle de l'évalué si absente.
      */
     @PutMapping("/{evalueId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> submitOrUpdate(@PathVariable UUID evalueId,
                                                               @Valid @RequestBody UpsertEvaluationRequest request) {
         CategorieEvaluation categorie = request.categorie() != null
@@ -89,7 +89,7 @@ public class EvaluationController {
      * « donner / modifier » de la fiche utilisateur.
      */
     @GetMapping("/my/{evalueId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getMyEvaluationsFor(@PathVariable UUID evalueId) {
         return ResponseEntity.ok(evaluationService.getMyEvaluationsFor(evalueId));
     }
@@ -98,7 +98,7 @@ public class EvaluationController {
      * Get my evaluations aggregated stats (what others think of me — anonymous).
      */
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getMyEvaluations() {
         return ResponseEntity.ok(evaluationService.getMyEvaluations());
     }
@@ -107,7 +107,7 @@ public class EvaluationController {
      * Get my evaluations as a paginated list (anonymous results, no evaluateur_id).
      */
     @GetMapping("/me/list")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<Map<String, Object>>> getMyEvaluationsList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -131,7 +131,7 @@ public class EvaluationController {
      * Get people I can evaluate.
      */
     @GetMapping("/to-evaluate")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getPeopleToEvaluate() {
         return ResponseEntity.ok(evaluationService.getPeopleToEvaluate());
     }
@@ -141,7 +141,7 @@ public class EvaluationController {
      * que l'utilisateur courant est autorisé à évaluer/voir cette personne).
      */
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE_GETEVALUATIONSFORUSER', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getEvaluationsForUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(evaluationService.getEvaluationsForUser(userId));
     }
@@ -150,7 +150,7 @@ public class EvaluationController {
      * Get all evaluations aggregated (Pasteur overview).
      */
     @GetMapping("/all")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVALUATIONS_EXECUTE_GETALLEVALUATIONS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getAllEvaluations() {
         return ResponseEntity.ok(evaluationService.getAllEvaluationsAggregated());
     }

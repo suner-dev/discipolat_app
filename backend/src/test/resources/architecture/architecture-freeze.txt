@@ -1,7 +1,7 @@
 # GELE — dette d'architecture constatee le 2026-10-09 (V0.1, ADR-002).
 # Un PLAFOND, pas un blanc-seing : la suite rougit des que la dette monte.
 # Ce fichier ne doit que DIMINUER au fil de la migration V1.
-#   plafond|<regle>|<nombre>   dette toleree, par compte (regles massives R1 R2 R4)
+#   plafond|<regle>|<nombre>   dette toleree, par compte (regles massives R1 R2 R4 R7)
 #   objet|<regle>|<cle>        objet historique tolere, par frontiere (R3 R5 R6)
 # Cle R3 = arete contexte->contexte (carte des blocages d'extraction) ; R6 = cycle.
 # Regenerer : mvn -o test -Dtest=ArchitectureRulesTest -Darchitecture.freeze.update=true
@@ -97,6 +97,10 @@ plafond|R2|0
 plafond|R4|3028
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
+# constat R7 (gardes http sans litteraux de role) : 0 violations, gelees par plafond ci-dessous
+# Parametrisation par eglise Phase 2 : tranches MEMBERS converties (@authz.can) — MemberController 8, GeofencingController 2, CompetenceMatchingController 1 (581 -> 570).
+# Parametrisation par eglise Phase 3 : 570 gardes residuelles converties en @authz.can('<CLE>', 'TENANT', null) — 547 mecaniques (catalogue V258, matrice == litteraux) + 23 guides (hasRole simples -> 21 cles V259, composes @perm.has preserves, multiligne OM). Le plafond tombe a 0 : desormais toute garde a litteral de role rougit la suite.
+plafond|R7|0
 objet|R3|admin -> alerts
 objet|R3|admin -> audit
 objet|R3|admin -> currency

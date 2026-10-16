@@ -29,7 +29,7 @@ public class DepartmentEventAttendanceController {
 
     /** Feuille de présence d'un événement : membres du département + statut pointé. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> eventAttendance(@PathVariable UUID departmentId,
                                                                @PathVariable UUID eventId) {
         return ResponseEntity.ok(managementService.getEventAttendance(departmentId, eventId));
@@ -37,7 +37,7 @@ public class DepartmentEventAttendanceController {
 
     /** Marque un membre présent/absent à un événement du département. */
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE_MARKEVENTATTENDANCE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> markEventAttendance(@PathVariable UUID departmentId,
                                                                    @PathVariable UUID eventId,
                                                                    @Valid @RequestBody DepartmentEventAttendanceRequest request) {
@@ -47,7 +47,7 @@ public class DepartmentEventAttendanceController {
 
     /** Marque tous les membres actifs du département présents (ou absents). */
     @PostMapping("/mark-all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> markAllAttendance(@PathVariable UUID departmentId,
                                                                  @PathVariable UUID eventId,
                                                                  @RequestParam(defaultValue = "true") boolean present) {
@@ -56,7 +56,7 @@ public class DepartmentEventAttendanceController {
 
     /** Export CSV de la feuille de présence de l'événement. */
     @GetMapping(value = "/export", produces = "text/csv;charset=UTF-8")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXPORT', 'TENANT', null)")
     public ResponseEntity<String> exportAttendance(@PathVariable UUID departmentId,
                                                    @PathVariable UUID eventId) {
         String csv = managementService.exportEventAttendanceCsv(departmentId, eventId);

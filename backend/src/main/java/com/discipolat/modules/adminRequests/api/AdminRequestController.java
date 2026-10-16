@@ -19,7 +19,7 @@ public class AdminRequestController {
     public AdminRequestController(AdminRequestService service) { this.service = service; }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('ADMINREQUESTS_EXECUTE', 'TENANT', null)")
     public List<AdminRequest> list() { return service.listAll(); }
 
     @GetMapping("/by-member/{membreId}")
@@ -39,7 +39,7 @@ public class AdminRequestController {
     }
 
     @PostMapping("/{id}/process")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('ADMINREQUESTS_EXECUTE', 'TENANT', null)")
     public AdminRequest process(@PathVariable UUID id,
             @RequestParam AdminRequest.Statut decision,
             @RequestParam UUID traiteurId,
@@ -55,6 +55,6 @@ public class AdminRequestController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('ADMINREQUESTS_EXECUTE', 'TENANT', null)")
     public Map<String, Object> stats() { return service.getStats(); }
 }

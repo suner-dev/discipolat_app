@@ -39,7 +39,7 @@ public class PastorateController {
     // ========== APPOINTMENTS ==========
 
     @GetMapping("/appointments")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETAPPOINTMENTS', 'TENANT', null)")
     public ResponseEntity<List<PastorateAppointment>> getAppointments(
             @RequestParam(required = false) UUID pastorId,
             @RequestParam(required = false) UUID orgUnitId) {
@@ -48,14 +48,14 @@ public class PastorateController {
     }
 
     @GetMapping("/appointments/{id}")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETAPPOINTMENT', 'TENANT', null)")
     public ResponseEntity<PastorateAppointment> getAppointment(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(pastorateService.getAppointment(tenantId, id));
     }
 
     @PostMapping("/appointments")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PastorateAppointment> createAppointment(@RequestBody PastorateAppointment appointment) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -63,7 +63,7 @@ public class PastorateController {
     }
 
     @PutMapping("/appointments/{id}")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PastorateAppointment> updateAppointment(@PathVariable UUID id, @RequestBody Map<String, Object> updates) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -71,7 +71,7 @@ public class PastorateController {
     }
 
     @DeleteMapping("/appointments/{id}")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> endAppointment(@PathVariable UUID id, @RequestParam String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -82,7 +82,7 @@ public class PastorateController {
     // ========== TRANSFERS ==========
 
     @GetMapping("/transfers")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETTRANSFERS', 'TENANT', null)")
     public ResponseEntity<List<PastorateTransfer>> getTransfers(
             @RequestParam(required = false) String status) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -90,7 +90,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PastorateTransfer> createTransfer(
             @RequestParam UUID pastorId,
             @RequestParam UUID toOrgUnitId,
@@ -101,7 +101,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers/{id}/approve")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_APPROVE', 'TENANT', null)")
     public ResponseEntity<PastorateTransfer> approveTransfer(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -109,7 +109,7 @@ public class PastorateController {
     }
 
     @PostMapping("/transfers/{id}/reject")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> rejectTransfer(@PathVariable UUID id, @RequestParam String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -121,7 +121,7 @@ public class PastorateController {
 
     /** Historique consultable par les bergers et l'administration — comme l'organigramme. */
     @GetMapping("/pastors/{pastorId}/history")
-    @PreAuthorize("hasAnyRole('PASTOR_PRINCIPAL', 'PASTEUR', 'ADMIN')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETPASTORHISTORY', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getPastorHistory(@PathVariable UUID pastorId) {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(pastorateService.getPastorHistory(tenantId, pastorId));

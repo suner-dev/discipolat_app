@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app.dart';
@@ -33,6 +35,22 @@ class _AppDrawerState extends State<AppDrawer> {
   void initState() {
     super.initState();
     _loadShape();
+    // §G4.4 + Phase 2-client — le menu est la projection des droits : il se
+    // recâble à chaud quand l'epoch des permissions change (push
+    // PermissionsChanged, re-pull servi). Sans écoute, un élargissement ou
+    // une restriction par l'église resterait invisible jusqu'à la
+    // réouverture complète de l'application.
+    AuthState().permissionsEpoch.addListener(_onEpochChanged);
+  }
+
+  @override
+  void dispose() {
+    AuthState().permissionsEpoch.removeListener(_onEpochChanged);
+    super.dispose();
+  }
+
+  void _onEpochChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadShape() async {
@@ -1103,6 +1121,10 @@ class _AppDrawerState extends State<AppDrawer> {
       if (response.data != null) {
         await api.saveTokens(response.data);
         auth.switchActiveRole(newRole);
+        // Phase 2-client — les permissions servies dépendent du rôle ACTIF
+        // (autorité porteuse du pont @authz.can) : nouveau token, nouveau
+        // ensemble. Miroir du switchTenant web (refreshContext).
+        unawaited(auth.refreshServedPermissions());
         if (mounted) {
           Navigator.pop(context);
           context.go(roleHome(newRole));
@@ -1126,10 +1148,20 @@ class _AppDrawerState extends State<AppDrawer> {
     final allRoles = auth.roles;
 
     // Filtre STRICT par rôle actif : seul l'espace métier du rôle est affiché.
-    final filteredItems = _navForRole(
+    var filteredItems = _navForRole(
       activeRole,
       isPlatformSuperAdmin: auth.isPlatformSuperAdmin,
     );
+    // Paramétration par église (Phase 2-client) : sur la tranche convertie
+    // (tranche MEMBERS), les clés SERVIES restreignent ou élargissent le
+    // menu — miroir de filterNavByAccess du web. Cache non prêt → comportement
+    // littéral par rôle intact (additif strict, jamais de menu vide).
+    if (auth.isServedPermissionsReady && !auth.isPlatformSuperAdmin) {
+      filteredItems = filteredItems
+          .where((item) => routeAdmittedByServedKeys(
+              item['route']?.toString() ?? '', auth.hasPermission))
+          .toList();
+    }
 
     return Drawer(
       child: Container(

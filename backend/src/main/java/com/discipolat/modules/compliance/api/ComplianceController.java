@@ -30,7 +30,7 @@ public class ComplianceController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(managerService.getComplianceStats());
     }
@@ -38,7 +38,7 @@ public class ComplianceController {
     // ── Rétention & purge (feature #4) ───────────────────────────
 
     @GetMapping("/retention-policies")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Object> retentionPolicies() {
         return ResponseEntity.ok(managerService.listRetentionPolicies());
     }
@@ -47,14 +47,14 @@ public class ComplianceController {
                                          String description, boolean hardDelete) {}
 
     @PutMapping("/retention-policies")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> setRetentionPolicy(@RequestBody RetentionPolicyRequest request) {
         return ResponseEntity.ok(managerService.setRetentionPolicy(
                 request.dataType(), request.retentionDays(), request.description(), request.hardDelete()));
     }
 
     @PostMapping("/retention-policies/purge-all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> purgeAll() {
         return ResponseEntity.ok(managerService.executeAutomatedPurge());
     }
@@ -62,7 +62,7 @@ public class ComplianceController {
     // ── Exports / portabilité (feature #4) ──────────────────────
 
     @GetMapping("/exports")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXPORT', 'TENANT', null)")
     public ResponseEntity<Object> exports() {
         return ResponseEntity.ok(managerService.listExports());
     }
@@ -70,7 +70,7 @@ public class ComplianceController {
     public record ExportRequest(UUID userId, String format) {}
 
     @PostMapping("/exports")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createExport(@RequestBody ExportRequest request) {
         return ResponseEntity.ok(managerService.exportUserData(request.userId(), request.format()));
     }
@@ -78,13 +78,13 @@ public class ComplianceController {
     // ── Chaîne de hachage du journal d'audit (feature #4) ───────
 
     @GetMapping("/audit-hash/verify")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> verifyAuditHash() {
         return ResponseEntity.ok(managerService.verifyAuditChain());
     }
 
     @GetMapping("/gdpr")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<GdprRequest>> listRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -94,7 +94,7 @@ public class ComplianceController {
     }
 
     @GetMapping("/gdpr/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<GdprRequest> getRequest(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getRequest(id));
     }
@@ -110,7 +110,7 @@ public class ComplianceController {
     }
 
     @PatchMapping("/gdpr/{id}/process")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<GdprRequest> processRequest(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(service.processRequest(id, body.get("statut"), body.get("resultat"), userId));
@@ -153,7 +153,7 @@ public class ComplianceController {
 
     /** Exécute réellement la purge d'une politique de rétention donnée. */
     @PostMapping("/retention-policies/{policyId}/execute")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> executeRetentionPolicy(@PathVariable UUID policyId) {
         return ResponseEntity.ok(managerService.executeRetentionPolicy(policyId));
     }
@@ -162,7 +162,7 @@ public class ComplianceController {
     public record RetentionPolicyCreateRequest(String dataCategory, int retentionDays, String actionOnExpiry) {}
 
     @PostMapping("/retention-policies")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createRetentionPolicy(@RequestBody RetentionPolicyCreateRequest request) {
         boolean hardDelete = "DELETE".equalsIgnoreCase(request.actionOnExpiry());
         return ResponseEntity.ok(managerService.setRetentionPolicy(
@@ -171,7 +171,7 @@ public class ComplianceController {
 
     /** Désactiver/supprimer une politique de rétention */
     @DeleteMapping("/retention-policies/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMPLIANCE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> deleteRetentionPolicy(@PathVariable UUID id) {
         return ResponseEntity.ok(managerService.deleteRetentionPolicy(id));
     }

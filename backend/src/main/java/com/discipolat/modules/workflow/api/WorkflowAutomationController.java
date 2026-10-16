@@ -23,19 +23,19 @@ public class WorkflowAutomationController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_LIST', 'TENANT', null)")
     public ResponseEntity<List<Automation>> list() {
         return ResponseEntity.ok(service.list());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_GET', 'TENANT', null)")
     public ResponseEntity<Automation> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<Automation> create(@RequestBody Map<String, Object> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         Automation a = service.create(
@@ -51,13 +51,13 @@ public class WorkflowAutomationController {
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_TOGGLE', 'TENANT', null)")
     public ResponseEntity<Automation> toggle(@PathVariable UUID id) {
         return ResponseEntity.ok(service.toggleStatut(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_DELETEAUTOMATION', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tontines")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+@PreAuthorize("@authz.can('TONTINE_EXECUTE', 'TENANT', null)")
 public class TontineController {
 
     private final TontineService service;
@@ -26,19 +26,19 @@ public class TontineController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TONTINE_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<TontineGroup> create(@RequestBody TontineGroup group) {
         return ResponseEntity.ok(service.createGroup(group));
     }
 
     @PostMapping("/{id}/members")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TONTINE_EXECUTE_ADDMEMBER', 'TENANT', null)")
     public ResponseEntity<TontineMember> addMember(@PathVariable UUID id, @RequestBody TontineMember member) {
         return ResponseEntity.ok(service.addMember(id, member));
     }
 
     @PostMapping("/{id}/contributions/{memberId}/pay")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('TONTINE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<TontineContribution> markPaid(@PathVariable UUID id,
                                                         @PathVariable UUID memberId,
                                                         @RequestParam(defaultValue = "1") int tour,
@@ -47,7 +47,7 @@ public class TontineController {
     }
 
     @PostMapping("/{id}/next-round")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TONTINE_EXECUTE_NEXTROUND', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> nextRound(@PathVariable UUID id) {
         return ResponseEntity.ok(service.nextRound(id));
     }

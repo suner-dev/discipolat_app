@@ -26,7 +26,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/events")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE','FAISEUR','MEMBRE')")
+@PreAuthorize("@authz.can('EVENTS_EXECUTE_R6A', 'TENANT', null)")
 public class EventController {
 
     private final EventService eventService;
@@ -48,7 +48,7 @@ public class EventController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EventResponse> create(@Valid @RequestBody CreateEventRequest request) {
         Event event = Event.builder()
                 .typeEvenement(request.typeEvenement())
@@ -79,14 +79,14 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EventResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(eventService.findById(id)));
     }
 
     /** Événements rattachés à un département (espace Responsable). */
     @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<EventResponse>> findByDepartmentId(
             @PathVariable UUID departmentId,
             @RequestParam(defaultValue = "0") int page,
@@ -101,7 +101,7 @@ public class EventController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<EventResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -130,7 +130,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EventResponse> update(@PathVariable UUID id,
                                                 @Valid @RequestBody UpdateEventRequest request) {
         Event event = Event.builder()
@@ -164,14 +164,14 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         eventService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{eventId}/register")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EventRegistrationResponse> register(@PathVariable UUID eventId) {
         EventRegistration reg = eventService.register(eventId);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -179,14 +179,14 @@ public class EventController {
     }
 
     @DeleteMapping("/{eventId}/unregister")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> unregister(@PathVariable UUID eventId) {
         eventService.unregister(eventId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{eventId}/attendance")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EventRegistrationResponse> markAttendance(
             @PathVariable UUID eventId,
             @RequestBody Map<String, Object> body) {
@@ -210,7 +210,7 @@ public class EventController {
      * arbitrable), 403 pointage desactive sur l'evenement.
      */
     @PostMapping("/{eventId}/checkin")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_CHECKIN', 'TENANT', null)")
     public ResponseEntity<GeofenceCheckinResponse> checkin(
             @PathVariable UUID eventId,
             @RequestBody GeofenceCheckinRequest request) {
@@ -268,7 +268,7 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}/registrations")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<EventRegistrationResponse>> getRegistrations(
             @PathVariable UUID eventId) {
         return ResponseEntity.ok(eventService.getRegistrations(eventId)
@@ -298,33 +298,33 @@ public class EventController {
     // ======================== WEEKLY PROGRAM TEMPLATES (US-50) ========================
 
     @GetMapping("/templates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GETTEMPLATES', 'TENANT', null)")
     public ResponseEntity<List<WeeklyProgramTemplate>> getTemplates() {
         return ResponseEntity.ok(eventService.getActiveTemplates());
     }
 
     @PostMapping("/templates")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_CREATETEMPLATE', 'TENANT', null)")
     public ResponseEntity<WeeklyProgramTemplate> createTemplate(@Valid @RequestBody WeeklyProgramTemplate template) {
         return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createTemplate(template));
     }
 
     @PutMapping("/templates/{id}")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_UPDATETEMPLATE', 'TENANT', null)")
     public ResponseEntity<WeeklyProgramTemplate> updateTemplate(
             @PathVariable UUID id, @Valid @RequestBody WeeklyProgramTemplate template) {
         return ResponseEntity.ok(eventService.updateTemplate(id, template));
     }
 
     @DeleteMapping("/templates/{id}")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_DELETETEMPLATE', 'TENANT', null)")
     public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
         eventService.deleteTemplate(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/templates/{id}/toggle")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_TOGGLETEMPLATE', 'TENANT', null)")
     public ResponseEntity<Void> toggleTemplate(@PathVariable UUID id, @RequestBody Map<String, Boolean> body) {
         eventService.toggleTemplateActif(id, body.getOrDefault("actif", true));
         return ResponseEntity.ok().build();
@@ -334,7 +334,7 @@ public class EventController {
      * Generate events for a specific week from the active program templates.
      */
     @PostMapping("/program/generate")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GENERATEWEEKPROGRAM', 'TENANT', null)")
     public ResponseEntity<List<EventResponse>> generateWeekProgram(
             @RequestParam(required = false) String semaine) {
         LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
@@ -347,7 +347,7 @@ public class EventController {
      * Generate events for the next 4 weeks from the active program templates.
      */
     @PostMapping("/program/generate-month")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GENERATEMONTHPROGRAM', 'TENANT', null)")
     public ResponseEntity<List<EventResponse>> generateMonthProgram() {
         List<Event> events = eventService.generateMonthProgram();
         return ResponseEntity.ok(events.stream().map(this::toResponse).toList());
@@ -357,7 +357,7 @@ public class EventController {
      * Get the program for a specific week.
      */
     @GetMapping("/program/week")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GETWEEKPROGRAM', 'TENANT', null)")
     public ResponseEntity<List<EventResponse>> getWeekProgram(
             @RequestParam(required = false) String semaine) {
         LocalDate weekStart = semaine != null ? LocalDate.parse(semaine)
@@ -369,7 +369,7 @@ public class EventController {
     // ======================== US-55: EVENT STATISTICS ========================
 
     @GetMapping("/statistics")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GETEVENTSTATISTICS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getEventStatistics(
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) String periodeDebut,
@@ -383,7 +383,7 @@ public class EventController {
      * Get all upcoming events consolidated — for Pasteur to see events from all departments/families.
      */
     @GetMapping("/consolidated")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GETCONSOLIDATEDUPCOMING', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getConsolidatedUpcoming(
             @RequestParam(defaultValue = "14") int days) {
         return ResponseEntity.ok(eventService.getConsolidatedUpcoming(days));
@@ -393,7 +393,7 @@ public class EventController {
      * Get upcoming events grouped by family and type — consolidated.
      */
     @GetMapping("/consolidated/by-family")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_GETCONSOLIDATEDBYFAMILY', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getConsolidatedByFamily(
             @RequestParam(defaultValue = "14") int days) {
         return ResponseEntity.ok(eventService.getConsolidatedByFamily(days));

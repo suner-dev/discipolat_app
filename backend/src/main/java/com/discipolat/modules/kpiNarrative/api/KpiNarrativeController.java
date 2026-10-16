@@ -36,7 +36,7 @@ public class KpiNarrativeController {
     }
 
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('KPINARRATIVE_EXECUTE_GENERATE', 'TENANT', null)")
     public ResponseEntity<KpiNarrative> generate(@RequestBody Map<String, Object> body) {
         KpiNarrative.TypeKPI type = KpiNarrative.TypeKPI.valueOf((String) body.get("typeKPI"));
         double actuel = body.get("valeurActuelle") != null ? ((Number) body.get("valeurActuelle")).doubleValue() : 0;
@@ -48,7 +48,7 @@ public class KpiNarrativeController {
     }
 
     @PostMapping("/generate-all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('KPINARRATIVE_EXECUTE', 'TENANT', null)")
     @SuppressWarnings("unchecked")
     public ResponseEntity<List<KpiNarrative>> generateAll(@RequestBody Map<String, Object[]> body) {
         Map<KpiNarrative.TypeKPI, double[]> kpisData = new java.util.HashMap<>();

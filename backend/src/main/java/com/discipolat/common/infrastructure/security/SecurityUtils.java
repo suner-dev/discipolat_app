@@ -43,6 +43,40 @@ public class SecurityUtils {
     }
 
     /**
+     * Clés de rôle portées par l'authentification courante (autorité Spring
+     * {@code ROLE_<clé>}), normalisées en MAJUSCULES. Vide hors requête
+     * authentifiée.
+     *
+     * <p>PARAMÉTRISATION PAR ÉGLISE (Phase 1) : ce point d'accès isole la lecture
+     * du {@code SecurityContextHolder} dans la couche infrastructure, pour que le
+     * domaine ({@code AuthorizationService}) reste pur (règle R1 « domaine sans
+     * infrastructure ») tout en pouvant reproduire à l'identique la décision
+     * {@code hasAnyRole(...)} à partir des rôles actifs du jeton.
+     */
+    public static java.util.Set<String> getActiveAuthorityRoleKeys() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())
+                || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return java.util.Set.of();
+        }
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        authentication.getAuthorities().forEach(a -> {
+            String granted = a.getAuthority();
+            if (granted != null && granted.startsWith("ROLE_")) {
+                // "ROLE_" compte 5 caractères — substring(4) laisserait un "_"
+                // résiduel ("_PASTEUR"), et le pont d'équivalence ne résoudrait
+                // aucun rôle (fail-closed silencieux).
+                String key = granted.substring(5).trim().toUpperCase(java.util.Locale.ROOT);
+                if (!key.isEmpty()) {
+                    keys.add(key);
+                }
+            }
+        });
+        return keys;
+    }
+
+    /**
      * Returns the current tenant ID from the tenant context (set by the
      * TenantInterceptor from the JWT claim). Static for direct service use.
      */

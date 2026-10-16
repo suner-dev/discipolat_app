@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/webhooks")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('WEBHOOKS_EXECUTE', 'TENANT', null)")
 public class WebhookController {
 
     private final WebhookService service;

@@ -330,6 +330,49 @@ class AuthState {
   /// Injectable pour les tests (widget/unit) ; null → ApiService réel.
   ApiService? livePermissionsApi;
 
+  // ── Permissions SERVIES (Phase 2-client, paramétration par église) ──
+  // Cache de GET /api/v1/me/permissions — ensemble de clés du catalogue
+  // V258 résolu côté serveur, miroir EXACT de @authz.can (pont d'autorités
+  // actives + surcouche tenant inclus). Le garde de route et le drawer
+  // interrogent ce cache quand il est prêt ; sinon repli littéral par rôle
+  // (transition — mêmes comportements qu'avant la conversion).
+  Set<String> _servedPermissions = const <String>{};
+  bool _servedPermissionsReady = false;
+
+  /// Injectable pour les tests ; null → repli sur [livePermissionsApi]
+  /// puis ApiService réel.
+  ApiService? servedPermissionsApi;
+
+  bool get isServedPermissionsReady => _servedPermissionsReady;
+  Set<String> get servedPermissions => _servedPermissions;
+
+  /// Vrai si l'ensemble servi contient la clé du catalogue. Normalisation
+  /// uppercase côté serveur (PermissionResolver) → comparaison insensible.
+  bool hasPermission(String permission) =>
+      _servedPermissions.contains(permission.toUpperCase());
+
+  /// Re-pull des permissions servies (source unique de vérité d'accès).
+  /// Ne bump PAS [permissionsEpoch] : appelé soit en chaîne de
+  /// [refreshLivePermissions] (epoch déjà incrémentée), soit isolément là
+  /// où la navigation en cours déclenche déjà un re-render.
+  Future<void> refreshServedPermissions() async {
+    try {
+      final api = servedPermissionsApi ?? livePermissionsApi ?? ApiService();
+      final res = await api.get('/me/permissions');
+      final data = res.data;
+      if (data is! Map) return;
+      final list = data['permissions'];
+      _servedPermissions = list is List
+          ? list.map((e) => e.toString().toUpperCase()).toSet()
+          : const <String>{};
+      _servedPermissionsReady = true;
+    } catch (e) {
+      // Best-effort (§G4.4-4) : échec réseau → le cache reste en l'état,
+      // le repli par rôle gouverne ; jamais de logout forcé.
+      debugPrint('[AuthState] refreshServedPermissions ignoré: $e');
+    }
+  }
+
   /// Re-pulls le rôle actif + la liste des rôles depuis le serveur.
   Future<void> refreshLivePermissions() async {
     try {
@@ -351,6 +394,10 @@ class AuthState {
       }
       _estChefDeFamille = data['estChefDeFamille'] as bool? ?? _estChefDeFamille;
       permissionsEpoch.value++;
+      // Le rôle actif a changé → l'ensemble servi change aussi (le pont
+      // d'autorités actives dépend du JWT re-validé). Miroir de la boucle
+      // web useRealtimeBus → refreshContext().
+      await refreshServedPermissions();
     } catch (e) {
       // Best-effort : REST indisponible → le prochain événement ou un
       // refresh manuel rattrapera ; jamais de logout forcé (§G4.4-4).
@@ -405,6 +452,9 @@ class AuthState {
       }
       // §G4.4 — rôles vivants : recâblage session à chaud sur push temps réel.
       _listenLiveRoles();
+      // Phase 2-client — amorçage du cache de permissions servies ; tant
+      // qu'il n'est pas prêt, la garde retombe sur le littéral par rôle.
+      unawaited(refreshServedPermissions());
     }
   }
 
@@ -441,6 +491,11 @@ class AuthState {
     _estChefDeFamille = false;
     _familleGereeId = null;
     _orgId = null;
+    // Phase 2-client — le cache de permissions servies n'a plus de
+    // porteur : on le vide et on repart en repli par rôle à la prochaine
+    // authentification (jamais de fuite de droits entre sessions).
+    _servedPermissions = const <String>{};
+    _servedPermissionsReady = false;
     // Clear tenant config on logout
     TenantConfig.clearOrgId();
     // §G4.4 — stopper l'écoute des rôles vivants.
@@ -465,6 +520,34 @@ String roleHome(String role, {bool isPlatformSuperAdmin = false}) {
     default:
       return '/dashboard'; // ADMIN, PASTEUR
   }
+}
+
+/// PARAMÉTRISATION PAR ÉGLISE (Phase 2-client mobile) — miroir EXACT de la
+/// table `ROUTE_PERMISSIONS` du web (`frontend/src/lib/routeAccess.ts`) :
+/// routes de la tranche MEMBERS → clés du catalogue V258 SERVIES par
+/// `GET /me/permissions` (any-of). Dès que le cache servi est prêt, il PRIME
+/// sur `_routeRoles` : l'église peut élargir (widening) ou restreindre
+/// (narrowing) la matrice d'un rôle sans redéploiement de l'application.
+/// `_routeRoles` demeure le repli de transition (chargement, tests hors
+/// session) — conformité §3 du protocole de migration des gardes.
+const Map<String, List<String>> routePermissions = {
+  '/members/requests': ['MEMBERS_EXECUTE'],
+  '/member-competences': ['MEMBERS_EXECUTE'],
+  '/qr-checkin': ['MEMBERS_EXECUTE_QRCHECKIN'],
+  '/geofencing': ['MEMBERS_EXECUTE_R4A'],
+};
+
+/// Clés servies requises pour une route, ou null si la route n'est pas
+/// convertie — alors seule la table par rôle décide (additif strict).
+List<String>? permissionsForRoute(String route) => routePermissions[route];
+
+/// Vrai si l'entrée de navigation [route] est admise par l'ensemble servi
+/// [hasKey]. Les routes non converties passent toujours : le filtre servi
+/// ne touche que la tranche convertie, par construction.
+bool routeAdmittedByServedKeys(String route, bool Function(String key) hasKey) {
+  final keys = permissionsForRoute(route);
+  if (keys == null || keys.isEmpty) return true;
+  return keys.any(hasKey);
 }
 
 /// List of roles allowed per route.
@@ -1479,7 +1562,21 @@ final appRouter = GoRouter(
       // 1) Chaque route n'est accessible que si le rôle ACTIF est autorisé.
       //    Priorité à la route exacte (ex. /admin/modules réservé ADMIN), puis
       //    repli sur le premier segment (ex. /souls/:id/pastoral-360).
-      if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
+      //
+      //    Paramétration par église (Phase 2-client) : sur les routes
+      //    converties de la tranche MEMBERS, l'ensemble de clés SERVI
+      //    (GET /me/permissions, miroir exact de @authz.can côté serveur)
+      //    PRIME dès qu'il est prêt — l'église peut élargir ou restreindre
+      //    la matrice d'un rôle sans redéploiement. Tant que le cache
+      //    n'est pas prêt, repli littéral par rôle (transition) : les
+      //    comportements d'avant la conversion sont strictement conservés.
+      final servedKeys = permissionsForRoute(state.matchedLocation) ??
+          permissionsForRoute(basePath);
+      if (auth.isServedPermissionsReady && servedKeys != null) {
+        if (!servedKeys.any((k) => auth.hasPermission(k))) {
+          return roleHome(role); // Ramené vers son propre espace métier
+        }
+      } else if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
         // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
         // qui partagent la vue complète de l'application).
         if (!(role == 'ADMIN' && allowedRoles.contains('PASTEUR'))) {

@@ -48,7 +48,7 @@ public class TenantFeatureController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE_GETFEATURES', 'TENANT', null)")
     public ResponseEntity<List<TenantFeatureResponse>> getFeatures() {
         UUID tenantId = getCurrentTenantId();
         List<TenantFeature> features = featureService.getFeaturesByTenant(tenantId);
@@ -58,7 +58,7 @@ public class TenantFeatureController {
     }
 
     @GetMapping("/enabled")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE_GETENABLEDFEATURES', 'TENANT', null)")
     public ResponseEntity<List<TenantFeatureResponse>> getEnabledFeatures() {
         UUID tenantId = getCurrentTenantId();
         List<TenantFeature> features = featureService.getEnabledFeatures(tenantId);
@@ -68,7 +68,7 @@ public class TenantFeatureController {
     }
 
     @PutMapping("/{moduleCode}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<TenantFeatureResponse> updateFeature(
             @PathVariable String moduleCode,
             @RequestBody TenantFeatureUpdateRequest request) {
@@ -89,7 +89,7 @@ public class TenantFeatureController {
     }
 
     @DeleteMapping("/{moduleCode}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> disableFeature(@PathVariable String moduleCode) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();

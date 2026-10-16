@@ -29,7 +29,7 @@ public class FaceRecognitionController {
 
     /** Enrôle le visage d'un utilisateur (mise à jour si déjà enrôlé). */
     @PostMapping("/enroll")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<FaceTemplate> enroll(@RequestBody EnrollRequest body) throws Exception {
         return ResponseEntity.ok(service.enroll(
                 body.userId(),
@@ -40,7 +40,7 @@ public class FaceRecognitionController {
 
     /** Identifie un visage parmi les gabarits actifs. */
     @PostMapping("/identify")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE_IDENTIFY', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> identify(@RequestBody IdentifyRequest body) throws Exception {
         FaceRecognitionService.IdentificationResult result =
                 service.identify(decode(body.imageBase64()));
@@ -60,7 +60,7 @@ public class FaceRecognitionController {
 
     /** Liste des gabarits enrôlés (recherche facultative par nom). */
     @GetMapping("/templates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<FaceTemplate>> templates(
             @RequestParam(required = false) String q) {
         return ResponseEntity.ok(service.list(q));
@@ -68,14 +68,14 @@ public class FaceRecognitionController {
 
     /** Statistiques d'enrôlement. */
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
     }
 
     /** Désactive un gabarit (droit à l'effacement RGPD). */
     @DeleteMapping("/templates/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE_DEACTIVATE', 'TENANT', null)")
     public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
         service.deactivate(id);
         return ResponseEntity.noContent().build();
@@ -83,7 +83,7 @@ public class FaceRecognitionController {
 
     /** P13 — Batch enrollment : enrôle plusieurs visages en une requête. */
     @PostMapping("/enroll-batch")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> enrollBatch(@RequestBody List<EnrollRequest> bodies) {
         int success = 0;
         int failed = 0;
@@ -103,7 +103,7 @@ public class FaceRecognitionController {
 
     /** P13 — Identifie avec seuil de confiance configurable. */
     @PostMapping("/identify-configurable")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('FACEREC_EXECUTE_IDENTIFYCONFIGURABLE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> identifyConfigurable(
             @RequestBody IdentifyWithThresholdRequest body) throws Exception {
         FaceRecognitionService.IdentificationResult result =

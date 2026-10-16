@@ -21,19 +21,19 @@ public class PropheticJournalController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PROPHETIC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PropheticEntry> create(@RequestBody PropheticEntry entry) {
         return ResponseEntity.ok(service.create(entry));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PROPHETIC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PropheticEntry> update(@PathVariable UUID id, @RequestBody PropheticEntry entry) {
         return ResponseEntity.ok(service.update(id, entry));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PROPHETIC_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

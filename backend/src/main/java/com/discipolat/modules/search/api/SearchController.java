@@ -31,7 +31,7 @@ public class SearchController {
      * - FAISEUR: searches only their assigned souls
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SEARCH_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<Map<String, Object>>> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
@@ -48,7 +48,7 @@ public class SearchController {
      * Returns up to 10 suggestions for the given query prefix.
      */
     @GetMapping("/autocomplete")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SEARCH_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> autocomplete(
             @RequestParam String q,
             @RequestParam(defaultValue = "10") int limit) {
@@ -62,7 +62,7 @@ public class SearchController {
      * full timeline, notes, prayer requests, parallel followups, alerts, exits.
      */
     @GetMapping("/profile/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SEARCH_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getCompleteProfile(@PathVariable UUID soulId) {
         return ResponseEntity.ok(searchService.getCompleteProfile(soulId));
     }

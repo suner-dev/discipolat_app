@@ -32,7 +32,7 @@ public class SuccessionPlanController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('SUCCESSION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SuccessionPlan> create(@RequestBody Map<String, String> body) {
         SuccessionPlan plan = service.create(
                 UUID.fromString(body.get("candidatId")),
@@ -44,19 +44,19 @@ public class SuccessionPlanController {
     }
 
     @PatchMapping("/{id}/readiness")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('SUCCESSION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SuccessionPlan> updateReadiness(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateReadiness(id, body.get("readiness")));
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('SUCCESSION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SuccessionPlan> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateStatut(id, body.get("statut")));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('SUCCESSION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

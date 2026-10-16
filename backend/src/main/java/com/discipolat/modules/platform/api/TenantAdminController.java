@@ -63,7 +63,7 @@ public class TenantAdminController {
      * Dashboard du Tenant Admin
      */
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_GETDASHBOARD', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         UUID tenantId = TenantContext.requireTenantId();
         
@@ -112,7 +112,7 @@ public class TenantAdminController {
      * Liste des membres du tenant
      */
     @GetMapping("/members")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_LISTMEMBERS', 'TENANT', null)")
     public ResponseEntity<PageResponse<Map<String, Object>>> listMembers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -172,7 +172,7 @@ public class TenantAdminController {
      * peut pas être rétrogradé. Action auditée.
      */
     @PutMapping("/members/{membershipId}/role")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPDATEMEMBERROLE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateMemberRole(
             @PathVariable UUID membershipId,
             @RequestBody Map<String, String> body,
@@ -222,7 +222,7 @@ public class TenantAdminController {
      * révoquer le dernier propriétaire. Action auditée.
      */
     @DeleteMapping("/members/{membershipId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_REVOKEMEMBER', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> revokeMember(
             @PathVariable UUID membershipId,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
@@ -281,7 +281,7 @@ public class TenantAdminController {
      * Gérer les rôles
      */
     @GetMapping("/roles")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_LISTROLES', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> listRoles() {
         UUID tenantId = TenantContext.requireTenantId();
         
@@ -306,7 +306,7 @@ public class TenantAdminController {
      * Modules / Feature Flags
      */
     @GetMapping("/modules")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_GETMODULES', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getModules() {
         UUID tenantId = TenantContext.requireTenantId();
         
@@ -332,7 +332,7 @@ public class TenantAdminController {
      * Modules - Activer/Désactiver
      */
     @PutMapping("/modules/{moduleKey}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_TOGGLEMODULE2', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> toggleModule(
             @PathVariable String moduleKey,
             @RequestBody Map<String, Boolean> request,

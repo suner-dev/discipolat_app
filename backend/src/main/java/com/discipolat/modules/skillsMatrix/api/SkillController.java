@@ -23,25 +23,25 @@ public class SkillController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SKILLSMATRIX_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<SkillEvaluation>> list() {
         return ResponseEntity.ok(service.listAll());
     }
 
     @GetMapping("/matrix")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SKILLSMATRIX_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> matrix() {
         return ResponseEntity.ok(service.getMatrix());
     }
 
     @GetMapping("/member/{memberId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SKILLSMATRIX_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<SkillEvaluation>> byMember(@PathVariable UUID memberId) {
         return ResponseEntity.ok(service.getByMembre(memberId));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SKILLSMATRIX_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SkillEvaluation> create(@RequestBody Map<String, String> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         SkillEvaluation eval = service.create(

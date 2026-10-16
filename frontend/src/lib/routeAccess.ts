@@ -14,6 +14,30 @@ import type { UserRole } from '@/types';
 
 export type AccessRole = UserRole | string;
 
+/* ============================================================================
+ * PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — ACCÈS PAR PERMISSIONS SERVIES
+ * --------------------------------------------------------------------------
+ * Tranche MEMBERS : pour les endpoints backend gardés par
+ * `@authz.can('<CLÉ>')`, les routes correspondantes sont gardées côté client par
+ * les CLÉS de permissions SERVIES (`GET /api/v1/me/permissions`, miroir exact du
+ * serveur depuis la Phase 2-client — pont d'autorités actives inclus). Une
+ * église qui redonne une clé à un rôle (surcouche tenant de la matrice V258)
+ * remet l'UI à jour sans redéploiement : plus rien n'est figé.
+ *
+ * Les littéraux `ROUTE_ROLES` restent le REPLI de transition : route non
+ * convertie, contexte tenant pas encore chargé, ou test monté hors TenantProvider.
+ * Le serveur demeure seul juge : l'UI ne fait qu'aligner les boutons.
+ * ========================================================================== */
+
+/** Routes converties : motif de chemin → clés permission servant la garde (any-of). */
+export const ROUTE_PERMISSIONS: Record<string, string[]> = {
+  // Tranche MEMBERS (Phase 2) — clés du catalogue V258, miroir des gardes `@authz.can`.
+  '/members/requests': ['MEMBERS_EXECUTE'],         // inbox · statuts · présences scopées
+  '/member-competences': ['MEMBERS_EXECUTE'],       // appariement des compétences
+  '/qr-checkin': ['MEMBERS_EXECUTE_QRCHECKIN'],     // pointage QR (garde la plus large de l'écran)
+  '/geofencing': ['MEMBERS_EXECUTE_R4A'],           // garde de classe GeofencingController
+};
+
 /** Routes restreintes : motif de chemin (segments `:param` dynamiques) → rôles autorisés. */
 export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   // Tableaux de bord
@@ -241,18 +265,27 @@ function matchesPattern(patternSegments: string[], pathSegments: string[]): bool
  * Rôles autorisés pour un chemin donné.
  * Retourne `null` si la route n'est pas restreinte (accessible à tous).
  */
-export function rolesForPath(path: string): AccessRole[] | null {
+function bestMatch<T>(registry: Record<string, T>, path: string): T | null {
   const pathSegs = splitSegments(path);
-  let bestMatch: string | null = null;
+  let bestMatchKey: string | null = null;
   let bestLen = -1;
-  for (const pattern of Object.keys(ROUTE_ROLES)) {
+  for (const pattern of Object.keys(registry)) {
     const patSegs = splitSegments(pattern);
     if (patSegs.length > bestLen && matchesPattern(patSegs, pathSegs)) {
-      bestMatch = pattern;
+      bestMatchKey = pattern;
       bestLen = patSegs.length;
     }
   }
-  return bestMatch ? ROUTE_ROLES[bestMatch] : null;
+  return bestMatchKey !== null ? registry[bestMatchKey] : null;
+}
+
+export function rolesForPath(path: string): AccessRole[] | null {
+  return bestMatch(ROUTE_ROLES, path);
+}
+
+/** Clés permission servant une route convertie ; `null` si la route reste par rôle. */
+export function permissionsForPath(path: string): string[] | null {
+  return bestMatch(ROUTE_PERMISSIONS, path);
 }
 
 /**
@@ -272,4 +305,30 @@ export function canRoleAccessPath(path: string, role: string | null | undefined)
 /** Filtre une liste d'items de navigation {href} selon le rôle actif. */
 export function filterNavByRole<T extends { href: string }>(items: T[], role: string | null | undefined): T[] {
   return items.filter((item) => canRoleAccessPath(item.href, role));
+}
+
+/**
+ * PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — accès d'abord par CLÉ SERVIE.
+ * `hasPermission` est la lecture du cache de permissions servies (TenantContext) :
+ * une route convertie est accordée/refusée par ses clés, sans littéral de rôle.
+ * Sans checker (contexte non chargé, test hors provider) ou sans route convertie,
+ * repli strict sur le registre par rôle — comportement transition identique.
+ */
+export function canAccessPath(
+  path: string,
+  role: string | null | undefined,
+  hasPermission?: ((key: string) => boolean) | undefined,
+): boolean {
+  const keys = permissionsForPath(path);
+  if (keys && hasPermission) return keys.some((k) => hasPermission(k));
+  return canRoleAccessPath(path, role);
+}
+
+/** Filtre de navigation par clé servie, avec repli par rôle (voir {@link canAccessPath}). */
+export function filterNavByAccess<T extends { href: string }>(
+  items: T[],
+  role: string | null | undefined,
+  hasPermission?: ((key: string) => boolean) | undefined,
+): T[] {
+  return items.filter((item) => canAccessPath(item.href, role, hasPermission));
 }

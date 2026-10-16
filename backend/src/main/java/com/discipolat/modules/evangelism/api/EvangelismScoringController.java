@@ -26,14 +26,14 @@ public class EvangelismScoringController {
 
     /** Score de conversion d'un prospect précis. */
     @GetMapping("/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVANGELISM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> score(@PathVariable UUID soulId) {
         return ResponseEntity.ok(scoringService.scoreFor(soulId));
     }
 
     /** Scores de tous les pipelines, triés du plus prometteur au plus à risque. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('EVANGELISM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> allScores() {
         List<EvangelismTrack> tracks = trackRepository.findAll();
         return ResponseEntity.ok(scoringService.scoreAll(tracks));

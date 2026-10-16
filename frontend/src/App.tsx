@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantOptional } from '@/contexts/TenantContext';
 import { WORKSPACE_HOME, isSuperUser, isTenantAdmin } from '@/workspaces';
 import type { UserRole } from '@/types';
 import MainLayout from '@/layouts/MainLayout';
@@ -299,8 +300,15 @@ function RouteFallback() {
   );
 }
 
-function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode; roles?: string[]; scope?: 'platform' | 'tenant' }) {
+function ProtectedRoute({ children, roles, permissions, scope }: { children: React.ReactNode; roles?: string[]; permissions?: string[]; scope?: 'platform' | 'tenant' }) {
   const { isAuthenticated, user, isLoading, activeRole } = useAuth();
+  // PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — le cache de permissions
+  // SERVIES (GET /api/v1/me/permissions, miroir exact de @authz.can) peut
+  // remplacer les littéraux de rôle : une route dotée de `permissions` est
+  // accordée par ses clés dès que le contexte tenant est chargé. Le registre
+  // par rôle reste le repli de transition (chargement, montage hors provider,
+  // routes non converties) — le serveur demeure seul juge effectif.
+  const tenant = useTenantOptional();
 
   if (isLoading) {
     return (
@@ -343,6 +351,15 @@ function ProtectedRoute({ children, roles, scope }: { children: React.ReactNode;
   const allowed = !roles
     || (currentRole && (roles.includes(currentRole)
         || (currentRole === 'ADMIN' && roles.includes('PASTEUR'))));
+  // Décision par CLÉS SERVIES (tranche convertie) : prime sur le littéral de
+  // rôle dès que le contexte tenant a chargé son ensemble effectif. Une église
+  // qui redonne la clé à un autre rôle (surcouche tenant V258) étend/resteint
+  // l'accès à l'écran SANS redéploiement — c'est l'objet du chantier.
+  if (permissions && permissions.length > 0 && tenant?.isInitialized) {
+    const granted = permissions.some((key) => tenant.hasPermission(key));
+    if (granted) return <>{children}</>;
+    return <Navigate to={WORKSPACE_HOME[(currentRole || 'FAISEUR') as UserRole] || '/dashboard'} replace />;
+  }
   if (!allowed) {
     // Redirection directe vers l'espace métier du rôle actif (au lieu de
     // /dashboard qui re-redirige) : un menu jamais accessible au rôle actif
@@ -641,7 +658,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/members/requests" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['MEMBERS_EXECUTE']}>
               <MemberRequestsPage />
             </ProtectedRoute>
           } />
@@ -1150,8 +1167,8 @@ export default function App() {
           <Route path="/admin/import" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ImportDataPage /></ProtectedRoute>} />
           <Route path="/kpi-narrative" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><KpiNarrativePage /></ProtectedRoute>} />
           <Route path="/maker-tracking" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><MakerTrackingPage /></ProtectedRoute>} />
-          <Route path="/member-competences" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><MemberCompetencesPage /></ProtectedRoute>} />
-          <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><QrCheckinPage /></ProtectedRoute>} />
+          <Route path="/member-competences" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['MEMBERS_EXECUTE']}><MemberCompetencesPage /></ProtectedRoute>} />
+          <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['MEMBERS_EXECUTE_QRCHECKIN']}><QrCheckinPage /></ProtectedRoute>} />
           <Route path="/network/stats" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NetworkStatsPage /></ProtectedRoute>} />
           <Route path="/voices" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoicesPage /></ProtectedRoute>} />
           <Route path="/workflow" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><WorkflowPage /></ProtectedRoute>} />
@@ -1182,7 +1199,7 @@ export default function App() {
           <Route path="/dashboard/summary" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><DashboardSummaryPage /></ProtectedRoute>} />
           <Route path="/discipleship-paths" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPathsPage /></ProtectedRoute>} />
           <Route path="/family-resources/:id" element={<ProtectedRoute><FamilyResourcesDetailPage /></ProtectedRoute>} />
-          <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}><GeofencingPage /></ProtectedRoute>} />
+          <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']} permissions={['MEMBERS_EXECUTE_R4A']}><GeofencingPage /></ProtectedRoute>} />
           <Route path="/referrals/status" element={<ProtectedRoute><ReferralsStatusPage /></ProtectedRoute>} />
           {/* V233-V236 — pages web branchées sur les contrats services
               (discipleship/tasks/health/finances). Les écritures restent

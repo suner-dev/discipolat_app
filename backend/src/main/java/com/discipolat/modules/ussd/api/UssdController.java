@@ -88,7 +88,7 @@ public class UssdController {
      * Statistiques USSD (admin).
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('USSD_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(ussdService.getStats(resolveTenantId()));
     }

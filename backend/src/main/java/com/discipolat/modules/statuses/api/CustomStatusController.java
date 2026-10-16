@@ -55,7 +55,7 @@ public class CustomStatusController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('STATUSES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<CustomStatus> create(
             @RequestParam(required = false) UUID spaceId,
             @RequestBody StatusRequest request) {
@@ -63,13 +63,13 @@ public class CustomStatusController {
     }
 
     @PutMapping("/{statusId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('STATUSES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<CustomStatus> update(@PathVariable UUID statusId, @RequestBody StatusRequest request) {
         return ResponseEntity.ok(statusService.updateStatus(tenantId(), statusId, request.toCommand()));
     }
 
     @DeleteMapping("/{statusId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('STATUSES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID statusId) {
         statusService.deleteStatus(tenantId(), statusId);
         return ResponseEntity.noContent().build();
@@ -89,7 +89,7 @@ public class CustomStatusController {
 
     /** Applique un changement de statut contrôlé (audit + événement StatusChanged). */
     @PostMapping("/change")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('STATUSES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> change(
             @RequestParam String entityType,
             @RequestParam String from,

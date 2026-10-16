@@ -58,21 +58,21 @@ public class TaskController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createTask(tenantId, body));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE_UPDATE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.updateTask(tenantId, id, body));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         UUID tenantId = TenantContext.getTenantId();
         service.deleteTask(tenantId, id);
@@ -80,14 +80,14 @@ public class TaskController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE_UPDATESTATUS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateStatus(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.updateStatus(tenantId, id, (String) body.get("status")));
     }
 
     @PatchMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> assign(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         UUID assignedToId = UUID.fromString(String.valueOf(body.get("assignedToId")));
@@ -102,7 +102,7 @@ public class TaskController {
     }
 
     @PostMapping("/{parentTaskId}/subtasks")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE_CREATESUBTASK', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createSubtask(@PathVariable Long parentTaskId, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createSubtask(tenantId, parentTaskId, body));
@@ -116,7 +116,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/attachments/{attachmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteAttachment(@PathVariable Long attachmentId) {
         UUID tenantId = TenantContext.getTenantId();
         service.deleteAttachment(tenantId, attachmentId);
@@ -138,7 +138,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/comments/{commentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         UUID tenantId = TenantContext.getTenantId();
         service.deleteComment(tenantId, commentId);
@@ -153,14 +153,14 @@ public class TaskController {
     }
 
     @PostMapping("/{taskId}/dependencies")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createDependency(@PathVariable Long taskId, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createDependency(tenantId, taskId, body));
     }
 
     @DeleteMapping("/dependencies/{dependencyId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteDependency(@PathVariable Long dependencyId) {
         UUID tenantId = TenantContext.getTenantId();
         service.deleteDependency(tenantId, dependencyId);
@@ -175,7 +175,7 @@ public class TaskController {
     }
 
     @PutMapping("/kanban/columns/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateKanbanColumn(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.updateKanbanColumn(tenantId, id, body));
@@ -189,7 +189,7 @@ public class TaskController {
      * changer. La position est désormais réellement persistée.
      */
     @PostMapping("/{taskId}/reorder")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> reorder(@PathVariable Long taskId, @RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         Integer order = body.get("order") == null ? null
@@ -236,7 +236,7 @@ public class TaskController {
     }
 
     @PostMapping("/templates/{templateId}/create")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TASKS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createFromTemplate(@PathVariable Long templateId, @RequestBody(required = false) Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createFromTemplate(tenantId, templateId, body == null ? Map.of() : body));

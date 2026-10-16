@@ -41,7 +41,7 @@ public class BrandingController {
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPDATEBRANDING', 'TENANT', null)")
     public ResponseEntity<BrandingResponse> updateBranding(@Valid @RequestBody BrandingRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
@@ -62,7 +62,7 @@ public class BrandingController {
     }
 
     @PostMapping(value = "/assets", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPLOADBRANDINGASSET', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> uploadBrandingAsset(
             @RequestParam("file") MultipartFile file,
             @RequestParam("assetType") String assetType) {

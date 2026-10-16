@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/neighborhood-health")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE','CHEF_DE_FAMILLE')")
+@PreAuthorize("@authz.can('NEIGHBORHOODHEALTH_EXECUTE', 'TENANT', null)")
 public class NeighborhoodHealthController {
 
     private final NeighborhoodHealthService service;

@@ -35,7 +35,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 @RestController
 @RequestMapping("/api/v1/souls")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE', 'TENANT_OWNER', 'TENANT_ADMIN')")
+@PreAuthorize("@authz.can('SOULS_EXECUTE_R8A', 'TENANT', null)")
 public class SoulController {
 
     private final SoulService soulService;
@@ -77,7 +77,7 @@ public class SoulController {
 
     /** Corbeille : âmes supprimées (soft-deleted), pour restauration éventuelle. */
     @GetMapping("/trash")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_TRASH', 'TENANT', null)")
     public ResponseEntity<PageResponse<SoulResponse>> trash(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -96,21 +96,21 @@ public class SoulController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SoulResponse> create(@Valid @RequestBody CreateSoulRequest request) {
         Soul soul = soulService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(SoulResponse.from(soul));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SoulResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateSoulRequest request) {
         Soul soul = soulService.update(id, request);
         return ResponseEntity.ok(SoulResponse.from(soul));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         soulService.delete(id);
         return ResponseEntity.noContent().build();
@@ -127,7 +127,7 @@ public class SoulController {
      * validation configuré par le pasteur (exécution immédiate si circuit vide).
      */
     @PatchMapping("/{id}/reassign")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_REASSIGN', 'TENANT', null)")
     public ResponseEntity<TransferResponse> reassign(
             @PathVariable UUID id, @RequestBody @Valid ReassignSoulRequest request) {
         return ResponseEntity.ok(transferBridgeService.reassignSoul(id, request.newFaiseurId()));
@@ -145,7 +145,7 @@ public class SoulController {
                 .stream().map(SoulResponse::from).toList());
     }    /** US-15: Auto-suggest least loaded faiseur for a family */
     @GetMapping("/suggest-faiseur/{familleId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_SUGGESTFAISEUR', 'TENANT', null)")
     public ResponseEntity<Map<String, UUID>> suggestFaiseur(@PathVariable UUID familleId) {
         UUID suggested = soulService.suggestLeastLoadedFaiseur(familleId);
         return ResponseEntity.ok(Map.of("faiseurId", suggested != null ? suggested : UUID.randomUUID()));
@@ -153,7 +153,7 @@ public class SoulController {
 
     /** US-24: Find all souls "en difficulté" (Pasteur only) */
     @GetMapping("/en-difficulte")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_FINDENDIFFICULTE', 'TENANT', null)")
     public ResponseEntity<List<SoulResponse>> findEnDifficulte() {
         return ResponseEntity.ok(soulService.findAllEnDifficulte()
                 .stream().map(SoulResponse::from).toList());
@@ -162,14 +162,14 @@ public class SoulController {
     // ======================== US-60: RESTORE SOUL ========================
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_RESTORE', 'TENANT', null)")
     public ResponseEntity<SoulResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(SoulResponse.from(soulService.restore(id)));
     }
 
     /** US-04/32: Request soul retraction */
     @PostMapping("/retraction-request")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_CREATERETRACTIONREQUEST', 'TENANT', null)")
     public ResponseEntity<SoulRetractionRequestResponse> createRetractionRequest(
             @Valid @RequestBody CreateSoulRetractionRequest request) {
         var retraction = retractionRequestService.create(request.ameId(), request.justification());
@@ -179,7 +179,7 @@ public class SoulController {
 
     /** List retraction requests by status */
     @GetMapping("/retraction-requests")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_GETRETRACTIONREQUESTS', 'TENANT', null)")
     public ResponseEntity<PageResponse<SoulRetractionRequestResponse>> getRetractionRequests(
             @RequestParam(defaultValue = "EN_ATTENTE") String statut,
             @RequestParam(defaultValue = "0") int page,
@@ -191,7 +191,7 @@ public class SoulController {
 
     /** Get retraction requests for a soul */
     @GetMapping("/{soulId}/retraction-requests")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_GETRETRACTIONREQUESTS2', 'TENANT', null)")
     public ResponseEntity<List<SoulRetractionRequestResponse>> getRetractionRequests(
             @PathVariable UUID soulId) {
         return ResponseEntity.ok(retractionRequestService.findByAmeId(soulId)
@@ -200,7 +200,7 @@ public class SoulController {
 
     /** Approve a retraction request */
     @PatchMapping("/retraction-request/{id}/approve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_APPROVE', 'TENANT', null)")
     public ResponseEntity<SoulRetractionRequestResponse> approveRetraction(
             @PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(SoulRetractionRequestResponse.from(
@@ -209,7 +209,7 @@ public class SoulController {
 
     /** Reject a retraction request */
     @PatchMapping("/retraction-request/{id}/reject")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_REJECTRETRACTION', 'TENANT', null)")
     public ResponseEntity<SoulRetractionRequestResponse> rejectRetraction(
             @PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(SoulRetractionRequestResponse.from(
@@ -219,7 +219,7 @@ public class SoulController {
     // ======================== US-22: SOUL EXIT ========================
 
     @PostMapping("/{id}/exit")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_MARKASEXITED', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> markAsExited(
             @PathVariable UUID id,
             @RequestBody Map<String, Object> body) {
@@ -231,7 +231,7 @@ public class SoulController {
     }
 
     @PostMapping("/{id}/reintegrate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_REINTEGRATE', 'TENANT', null)")
     public ResponseEntity<SoulResponse> reintegrate(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
@@ -240,7 +240,7 @@ public class SoulController {
     }
 
     @GetMapping("/{id}/exits")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_GETEXITS', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getExits(@PathVariable UUID id) {
         return ResponseEntity.ok(soulExitService.findExitsForSoul(id).stream()
                 .map(ex -> Map.<String, Object>of(
@@ -255,13 +255,13 @@ public class SoulController {
     // ======================== SCORE SPIRITUEL ========================
 
     @GetMapping("/{id}/spiritual-score")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> spiritualScore(@PathVariable UUID id) {
         return ResponseEntity.ok(spiritualScoreService.computeScore(id));
     }
 
     @GetMapping("/{id}/spiritual-score/history")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> spiritualScoreHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(spiritualScoreService.getHistory(id));
     }
@@ -269,7 +269,7 @@ public class SoulController {
     // ======================== PHASE 3: DOSSIER PASTORAL 360° ========================
 
     @GetMapping("/{id}/pastoral-360")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getPastoral360(@PathVariable UUID id) {
         return ResponseEntity.ok(soulService.getPastoral360(id));
     }
@@ -277,7 +277,7 @@ public class SoulController {
     // ======================== US-23: FILTER SOULS BY SPIRITUAL STATE ========================
 
     @GetMapping("/filter")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_FILTERSOULS', 'TENANT', null)")
     public ResponseEntity<PageResponse<SoulResponse>> filterSouls(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,

@@ -47,7 +47,7 @@ public class PassportController {
 
     /** Émet le passeport d'un membre (idempotent). */
     @PostMapping("/member/{memberId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PASSPORT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PassportResponse> issuePassport(@PathVariable UUID memberId) {
         SpiritualPassport passport = service.issuePassport(memberId);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(passport));
@@ -61,14 +61,14 @@ public class PassportController {
 
     /** Passeport d'un membre du tenant courant (usage pastoral). */
     @GetMapping("/member/{memberId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('PASSPORT_EXECUTE_GETMEMBERPASSPORT', 'TENANT', null)")
     public ResponseEntity<PassportResponse> getMemberPassport(@PathVariable UUID memberId) {
         return ResponseEntity.ok(toResponse(service.getMemberPassport(memberId)));
     }
 
     /** Ajoute une entrée d'historique (baptême, formation, service…). */
     @PostMapping("/{passportId}/entries")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PASSPORT_EXECUTE_ADDENTRY', 'TENANT', null)")
     public ResponseEntity<SpiritualPassportEntry> addEntry(@PathVariable UUID passportId,
                                                            @RequestBody SpiritualPassportEntry entry) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addEntry(passportId, entry));
@@ -76,7 +76,7 @@ public class PassportController {
 
     /** Révoque un passeport. */
     @PostMapping("/{passportId}/revoke")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PASSPORT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PassportResponse> revoke(@PathVariable UUID passportId,
                                                    @RequestBody(required = false) Map<String, String> body) {
         String reason = body == null ? null : body.get("reason");
@@ -106,7 +106,7 @@ public class PassportController {
 
     /** Historique de vérification (traçabilité) — responsables de l'église. */
     @GetMapping("/verifications")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('PASSPORT_EXECUTE_GETVERIFICATIONS', 'TENANT', null)")
     public ResponseEntity<List<PassportVerification>> getVerifications(@RequestParam String code) {
         return ResponseEntity.ok(service.getVerifications(code));
     }

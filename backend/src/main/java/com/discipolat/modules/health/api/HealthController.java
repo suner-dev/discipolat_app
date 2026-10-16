@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/health")
-@PreAuthorize("hasAnyRole('HEALTH_STAFF', 'HEALTH_LEAD', 'ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('HEALTH_EXECUTE_R4A', 'TENANT', null)")
 public class HealthController {
 
     private final HealthService healthService;

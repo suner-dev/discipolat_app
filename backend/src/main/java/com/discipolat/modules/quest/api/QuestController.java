@@ -29,7 +29,7 @@ public class QuestController {
     }
 
     @GetMapping("/profile/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('QUEST_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> profileFor(@PathVariable UUID userId) {
         return ResponseEntity.ok(service.profileFor(userId));
     }
@@ -58,7 +58,7 @@ public class QuestController {
 
     /** Attribution manuelle d'XP (bonus événement live, semaine évangélisation…). */
     @PostMapping("/award")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('QUEST_EXECUTE_AWARD', 'TENANT', null)")
     public ResponseEntity<XpLedger> award(@RequestBody Map<String, Object> body) {
         UUID userId = UUID.fromString(body.get("userId").toString());
         XpLedger.QuestAction action = XpLedger.QuestAction.valueOf(body.get("action").toString());

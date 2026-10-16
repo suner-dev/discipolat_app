@@ -34,33 +34,33 @@ public class CommunicationController {
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMMUNICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> listAll() {
         return ResponseEntity.ok(communicationService.listAll());
     }
 
     @PostMapping("/admin")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMMUNICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody CommunicationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(communicationService.create(request));
     }
 
     @PutMapping("/admin/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMMUNICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID id,
                                                       @Valid @RequestBody CommunicationRequest request) {
         return ResponseEntity.ok(communicationService.update(id, request));
     }
 
     @PostMapping("/admin/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMMUNICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> publish(@PathVariable UUID id) {
         return ResponseEntity.ok(communicationService.publish(id));
     }
 
     @DeleteMapping("/admin/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('COMMUNICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         communicationService.delete(id);
         return ResponseEntity.noContent().build();

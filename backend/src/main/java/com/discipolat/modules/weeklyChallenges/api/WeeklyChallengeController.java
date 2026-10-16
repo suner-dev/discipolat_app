@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/weekly-challenges")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('WEEKLYCHALLENGES_EXECUTE', 'TENANT', null)")
 public class WeeklyChallengeController {
 
     private final WeeklyChallengeService challengeService;

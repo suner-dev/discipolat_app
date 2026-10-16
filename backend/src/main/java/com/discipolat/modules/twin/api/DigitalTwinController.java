@@ -18,14 +18,14 @@ public class DigitalTwinController {
     }
 
     @GetMapping("/snapshot")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TWIN_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> snapshot() {
         return ResponseEntity.ok(service.snapshot());
     }
 
     /** Simulateur « et si » : projections de croissance selon les hypothèses. */
     @PostMapping("/simulate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TWIN_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> simulate(@RequestBody Map<String, Object> body) {
         double faiseurMultiplier = doubleOf(body.get("faiseurMultiplier"), 1.0);
         int retentionGain = intOf(body.get("retentionGain"), 0);

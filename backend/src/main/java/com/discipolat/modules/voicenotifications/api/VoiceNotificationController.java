@@ -35,7 +35,7 @@ public class VoiceNotificationController {
      * POST /api/v1/voice-notifications/test/role/{role}
      */
     @PostMapping("/test/role/{role}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('VOICENOTIFICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<?> testNotifyRole(@PathVariable String role, @RequestBody Map<String, String> body) {
         String title = body.getOrDefault("title", "Test notification");
         String messageBody = body.getOrDefault("body", "Ceci est un test de notification vocale");
@@ -79,7 +79,7 @@ public class VoiceNotificationController {
      * POST /api/v1/voice-notifications/test/all
      */
     @PostMapping("/test/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('VOICENOTIFICATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<?> testNotifyAll(@RequestBody Map<String, String> body) {
         String title = body.getOrDefault("title", "Notification globale");
         String messageBody = body.getOrDefault("body", "Notification vocale globale");

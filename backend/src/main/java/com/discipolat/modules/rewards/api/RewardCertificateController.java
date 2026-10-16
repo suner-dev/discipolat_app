@@ -41,14 +41,14 @@ public class RewardCertificateController {
 
     /** Émettre un certificat (admin/pasteur). */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('REWARDS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Certificate> issue(@RequestBody Certificate certificate) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.issue(certificate));
     }
 
     /** Liste des certificats de l'église. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('REWARDS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Certificate>> list() {
         return ResponseEntity.ok(service.list());
     }

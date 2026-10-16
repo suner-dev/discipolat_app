@@ -23,32 +23,32 @@ public class ObjectiveController {
 
     /** Liste des objectifs actifs (tous rôles confondus) — pour l'admin. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('OBJECTIVES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Objective>> findAll() {
         return ResponseEntity.ok(objectiveService.findAll());
     }
 
     /** Progression automatique des objectifs du rôle actif de l'utilisateur. */
     @GetMapping("/my-progress")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('OBJECTIVES_EXECUTE_MYPROGRESS', 'TENANT', null)")
     public ResponseEntity<List<ObjectiveProgressResponse>> myProgress() {
         return ResponseEntity.ok(objectiveService.myProgress());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('OBJECTIVES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Objective> create(@Valid @RequestBody CreateObjectiveRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(objectiveService.create(request));
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('OBJECTIVES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Objective> toggle(@PathVariable UUID id) {
         return ResponseEntity.ok(objectiveService.toggle(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('OBJECTIVES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         objectiveService.delete(id);
         return ResponseEntity.noContent().build();

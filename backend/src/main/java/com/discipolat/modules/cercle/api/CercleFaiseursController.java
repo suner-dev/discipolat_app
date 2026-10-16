@@ -16,7 +16,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/v1/cercle-faiseurs")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','FAISEUR')")
+@PreAuthorize("@authz.can('CERCLE_EXECUTE', 'TENANT', null)")
 public class CercleFaiseursController {
 
     private static final Logger log = LoggerFactory.getLogger(CercleFaiseursController.class);

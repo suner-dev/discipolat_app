@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/intelligence")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('INTELLIGENCE_EXECUTE', 'TENANT', null)")
 public class IntelligenceController {
 
     private final IntelligenceCenterService intelligenceService;

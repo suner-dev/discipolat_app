@@ -62,13 +62,13 @@ public class TestimonyController {
         return ResponseEntity.ok(testimonyService.like(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('TESTIMONIALS_APPROVE', 'TENANT', null)")
     @PostMapping("/{id}/approve")
     public ResponseEntity<Testimony> approve(@PathVariable UUID id) {
         return ResponseEntity.ok(testimonyService.approve(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('TESTIMONIALS_CREATE', 'TENANT', null)")
     @PostMapping("/{id}/reject")
     public ResponseEntity<Testimony> reject(@PathVariable UUID id) {
         return ResponseEntity.ok(testimonyService.reject(id));

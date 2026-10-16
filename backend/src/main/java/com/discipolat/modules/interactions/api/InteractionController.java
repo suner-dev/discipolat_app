@@ -21,13 +21,13 @@ public class InteractionController {
     }
 
     @GetMapping("/souls/{soulId}/interactions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('INTERACTIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<InteractionResponse>> findBySoul(@PathVariable UUID soulId) {
         return ResponseEntity.ok(interactionService.findBySoul(soulId));
     }
 
     @PostMapping("/souls/{soulId}/interactions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('INTERACTIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<InteractionResponse> create(
             @PathVariable UUID soulId,
             @Valid @RequestBody CreateInteractionRequest request) {
@@ -36,7 +36,7 @@ public class InteractionController {
     }
 
     @DeleteMapping("/interactions/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('INTERACTIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         interactionService.delete(id);
         return ResponseEntity.noContent().build();
@@ -44,7 +44,7 @@ public class InteractionController {
 
     /** Rappels et actions assignées à l'utilisateur connecté (CRM). */
     @GetMapping("/interactions/my-reminders")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('INTERACTIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<InteractionResponse>> myReminders() {
         return ResponseEntity.ok(interactionService.myReminders());
     }

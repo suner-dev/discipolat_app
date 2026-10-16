@@ -47,7 +47,7 @@ public class WorkflowEngineController {
     }
 
     @PostMapping("/definitions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowDefinition> createDefinition(@RequestBody DefinitionRequest request) {
         return ResponseEntity.ok(definitionService.create(tenantId(), request.toCommand()));
     }
@@ -59,14 +59,14 @@ public class WorkflowEngineController {
     }
 
     @PutMapping("/definitions/{workflowId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowDefinition> updateDefinition(@PathVariable UUID workflowId,
                                                               @RequestBody DefinitionRequest request) {
         return ResponseEntity.ok(definitionService.update(tenantId(), workflowId, request.toCommand()));
     }
 
     @DeleteMapping("/definitions/{workflowId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_DELETEDEFINITION', 'TENANT', null)")
     public ResponseEntity<Void> deleteDefinition(@PathVariable UUID workflowId) {
         definitionService.delete(tenantId(), workflowId);
         return ResponseEntity.noContent().build();
@@ -88,33 +88,33 @@ public class WorkflowEngineController {
     }
 
     @PostMapping("/definitions/{workflowId}/steps")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowStep> addStep(@PathVariable UUID workflowId, @RequestBody StepRequest request) {
         return ResponseEntity.ok(designService.addStep(tenantId(), workflowId, request.toCommand()));
     }
 
     @PutMapping("/steps/{stepId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowStep> updateStep(@PathVariable UUID stepId, @RequestBody StepRequest request) {
         return ResponseEntity.ok(designService.updateStep(tenantId(), stepId, request.toCommand()));
     }
 
     @DeleteMapping("/steps/{stepId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteStep(@PathVariable UUID stepId) {
         designService.deleteStep(tenantId(), stepId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/definitions/{workflowId}/transitions")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowTransition> addTransition(@PathVariable UUID workflowId,
                                                             @RequestBody TransitionRequest request) {
         return ResponseEntity.ok(designService.addTransition(tenantId(), workflowId, request.toCommand()));
     }
 
     @DeleteMapping("/transitions/{transitionId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteTransition(@PathVariable UUID transitionId) {
         designService.deleteTransition(tenantId(), transitionId);
         return ResponseEntity.noContent().build();
@@ -137,7 +137,7 @@ public class WorkflowEngineController {
     }
 
     @PostMapping("/instances/{instanceId}/reset")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE', 'TENANT', null)")
     public ResponseEntity<WorkflowInstance> reset(@PathVariable UUID instanceId) {
         return ResponseEntity.ok(engine.reset(tenantId(), SecurityUtils.getCurrentUserId(), instanceId));
     }
@@ -174,7 +174,7 @@ public class WorkflowEngineController {
 
     /** Déclenche l'escalade des tâches en retard (appelé par un job planifié ou un admin). */
     @PostMapping("/escalations/run")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('WORKFLOW_EXECUTE_RUNESCALATIONS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> runEscalations() {
         int count = engine.escalateOverdueTasks(tenantId(), Instant.now());
         return ResponseEntity.ok(Map.of("escalated", count, "ranAt", Instant.now().toString()));

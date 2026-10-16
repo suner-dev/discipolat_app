@@ -50,34 +50,34 @@ public class DictionaryController {
     /* ---------------------------- Administration ---------------------------- */
 
     @GetMapping("/admin/dictionaries")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, List<DictionaryEntry>>> allDictionaries() {
         return ResponseEntity.ok(dictionaryService.allGrouped());
     }
 
     @PostMapping("/admin/dictionaries/{key}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<DictionaryEntry> create(@PathVariable String key,
                                                   @Valid @RequestBody DictionaryEntry entry) {
         return ResponseEntity.status(HttpStatus.CREATED).body(dictionaryService.create(key, entry));
     }
 
     @PutMapping("/admin/dictionaries/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<DictionaryEntry> update(@PathVariable UUID id,
                                                   @Valid @RequestBody DictionaryEntry entry) {
         return ResponseEntity.ok(dictionaryService.update(id, entry));
     }
 
     @DeleteMapping("/admin/dictionaries/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         dictionaryService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/admin/dictionaries/reset")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> reset() {
         dictionaryService.resetDefaults();
         return ResponseEntity.noContent().build();

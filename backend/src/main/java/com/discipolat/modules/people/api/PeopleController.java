@@ -26,7 +26,7 @@ import java.util.UUID;
 // §G3.1 — les responsables (département/famille) parcourent le répertoire et
 // affectent depuis la liste « sans espace » ; le service applique le scope
 // (spaceService.canCustomize) comme seule source de vérité.
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+@PreAuthorize("@authz.can('PEOPLE_EXECUTE_R6A', 'TENANT', null)")
 public class PeopleController {
 
     private final PeopleService peopleService;
@@ -65,7 +65,7 @@ public class PeopleController {
     }
 
     @PostMapping("/register")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PEOPLE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<?> registerPerson(@RequestBody Person person, @RequestParam(required = false) String source) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -82,7 +82,7 @@ public class PeopleController {
     }
 
     @PostMapping("/{masterId}/merge/{duplicateId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('PEOPLE_EXECUTE_MERGEPERSONS', 'TENANT', null)")
     public ResponseEntity<Person> mergePersons(@PathVariable UUID masterId, @PathVariable UUID duplicateId) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -125,7 +125,7 @@ public class PeopleController {
     }
 
     @PostMapping("/{personId}/roles")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PEOPLE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<RoleAssignment> assignRole(
             @PathVariable UUID personId,
             @RequestParam UUID roleId,
@@ -138,7 +138,7 @@ public class PeopleController {
     }
 
     @DeleteMapping("/roles/{assignmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PEOPLE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> endRole(@PathVariable UUID assignmentId, @RequestParam(required = false) String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -147,7 +147,7 @@ public class PeopleController {
     }
 
     @PostMapping("/{personId}/transfer")
-    @PreAuthorize("hasRole('PASTOR_PRINCIPAL')")
+    @PreAuthorize("@authz.can('PEOPLE_EXECUTE_TRANSFERPASTOR', 'TENANT', null)")
     public ResponseEntity<RoleAssignment> transferPastor(
             @PathVariable UUID personId,
             @RequestParam UUID newOrgUnitId,

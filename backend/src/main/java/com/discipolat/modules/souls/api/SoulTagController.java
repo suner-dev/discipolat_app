@@ -20,26 +20,26 @@ public class SoulTagController {
     }
 
     @GetMapping("/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<String>> getTags(@PathVariable UUID soulId) {
         return ResponseEntity.ok(soulTagService.getTags(soulId));
     }
 
     @PostMapping("/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<String>> addTag(@PathVariable UUID soulId,
                                                @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(soulTagService.addTag(soulId, body.getOrDefault("tag", "")));
     }
 
     @DeleteMapping("/{soulId}/{tag}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<String>> removeTag(@PathVariable UUID soulId, @PathVariable String tag) {
         return ResponseEntity.ok(soulTagService.removeTag(soulId, tag));
     }
 
     @GetMapping("/available")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<String>> allTags() {
         return ResponseEntity.ok(soulTagService.listAllTags());
     }

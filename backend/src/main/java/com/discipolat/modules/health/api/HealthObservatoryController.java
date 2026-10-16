@@ -21,21 +21,21 @@ public class HealthObservatoryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('HEALTH_EXECUTE_OBSERVATORY', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> observatory() {
         return ResponseEntity.ok(service.observatory());
     }
 
     /** P19 — Tendance santé spirituelle 6 mois. */
     @GetMapping("/trend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('HEALTH_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> trend() {
         return ResponseEntity.ok(service.trend());
     }
 
     /** P19 — Score de santé par département. */
     @GetMapping("/departments")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('HEALTH_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> departmentScores() {
         return ResponseEntity.ok(service.departmentScores());
     }

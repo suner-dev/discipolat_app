@@ -102,7 +102,7 @@ public class ModuleCatalogController {
     }
 
     @PutMapping("/spaces/{spaceId}/modules/{moduleCode}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceModuleResponse> toggleSpaceModule(
             @PathVariable UUID spaceId,
             @PathVariable String moduleCode,
@@ -122,7 +122,7 @@ public class ModuleCatalogController {
     }
 
     @PutMapping("/spaces/{spaceId}/modules/{moduleCode}/config")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceModuleResponse> updateSpaceModuleConfig(
             @PathVariable UUID spaceId,
             @PathVariable String moduleCode,
@@ -135,7 +135,7 @@ public class ModuleCatalogController {
     }
 
     @PutMapping("/spaces/{spaceId}/modules/{moduleCode}/limits")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceModuleResponse> updateSpaceModuleLimits(
             @PathVariable UUID spaceId,
             @PathVariable String moduleCode,
@@ -148,7 +148,7 @@ public class ModuleCatalogController {
     }
 
     @PutMapping("/spaces/{spaceId}/modules/{moduleCode}/order")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceModuleResponse> updateSpaceModuleOrder(
             @PathVariable UUID spaceId,
             @PathVariable String moduleCode,

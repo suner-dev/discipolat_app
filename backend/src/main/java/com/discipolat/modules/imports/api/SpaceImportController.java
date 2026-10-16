@@ -47,7 +47,7 @@ public class SpaceImportController {
     }
 
     @PostMapping(value = "/api/v1/spaces/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("@authz.isPlatformSuperAdmin() or hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('IMPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceImportReport> importFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun) throws IOException {
@@ -59,7 +59,7 @@ public class SpaceImportController {
     }
 
     @PostMapping(value = "/api/v1/spaces/import", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("@authz.isPlatformSuperAdmin() or hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('IMPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SpaceImportReport> importJson(
             @RequestBody SpaceExportBundle bundle,
             @RequestParam(name = "dryRun", defaultValue = "false") boolean dryRun) {
