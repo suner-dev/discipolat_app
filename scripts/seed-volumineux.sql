@@ -216,7 +216,10 @@ BEGIN
                 (ARRAY['PRIMAIRE','SECONDAIRE','BACCALAUREAT','LICENCE','MASTER'])[1 + ((i - 1) % 5)],
                 CASE WHEN i % 3 = 0 THEN 1 + (i % 4) ELSE 0 END,
                 (ARRAY['Koumassi','Yopougon','Marcory','Cocody','Adjamé','Treichville','Abobo','Plateau'])[1 + ((i - 1) % 8)],
-                CURRENT_DATE - (i % 20) * INTERVAL '1 day',
+                -- Contact récent par défaut : la minorité « en retard » est
+                -- modélisée à l'étape 16 (sinon le job d'absence crée une
+                -- alerte pour chaque âme suivie normalement).
+                CURRENT_TIMESTAMP - ((i % 47) + 1) * INTERVAL '1 hour',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, admin_id)
         ON CONFLICT (id) DO NOTHING;
     END LOOP;
@@ -682,6 +685,63 @@ BEGIN
     END LOOP;
 END $$;
 
+-- ============================================================================
+-- 16. RÉALISME DU SUIVI PASTORAL ET DES ALERTES
+--     Le job planifié « absence 48 h » crée une alerte par âme sans contact
+--     récent. Avec un dernier contact étalé sur 20 jours pour 1 000 âmes, il
+--     en produisait ~900 : le tableau de bord du pasteur affichait un chiffre
+--     invraisemblable et la page Alertes devenait illisible. On modélise donc
+--     une église réellement en suivi : ~97 % des membres vus sous 48 h, ~2 %
+--     en retard de quelques jours, ~1 % en décrochage réel (alerte 3 semaines).
+--     Déterministe (hash de l'UUID) et idempotent : relancer ne change rien.
+-- ============================================================================
+DO $$
+DECLARE
+    v_pasteur UUID;
+BEGIN
+    SELECT id INTO v_pasteur FROM users WHERE role = 'PASTEUR' ORDER BY created_at LIMIT 1;
+
+    UPDATE souls s
+       SET date_dernier_contact = CASE
+               WHEN (hashtext(s.id::text) & 2147483647) % 100 < 97
+                   THEN CURRENT_TIMESTAMP - (((hashtext(s.id::text) & 2147483647) % 47) + 1) * INTERVAL '1 hour'
+               WHEN (hashtext(s.id::text) & 2147483647) % 100 < 99
+                   THEN CURRENT_TIMESTAMP - (3 + ((hashtext(s.id::text) & 2147483647) % 10)) * INTERVAL '1 day'
+               ELSE CURRENT_TIMESTAMP - (24 + ((hashtext(s.id::text) & 2147483647) % 20)) * INTERVAL '1 day'
+           END,
+           updated_at = CURRENT_TIMESTAMP
+     WHERE s.deleted_at IS NULL;
+
+    -- Alertes d'absence devenues sans objet : on applique la même invariance
+    -- que le job (une âme vue récemment ne doit plus porter d'alerte ACTIVE),
+    -- avec une date de résolution étalée sur les jours suivants.
+    UPDATE alerts a
+       SET statut = 'RESOLUE',
+           resolu_par = v_pasteur,
+           date_resolution = LEAST(NOW(), a.date_declenchement
+                                   + (((hashtext(a.id::text) & 2147483647) % 96) + 2) * INTERVAL '1 hour'),
+           updated_at = CURRENT_TIMESTAMP
+      FROM souls s
+     WHERE a.ame_id = s.id
+       AND a.statut = 'ACTIVE'
+       AND a.type_alerte IN ('ABSENCE_48H', 'ABSENCE_3_SEMAINES')
+       AND s.date_dernier_contact > CASE
+               WHEN a.type_alerte = 'ABSENCE_3_SEMAINES' THEN NOW() - INTERVAL '3 weeks'
+               ELSE NOW() - INTERVAL '48 hours'
+           END;
+
+    -- Ménage : les alertes d'absence rattachées à une âme supprimée ou absente
+    -- ne peuvent plus être traitées par le pasteur, on les solde.
+    UPDATE alerts a
+       SET statut = 'RESOLUE',
+           resolu_par = v_pasteur,
+           date_resolution = LEAST(NOW(), a.date_declenchement + INTERVAL '1 day'),
+           updated_at = CURRENT_TIMESTAMP
+     WHERE a.statut = 'ACTIVE'
+       AND a.type_alerte IN ('ABSENCE_48H', 'ABSENCE_3_SEMAINES')
+       AND NOT EXISTS (SELECT 1 FROM souls s WHERE s.id = a.ame_id AND s.deleted_at IS NULL);
+END $$;
+
 COMMIT;
 
 -- ============================================================================
@@ -705,4 +765,6 @@ UNION ALL SELECT 'family_reports', count(*) FROM family_reports
 UNION ALL SELECT 'department_checklists', count(*) FROM department_checklists
 UNION ALL SELECT 'department_equipment', count(*) FROM department_equipment
 UNION ALL SELECT 'department_activity', count(*) FROM department_activity
+UNION ALL SELECT 'alerts_actives', count(*) FROM alerts WHERE statut = 'ACTIVE'
+UNION ALL SELECT 'alerts_resolues', count(*) FROM alerts WHERE statut = 'RESOLUE'
 ORDER BY entite;
