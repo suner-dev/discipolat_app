@@ -461,77 +461,77 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/dashboard/membre" element={
-            <ProtectedRoute roles={['MEMBRE']}>
+            <ProtectedRoute roles={['MEMBRE']} permissions={['UI_DASHBOARD_MEMBRE_ACCESS']}>
               <MemberDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/membre/activities" element={
-            <ProtectedRoute roles={['MEMBRE']}>
+            <ProtectedRoute roles={['MEMBRE']} permissions={['UI_DASHBOARD_MEMBRE_ACTIVITIES_ACCESS']}>
               <MemberActivitiesPage />
             </ProtectedRoute>
           } />
           <Route path="/discipline" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_DISCIPLINE_ACCESS']}>
               <DisciplinePage />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/pasteur" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['DASHBOARD_EXECUTE']}>
               <PasteurDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/chef-famille" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['DASHBOARD_EXECUTE_GETCHEFFAMILLEDASHBOARD']}>
               <ChefFamilleDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/responsable" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DASHBOARD_EXECUTE_GETRESPONSABLEDASHBOARD']}>
               <ResponsableDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/search" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SEARCH_EXECUTE']}>
               <IntelligentSearchPage />
             </ProtectedRoute>
           } />
           <Route path="/souls" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SOULS_EXECUTE']}>
               <SoulsPage />
             </ProtectedRoute>
           } />
           <Route path="/souls/new" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SOULS_EXECUTE']}>
               <SoulCreatePage />
             </ProtectedRoute>
           } />
           <Route path="/souls/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SOULS_EXECUTE']}>
               <SoulDetailPage />
             </ProtectedRoute>
           } />
           <Route path="/souls/:id/edit" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SOULS_EXECUTE']}>
               <SoulEditPage />
             </ProtectedRoute>
           } />
           <Route path="/families" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['FAMILIES_EXECUTE_R5A']}>
               <FamiliesPage />
             </ProtectedRoute>
           } />
           <Route path="/families/new" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['FAMILIES_EXECUTE_CREATE']}>
               <FamilyCreatePage />
             </ProtectedRoute>
           } />
           <Route path="/families/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['FAMILIES_EXECUTE_R5A']}>
               <FamilyDetailPage />
             </ProtectedRoute>
           } />
           <Route path="/spaces/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_SPACES_ACCESS']}>
               {/* G5.4 : l'OS d'espace lit le bootstrap résolu serveur → exige un tenant actif */}
               <RequireTenantAccess>
                 <SpaceOsPage />
@@ -541,14 +541,14 @@ export default function App() {
           {/* §G3.1/§G6.4 — répertoire des personnes : filtres « sans espace /
               sans famille » réels + affectation (le serveur notifie la personne). */}
           <Route path="/people" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER']} permissions={['PEOPLE_EXECUTE_R6A']}>
               <RequireTenantAccess>
                 <PeopleDirectoryPage />
               </RequireTenantAccess>
             </ProtectedRoute>
           } />
           <Route path="/organization" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_ORGANIZATION_ACCESS']}>
               <RequireTenantAccess>
                 <OrganizationBrowserPage />
               </RequireTenantAccess>
@@ -556,99 +556,99 @@ export default function App() {
           } />
           {/* §G4.3 — Ministère pastoral : lecture bergers/administration, écritures PASTOR_PRINCIPAL/ADMIN (miroir PastorateController). */}
           <Route path="/pastoral" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'PASTOR_PRINCIPAL']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'PASTOR_PRINCIPAL']} permissions={['UI_PASTORAL_ACCESS']}>
               <RequireTenantAccess>
                 <PastoralMinistryPage />
               </RequireTenantAccess>
             </ProtectedRoute>
           } />
           <Route path="/departments" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentsPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentDetailPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id/report" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentReportPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id/manage" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentManagementPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id/members/:memberId" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentMemberDossierPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id/stats" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentStatsPage />
             </ProtectedRoute>
           } />
           <Route path="/departments/:id/tools" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTS_EXECUTE']}>
               <DepartmentToolsPage />
             </ProtectedRoute>
           } />
           <Route path="/reports" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['REPORTS_EXECUTE_GETMAKERREPORT']}>
               <ReportsPage />
             </ProtectedRoute>
           } />
           <Route path="/reports/maker" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_REPORTS_MAKER_ACCESS']}>
               <MakerReportPage />
             </ProtectedRoute>
           } />
           <Route path="/reports/family" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['REPORTS_EXECUTE_GETMAKERREPORT']}>
               <FamilyReportPage />
             </ProtectedRoute>
           } />
           <Route path="/families/:id/faiseur-performance" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['FAMILIES_EXECUTE_R4A']}>
               <FamilyFaiseurPerformancePage />
             </ProtectedRoute>
           } />
           <Route path="/prayers" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_PRAYERS_ACCESS']}>
               <PrayersPage />
             </ProtectedRoute>
           } />
           <Route path="/events" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['EVENTS_EXECUTE_R6A']}>
               <EventsPage />
             </ProtectedRoute>
           } />
           <Route path="/documents" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_DOCUMENTS_ACCESS']}>
               <DocumentsPage />
             </ProtectedRoute>
           } />
           <Route path="/parallel-followups" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['PARALLELFOLLOWUPS_EXECUTE_R5A']}>
               <ParallelFollowupsPage />
             </ProtectedRoute>
           } />
           <Route path="/alerts" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['ALERTS_EXECUTE']}>
               <AlertsPage />
             </ProtectedRoute>
           } />
           <Route path="/finances" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_FINANCES_ACCESS']}>
               <FinancePage />
             </ProtectedRoute>
           } />
           <Route path="/communications" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_COMMUNICATIONS_ACCESS']}>
               <CommunicationsPage />
             </ProtectedRoute>
           } />
@@ -663,107 +663,107 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/map" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_MAP_ACCESS']}>
               <MapPage />
             </ProtectedRoute>
           } />
           <Route path="/evangelism" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['EVANGELISM_EXECUTE']}>
               <EvangelismPage />
             </ProtectedRoute>
           } />
           <Route path="/objectives" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['OBJECTIVES_EXECUTE_MYPROGRESS']}>
               <ObjectivesPage />
             </ProtectedRoute>
           } />
           <Route path="/visits" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_VISITS_ACCESS']}>
               <VisitsPage />
             </ProtectedRoute>
           } />
           <Route path="/badges" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['BADGES_EXECUTE']}>
               <BadgesPage />
             </ProtectedRoute>
           } />
           <Route path="/quest" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_QUEST_ACCESS']}>
               <QuestPage />
             </ProtectedRoute>
           } />
           <Route path="/giving" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_GIVING_ACCESS']}>
               <GivingPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/payments" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminPaymentDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/health-observatory" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_HEALTH_OBSERVATORY_ACCESS']}>
               <HealthObservatoryPage />
             </ProtectedRoute>
           } />
           <Route path="/tontines" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['TONTINE_EXECUTE']}>
               <TontinePage />
             </ProtectedRoute>
           } />
           <Route path="/digital-twin" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_DIGITAL_TWIN_ACCESS']}>
               <DigitalTwinPage />
             </ProtectedRoute>
           } />
           <Route path="/prophetic-journal" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_PROPHETIC_JOURNAL_ACCESS']}>
               <PropheticJournalPage />
             </ProtectedRoute>
           } />
           <Route path="/sermon-assistant" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_SERMON_ASSISTANT_ACCESS']}>
               <SermonAssistantPage />
             </ProtectedRoute>
           } />
           <Route path="/voice-reports" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['VOICEREPORTS_EXECUTE']}>
               <VoiceReportsPage />
             </ProtectedRoute>
           } />
           <Route path="/kingdom-map" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_KINGDOM_MAP_ACCESS']}>
               <KingdomMappingPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/whatsapp" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminWhatsappPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/connectors" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminConnectorsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/webhooks" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminWebhooksPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/webhook-logs" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <WebhookLogPage />
             </ProtectedRoute>
           } />
           <Route path="/trainings" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['TRAININGS_EXECUTE']}>
               <TrainingsPage />
             </ProtectedRoute>
           } />
           <Route path="/appointments" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['APPOINTMENTS_EXECUTE']}>
               <AppointmentsPage />
             </ProtectedRoute>
           } />
@@ -773,7 +773,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/users" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_USERS_ACCESS']}>
               <UsersPage />
             </ProtectedRoute>
           } />
@@ -783,90 +783,90 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/audit" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['AUDIT_EXECUTE']}>
               <AuditPage />
             </ProtectedRoute>
           } />          <Route path="/permissions" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_PERMISSIONS_ACCESS']}>
               <PermissionsPage />
             </ProtectedRoute>} />
           <Route path="/families/compare" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['FAMILIES_EXECUTE_DELETE']}>
               <CompareFamiliesPage />
             </ProtectedRoute>
           } />
           <Route path="/souls/retractions" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['SOULS_EXECUTE_DELETE']}>
               <SoulRetractionsPage />
             </ProtectedRoute>
           } />
           <Route path="/prayers/spaces" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_PRAYERS_SPACES_ACCESS']}>
               <PrayerSpacesPage />
             </ProtectedRoute>
           } />
           <Route path="/evaluations" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['EVALUATIONS_EXECUTE_GETALL']}>
               <EvaluationsPage />
             </ProtectedRoute>
           } />
           <Route path="/prayers/actions-de-grace" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_PRAYERS_ACTIONS_DE_GRACE_ACCESS']}>
               <ActionsDeGracePage />
             </ProtectedRoute>
           } />
           <Route path="/reports/urgent-aid" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['REPORTS_EXECUTE_GETURGENTAIDREQUESTS']}>
               <UrgentAidPage />
             </ProtectedRoute>
           } />
           <Route path="/events/program" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['EVENTS_EXECUTE_DELETEEVENT']}>
               <WeeklyProgramPage />
             </ProtectedRoute>
           } />
           <Route path="/programs" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['PROGRAMS_EXECUTE_CREATE']}>
               <ProgramTypesPage />
             </ProtectedRoute>
           } />
           <Route path="/souls/:id/pastoral-360" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['SOULS_EXECUTE']}>
               <Pastoral360Page />
             </ProtectedRoute>
           } />
           <Route path="/crm/faiseur" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_CRM_FAISEUR_ACCESS']}>
               <CrmFaiseurPage />
             </ProtectedRoute>
           } />
           <Route path="/events/statistics" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['EVENTS_EXECUTE_DELETEEVENT']}>
               <EventStatisticsPage />
             </ProtectedRoute>
           } />
           <Route path="/transfers" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['TRANSFERS_EXECUTE_CANCEL']}>
               <TransfersPage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/new" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['TRANSFERS_EXECUTE_CANCEL']}>
               <TransferCreatePage />
             </ProtectedRoute>
           } />
           <Route path="/transfers/:id" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['TRANSFERS_EXECUTE_CANCEL']}>
               <TransferDetailPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/transfers" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminWorkflowBuilderPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/space-templates" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminSpaceTemplatesPage />
             </ProtectedRoute>
           } />
@@ -901,22 +901,22 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminDashboardRoute />
             </ProtectedRoute>
           } />
           <Route path="/admin/custom-fields" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminCustomFieldsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/feedback" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminFeedbackPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/dictionaries" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminDictionariesPage />
             </ProtectedRoute>
           } />
@@ -924,7 +924,7 @@ export default function App() {
             <ProtectedRoute scope="platform"><AdminTenantsPage /></ProtectedRoute>
           } />
           <Route path="/admin/notifications" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminNotificationTemplatesPage />
             </ProtectedRoute>
           } />
@@ -934,32 +934,32 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/integrations" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminIntegrationsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/gdpr" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <AdminGdprPage />
             </ProtectedRoute>
           } />
           <Route path="/ai-assistant" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_AI_ASSISTANT_ACCESS']}>
               <AiAssistantPage />
             </ProtectedRoute>
           } />
           <Route path="/tickets" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_TICKETS_ACCESS']}>
               <TicketsPage />
             </ProtectedRoute>
           } />
           <Route path="/onboarding-wizard" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_ONBOARDING_WIZARD_ACCESS']}>
               <OnboardingWizardPage />
             </ProtectedRoute>
           } />
           <Route path="/surveys" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_SURVEYS_ACCESS']}>
               <SurveysPage />
             </ProtectedRoute>
           } />
@@ -969,7 +969,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/skills-matrix" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_SKILLS_MATRIX_ACCESS']}>
               <SkillsMatrixPage />
             </ProtectedRoute>
           } />
@@ -984,7 +984,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/team-gantt" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_TEAM_GANTT_ACCESS']}>
               <TeamGanttPage />
             </ProtectedRoute>
           } />
@@ -994,21 +994,21 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/compliance" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}>
               <ComplianceDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/pricing" element={<PricingPage />} />
           {/* Facturation SaaS : abonnement courant + portail client Stripe */}
-          <Route path="/billing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><BillingPage /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_BILLING_ACCESS']}><BillingPage /></ProtectedRoute>} />
           <Route path="/api-docs" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_API_DOCS_ACCESS']}>
               <ApiDocsPage />
             </ProtectedRoute>
           } />
-          <Route path="/portal" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PublicPortalPage /></ProtectedRoute>} />
+          <Route path="/portal" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_PORTAL_ACCESS']}><PublicPortalPage /></ProtectedRoute>} />
           <Route path="/cercle-faiseurs" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_CERCLE_FAISEURS_ACCESS']}>
               <CercleFaiseursPage />
             </ProtectedRoute>
           } />
@@ -1038,22 +1038,22 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/streaming" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['STREAMING_EXECUTE']}>
               <StreamingPage />
             </ProtectedRoute>
           } />
           <Route path="/broadcast" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_BROADCAST_ACCESS']}>
               <BroadcastPage />
             </ProtectedRoute>
           } />
           <Route path="/inventory" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['INVENTORY_EXECUTE']}>
               <InventoryPage />
             </ProtectedRoute>
           } />
           <Route path="/department-kpis" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['DEPARTMENTKPI_EXECUTE']}>
               <DepartmentKPIsPage />
             </ProtectedRoute>
           } />
@@ -1073,7 +1073,7 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/ai-predictions" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_AI_PREDICTIONS_ACCESS']}>
               <AiPredictionsPage />
             </ProtectedRoute>
           } />
@@ -1083,17 +1083,17 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/family-cohesion" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['UI_FAMILY_COHESION_ACCESS']}>
               <FamilyCohesionPage />
             </ProtectedRoute>
           } />
           <Route path="/succession" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['SUCCESSION_EXECUTE']}>
               <SuccessionPage />
             </ProtectedRoute>
           } />
           <Route path="/pastoral-visits" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']} permissions={['UI_PASTORAL_VISITS_ACCESS']}>
               <PastoralVisitsPage />
             </ProtectedRoute>
           } />
@@ -1103,111 +1103,111 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/automations" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['AUTOMATIONS_READ']}>
               <AutomationsPage />
             </ProtectedRoute>
           } />
           <Route path="/mentoring" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['MENTORING_EXECUTE']}>
               <MentoratIAPage />
             </ProtectedRoute>
           } />
           <Route path="/kpi-drilldown" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_KPI_DRILLDOWN_ACCESS']}>
               <KpiDrillDownPage />
             </ProtectedRoute>
           } />
-          <Route path="/currency-settings" element={<ProtectedRoute roles={['ADMIN']}><CurrencySettingsPage /></ProtectedRoute>} />
-          <Route path="/content-moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ContentModerationPage /></ProtectedRoute>} />
-          <Route path="/predictions-ml" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PredictionsMLPage /></ProtectedRoute>} />
-          <Route path="/intelligence-center" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><IntelligenceCenterPage /></ProtectedRoute>} />
-          <Route path="/engagement-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EngagementAnalyticsPage /></ProtectedRoute>} />
-          <Route path="/scheduled-announcements" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ScheduledAnnouncementsPage /></ProtectedRoute>} />
-          <Route path="/event-checklists" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EventChecklistsPage /></ProtectedRoute>} />
-          <Route path="/group-messages" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><GroupMessagesPage /></ProtectedRoute>} />
-          <Route path="/weekly-challenges" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><WeeklyChallengesPage /></ProtectedRoute>} />
-          <Route path="/discipleship-path" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPathPage /></ProtectedRoute>} />
-          <Route path="/ai-visit-notes" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><AiVisitNotesPage /></ProtectedRoute>} />
-          <Route path="/reverse-mentoring" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><ReverseMentoringPage /></ProtectedRoute>} />
-          <Route path="/family-meetings" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><FamilyMeetingPage /></ProtectedRoute>} />
-          <Route path="/executive-insights" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ExecutiveInsightsPage /></ProtectedRoute>} />
+          <Route path="/currency-settings" element={<ProtectedRoute roles={['ADMIN']} permissions={['UI_CURRENCY_SETTINGS_ACCESS']}><CurrencySettingsPage /></ProtectedRoute>} />
+          <Route path="/content-moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_CONTENT_MODERATION_ACCESS']}><ContentModerationPage /></ProtectedRoute>} />
+          <Route path="/predictions-ml" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_PREDICTIONS_ML_ACCESS']}><PredictionsMLPage /></ProtectedRoute>} />
+          <Route path="/intelligence-center" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_INTELLIGENCE_CENTER_ACCESS']}><IntelligenceCenterPage /></ProtectedRoute>} />
+          <Route path="/engagement-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_ENGAGEMENT_ANALYTICS_ACCESS']}><EngagementAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/scheduled-announcements" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_SCHEDULED_ANNOUNCEMENTS_ACCESS']}><ScheduledAnnouncementsPage /></ProtectedRoute>} />
+          <Route path="/event-checklists" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_EVENT_CHECKLISTS_ACCESS']}><EventChecklistsPage /></ProtectedRoute>} />
+          <Route path="/group-messages" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_GROUP_MESSAGES_ACCESS']}><GroupMessagesPage /></ProtectedRoute>} />
+          <Route path="/weekly-challenges" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_WEEKLY_CHALLENGES_ACCESS']}><WeeklyChallengesPage /></ProtectedRoute>} />
+          <Route path="/discipleship-path" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_DISCIPLESHIP_PATH_ACCESS']}><DiscipleshipPathPage /></ProtectedRoute>} />
+          <Route path="/ai-visit-notes" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_AI_VISIT_NOTES_ACCESS']}><AiVisitNotesPage /></ProtectedRoute>} />
+          <Route path="/reverse-mentoring" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_REVERSE_MENTORING_ACCESS']}><ReverseMentoringPage /></ProtectedRoute>} />
+          <Route path="/family-meetings" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['UI_FAMILY_MEETINGS_ACCESS']}><FamilyMeetingPage /></ProtectedRoute>} />
+          <Route path="/executive-insights" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['EXECUTIVEINSIGHTS_EXECUTE']}><ExecutiveInsightsPage /></ProtectedRoute>} />
           <Route path="/upcoming-events" element={<ProtectedRoute><UpcomingEventsMemberPage /></ProtectedRoute>} />
           <Route path="/my-team" element={<ProtectedRoute><MyTeamFamilyPage /></ProtectedRoute>} />
           <Route path="/notification-preferences" element={<ProtectedRoute><NotificationPreferencesPage /></ProtectedRoute>} />
           {/* ===== P3 — Innovation / futuriste ===== */}
-          <Route path="/admin/data-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><DataMigrationPage /></ProtectedRoute>} />
-          <Route path="/load-prediction" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><LoadPredictionPage /></ProtectedRoute>} />
-          <Route path="/growth-projections" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><GrowthProjectionPage /></ProtectedRoute>} />
-          <Route path="/neighborhood-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NeighborhoodHealthPage /></ProtectedRoute>} />
-          <Route path="/sabbath-dashboard" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SabbathDashboardPage /></ProtectedRoute>} />
-          <Route path="/church-benchmark" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ChurchBenchmarkPage /></ProtectedRoute>} />
-          <Route path="/admin/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminUsageAnalyticsPage /></ProtectedRoute>} />
-          <Route path="/admin/backups" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminBackupsPage /></ProtectedRoute>} />
+          <Route path="/admin/data-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><DataMigrationPage /></ProtectedRoute>} />
+          <Route path="/load-prediction" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['LOADPREDICTION_EXECUTE']}><LoadPredictionPage /></ProtectedRoute>} />
+          <Route path="/growth-projections" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_GROWTH_PROJECTIONS_ACCESS']}><GrowthProjectionPage /></ProtectedRoute>} />
+          <Route path="/neighborhood-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_NEIGHBORHOOD_HEALTH_ACCESS']}><NeighborhoodHealthPage /></ProtectedRoute>} />
+          <Route path="/sabbath-dashboard" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['SABBATHDASHBOARD_EXECUTE']}><SabbathDashboardPage /></ProtectedRoute>} />
+          <Route path="/church-benchmark" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_CHURCH_BENCHMARK_ACCESS']}><ChurchBenchmarkPage /></ProtectedRoute>} />
+          <Route path="/admin/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><AdminUsageAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/admin/backups" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><AdminBackupsPage /></ProtectedRoute>} />
           <Route path="/follow-up-requests" element={<ProtectedRoute><FollowUpRequestsPage /></ProtectedRoute>} />
-          <Route path="/voice-assistant" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoiceAssistantPage /></ProtectedRoute>} />
-          <Route path="/forms" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><FormsPage /></ProtectedRoute>} />
-          <Route path="/volunteers" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><VolunteersPage /></ProtectedRoute>} />
-          <Route path="/dev-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><DevPlanPage /></ProtectedRoute>} />
-          <Route path="/moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ModerationPage /></ProtectedRoute>} />
-          <Route path="/church-comparison" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ChurchComparisonPage /></ProtectedRoute>} />
-          <Route path="/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><UsageAnalyticsPage /></ProtectedRoute>} />
+          <Route path="/voice-assistant" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_VOICE_ASSISTANT_ACCESS']}><VoiceAssistantPage /></ProtectedRoute>} />
+          <Route path="/forms" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['FORMS_EXECUTE']}><FormsPage /></ProtectedRoute>} />
+          <Route path="/volunteers" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['VOLUNTEERS_CREATE']}><VolunteersPage /></ProtectedRoute>} />
+          <Route path="/dev-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['UI_DEV_PLANS_ACCESS']}><DevPlanPage /></ProtectedRoute>} />
+          <Route path="/moderation" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_MODERATION_ACCESS']}><ModerationPage /></ProtectedRoute>} />
+          <Route path="/church-comparison" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['CHURCHCOMPARISON_EXECUTE']}><ChurchComparisonPage /></ProtectedRoute>} />
+          <Route path="/usage-analytics" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['USAGEANALYTICS_EXECUTE']}><UsageAnalyticsPage /></ProtectedRoute>} />
           <Route path="/encouragements" element={<ProtectedRoute><EncouragementsPage /></ProtectedRoute>} />
-          <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><NetworkPage /></ProtectedRoute>} />
-          <Route path="/passport" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><PassportPage /></ProtectedRoute>} />
-          <Route path="/admin-requests" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AdminRequestsPage /></ProtectedRoute>} />
-          <Route path="/admin/sync-conflicts" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SyncConflictsPage /></ProtectedRoute>} />
-          <Route path="/emergency-aid" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EmergencyAidPage /></ProtectedRoute>} />
-          <Route path="/aid-exchange" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><AidExchangePage /></ProtectedRoute>} />
-          <Route path="/2fa-status" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><Auth2faStatusPage /></ProtectedRoute>} />
-          <Route path="/visit-notes/verify" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><VisitNotesVerifyPage /></ProtectedRoute>} />
-          <Route path="/ai-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AiHealthPage /></ProtectedRoute>} />
-          <Route path="/ai-predictions/risks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><PredictionsRiskPage /></ProtectedRoute>} />
-          <Route path="/team-tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><TeamTasksPage /></ProtectedRoute>} />
-          <Route path="/sermon-translations" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SermonTranslationsPage /></ProtectedRoute>} />
-          <Route path="/admin/import" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><ImportDataPage /></ProtectedRoute>} />
-          <Route path="/kpi-narrative" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><KpiNarrativePage /></ProtectedRoute>} />
-          <Route path="/maker-tracking" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><MakerTrackingPage /></ProtectedRoute>} />
+          <Route path="/network" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_NETWORK_ACCESS']}><NetworkPage /></ProtectedRoute>} />
+          <Route path="/passport" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_PASSPORT_ACCESS']}><PassportPage /></ProtectedRoute>} />
+          <Route path="/admin-requests" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMINREQUESTS_EXECUTE']}><AdminRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/sync-conflicts" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_ADMIN_SYNC_CONFLICTS_ACCESS']}><SyncConflictsPage /></ProtectedRoute>} />
+          <Route path="/emergency-aid" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_EMERGENCY_AID_ACCESS']}><EmergencyAidPage /></ProtectedRoute>} />
+          <Route path="/aid-exchange" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_AID_EXCHANGE_ACCESS']}><AidExchangePage /></ProtectedRoute>} />
+          <Route path="/2fa-status" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_2FA_STATUS_ACCESS']}><Auth2faStatusPage /></ProtectedRoute>} />
+          <Route path="/visit-notes/verify" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_VISIT_NOTES_VERIFY_ACCESS']}><VisitNotesVerifyPage /></ProtectedRoute>} />
+          <Route path="/ai-health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_AI_HEALTH_ACCESS']}><AiHealthPage /></ProtectedRoute>} />
+          <Route path="/ai-predictions/risks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_AI_PREDICTIONS_RISKS_ACCESS']}><PredictionsRiskPage /></ProtectedRoute>} />
+          <Route path="/team-tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_TEAM_TASKS_ACCESS']}><TeamTasksPage /></ProtectedRoute>} />
+          <Route path="/sermon-translations" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_SERMON_TRANSLATIONS_ACCESS']}><SermonTranslationsPage /></ProtectedRoute>} />
+          <Route path="/admin/import" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><ImportDataPage /></ProtectedRoute>} />
+          <Route path="/kpi-narrative" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['KPINARRATIVE_EXECUTE']}><KpiNarrativePage /></ProtectedRoute>} />
+          <Route path="/maker-tracking" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_MAKER_TRACKING_ACCESS']}><MakerTrackingPage /></ProtectedRoute>} />
           <Route path="/member-competences" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['MEMBERS_EXECUTE']}><MemberCompetencesPage /></ProtectedRoute>} />
           <Route path="/qr-checkin" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['MEMBERS_EXECUTE_QRCHECKIN']}><QrCheckinPage /></ProtectedRoute>} />
-          <Route path="/network/stats" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><NetworkStatsPage /></ProtectedRoute>} />
-          <Route path="/voices" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']}><VoicesPage /></ProtectedRoute>} />
-          <Route path="/workflow" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><WorkflowPage /></ProtectedRoute>} />
-          <Route path="/skill-matching" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><SkillMatchingPage /></ProtectedRoute>} />
-          <Route path="/face-recognition" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><FaceRecognitionPage /></ProtectedRoute>} />
-          <Route path="/twin-snapshot" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TwinSnapshotPage /></ProtectedRoute>} />
-          <Route path="/reward-certificates" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><RewardCertificatesPage /></ProtectedRoute>} />
-          <Route path="/sermons" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SermonsPage /></ProtectedRoute>} />
-          <Route path="/development-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']}><DevelopmentPlansPage /></ProtectedRoute>} />
-          <Route path="/surveys/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><SurveyDetailPage /></ProtectedRoute>} />
-          <Route path="/forms/:id/responses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><FormResponsesPage /></ProtectedRoute>} />
-          <Route path="/calendar-ical" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CalendrierPage /></ProtectedRoute>} />
-          <Route path="/department-reports" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><DepartmentReportsPage /></ProtectedRoute>} />
-          <Route path="/family-tree" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><FamilyTreePage /></ProtectedRoute>} />
-          <Route path="/announcement-schedule" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><AnnouncementSchedulePage /></ProtectedRoute>} />
-          <Route path="/documents/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DocumentDetailPage /></ProtectedRoute>} />
-          <Route path="/tickets/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TicketDetailPage /></ProtectedRoute>} />
-          <Route path="/testimonies/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><TestimonyDetailPage /></ProtectedRoute>} />
-          <Route path="/rewards/claims" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']}><RewardsClaimsPage /></ProtectedRoute>} />
-          <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']}><UserRolesPage /></ProtectedRoute>} />
-          <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']}><ComplianceExportsPage /></ProtectedRoute>} />
-          <Route path="/admin/space-import-export" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><SpaceImportExportPage /></ProtectedRoute>} />
-          <Route path="/admin/legacy-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><LegacyMigrationPage /></ProtectedRoute>} />
+          <Route path="/network/stats" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['NETWORK_EXECUTE']}><NetworkStatsPage /></ProtectedRoute>} />
+          <Route path="/voices" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_VOICES_ACCESS']}><VoicesPage /></ProtectedRoute>} />
+          <Route path="/workflow" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['WORKFLOW_EXECUTE_CREATE']}><WorkflowPage /></ProtectedRoute>} />
+          <Route path="/skill-matching" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_SKILL_MATCHING_ACCESS']}><SkillMatchingPage /></ProtectedRoute>} />
+          <Route path="/face-recognition" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_FACE_RECOGNITION_ACCESS']}><FaceRecognitionPage /></ProtectedRoute>} />
+          <Route path="/twin-snapshot" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_TWIN_SNAPSHOT_ACCESS']}><TwinSnapshotPage /></ProtectedRoute>} />
+          <Route path="/reward-certificates" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_REWARD_CERTIFICATES_ACCESS']}><RewardCertificatesPage /></ProtectedRoute>} />
+          <Route path="/sermons" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_SERMONS_ACCESS']}><SermonsPage /></ProtectedRoute>} />
+          <Route path="/development-plans" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE']} permissions={['UI_DEVELOPMENT_PLANS_ACCESS']}><DevelopmentPlansPage /></ProtectedRoute>} />
+          <Route path="/surveys/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_SURVEYS_2_ACCESS']}><SurveyDetailPage /></ProtectedRoute>} />
+          <Route path="/forms/:id/responses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['FORMS_EXECUTE']}><FormResponsesPage /></ProtectedRoute>} />
+          <Route path="/calendar-ical" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_CALENDAR_ICAL_ACCESS']}><CalendrierPage /></ProtectedRoute>} />
+          <Route path="/department-reports" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_DEPARTMENT_REPORTS_ACCESS']}><DepartmentReportsPage /></ProtectedRoute>} />
+          <Route path="/family-tree" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_FAMILY_TREE_ACCESS']}><FamilyTreePage /></ProtectedRoute>} />
+          <Route path="/announcement-schedule" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_ANNOUNCEMENT_SCHEDULE_ACCESS']}><AnnouncementSchedulePage /></ProtectedRoute>} />
+          <Route path="/documents/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_DOCUMENTS_ACCESS']}><DocumentDetailPage /></ProtectedRoute>} />
+          <Route path="/tickets/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_TICKETS_2_ACCESS']}><TicketDetailPage /></ProtectedRoute>} />
+          <Route path="/testimonies/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_TESTIMONIES_ACCESS']}><TestimonyDetailPage /></ProtectedRoute>} />
+          <Route path="/rewards/claims" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_REWARDS_CLAIMS_ACCESS']}><RewardsClaimsPage /></ProtectedRoute>} />
+          <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']} permissions={['USERS_EXECUTE_HARDDELETE']}><UserRolesPage /></ProtectedRoute>} />
+          <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']} permissions={['UI_ADMIN_COMPLIANCE_EXPORTS_ACCESS']}><ComplianceExportsPage /></ProtectedRoute>} />
+          <Route path="/admin/space-import-export" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><SpaceImportExportPage /></ProtectedRoute>} />
+          <Route path="/admin/legacy-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><LegacyMigrationPage /></ProtectedRoute>} />
           <Route path="/conversations" element={<ProtectedRoute><ConversationsPage /></ProtectedRoute>} />
-          <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']}><CoursesPage /></ProtectedRoute>} />
-          <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><EquipmentPage /></ProtectedRoute>} />
-          <Route path="/budgets" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']}><BudgetPage /></ProtectedRoute>} />
-          <Route path="/dashboard/summary" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']}><DashboardSummaryPage /></ProtectedRoute>} />
-          <Route path="/discipleship-paths" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPathsPage /></ProtectedRoute>} />
+          <Route path="/courses" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_COURSES_ACCESS']}><CoursesPage /></ProtectedRoute>} />
+          <Route path="/equipment" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_EQUIPMENT_ACCESS']}><EquipmentPage /></ProtectedRoute>} />
+          <Route path="/budgets" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_BUDGETS_ACCESS']}><BudgetPage /></ProtectedRoute>} />
+          <Route path="/dashboard/summary" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['DASHBOARD_EXECUTE']}><DashboardSummaryPage /></ProtectedRoute>} />
+          <Route path="/discipleship-paths" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_DISCIPLESHIP_PATHS_ACCESS']}><DiscipleshipPathsPage /></ProtectedRoute>} />
           <Route path="/family-resources/:id" element={<ProtectedRoute><FamilyResourcesDetailPage /></ProtectedRoute>} />
           <Route path="/geofencing" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR']} permissions={['MEMBERS_EXECUTE_R4A']}><GeofencingPage /></ProtectedRoute>} />
           <Route path="/referrals/status" element={<ProtectedRoute><ReferralsStatusPage /></ProtectedRoute>} />
           {/* V233-V236 — pages web branchées sur les contrats services
               (discipleship/tasks/health/finances). Les écritures restent
               gardées par rôle côté serveur (403 → toast). */}
-          <Route path="/discipleship" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><DiscipleshipPage /></ProtectedRoute>} />
-          <Route path="/tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']}><TasksBoardPage /></ProtectedRoute>} />
-          <Route path="/health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD']}><HealthPortalPage /></ProtectedRoute>} />
-          <Route path="/finance-modules" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']}><FinanceModulesPage /></ProtectedRoute>} />
+          <Route path="/discipleship" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_DISCIPLESHIP_ACCESS']}><DiscipleshipPage /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['TASKS_EXECUTE_CREATE']}><TasksBoardPage /></ProtectedRoute>} />
+          <Route path="/health" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD']} permissions={['HEALTH_EXECUTE_R4A']}><HealthPortalPage /></ProtectedRoute>} />
+          <Route path="/finance-modules" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_FINANCE_MODULES_ACCESS']}><FinanceModulesPage /></ProtectedRoute>} />
         </Route>
 
         {/* ==================================================================

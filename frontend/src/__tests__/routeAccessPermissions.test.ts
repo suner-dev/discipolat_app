@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   ROUTE_PERMISSIONS,
+  ROUTE_ROLES,
   permissionsForPath,
   canAccessPath,
   canRoleAccessPath,
@@ -64,23 +65,33 @@ describe('routeAccess — accès par permissions servies (tranche MEMBERS)', () 
     }
   });
 
-  it('(4) route non convertie : le checker servi ne change rien (additif)', () => {
+  it('(4) voie ouverte (hors registre) : le checker servi est sans effet (additif)', () => {
     const has = (_k: string) => false;
-    // /audit n'est pas dans ROUTE_PERMISSIONS → décision par rôle seulement.
-    expect(canAccessPath('/audit', 'ADMIN', has)).toBe(true);
-    expect(canAccessPath('/audit', 'MEMBRE', has)).toBe(false);
+    // '/legal' ne figure dans ROUTE_ROLES ni ROUTE_PERMISSIONS : ouvert à tout
+    // utilisateur authentifié ; aucun ensemble servi ne peut le restreindre.
+    expect(canAccessPath('/legal', 'MEMBRE', has)).toBe(true);
+    expect(canAccessPath('/legal', 'ADMIN', has)).toBe(true);
+  });
+
+  it('(5) Phase 4 : TOUTE route restreinte par rôle est servie par une clé (rien de figé)', () => {
+    // Invariant du chantier : après la tranche Phase 4, il ne reste AUCUNE
+    // route gardée uniquement par un littéral de rôle — chacune a une clé
+    // du catalogue, donc une église peut en étendre/retirer l'accès par sa
+    // surcouche tenant sans redéploiement.
+    for (const path of Object.keys(ROUTE_ROLES)) {
+      expect(ROUTE_PERMISSIONS[path], `route restreinte sans clé servie : ${path}`).toBeDefined();
+    }
   });
 
   it('filterNavByAccess filtre les entrées converties par les clés servies', () => {
     const items = [
-      { href: QR },
-      { href: REQUESTS },
-      { href: '/audit' },
+      { href: REQUESTS },   // convertie, clé MEMBERS_EXECUTE servie → gardée
+      { href: QR },          // convertie, clé QR absente de l'ensemble → retirée
+      { href: '/audit' },    // convertie (AUDIT_EXECUTE non servie) → retirée
+      { href: '/legal' },    // hors registre → repli par rôle (PASTEUR) → gardée
     ];
     const has = (k: string) => k === 'MEMBERS_EXECUTE';
     const kept = filterNavByAccess(items, 'PASTEUR', has);
-    // Pointage QR refusé (clé QR absente de l'ensemble servi), demandes admis,
-    // /audit reste par rôle (ADMIN/PASTEUR).
-    expect(kept.map((i) => i.href)).toEqual([REQUESTS, '/audit']);
+    expect(kept.map((i) => i.href)).toEqual([REQUESTS, '/legal']);
   });
 });
