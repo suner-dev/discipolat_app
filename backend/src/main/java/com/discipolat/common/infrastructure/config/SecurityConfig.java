@@ -26,6 +26,7 @@ import com.discipolat.common.infrastructure.security.JwtAuthenticationFilter;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
 import com.discipolat.modules.security.domain.TokenRevocationService;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
@@ -73,6 +74,18 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> {
+                // Dispatch ASYNC = reprise du filtre de sécurité par le conteneur quand
+                // une requête initiale déjà autorisée se termine (fin d'un stream SSE
+                // « /api/v1/events/entity-changes », timeout d'émiteur, coupure client).
+                // JwtAuthenticationFilter (OncePerRequestFilter) ne rejoue pas sur ce
+                // dispatch : sans cette règle, la coupure SSE arrivait ANONYME devant
+                // anyRequest().authenticated() → AuthorizationDeniedException sur une
+                // réponse déjà engagée → « Servlet.service() threw exception » répété
+                // (observé dans les logs de la démo live du 16/10, ~1 bloc par minute).
+                // Ce n'est PAS une ouverture : la requête d'origine (REQUEST) a été
+                // intégralement authentorisée, sinon il n'y a pas de dispatch ASYNC.
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();
+
                 // Connexion/liens d'identité externe : ces deux routes exigent une
                 // session ALORS QUE /api/v1/auth/** est public juste après. L'ordre
                 // compte (premier motif gagnant) : sans cette ligne, n'importe
