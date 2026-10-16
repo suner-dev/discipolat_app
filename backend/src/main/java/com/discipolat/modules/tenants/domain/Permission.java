@@ -53,6 +53,13 @@ public class Permission {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    /**
+     * Attention au cycle de sérialisation {@code Role ↔ Permission} : cette
+     * rétroférence est coupée du JSON par mixin d'infrastructure
+     * ({@code TenantSerializationConfig}) — la règle R1 interdit d'annoter
+     * le domaine avec Jackson. Détail et preuve : test
+     * {@code RolePermissionSerializationTest}.
+     */
     @ManyToMany(mappedBy = "permissions")
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
