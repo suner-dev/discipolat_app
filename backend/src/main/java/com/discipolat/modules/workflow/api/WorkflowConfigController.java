@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/v1/workflows")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('WORKFLOW_EXECUTE_R2A', 'TENANT', null)")
 @RequiredArgsConstructor
 public class WorkflowConfigController {
 

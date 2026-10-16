@@ -330,6 +330,49 @@ class AuthState {
   /// Injectable pour les tests (widget/unit) ; null → ApiService réel.
   ApiService? livePermissionsApi;
 
+  // ── Permissions SERVIES (Phase 2-client, paramétration par église) ──
+  // Cache de GET /api/v1/me/permissions — ensemble de clés du catalogue
+  // V258 résolu côté serveur, miroir EXACT de @authz.can (pont d'autorités
+  // actives + surcouche tenant inclus). Le garde de route et le drawer
+  // interrogent ce cache quand il est prêt ; sinon repli littéral par rôle
+  // (transition — mêmes comportements qu'avant la conversion).
+  Set<String> _servedPermissions = const <String>{};
+  bool _servedPermissionsReady = false;
+
+  /// Injectable pour les tests ; null → repli sur [livePermissionsApi]
+  /// puis ApiService réel.
+  ApiService? servedPermissionsApi;
+
+  bool get isServedPermissionsReady => _servedPermissionsReady;
+  Set<String> get servedPermissions => _servedPermissions;
+
+  /// Vrai si l'ensemble servi contient la clé du catalogue. Normalisation
+  /// uppercase côté serveur (PermissionResolver) → comparaison insensible.
+  bool hasPermission(String permission) =>
+      _servedPermissions.contains(permission.toUpperCase());
+
+  /// Re-pull des permissions servies (source unique de vérité d'accès).
+  /// Ne bump PAS [permissionsEpoch] : appelé soit en chaîne de
+  /// [refreshLivePermissions] (epoch déjà incrémentée), soit isolément là
+  /// où la navigation en cours déclenche déjà un re-render.
+  Future<void> refreshServedPermissions() async {
+    try {
+      final api = servedPermissionsApi ?? livePermissionsApi ?? ApiService();
+      final res = await api.get('/me/permissions');
+      final data = res.data;
+      if (data is! Map) return;
+      final list = data['permissions'];
+      _servedPermissions = list is List
+          ? list.map((e) => e.toString().toUpperCase()).toSet()
+          : const <String>{};
+      _servedPermissionsReady = true;
+    } catch (e) {
+      // Best-effort (§G4.4-4) : échec réseau → le cache reste en l'état,
+      // le repli par rôle gouverne ; jamais de logout forcé.
+      debugPrint('[AuthState] refreshServedPermissions ignoré: $e');
+    }
+  }
+
   /// Re-pulls le rôle actif + la liste des rôles depuis le serveur.
   Future<void> refreshLivePermissions() async {
     try {
@@ -351,6 +394,10 @@ class AuthState {
       }
       _estChefDeFamille = data['estChefDeFamille'] as bool? ?? _estChefDeFamille;
       permissionsEpoch.value++;
+      // Le rôle actif a changé → l'ensemble servi change aussi (le pont
+      // d'autorités actives dépend du JWT re-validé). Miroir de la boucle
+      // web useRealtimeBus → refreshContext().
+      await refreshServedPermissions();
     } catch (e) {
       // Best-effort : REST indisponible → le prochain événement ou un
       // refresh manuel rattrapera ; jamais de logout forcé (§G4.4-4).
@@ -405,6 +452,9 @@ class AuthState {
       }
       // §G4.4 — rôles vivants : recâblage session à chaud sur push temps réel.
       _listenLiveRoles();
+      // Phase 2-client — amorçage du cache de permissions servies ; tant
+      // qu'il n'est pas prêt, la garde retombe sur le littéral par rôle.
+      unawaited(refreshServedPermissions());
     }
   }
 
@@ -441,6 +491,11 @@ class AuthState {
     _estChefDeFamille = false;
     _familleGereeId = null;
     _orgId = null;
+    // Phase 2-client — le cache de permissions servies n'a plus de
+    // porteur : on le vide et on repart en repli par rôle à la prochaine
+    // authentification (jamais de fuite de droits entre sessions).
+    _servedPermissions = const <String>{};
+    _servedPermissionsReady = false;
     // Clear tenant config on logout
     TenantConfig.clearOrgId();
     // §G4.4 — stopper l'écoute des rôles vivants.
@@ -465,6 +520,133 @@ String roleHome(String role, {bool isPlatformSuperAdmin = false}) {
     default:
       return '/dashboard'; // ADMIN, PASTEUR
   }
+}
+
+/// PARAMÉTRISATION PAR ÉGLISE (Phase 2-client mobile) — miroir EXACT de la
+/// table `ROUTE_PERMISSIONS` du web (`frontend/src/lib/routeAccess.ts`) :
+/// routes de la tranche MEMBERS → clés du catalogue V258 SERVIES par
+/// `GET /me/permissions` (any-of). Dès que le cache servi est prêt, il PRIME
+/// sur `_routeRoles` : l'église peut élargir (widening) ou restreindre
+/// (narrowing) la matrice d'un rôle sans redéploiement de l'application.
+/// `_routeRoles` demeure le repli de transition (chargement, tests hors
+/// session) — conformité §3 du protocole de migration des gardes.
+const Map<String, List<String>> routePermissions = {
+  // Tranche MEMBERS (Phase 2-client) — élargissement volontaire qr-checkin
+  // (la capacité MEMBERS_EXECUTE_QRCHECKIN dépasse le littéral legacy) : ces
+  // quatre clés sont décidées, ne pas les aligner mécaniquement sur le web.
+  '/members/requests': ['MEMBERS_EXECUTE'],
+  '/member-competences': ['MEMBERS_EXECUTE'],
+  '/qr-checkin': ['MEMBERS_EXECUTE_QRCHECKIN'],
+  '/geofencing': ['MEMBERS_EXECUTE_R4A'],
+  // PARAMÉTRISATION PAR ÉGLISE (Phase 5) — tranches converties par module. Chaque
+  // entrée n'a été ajoutée ICI que parce que l'ensemble de rôles littéraux de la
+  // route mobile est EXACTEMENT égal à la matrice de la clé côté serveur (même
+  // clé que le web, catalogue V258-V261). Le rendu servi (`GET /me/permissions`)
+  // est donc IDENTIQUE au filtrage par rôle legacy : additif pur, aucune
+  // régression. Une fois le cache servi prêt, l'église peut élargir/restreindre
+  // la matrice d'un rôle sans redéploiement. Les routes au littéral DIFFÉRENT
+  // (mobile plus large/étroit que le web) sont volontairement restées en repli
+  // littéral par rôle — jamais de changement de sémantique implicite.
+  '/2fa-status': ['UI_2FA_STATUS_ACCESS'],
+  '/admin': ['ADMIN_EXECUTE'],
+  '/admin/dashboard': ['ADMIN_EXECUTE'],
+  '/admin/payments': ['ADMIN_EXECUTE'],
+  '/admin/webhook-logs': ['ADMIN_EXECUTE'],
+  '/ai-health': ['UI_AI_HEALTH_ACCESS'],
+  '/ai-predictions/risks': ['UI_AI_PREDICTIONS_RISKS_ACCESS'],
+  '/aid-exchange': ['UI_AID_EXCHANGE_ACCESS'],
+  '/alerts': ['ALERTS_EXECUTE'],
+  '/announcement-schedule': ['UI_ANNOUNCEMENT_SCHEDULE_ACCESS'],
+  '/appointments': ['APPOINTMENTS_EXECUTE'],
+  '/audit': ['AUDIT_EXECUTE'],
+  '/badges': ['BADGES_EXECUTE'],
+  '/broadcast': ['UI_BROADCAST_ACCESS'],
+  '/cercle-faiseurs': ['UI_CERCLE_FAISEURS_ACCESS'],
+  '/church-comparison': ['CHURCHCOMPARISON_EXECUTE'],
+  '/communications': ['UI_COMMUNICATIONS_ACCESS'],
+  '/community': ['UI_COMMUNITY_ACCESS'],
+  '/conversations': ['UI_CONVERSATIONS_ACCESS'],
+  '/dashboard/chef-famille': ['DASHBOARD_EXECUTE_GETCHEFFAMILLEDASHBOARD'],
+  '/dashboard/pasteur': ['DASHBOARD_EXECUTE'],
+  '/dashboard/responsable': ['DASHBOARD_EXECUTE_GETRESPONSABLEDASHBOARD'],
+  '/department-reports': ['UI_DEPARTMENT_REPORTS_ACCESS'],
+  '/departments': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id/manage': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id/members/:memberId': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id/report': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id/stats': ['DEPARTMENTS_EXECUTE'],
+  '/departments/:id/tools': ['DEPARTMENTS_EXECUTE'],
+  '/development-plans': ['UI_DEVELOPMENT_PLANS_ACCESS'],
+  '/discipleship-path': ['UI_DISCIPLESHIP_PATH_ACCESS'],
+  '/discipline': ['UI_DISCIPLINE_ACCESS'],
+  '/documents': ['UI_DOCUMENTS_ACCESS'],
+  '/emergency-aid': ['UI_EMERGENCY_AID_ACCESS'],
+  '/engagement-analytics': ['UI_ENGAGEMENT_ANALYTICS_ACCESS'],
+  '/evaluations': ['EVALUATIONS_EXECUTE_GETALL'],
+  '/evangelism': ['EVANGELISM_EXECUTE'],
+  '/events': ['EVENTS_EXECUTE_R6A'],
+  '/executive-insights': ['EXECUTIVEINSIGHTS_EXECUTE'],
+  '/face-recognition': ['UI_FACE_RECOGNITION_ACCESS'],
+  '/families': ['FAMILIES_EXECUTE_R5A'],
+  '/family-cohesion': ['UI_FAMILY_COHESION_ACCESS'],
+  '/family-tree': ['UI_FAMILY_TREE_ACCESS'],
+  '/giving': ['UI_GIVING_ACCESS'],
+  '/inventory': ['INVENTORY_EXECUTE'],
+  '/kpi-drilldown': ['UI_KPI_DRILLDOWN_ACCESS'],
+  '/load-prediction': ['LOADPREDICTION_EXECUTE'],
+  '/map': ['UI_MAP_ACCESS'],
+  '/marketplace': ['UI_MARKETPLACE_ACCESS'],
+  '/neighborhood-health': ['UI_NEIGHBORHOOD_HEALTH_ACCESS'],
+  '/network': ['UI_NETWORK_ACCESS'],
+  '/network/stats': ['NETWORK_EXECUTE'],
+  '/objectives': ['OBJECTIVES_EXECUTE_MYPROGRESS'],
+  '/parallel-followups': ['PARALLELFOLLOWUPS_EXECUTE_R5A'],
+  '/passport': ['UI_PASSPORT_ACCESS'],
+  '/pastoral': ['UI_PASTORAL_ACCESS'],
+  '/prayers/actions-de-grace': ['UI_PRAYERS_ACTIONS_DE_GRACE_ACCESS'],
+  '/predictions-ml': ['UI_PREDICTIONS_ML_ACCESS'],
+  '/prophetic-journal': ['UI_PROPHETIC_JOURNAL_ACCESS'],
+  '/quest': ['UI_QUEST_ACCESS'],
+  '/reports': ['REPORTS_EXECUTE_GETMAKERREPORT'],
+  '/reports/family': ['REPORTS_EXECUTE_GETMAKERREPORT'],
+  '/reports/maker': ['UI_REPORTS_MAKER_ACCESS'],
+  '/reward-certificates': ['UI_REWARD_CERTIFICATES_ACCESS'],
+  '/rewards': ['UI_REWARDS_ACCESS'],
+  '/rewards/claims': ['UI_REWARDS_CLAIMS_ACCESS'],
+  '/search': ['SEARCH_EXECUTE'],
+  '/souls': ['SOULS_EXECUTE'],
+  '/souls/:id': ['SOULS_EXECUTE'],
+  '/souls/:id/pastoral-360': ['SOULS_EXECUTE'],
+  '/souls/new': ['SOULS_EXECUTE'],
+  '/streaming': ['STREAMING_EXECUTE'],
+  '/succession': ['SUCCESSION_EXECUTE'],
+  '/surveys': ['UI_SURVEYS_ACCESS'],
+  '/team-tasks': ['UI_TEAM_TASKS_ACCESS'],
+  '/tenant/settings': ['UI_TENANT_SETTINGS_ACCESS'],
+  '/tickets': ['UI_TICKETS_ACCESS'],
+  '/tontines': ['TONTINE_EXECUTE'],
+  '/trainings': ['TRAININGS_EXECUTE'],
+  '/twin-snapshot': ['UI_TWIN_SNAPSHOT_ACCESS'],
+  '/usage-analytics': ['USAGEANALYTICS_EXECUTE'],
+  '/visit-notes/verify': ['UI_VISIT_NOTES_VERIFY_ACCESS'],
+  '/visits': ['UI_VISITS_ACCESS'],
+  '/voice-reports': ['VOICEREPORTS_EXECUTE'],
+  '/voices': ['UI_VOICES_ACCESS'],
+  '/workflow': ['WORKFLOW_EXECUTE_CREATE'],
+};
+
+/// Clés servies requises pour une route, ou null si la route n'est pas
+/// convertie — alors seule la table par rôle décide (additif strict).
+List<String>? permissionsForRoute(String route) => routePermissions[route];
+
+/// Vrai si l'entrée de navigation [route] est admise par l'ensemble servi
+/// [hasKey]. Les routes non converties passent toujours : le filtre servi
+/// ne touche que la tranche convertie, par construction.
+bool routeAdmittedByServedKeys(String route, bool Function(String key) hasKey) {
+  final keys = permissionsForRoute(route);
+  if (keys == null || keys.isEmpty) return true;
+  return keys.any(hasKey);
 }
 
 /// List of roles allowed per route.
@@ -1479,7 +1661,21 @@ final appRouter = GoRouter(
       // 1) Chaque route n'est accessible que si le rôle ACTIF est autorisé.
       //    Priorité à la route exacte (ex. /admin/modules réservé ADMIN), puis
       //    repli sur le premier segment (ex. /souls/:id/pastoral-360).
-      if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
+      //
+      //    Paramétration par église (Phase 2-client) : sur les routes
+      //    converties de la tranche MEMBERS, l'ensemble de clés SERVI
+      //    (GET /me/permissions, miroir exact de @authz.can côté serveur)
+      //    PRIME dès qu'il est prêt — l'église peut élargir ou restreindre
+      //    la matrice d'un rôle sans redéploiement. Tant que le cache
+      //    n'est pas prêt, repli littéral par rôle (transition) : les
+      //    comportements d'avant la conversion sont strictement conservés.
+      final servedKeys = permissionsForRoute(state.matchedLocation) ??
+          permissionsForRoute(basePath);
+      if (auth.isServedPermissionsReady && servedKeys != null) {
+        if (!servedKeys.any((k) => auth.hasPermission(k))) {
+          return roleHome(role); // Ramené vers son propre espace métier
+        }
+      } else if (allowedRoles != null && !auth.hasActiveRole(allowedRoles)) {
         // L'Admin actif dispose des capacités du Pasteur (super-utilisateurs
         // qui partagent la vue complète de l'application).
         if (!(role == 'ADMIN' && allowedRoles.contains('PASTEUR'))) {

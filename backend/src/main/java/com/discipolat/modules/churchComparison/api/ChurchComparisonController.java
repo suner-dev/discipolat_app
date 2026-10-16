@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/church-comparisons")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('CHURCHCOMPARISON_EXECUTE', 'TENANT', null)")
 public class ChurchComparisonController {
 
     private final ChurchComparisonService service;

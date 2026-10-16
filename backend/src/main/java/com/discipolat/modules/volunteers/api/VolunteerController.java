@@ -24,19 +24,19 @@ public class VolunteerController {
     @GetMapping("/{id}")
     public Volunteer get(@PathVariable UUID id) { return service.get(id); }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('VOLUNTEERS_CREATE', 'TENANT', null)")
     @PostMapping
     public ResponseEntity<Volunteer> create(@RequestBody Volunteer v) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(v));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('VOLUNTEERS_UPDATE', 'TENANT', null)")
     @PutMapping("/{id}")
     public Volunteer update(@PathVariable UUID id, @RequestBody Volunteer updates) {
         return service.update(id, updates);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('VOLUNTEERS_DELETE', 'TENANT', null)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);

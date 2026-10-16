@@ -24,7 +24,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/geofencing")
-@PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN', 'RESPONSABLE', 'MEMBRE')")
+@PreAuthorize("@authz.can('MEMBERS_EXECUTE_R4A', 'TENANT', null)")
 @RequiredArgsConstructor
 public class GeofencingController {
 
@@ -101,7 +101,7 @@ public class GeofencingController {
      * P20 — Historique global (superviseurs).
      */
     @GetMapping("/history/all")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('MEMBERS_EXECUTE_HISTORYALL', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> historyAll() {
         UUID tenantId = TenantContext.getTenantId();
         List<Map<String, Object>> out = pingRepository

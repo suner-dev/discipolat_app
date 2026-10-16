@@ -103,7 +103,7 @@ public class OrganizationManagementController {
     // ==================== CRÉER UN NOEUD ====================
 
     @PostMapping("/nodes")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'REGION_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_CREATENODE', 'TENANT', null)")
     public ResponseEntity<OrganizationNodeResponse> createNode(@RequestBody CreateNodeRequest request) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
@@ -172,8 +172,7 @@ public class OrganizationManagementController {
     // ==================== METTRE À JOUR UN NOEUD ====================
 
     @PutMapping("/nodes/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'CHURCH_ADMIN', " +
-            "'SUB_CHURCH_ADMIN', 'CAMPUS_ADMIN', 'DEPARTMENT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPDATENODE', 'TENANT', null)")
     public ResponseEntity<OrganizationNodeResponse> updateNode(
             @PathVariable UUID id,
             @RequestBody UpdateNodeRequest request) {
@@ -212,7 +211,7 @@ public class OrganizationManagementController {
     // ==================== DÉPLACER UN NOEUD ====================
 
     @PostMapping("/nodes/{id}/move")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_MOVENODE', 'TENANT', null)")
     public ResponseEntity<OrganizationNodeResponse> moveNode(
             @PathVariable UUID id,
             @RequestBody Map<String, UUID> request) {
@@ -267,7 +266,7 @@ public class OrganizationManagementController {
     // ==================== SUPPRIMER UN NOEUD ====================
 
     @DeleteMapping("/nodes/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_DELETENODE', 'TENANT', null)")
     public ResponseEntity<Void> deleteNode(@PathVariable UUID id) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();
@@ -306,7 +305,7 @@ public class OrganizationManagementController {
     // ==================== AFFECTER RESPONSABLE ====================
 
     @PutMapping("/nodes/{id}/responsible")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_SETRESPONSIBLE', 'TENANT', null)")
     public ResponseEntity<NodeResponsibleResponse> setResponsible(
             @PathVariable UUID id,
             @RequestBody Map<String, UUID> request) {

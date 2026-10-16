@@ -25,7 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/space-templates")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('CONFIG_EXECUTE_R2A', 'TENANT', null)")
 public class SpaceTemplateController {
 
     private final SpaceTemplateService spaceTemplateService;
@@ -63,19 +63,19 @@ public class SpaceTemplateController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('CONFIG_EXECUTE_CREATETEMPLATE', 'TENANT', null)")
     public ResponseEntity<SpaceTemplate> createTemplate(@RequestBody SpaceTemplate template) {
         return ResponseEntity.ok(spaceTemplateService.createTemplate(template));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('CONFIG_EXECUTE_UPDATETEMPLATE', 'TENANT', null)")
     public ResponseEntity<SpaceTemplate> updateTemplate(@PathVariable UUID id, @RequestBody SpaceTemplate template) {
         return ResponseEntity.ok(spaceTemplateService.updateTemplate(id, template));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('CONFIG_EXECUTE_DELETETEMPLATE', 'TENANT', null)")
     public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
         spaceTemplateService.deleteTemplate(id);
         return ResponseEntity.noContent().build();
@@ -85,7 +85,7 @@ public class SpaceTemplateController {
      * Crée un espace à partir d'un template (clone la configuration)
      */
     @PostMapping("/{code}/create-space")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+    @PreAuthorize("@authz.can('CONFIG_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createSpaceFromTemplate(
             @PathVariable String code,
             @RequestBody Map<String, Object> request) {

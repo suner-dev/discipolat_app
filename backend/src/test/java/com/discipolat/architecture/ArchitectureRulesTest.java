@@ -1,5 +1,6 @@
 package com.discipolat.architecture;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -76,7 +77,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * octets de {@code target/classes}, le contexte Spring n'est pas démarré. Le test coûte dix
  * secondes et ne peut pas rougir à cause de l'état d'une base.
  */
-@DisplayName("Règles d'architecture R1..R6 (ArchUnit, plafond gelé)")
+@DisplayName("Règles d'architecture R1..R7 (ArchUnit, plafond gelé)")
 class ArchitectureRulesTest {
 
     /** Gel de la dette historique : plafond par compte, liste par objet. */
@@ -383,7 +384,51 @@ class ArchitectureRulesTest {
         return m.find() ? m.group(1) + " <-> " + m.group(2) : null;
     }
 
-    /** Les six règles, dans l'ordre du document cible (§4). */
+    // ------------------------------------------------------------------ R7 · aucun littéral de rôle dans les gardes HTTP
+    // Le projet a un moteur d'autorisation par PERMISSION configurable par église
+    // (AuthorizationService, @authz.can, RoleManagementController) ; les littéraux
+    // hasRole/hasAnyRole court-circuitent ce moteur en codant la hiérarchie dans le
+    // source — une église ne peut alors pas affiner sans redéploiement. Cette règle
+    // gèle l'inventaire de départ PAR PLAFOND : chaque PR de migration (endpoint ->
+    // @authz.can) fait baisser le compteur, et le plafond ne peut jamais remonter.
+    // Périmètre mesuré : sites @PreAuthorize dont l'expression contient hasRole( ou
+    // hasAnyRole( — niveau MÉTHODE et niveau CLASSE (la garde héritée protège alors
+    // tous les endpoints de la classe) — dans les classes ..api.. ou *Controller.
+    // Les classes de test sont déjà exclues (DoNotIncludeTests).
+
+    private static ArchRule r7AucunLitteralDeRoleDansLesGardes() {
+        return classes().should(new ArchCondition<JavaClass>(
+                "ne pas coder de roles en litteral dans @PreAuthorize (methode ou classe) — "
+                        + "utiliser @authz.can('<CLE>')") {
+                    @Override
+                    public void check(JavaClass classe, ConditionEvents events) {
+                        String nom = classe.getName();
+                        boolean dansPerimetre = nom.contains(".api.") || nom.endsWith("Controller");
+                        if (!dansPerimetre) {
+                            return; // hors couche transport : hors périmètre du standard ADR-002
+                        }
+                        classe.tryGetAnnotationOfType(PreAuthorize.class).ifPresent(garde ->
+                                signalerLitteraux(events, "classe " + nom, garde.value()));
+                        classe.getMethods().forEach(methode ->
+                                methode.tryGetAnnotationOfType(PreAuthorize.class).ifPresent(garde ->
+                                        signalerLitteraux(events, methode.getFullName(), garde.value())));
+                    }
+                })
+                .allowEmptyShould(true)
+                .because("R7 — l'autorisation HTTP se fait par permission configurable par eglise "
+                        + "(@authz.can) ; les litteraux de role sont une dette gelee en plafond, "
+                        + "qui doit diminuer a chaque migration et ne jamais remonter");
+    }
+
+    /** Un événement par expression @PreAuthorize contenant un littéral de rôle. */
+    private static void signalerLitteraux(ConditionEvents events, String site, String expression) {
+        if (expression.contains("hasAnyRole(") || expression.contains("hasRole(")) {
+            events.add(new SimpleConditionEvent(site, false,
+                    "Garde @PreAuthorize basee sur un LITTERAL DE ROLE (non parametrisable) : " + site));
+        }
+    }
+
+    /** Les règles, dans l'ordre du document cible (§4) ; R7 est la règle du rollout paramétrisation. */
     private static List<Regle> regles() {
         return Arrays.asList(
                 Regle.plafond("R1", "domaine sans infrastructure", r1DomaineSansInfrastructure()),
@@ -391,11 +436,12 @@ class ArchitectureRulesTest {
                 Regle.objets("R3", "frontieres entre contexts", ArchitectureRulesTest::cleR3, r3FrontieresEntreContextes()),
                 Regle.plafond("R4", "domaine sans annotations de conteneur", r4DomaineSansAnnotationsDeConteneur()),
                 Regle.objets("R5", "controleur ne touche pas la persistence", ArchitectureRulesTest::cleR5, r5ControleurNeTouchePasLaPersistence()),
-                Regle.objets("R6", "aucun couplage reciproque entre contexts", ArchitectureRulesTest::cleR6, r6AucunCouplageReciproque()));
+                Regle.objets("R6", "aucun couplage reciproque entre contexts", ArchitectureRulesTest::cleR6, r6AucunCouplageReciproque()),
+                Regle.plafond("R7", "gardes http sans litteraux de role", r7AucunLitteralDeRoleDansLesGardes()));
     }
 
     @Test
-    @DisplayName("R1..R6 : la dette gelée ne monte pas, et toute nouvelle frontière violée rougit")
+    @DisplayName("R1..R7 : la dette gelée ne monte pas, et toute nouvelle frontière violée rougit")
     void la_dette_architecture_ne_regresse_pas() throws IOException {
         Map<String, Set<String>> objetsActuels = new TreeMap<>();
         Map<String, Integer> comptesActuels = new TreeMap<>();
@@ -500,7 +546,7 @@ class ArchitectureRulesTest {
                 + " objet(s) de plus que le gel -> " + tronquer(String.join(" | ", cles), 900)));
 
         assertThat(griefs)
-                .as("Violation des regles d'architecture R1..R6. Le gel %s est un PLAFOND, pas un "
+                .as("Violation des regles d'architecture R1..R7. Le gel %s est un PLAFOND, pas un "
                         + "blanc-seing : corriger le code, ou — si la frontiere est volontairement "
                         + "redefinie — le discuter dans la PR puis regeler explicitement.", FICHIER_GEL)
                 .isEmpty();
@@ -514,7 +560,7 @@ class ArchitectureRulesTest {
                 "# GELE — dette d'architecture constatee le 2026-10-09 (V0.1, ADR-002).",
                 "# Un PLAFOND, pas un blanc-seing : la suite rougit des que la dette monte.",
                 "# Ce fichier ne doit que DIMINUER au fil de la migration V1.",
-                "#   plafond|<regle>|<nombre>   dette toleree, par compte (regles massives R1 R2 R4)",
+                "#   plafond|<regle>|<nombre>   dette toleree, par compte (regles massives R1 R2 R4 R7)",
                 "#   objet|<regle>|<cle>        objet historique tolere, par frontiere (R3 R5 R6)",
                 "# Cle R3 = arete contexte->contexte (carte des blocages d'extraction) ; R6 = cycle.",
                 "# Regenerer : mvn -o test -Dtest=ArchitectureRulesTest -Darchitecture.freeze.update=true",
@@ -585,11 +631,11 @@ class ArchitectureRulesTest {
             throws IOException {
         Files.createDirectories(RAPPORT.getParent());
         StringBuilder rapport = new StringBuilder();
-        rapport.append("Regles d'architecture R1..R6 — rapport detaille (non bloquant)\n");
+        rapport.append("Regles d'architecture R1..R7 — rapport detaille (non bloquant)\n");
         rapport.append("classes de production importees : ").append(CLASSES_PRODUCTION.size()).append('\n');
         rapport.append("dette totale constatee : ").append(comptes.values().stream().mapToInt(Integer::intValue).sum())
                 .append(" violations distinctes\n");
-        rapport.append("regles : R1/R2/R4 gelées par COMPTE, R3/R5/R6 gelées par OBJET\n\n");
+        rapport.append("regles : R1/R2/R4/R7 gelées par COMPTE, R3/R5/R6 gelées par OBJET\n\n");
         comptes.forEach((id, compte) -> rapport.append(String.format("  %s : %6d violations%n", id, compte)));
         rapport.append("\n=== blocages d'extraction (composants fortement connexes de contexts) ===\n");
         List<Set<String>> compositeurs = composantsFortementConnexes();

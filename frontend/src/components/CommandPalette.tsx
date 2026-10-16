@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantOptional } from '@/contexts/TenantContext';
+import { permissionsForPath } from '@/lib/routeAccess';
 import api from '@/lib/api';
 
 /** Résultat d'autocomplete backend (/search/autocomplete). */
@@ -74,6 +76,10 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
   const { activeRole, user } = useAuth();
+  // PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — les entrées dont la route est
+  // convertie (ROUTE_PERMISSIONS) sont filtrées par les CLÉS SERVIES, miroir des
+  // gardes `@authz.can` ; le filtrage par rôle reste le repli de transition.
+  const tenant = useTenantOptional();
   const dark = darkMode;
   const role = (activeRole || user?.role || 'FAISEUR') as string;
 
@@ -133,13 +139,22 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
     const roleFiltered = COMMAND_ITEMS.filter(
       (i) => !i.roles || i.roles.includes(role),
     );
+    // 1bis. Filtrage par permission SERVIE pour les routes converties (tranche
+    // MEMBERS) : la clé effective de l'église courant prime sur le littéral de
+    // rôle — une nomination/demotion de clé se reflète sans redéploiement.
+    const servedFiltered = tenant?.isInitialized
+      ? roleFiltered.filter((i) => {
+          const keys = permissionsForPath(i.href);
+          return !keys || keys.some((k) => tenant.hasPermission(k));
+        })
+      : roleFiltered;
     // 2. Filtrage par requête.
     const q = query.trim().toLowerCase();
-    if (!q) return roleFiltered;
-    return roleFiltered.filter(
+    if (!q) return servedFiltered;
+    return servedFiltered.filter(
       (i) => i.label.toLowerCase().includes(q) || i.section.toLowerCase().includes(q),
     );
-  }, [query, role]);
+  }, [query, role, tenant]);
 
   const grouped = useMemo(() => {
     // Section dynamique "Personnes" : résultats de l'autocomplete backend.

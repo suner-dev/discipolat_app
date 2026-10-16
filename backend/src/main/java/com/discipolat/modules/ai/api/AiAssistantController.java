@@ -81,7 +81,7 @@ public class AiAssistantController {
      * Consommé par le détail d'âme web et mobile.
      */
     @GetMapping("/analyze/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('AI_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> analyze(@PathVariable UUID soulId) {
         return ResponseEntity.ok(service.analyzeSoul(soulId, securityUtils.getCurrentUserId()));
     }
@@ -90,7 +90,7 @@ public class AiAssistantController {
      * Message d'encouragement personnalisé pour une âme.
      */
     @GetMapping("/encouragement/{soulId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('AI_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> encouragement(@PathVariable UUID soulId) {
         return ResponseEntity.ok(service.generateEncouragement(soulId));
     }

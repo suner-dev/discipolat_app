@@ -24,7 +24,7 @@ import java.util.*;
  */
 @RestController
 @RequestMapping("/api/v1/assets")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('INVENTORY_EXECUTE', 'TENANT', null)")
 public class AssetController {
 
     private final InventoryService inventoryService;

@@ -36,32 +36,32 @@ public class PageBuilderController {
     /* ----------------------------- Admin ----------------------------- */
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<CustomPage>> listPages() {
         return ResponseEntity.ok(pageBuilderService.listAll());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<CustomPage> createPage(@Valid @RequestBody CustomPage page) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pageBuilderService.create(page));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<CustomPage> updatePage(@PathVariable UUID id, @Valid @RequestBody CustomPage page) {
         return ResponseEntity.ok(pageBuilderService.update(id, page));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deletePage(@PathVariable UUID id) {
         pageBuilderService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<CustomPage> setPublished(@PathVariable UUID id,
                                                    @RequestBody Map<String, Boolean> body) {
         boolean published = body.getOrDefault("published", true);
@@ -70,19 +70,19 @@ public class PageBuilderController {
 
     /** Aperçu (résolu) d'une page, y compris non publiée. */
     @GetMapping("/preview/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<ResolvedPage> preview(@PathVariable UUID id) {
         return ResponseEntity.ok(pageBuilderService.resolvePreview(id));
     }
 
     @GetMapping("/sources")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<PageDataSource>> sources() {
         return ResponseEntity.ok(pageBuilderService.sources());
     }
 
     @GetMapping("/options")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> options() {
         return ResponseEntity.ok(pageBuilderService.roleOptions());
     }

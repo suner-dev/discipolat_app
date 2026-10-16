@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/badges")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+@PreAuthorize("@authz.can('BADGES_EXECUTE', 'TENANT', null)")
 public class BadgeController {
 
     private final BadgeService badgeService;

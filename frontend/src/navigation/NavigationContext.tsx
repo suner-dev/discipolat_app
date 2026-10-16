@@ -7,7 +7,8 @@ import {
   type ReactNode,
 } from 'react';
 import { navForRole, PLATFORM_NAV } from '@/workspaces';
-import { filterNavByRole } from '@/lib/routeAccess';
+import { filterNavByAccess } from '@/lib/routeAccess';
+import { useTenantOptional } from '@/contexts/TenantContext';
 import { usePlatformConfig, menusToSections } from '@/contexts/PlatformContext';
 import { resolveIcon } from '@/lib/menuIcons';
 import type { LucideIcon } from 'lucide-react';
@@ -59,6 +60,11 @@ interface NavigationProviderProps {
 
 export function NavigationProvider({ user, children }: NavigationProviderProps) {
   const { menus: configMenus } = usePlatformConfig();
+  // PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — les routes de la tranche
+  // convertie (ROUTE_PERMISSIONS) sont filtrées par les CLÉS SERVIES ; le filtre
+  // par rôle reste le repli des routes non converties et du chargement.
+  const tenant = useTenantOptional();
+  const servedCheck = tenant?.isInitialized ? tenant.hasPermission : undefined;
   const [openState, setOpenState] = useState<Record<string, boolean>>({});
 
   const onToggleGroup = useCallback((id: string, open: boolean) => {
@@ -78,7 +84,7 @@ export function NavigationProvider({ user, children }: NavigationProviderProps) 
     if (configMenus.length > 0) {
       const fromConfig = menusToSections(configMenus).map((section) => ({
         title: section.title,
-        items: filterNavByRole(
+        items: filterNavByAccess(
           section.items.map((menu: MenuEntry) => ({
             name: menu.label,
             href: menu.href,
@@ -86,6 +92,7 @@ export function NavigationProvider({ user, children }: NavigationProviderProps) 
             subtitle: '',
           })),
           activeRole,
+          servedCheck,
         ) satisfies NavEntry[],
       }));
       const nonEmpty = fromConfig.filter((section) => section.items.length > 0);
@@ -95,9 +102,9 @@ export function NavigationProvider({ user, children }: NavigationProviderProps) 
     }
     return navForRole(user as never, activeRole).map((section) => ({
       title: section.title,
-      items: filterNavByRole(section.items as unknown as NavEntry[], activeRole),
+      items: filterNavByAccess(section.items as unknown as NavEntry[], activeRole, servedCheck),
     }));
-  }, [configMenus, isPlatformAdmin, activeRole, user]);
+  }, [configMenus, isPlatformAdmin, activeRole, user, servedCheck]);
 
   const nodes = useMemo(
     () =>

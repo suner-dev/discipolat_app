@@ -24,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/inventory")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('INVENTORY_EXECUTE', 'TENANT', null)")
 @RequiredArgsConstructor
 public class InventoryController {
 

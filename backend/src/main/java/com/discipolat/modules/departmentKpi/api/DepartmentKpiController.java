@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/department-kpis")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('DEPARTMENTKPI_EXECUTE', 'TENANT', null)")
 public class DepartmentKpiController {
 
     private final DepartmentKpiService service;

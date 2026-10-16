@@ -32,7 +32,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/families")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+@PreAuthorize("@authz.can('FAMILIES_EXECUTE_R5A', 'TENANT', null)")
 public class FamilyController {
 
     private final FamilyService familyService;
@@ -95,21 +95,21 @@ public class FamilyController {
      * Cas 2 : Créer immédiatement un nouveau chef (createNewChef = true + infos)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<FamilyResponse> create(@Valid @RequestBody CreateFamilyRequest request) {
         Family family = familyService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(family));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_UPDATE', 'TENANT', null)")
     public ResponseEntity<FamilyResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateFamilyRequest request) {
         Family family = familyService.update(id, request);
         return ResponseEntity.ok(toResponse(family));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR') && @perm.has('FAMILY','DELETE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_DELETE', 'TENANT', null) && @perm.has('FAMILY','DELETE')")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID id) {
         familyService.delete(id);
         return ResponseEntity.ok(Map.of("message", "Family dissolved successfully"));
@@ -121,7 +121,7 @@ public class FamilyController {
      * validation configuré par le pasteur (exécution immédiate si circuit vide).
      */
     @PatchMapping("/{id}/chief")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_REASSIGNCHIEF', 'TENANT', null)")
     public ResponseEntity<TransferResponse> reassignChief(@PathVariable UUID id, @Valid @RequestBody ReassignChiefRequest request) {
         return ResponseEntity.ok(transferBridgeService.reassignChef(id, request.newChefId()));
     }
@@ -135,7 +135,7 @@ public class FamilyController {
     // ======================== US-08: TREE VIEW ========================
 
     @GetMapping("/{id}/tree")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETFAMILYTREE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getFamilyTree(@PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getFamilyTree(id));
     }
@@ -143,7 +143,7 @@ public class FamilyController {
     // ======================== FAISEUR PERFORMANCE ========================
 
     @GetMapping("/{id}/faiseur-performance")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETFAISEURPERFORMANCE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getFaiseurPerformance(
             @PathVariable UUID id,
             @RequestParam(required = false) String semaine) {
@@ -154,7 +154,7 @@ public class FamilyController {
     // ======================== US-10: FAMILY HISTORY ========================
 
     @GetMapping("/{id}/history")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETFAMILYHISTORY', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getFamilyHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(familyService.getFamilyHistory(id));
     }
@@ -162,7 +162,7 @@ public class FamilyController {
     // ======================== US-11: COMPARE FAMILIES ========================
 
     @PostMapping("/compare")
-    @PreAuthorize("hasRole('PASTEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_COMPAREFAMILIES', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> compareFamilies(
             @RequestBody Map<String, List<UUID>> body) {
         List<UUID> familyIds = body.getOrDefault("familyIds", List.of());
@@ -176,7 +176,7 @@ public class FamilyController {
      * raison) — jamais d'UUID brut ni de date technique.
      */
     @GetMapping("/{id}/chief-history")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETCHIEFHISTORY', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getChiefHistory(@PathVariable UUID id) {
         List<Map<String, Object>> history = new java.util.ArrayList<>();
         for (FamilyChiefHistory change : familyService.getChiefHistory(id)) {
@@ -199,7 +199,7 @@ public class FamilyController {
     // ======================== US-60: RESTORE FAMILY ========================
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_RESTORE', 'TENANT', null)")
     public ResponseEntity<FamilyResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(familyService.restore(id)));
     }
@@ -208,14 +208,14 @@ public class FamilyController {
 
     /** Indice de risque calculé automatiquement pour une famille. */
     @GetMapping("/{id}/risk")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETRISKASSESSMENT', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getRiskAssessment(@PathVariable UUID id) {
         return ResponseEntity.ok(familyRiskService.getRiskAssessment(id));
     }
 
     /** Définition manuelle du niveau de risque par le pasteur. */
     @PutMapping("/{id}/risk-level")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_SETNIVEAURISQUE', 'TENANT', null)")
     public ResponseEntity<FamilyResponse> setNiveauRisque(
             @PathVariable UUID id,
             @Valid @RequestBody SetRiskLevelRequest request) {
@@ -225,7 +225,7 @@ public class FamilyController {
 
     /** Historique des changements de niveau de risque. */
     @GetMapping("/{id}/risk-history")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_GETRISKHISTORY', 'TENANT', null)")
     public ResponseEntity<List<FamilyRiskHistory>> getRiskHistory(@PathVariable UUID id) {
         return ResponseEntity.ok(familyRiskService.getRiskHistory(id));
     }

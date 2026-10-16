@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/load-prediction")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE')")
+@PreAuthorize("@authz.can('LOADPREDICTION_EXECUTE', 'TENANT', null)")
 public class LoadPredictionController {
 
     private final LoadPredictionService service;

@@ -119,20 +119,20 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE_RECENT', 'TENANT', null)")
     public ResponseEntity<List<PaymentIntent>> recent() {
         return ResponseEntity.ok(service.recent());
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE_STATS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
     }
 
     /** Dashboard admin complet — KPIs, répartitions, tendances, dons récurrents. */
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> dashboard() {
         return ResponseEntity.ok(service.dashboard());
     }
@@ -164,7 +164,7 @@ public class PaymentController {
 
     /** Stats dons récurrents (admin). */
     @GetMapping("/recurring/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE_RECURRINGSTATS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> recurringStats() {
         return ResponseEntity.ok(recurringDonationService.stats());
     }

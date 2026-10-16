@@ -28,7 +28,7 @@ public class AutomationController {
 
     // ── Règles ────────────────────────────────────────────────────
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping
     public ResponseEntity<PageResponse<AutomationRule>> listRules(
             @RequestParam(defaultValue = "0") int page,
@@ -38,20 +38,20 @@ public class AutomationController {
                 rules.getTotalElements(), rules.getTotalPages()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/active")
     public ResponseEntity<List<AutomationRule>> listActive() {
         return ResponseEntity.ok(service.listActiveRules());
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/{id}")
     public ResponseEntity<AutomationRule> getRule(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getRuleById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AutomationRule> createRule(@RequestBody Map<String, String> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         AutomationRule rule = service.createRule(
@@ -62,19 +62,19 @@ public class AutomationController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AutomationRule> updateRule(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateRule(id, body));
     }
 
     @PatchMapping("/{id}/toggle")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AutomationRule> toggleRule(@PathVariable UUID id) {
         return ResponseEntity.ok(service.toggleRule(id));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteRule(@PathVariable UUID id) {
         service.deleteRule(id);
         return ResponseEntity.noContent().build();
@@ -83,7 +83,7 @@ public class AutomationController {
     // ── Trigger manuel ────────────────────────────────────────────
 
     @PostMapping("/trigger/{event}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<AutomationExecution>> trigger(
             @PathVariable String event,
             @RequestBody(required = false) Map<String, String> body) {
@@ -95,7 +95,7 @@ public class AutomationController {
 
     // ── Historique ────────────────────────────────────────────────
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/{id}/executions")
     public ResponseEntity<List<AutomationExecution>> listExecutions(@PathVariable UUID id) {
         return ResponseEntity.ok(service.listExecutions(id));
@@ -103,7 +103,7 @@ public class AutomationController {
 
     // ── Stats ─────────────────────────────────────────────────────
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.getStats());
@@ -111,7 +111,7 @@ public class AutomationController {
 
     // ── Enums dispo ───────────────────────────────────────────────
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/triggers")
     public ResponseEntity<Map<String, String>> listTriggers() {
         Map<String, String> triggers = new java.util.LinkedHashMap<>();
@@ -134,7 +134,7 @@ public class AutomationController {
         return ResponseEntity.ok(triggers);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUTOMATIONS_READ', 'TENANT', null)")
     @GetMapping("/actions")
     public ResponseEntity<Map<String, String>> listActions() {
         Map<String, String> actions = new java.util.LinkedHashMap<>();

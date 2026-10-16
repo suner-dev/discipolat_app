@@ -58,7 +58,7 @@ public class NetworkController {
 
     /** Crée une ressource partagée. */
     @PostMapping("/resources")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<NetworkResource> createResource(@RequestBody NetworkResource resource) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createResource(resource));
     }
@@ -71,7 +71,7 @@ public class NetworkController {
 
     /** Désactive une ressource. */
     @DeleteMapping("/resources/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deactivateResource(@PathVariable java.util.UUID id) {
         service.deactivateResource(id);
         return ResponseEntity.noContent().build();
@@ -105,7 +105,7 @@ public class NetworkController {
 
     /** Crée un événement inter-églises. */
     @PostMapping("/events")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<NetworkEvent> createEvent(@RequestBody NetworkEvent event) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createEvent(event));
     }
@@ -124,7 +124,7 @@ public class NetworkController {
 
     /** Désactive un événement. */
     @DeleteMapping("/events/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deactivateEvent(@PathVariable java.util.UUID id) {
         service.deactivateEvent(id);
         return ResponseEntity.noContent().build();
@@ -158,14 +158,14 @@ public class NetworkController {
 
     /** Met à jour mon entrée dans le répertoire. */
     @PutMapping("/directory/mine")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<NetworkDirectory> updateMyDirectoryEntry(@RequestBody NetworkDirectory updates) {
         return ResponseEntity.ok(service.updateMyDirectoryEntry(updates));
     }
 
     /** Active/désactive mon listing public. */
     @PostMapping("/directory/mine/listing")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<NetworkDirectory> toggleListing(@RequestBody Map<String, Boolean> body) {
         boolean listed = Boolean.TRUE.equals(body.get("listed"));
         return ResponseEntity.ok(service.toggleListing(listed));
@@ -175,7 +175,7 @@ public class NetworkController {
 
     /** Résumé du réseau (responsables de l'église). */
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('NETWORK_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getNetworkStats() {
         return ResponseEntity.ok(service.getNetworkStats());
     }

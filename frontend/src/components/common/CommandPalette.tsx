@@ -6,7 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { navForRole, PLATFORM_NAV, type WorkspaceNavItem } from '@/workspaces';
-import { canRoleAccessPath } from '@/lib/routeAccess';
+import { canAccessPath } from '@/lib/routeAccess';
+import { useTenantOptional } from '@/contexts/TenantContext';
 import { useI18n } from '@/i18n';
 import { navKeyMap } from '@/i18n/navKeys';
 
@@ -60,6 +61,12 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
   const activeRole = user?.activeRole || user?.role || 'MEMBRE';
 
+  // PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — les entrées dont la route est
+  // convertie (ROUTE_PERMISSIONS) sont filtrées par les CLÉS SERVIES ; repli par
+  // rôle tant que le contexte tenant n'a pas chargé (parité avec ProtectedRoute).
+  const tenant = useTenantOptional();
+  const servedCheck = tenant?.isInitialized ? tenant.hasPermission : undefined;
+
   // FE-1 (SPEC_ONBOARDING_FLOWS) — palette isolée : le Super Admin plateforme
   // ne cherche que dans la console plateforme, jamais les menus d'église.
   const platformAdmin = user?.platformSuperAdmin === true;
@@ -73,7 +80,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
     for (const section of navForRole(user, activeRole)) {
       for (const item of section.items as WorkspaceNavItem[]) {
         if (seen.has(item.href)) continue;
-        if (!platformAdmin && !canRoleAccessPath(item.href, activeRole)) continue;
+        if (!platformAdmin && !canAccessPath(item.href, activeRole, servedCheck)) continue;
         seen.add(item.href);
         items.push({
           id: `nav-${item.href}`,
@@ -86,7 +93,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       }
     }
     return items;
-  }, [activeRole, platformAdmin, t, user]);
+  }, [activeRole, platformAdmin, servedCheck, t, user]);
 
   // Actions rapides (routes réelles, filtrées par droit) — jamais de bouton mort.
   // T-W1 (F12) : ces entrées pointent vers des écrans d'ÉGLISE (« nouvelle âme »,
@@ -100,7 +107,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       { key: 'commandPalette.actionOpenSearch', href: '/search', icon: SearchIcon },
     ];
     return defs
-      .filter((d) => canRoleAccessPath(d.href, activeRole))
+      .filter((d) => canAccessPath(d.href, activeRole, servedCheck))
       .map((d) => ({
         id: `action-${d.href}`,
         label: t(d.key),
@@ -108,7 +115,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
         icon: d.icon,
         href: d.href,
       }));
-  }, [activeRole, platformAdmin, t]);
+  }, [activeRole, platformAdmin, servedCheck, t]);
 
   // Recherche de personnes (vraie API), activée dès 2 caractères.
   const debounced = useDebounce(query.trim(), 200);
@@ -278,7 +285,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
           })}
         </ul>
 
-        {query.trim().length >= 2 && canRoleAccessPath('/search', activeRole) && (
+        {query.trim().length >= 2 && canAccessPath('/search', activeRole, servedCheck) && (
           <button
             type="button"
             onClick={() => {

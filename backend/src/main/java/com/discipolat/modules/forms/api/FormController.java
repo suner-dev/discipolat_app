@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/forms")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('FORMS_EXECUTE', 'TENANT', null)")
 public class FormController {
 
     private final FormService formService;

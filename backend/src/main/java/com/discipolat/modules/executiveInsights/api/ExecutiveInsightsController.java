@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/executive-insights")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('EXECUTIVEINSIGHTS_EXECUTE', 'TENANT', null)")
 public class ExecutiveInsightsController {
 
     private final ExecutiveInsightsService service;

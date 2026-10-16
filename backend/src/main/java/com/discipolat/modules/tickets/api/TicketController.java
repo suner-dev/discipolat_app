@@ -29,7 +29,7 @@ public class TicketController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('TICKETS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<Ticket>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,

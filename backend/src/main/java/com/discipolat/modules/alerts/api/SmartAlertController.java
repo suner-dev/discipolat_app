@@ -9,7 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/smart-alerts")
-@PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('ALERTS_EXECUTE_R3A', 'TENANT', null)")
 public class SmartAlertController {
 
     private final SmartAlertService smartAlertService;

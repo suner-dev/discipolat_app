@@ -51,7 +51,7 @@ public class MakerReportController {
     }
 
     @GetMapping("/maker-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<MakerReportResponse>> getMakerReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -69,7 +69,7 @@ public class MakerReportController {
     }
 
     @PostMapping("/maker-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_SUBMITMAKERREPORT', 'TENANT', null)")
     public ResponseEntity<MakerReportResponse> submitMakerReport(@Valid @RequestBody SubmitMakerReportRequest request) {
         MakerReport report = reportService.submitMakerReport(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(report));
@@ -77,14 +77,14 @@ public class MakerReportController {
 
     /** US-29: Save report as draft */
     @PostMapping("/maker-weekly/draft")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_SAVEDRAFT', 'TENANT', null)")
     public ResponseEntity<MakerReportResponse> saveDraft(@Valid @RequestBody SubmitMakerReportRequest request) {
         MakerReport report = reportService.saveDraft(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(report));
     }
 
     @GetMapping("/maker-weekly/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_GETMAKERREPORT', 'TENANT', null)")
     public ResponseEntity<MakerReportResponse> getMakerReport(@PathVariable UUID id) {
         return ResponseEntity.ok(toResponse(reportService.findMakerReportById(id)));
     }
@@ -92,7 +92,7 @@ public class MakerReportController {
     // ======================== US-26: PRE-FILLED REPORT ========================
 
     @GetMapping("/maker-weekly/prefill/{faiseurId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getPreFilledReport(@PathVariable UUID faiseurId) {
         return ResponseEntity.ok(reportService.getPreFilledReport(faiseurId));
     }
@@ -102,13 +102,13 @@ public class MakerReportController {
     // ======================== US-42: URGENT AID REQUESTS ========================
 
     @GetMapping("/maker-weekly/urgent-aid")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_GETURGENTAIDREQUESTS', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getUrgentAidRequests(@RequestParam(required = false) Boolean traite) {
         return ResponseEntity.ok(reportService.getUrgentAidRequests(traite));
     }
 
     @PatchMapping("/maker-weekly/urgent-aid/{reportId}/mark-treated")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_MARKAIDASTREATED', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> markAidAsTreated(@PathVariable UUID reportId) {
         reportService.markAidAsTreated(reportId);
         return ResponseEntity.ok(Map.of("message", "Aid request marked as treated"));
@@ -117,7 +117,7 @@ public class MakerReportController {
     // ======================== US-34: REPORT CORRECTION ========================
 
     @PostMapping("/correction")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_CORRECTREPORT', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> correctReport(
             @Valid @RequestBody ReportCorrectionRequest request) {
         MakerReport report = reportService.findMakerReportById(request.reportId());
@@ -145,13 +145,13 @@ public class MakerReportController {
     }
 
     @GetMapping("/correction/{reportId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_GETCORRECTIONS', 'TENANT', null)")
     public ResponseEntity<List<ReportCorrection>> getCorrections(@PathVariable UUID reportId) {
         return ResponseEntity.ok(correctionRepository.findByReportIdOrderByCreatedAtDesc(reportId));
     }
 
     @GetMapping("/family-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<FamilyReportResponse>> getFamilyReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -169,14 +169,14 @@ public class MakerReportController {
     }
 
     @PostMapping("/family-weekly")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_SUBMITFAMILYREPORT', 'TENANT', null)")
     public ResponseEntity<FamilyReportResponse> submitFamilyReport(@Valid @RequestBody SubmitFamilyReportRequest request) {
         com.discipolat.modules.reports.domain.FamilyReport report = reportService.submitFamilyReport(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toFamilyResponse(report));
     }
 
     @GetMapping("/family-weekly/{familyId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<FamilyReportResponse>> getFamilyReportsByFamily(
             @PathVariable UUID familyId,
             @RequestParam(required = false) LocalDate semaine) {
@@ -190,7 +190,7 @@ public class MakerReportController {
     }
 
     @PatchMapping("/family-weekly/{id}/validate")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('REPORTS_EXECUTE_VALIDATEFAMILYREPORT', 'TENANT', null)")
     public ResponseEntity<FamilyReportResponse> validateFamilyReport(
             @PathVariable UUID id,
             @RequestBody @Valid ValidateReportRequest request) {

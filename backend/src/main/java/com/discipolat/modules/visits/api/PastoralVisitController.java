@@ -66,7 +66,7 @@ public class PastoralVisitController {
     }
 
     @PostMapping("/auto-generate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('VISITS_EXECUTE_AUTOGENERATE', 'TENANT', null)")
     public ResponseEntity<List<PastoralVisit>> autoGenerate(@RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
         List<String> membreIdsStr = (List<String>) body.get("membreIds");

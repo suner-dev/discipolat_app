@@ -22,32 +22,32 @@ public class EmergencyAidController {
 
     /** Bouton « Urgence Pastorale » : ouvre une demande + plan de secours automatisé. */
     @PostMapping("/emergency")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('AID_EXECUTE', 'TENANT', null)")
     public ResponseEntity<EmergencyAidRequest> open(@RequestBody EmergencyAidRequest request) {
         return ResponseEntity.ok(service.open(request));
     }
 
     @GetMapping("/emergency")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('AID_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<EmergencyAidRequest>> recent() {
         return ResponseEntity.ok(service.recent());
     }
 
     @GetMapping("/emergency/open")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+    @PreAuthorize("@authz.can('AID_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<EmergencyAidRequest>> openRequests() {
         return ResponseEntity.ok(service.openRequests());
     }
 
     @PostMapping("/emergency/{id}/collect")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('AID_EXECUTE_COLLECT', 'TENANT', null)")
     public ResponseEntity<EmergencyAidRequest> collect(@PathVariable java.util.UUID id,
                                                        @RequestParam BigDecimal amount) {
         return ResponseEntity.ok(service.addCollected(id, amount));
     }
 
     @PostMapping("/emergency/{id}/resolve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('AID_EXECUTE_RESOLVE', 'TENANT', null)")
     public ResponseEntity<EmergencyAidRequest> resolve(@PathVariable java.util.UUID id) {
         return ResponseEntity.ok(service.resolve(id));
     }

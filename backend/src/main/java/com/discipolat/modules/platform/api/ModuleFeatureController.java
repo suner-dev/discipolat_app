@@ -106,7 +106,7 @@ public class ModuleFeatureController {
     // ==================== ACTIVER/DÉSACTIVER UN MODULE ====================
 
     @PutMapping("/modules/{moduleKey}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_TOGGLEMODULE', 'TENANT', null)")
     public ResponseEntity<ModuleInfo> toggleModule(
             @PathVariable String moduleKey,
             @RequestBody Map<String, Boolean> request) {
@@ -165,7 +165,7 @@ public class ModuleFeatureController {
     }
 
     @PutMapping("/flags")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPDATEFEATUREFLAGS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateFeatureFlags(@RequestBody Map<String, Object> flags) {
         UUID tenantId = getCurrentTenantId();
         UUID currentUserId = getCurrentUserId();

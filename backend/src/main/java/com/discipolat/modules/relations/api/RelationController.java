@@ -91,7 +91,7 @@ public class RelationController {
      * saisit le pasteur d'un ancien) — ADMIN / PASTEUR uniquement.
      */
     @PostMapping("/users/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('RELATIONS_EXECUTE_DECLAREFOR', 'TENANT', null)")
     public ResponseEntity<MemberRelationView> declareFor(@PathVariable UUID userId,
                                                          @RequestBody DeclareRelationRequest body) {
         UUID tenantId = TenantContext.getTenantId();
@@ -117,7 +117,7 @@ public class RelationController {
 
     /** Rattachements d'un autre membre — même garde que la fiche /users/{id}/detail. */
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('RELATIONS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> relationsOf(@PathVariable UUID userId) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.summary(tenantId, userId, SecurityUtils.getCurrentUserId()));

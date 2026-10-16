@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/sermons")
-@PreAuthorize("hasAnyRole('PASTEUR', 'ADMIN', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('TRAININGS_EXECUTE_R3A', 'TENANT', null)")
 @RequiredArgsConstructor
 public class SermonTranscriptionController {
 

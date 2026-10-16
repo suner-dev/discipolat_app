@@ -35,7 +35,7 @@ public class UsageAnalyticsController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('USAGEANALYTICS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<?> summary(@RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(service.summary(days));
     }

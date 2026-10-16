@@ -45,7 +45,7 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/journeys")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createJourney(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createJourney(tenantId, body));
@@ -68,7 +68,7 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/stages")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createStage(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createStage(tenantId, body));
@@ -96,14 +96,14 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/progress")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createProgress(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createProgress(tenantId, body));
     }
 
     @PatchMapping("/progress/{progressId}/requirements/{requirementId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateRequirement(
             @PathVariable Long progressId, @PathVariable Long requirementId,
             @RequestBody Map<String, Object> body) {
@@ -112,7 +112,7 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/progress/{progressId}/stages/{stageId}/complete")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> completeStage(
             @PathVariable Long progressId, @PathVariable Long stageId) {
         UUID tenantId = TenantContext.getTenantId();
@@ -135,14 +135,14 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/assignments")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> createAssignment(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.createAssignment(tenantId, body));
     }
 
     @PostMapping("/assignments/{id}/end")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> endAssignment(@PathVariable Long id) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.endAssignment(tenantId, id));
@@ -163,14 +163,14 @@ public class DiscipleshipController {
     }
 
     @PostMapping("/meetings")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> scheduleMeeting(@RequestBody Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.status(HttpStatus.CREATED).body(service.scheduleMeeting(tenantId, body));
     }
 
     @PostMapping("/meetings/{id}/complete")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DISCIPLESHIP_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> completeMeeting(
             @PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
         UUID tenantId = TenantContext.getTenantId();

@@ -50,13 +50,13 @@ public class FollowUpRequestController {
     }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FOLLOWUPREQUESTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<FollowUpRequest>> pending() {
         return ResponseEntity.ok(service.pending());
     }
 
     @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FOLLOWUPREQUESTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<FollowUpRequest> assign(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
         UUID assignee = body.get("assignedToId") != null
                 ? UUID.fromString(body.get("assignedToId").toString())
@@ -66,13 +66,13 @@ public class FollowUpRequestController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FOLLOWUPREQUESTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<FollowUpRequest> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateStatus(id, body.get("status"), body.get("notes")));
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR','CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('FOLLOWUPREQUESTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.stats());
     }

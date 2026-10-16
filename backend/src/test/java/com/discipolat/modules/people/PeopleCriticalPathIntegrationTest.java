@@ -3,6 +3,7 @@ package com.discipolat.modules.people;
 import com.discipolat.DiscipolatApplication;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.common.test.TestPermissionMatrix;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
 import com.discipolat.modules.users.domain.User;
@@ -107,6 +108,13 @@ class PeopleCriticalPathIntegrationTest {
             createTestRoles();
             rolesCreated = true;
         }
+        // createTestRoles insère des rôles LOCAUX (tenant_id = DEFAULT_TENANT_ID)
+        // qui ombragent les globaux d'import.sql. Sans héritage, le pont
+        // d'équivalence résoudrait un rôle local vide et refuserait (403) des
+        // cas positifs légitimes (PASTEUR lisant le répertoire, créant un
+        // événement). On rejoue l'héritage production (V259 §5 / V260 §2),
+        // additivement et idempotemment.
+        jdbcTemplate.update(TestPermissionMatrix.INHERIT_GLOBAL_GRANTS_H2);
 
         // Create tenant owner (has TENANT_OWNER role for invitations)
         tenantOwnerId = saveUser("owner@test", UserRole.ADMIN);

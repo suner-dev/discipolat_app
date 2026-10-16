@@ -28,7 +28,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/integrations")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('ADMIN_EXECUTE', 'TENANT', null)")
 public class AdminIntegrationController {
 
     private static final Set<String> VALID_CATEGORIES = Set.of("smtp", "storage", "jwt", "rate-limiting");

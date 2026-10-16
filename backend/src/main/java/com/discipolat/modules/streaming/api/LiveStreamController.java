@@ -43,14 +43,14 @@ public class LiveStreamController {
         return ResponseEntity.ok(service.get(TenantContext.requireTenantId(), id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('STREAMING_CREATE', 'TENANT', null)")
     @PostMapping
     public ResponseEntity<LiveStream> create(@RequestBody LiveStream stream) {
         // tenantId et createdBy du corps sont ignorés : forcés serveur.
         return ResponseEntity.ok(service.create(stream, SecurityUtils.getCurrentUserId()));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('STREAMING_UPDATE', 'TENANT', null)")
     @PutMapping("/{id}")
     public ResponseEntity<LiveStream> update(@PathVariable Long id, @RequestBody LiveStream stream) {
         // Seuls les champs éditables sont appliqués sur l'entité chargée,
@@ -58,20 +58,20 @@ public class LiveStreamController {
         return ResponseEntity.ok(service.update(TenantContext.requireTenantId(), id, stream));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('STREAMING_DELETE', 'TENANT', null)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(TenantContext.requireTenantId(), id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('STREAMING_CREATE', 'TENANT', null)")
     @PostMapping("/{id}/go-live")
     public ResponseEntity<LiveStream> goLive(@PathVariable Long id) {
         return ResponseEntity.ok(service.goLive(TenantContext.requireTenantId(), id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('STREAMING_EXECUTE', 'TENANT', null)")
     @PostMapping("/{id}/end")
     public ResponseEntity<LiveStream> endStream(@PathVariable Long id) {
         return ResponseEntity.ok(service.endStream(TenantContext.requireTenantId(), id));

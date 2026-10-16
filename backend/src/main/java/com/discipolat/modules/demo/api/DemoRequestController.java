@@ -54,7 +54,7 @@ public class DemoRequestController {
 
     /** Consultation des demandes — réservée à l'administration. */
     @GetMapping("/api/v1/admin/demo-requests")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('DEMO_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<DemoRequestResponse>> list() {
         return ResponseEntity.ok(demoRequestService.listAll());
     }

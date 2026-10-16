@@ -32,39 +32,39 @@ public class AnnouncementController {
         return ResponseEntity.ok(announcementService.get(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_CREATE', 'TENANT', null)")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody ScheduledAnnouncement announcement) {
         return ResponseEntity.status(HttpStatus.CREATED).body(announcementService.create(announcement));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_UPDATE', 'TENANT', null)")
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody ScheduledAnnouncement announcement) {
         return ResponseEntity.ok(announcementService.update(id, announcement));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_CREATE', 'TENANT', null)")
     @PostMapping("/{id}/schedule")
     public ResponseEntity<?> schedule(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         LocalDateTime scheduledAt = LocalDateTime.parse(body.get("scheduledAt"));
         return ResponseEntity.ok(announcementService.schedule(id, scheduledAt));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_CREATE', 'TENANT', null)")
     @PostMapping("/{id}/publish")
     public ResponseEntity<?> publish(@PathVariable UUID id) {
         return ResponseEntity.ok(announcementService.publishNow(id));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_CREATE', 'TENANT', null)")
     @PostMapping("/{id}/cancel")
     public ResponseEntity<?> cancel(@PathVariable UUID id) {
         announcementService.cancel(id);
         return ResponseEntity.ok(Map.of("message", "Annonce annulée"));
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('ANNOUNCEMENTS_DELETE', 'TENANT', null)")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable UUID id) {
         announcementService.delete(id);

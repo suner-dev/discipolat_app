@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/church-events")
 // §G3.3/§G3.4 — les responsables de département/famille programment et pilotent
 // leurs événements (le service garde le scope) ; legacy DEPARTMENT_LEADER/FAMILY_LEADER conservés.
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER')")
+@PreAuthorize("@authz.can('EVENTS_EXECUTE_R6A2', 'TENANT', null)")
 public class ChurchEventController {
 
     private final ChurchEventService churchEventService;
@@ -64,7 +64,7 @@ public class ChurchEventController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_CREATEEVENT', 'TENANT', null)")
     public ResponseEntity<ChurchEventDto> createEvent(@RequestBody ChurchEventDto event) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -73,7 +73,7 @@ public class ChurchEventController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'DEPARTMENT_LEADER')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_UPDATEEVENT', 'TENANT', null)")
     public ResponseEntity<ChurchEventDto> updateEvent(@PathVariable UUID id, @RequestBody ChurchEventDto event) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -82,7 +82,7 @@ public class ChurchEventController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_DELETEEVENT', 'TENANT', null)")
     public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID actorId = SecurityUtils.getCurrentUserId();
@@ -94,7 +94,7 @@ public class ChurchEventController {
 
     /** Clôturage + archive intégrale versionnée (dress codes, équipes, tâches, programme, matériel, présences). */
     @PostMapping("/{eventId}/archive")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'DEPARTMENT_LEADER')")
+    @PreAuthorize("@authz.can('EVENTS_EXECUTE_ARCHIVEEVENT', 'TENANT', null)")
     public ResponseEntity<com.discipolat.modules.events.domain.ChurchEventArchive> archiveEvent(
             @PathVariable UUID eventId) {
         UUID tenantId = TenantContext.requireTenantId();

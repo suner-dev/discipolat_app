@@ -46,7 +46,7 @@ public class DressCodeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DRESSCODE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<DressCodeDetailResponse> create(@RequestBody DressCodeRequest request) {
         UUID tenantId = TenantContext.requireTenantId();
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -74,7 +74,7 @@ public class DressCodeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DRESSCODE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<DressCodeDetailResponse> update(@PathVariable UUID id, @RequestBody DressCodeRequest request) {
         UUID tenantId = TenantContext.requireTenantId();
 
@@ -101,7 +101,7 @@ public class DressCodeController {
     }
 
     @PostMapping("/{id}/archive")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('DRESSCODE_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> archive(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         dressCodeService.archive(tenantId, id);
@@ -109,7 +109,7 @@ public class DressCodeController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DRESSCODE_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         UUID tenantId = TenantContext.requireTenantId();
         dressCodeService.delete(tenantId, id);

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/sabbath-dashboard")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','RESPONSABLE')")
+@PreAuthorize("@authz.can('SABBATHDASHBOARD_EXECUTE', 'TENANT', null)")
 public class SabbathDashboardController {
 
     private final SabbathDashboardService service;

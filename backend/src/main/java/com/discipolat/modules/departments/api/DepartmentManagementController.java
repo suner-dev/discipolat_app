@@ -26,7 +26,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/departments/{departmentId}")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE', 'TENANT', null)")
 public class DepartmentManagementController {
 
     private final DepartmentManagementService managementService;

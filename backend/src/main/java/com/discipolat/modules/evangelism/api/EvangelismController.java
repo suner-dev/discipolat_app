@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/evangelism")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+@PreAuthorize("@authz.can('EVANGELISM_EXECUTE', 'TENANT', null)")
 public class EvangelismController {
 
     private final EvangelismService evangelismService;

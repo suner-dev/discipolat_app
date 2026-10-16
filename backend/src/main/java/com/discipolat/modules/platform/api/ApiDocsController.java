@@ -18,7 +18,7 @@ public class ApiDocsController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getApiDocs() {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         Map<String, Object> docs = new LinkedHashMap<>();
@@ -71,7 +71,7 @@ public class ApiDocsController {
     }
 
     @GetMapping("/openapi.yaml")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<String> getOpenApiSpec() {
         featureFlagService.requireEnabled(PlatformFeatureFlagService.DOCS_ENABLED);
         String yaml = """

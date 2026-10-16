@@ -39,19 +39,19 @@ public class FeedbackController {
     }
 
     @GetMapping("/api/v1/admin/feedback")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<FeedbackResponse>> list() {
         return ResponseEntity.ok(feedbackService.listAll());
     }
 
     @GetMapping("/api/v1/admin/feedback/stats")
-    @PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<FeedbackStatsResponse> stats() {
         return ResponseEntity.ok(feedbackService.stats());
     }
 
     @PatchMapping("/api/v1/admin/feedback/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PLATFORM_EXECUTE', 'TENANT', null)")
     public ResponseEntity<FeedbackResponse> updateStatus(@PathVariable UUID id,
                                                          @RequestBody Map<String, String> body) {
         String status = body.getOrDefault("status", "NOUVEAU");

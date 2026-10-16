@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE')")
+@PreAuthorize("@authz.can('APPOINTMENTS_EXECUTE', 'TENANT', null)")
 public class AppointmentController {
 
     private final AppointmentService appointmentService;

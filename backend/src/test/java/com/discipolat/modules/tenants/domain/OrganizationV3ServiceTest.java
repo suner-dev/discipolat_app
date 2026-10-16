@@ -271,12 +271,13 @@ class OrganizationV3ServiceTest {
         @Mock OrganizationNodeRepository orgNodeRepository;
         @Mock com.discipolat.modules.users.domain.UserRepository userRepository;
         @Mock MemberRoleAssignmentRepository assignmentRepository;
+        @Mock RoleRepository roleRepository;
 
         @Test
         @DisplayName("une permission est accordée via une assignation couvrant le nœud (additif)")
         void assignmentGrantsPermission() {
             AuthorizationService authz = new AuthorizationService(membershipRepository, permissionRepository,
-                    orgNodeRepository, userRepository, assignmentRepository);
+                    orgNodeRepository, userRepository, assignmentRepository, roleRepository);
             // Une appartenance « simple membre » sur le campus, SANS la permission SERMON.
             // L'appartenance = l'appartenance ; la capacité additive vient de l'assignation.
             TenantMembership plainMember = TenantMembership.builder()
@@ -310,7 +311,7 @@ class OrganizationV3ServiceTest {
         @DisplayName("scopeId étranger au tenant → aucune couverture par assignation")
         void foreignScopeNoCoverage() {
             AuthorizationService authz = new AuthorizationService(membershipRepository, permissionRepository,
-                    orgNodeRepository, userRepository, assignmentRepository);
+                    orgNodeRepository, userRepository, assignmentRepository, roleRepository);
             when(membershipRepository.findAllByUserIdAndTenantIdAndStatus(USER, TENANT, MembershipStatus.ACTIVE))
                     .thenReturn(List.of(TenantMembership.builder().tenantId(TENANT).userId(USER)
                             .role(Role.builder().key("MEMBER").build()).scopeType(MembershipScopeType.CAMPUS)

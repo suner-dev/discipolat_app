@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/finances")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+@PreAuthorize("@authz.can('FINANCES_EXECUTE_R4A', 'TENANT', null)")
 public class FinanceController {
 
     private final FinanceService financeService;
@@ -103,7 +103,7 @@ public class FinanceController {
 
     /** Import d'un relevé bancaire (idempotent par externalKey) + rapprochement auto immédiat. */
     @PostMapping("/reconciliation/import")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FINANCES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> importStatement(
             @RequestBody Map<String, List<com.discipolat.modules.finances.service.FinanceReconciliationService.StatementLineInput>> body) {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
@@ -113,7 +113,7 @@ public class FinanceController {
 
     /** Relance le rapprochement automatique sur les lignes encore ouvertes. */
     @PostMapping("/reconciliation/auto")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FINANCES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> autoMatch() {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
         return ResponseEntity.ok(reconciliationService.autoMatch(tenantId));
@@ -121,7 +121,7 @@ public class FinanceController {
 
     /** Résidus à traiter manuellement : lignes du relevé + écritures jamais rapprochées. */
     @GetMapping("/reconciliation/unmatched")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FINANCES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> unmatched() {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
         return ResponseEntity.ok(reconciliationService.unmatched(tenantId));
@@ -129,7 +129,7 @@ public class FinanceController {
 
     /** Rapprochement manuel d'une ligne avec une écriture (tenant contrôlé). */
     @PostMapping("/reconciliation/match")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FINANCES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<com.discipolat.modules.finances.domain.FinanceBankStatementLine> manualMatch(
             @RequestBody Map<String, String> body) {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
@@ -139,7 +139,7 @@ public class FinanceController {
 
     /** Grand livre : soldes, écart rapproché/relevé, intégrité (jamais masqué). */
     @GetMapping("/reconciliation/ledger")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('FINANCES_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> ledger() {
         UUID tenantId = com.discipolat.common.multitenancy.TenantContext.requireTenantId();
         return ResponseEntity.ok(reconciliationService.ledger(tenantId));

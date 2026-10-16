@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/gdpr")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+@PreAuthorize("@authz.can('GDPR_EXECUTE', 'TENANT', null)")
 public class GdprController {
 
     private final GdprService gdprService;

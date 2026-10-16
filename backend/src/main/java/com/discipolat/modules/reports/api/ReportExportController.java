@@ -30,7 +30,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/maker-weekly")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXPORT', 'TENANT', null)")
     public ResponseEntity<byte[]> exportMakerReports(
             @RequestParam(required = false) UUID faiseurId,
             @RequestParam(required = false) UUID familleId,
@@ -66,7 +66,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/family-weekly")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('REPORTS_EXPORT_EXPORTFAMILYREPORTS', 'TENANT', null)")
     public ResponseEntity<byte[]> exportFamilyReports(
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) LocalDate semaine) {
@@ -105,7 +105,7 @@ public class ReportExportController {
     // ======================== PDF EXPORT ========================
 
     @GetMapping("/consolidated-pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('REPORTS_EXPORT_EXPORTCONSOLIDATEDPDF', 'TENANT', null)")
     public ResponseEntity<byte[]> exportConsolidatedPdf(
             @RequestParam(required = false) UUID familleId,
             @RequestParam(required = false) LocalDate semaine) {
@@ -130,7 +130,7 @@ public class ReportExportController {
 
 /** P22 — Rapport exécutif automatique (mensuel / trimestriel). */
     @GetMapping("/executive-pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXPORT_EXPORTEXECUTIVEPDF', 'TENANT', null)")
     public ResponseEntity<byte[]> exportExecutivePdf(
             @RequestParam(defaultValue = "MONTHLY") String periode,
             @RequestParam(required = false) LocalDate from,
@@ -169,7 +169,7 @@ public class ReportExportController {
     }
 
     @GetMapping("/maker-pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('REPORTS_EXPORT', 'TENANT', null)")
     public ResponseEntity<byte[]> exportMakerPdf(
             @RequestParam(required = false) UUID faiseurId,
             @RequestParam(required = false) UUID familleId,

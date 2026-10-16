@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/departments")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE', 'TENANT', null)")
 public class DepartmentController {
 
     private final DepartmentService departmentService;
@@ -55,14 +55,14 @@ public class DepartmentController {
      * Cas 2 : Créer immédiatement un nouveau responsable (createNewResponsable = true + infos)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<DepartmentResponse> create(@Valid @RequestBody CreateDepartmentRequest request) {
         Department department = departmentService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(DepartmentResponse.from(department));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE_UPDATE', 'TENANT', null)")
     public ResponseEntity<DepartmentResponse> update(@PathVariable UUID id,
                                                       @Valid @RequestBody UpdateDepartmentRequest request) {
         Department department = departmentService.findById(id);
@@ -74,7 +74,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('DEPARTMENTS_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         departmentService.delete(id);
         return ResponseEntity.noContent().build();

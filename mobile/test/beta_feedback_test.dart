@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/data/models/platform_meta.dart';
@@ -87,6 +88,15 @@ void _setRole(String role) {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Le tearDown appelle AuthState().logout() → TenantConfig.clearOrgId() →
+  // SharedPreferences.getInstance(). Sans plugin enregistré (pur VM de test),
+  // le canal méthode renvoie un MissingPluginException dont le completer
+  // d'erreur fuit APRÈS la fin du test (fuite async intermittente en CI, la
+  // tâche « Mobile - Flutter » vire au rouge sur ce seul test). On branche
+  // des valeurs mockées pour que getInstance() résolve normalement : isolation
+  // propre, aucun changement de comportement applicatif.
+  setUpAll(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   setUp(() => _setRole('FAISEUR'));
   tearDown(() => AuthState().logout());

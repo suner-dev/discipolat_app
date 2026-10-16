@@ -22,7 +22,7 @@ public class ImportController {
     }
 
     @PostMapping(value = "/validate/{type}", consumes = "multipart/form-data")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('IMPORTS_EXECUTE_VALIDATE', 'TENANT', null)")
     public ResponseEntity<ImportValidationResult> validate(
             @PathVariable ImportType type,
             @RequestParam("file") MultipartFile file
@@ -45,7 +45,7 @@ public class ImportController {
     }
 
     @PostMapping(value = "/{type}", consumes = "multipart/form-data")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@authz.can('IMPORTS_EXECUTE_IMPORTDATA', 'TENANT', null)")
     public ResponseEntity<ImportResult> importData(
             @PathVariable ImportType type,
             @RequestParam("file") MultipartFile file

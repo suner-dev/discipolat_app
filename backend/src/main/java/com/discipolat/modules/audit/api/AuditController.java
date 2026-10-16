@@ -27,7 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/audit")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR')")
+@PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
 public class AuditController {
 
     private final AuditService auditService;           // Legacy audit_logs (V1 schema)
@@ -41,7 +41,7 @@ public class AuditController {
     // ========== LEGACY AUDIT (audit_logs table from V1) ==========
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<AuditLog>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -61,7 +61,7 @@ public class AuditController {
     }
 
     @GetMapping(value = "/export", produces = "text/csv")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXPORT', 'TENANT', null)")
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) UUID utilisateurId,
             @RequestParam(required = false) String entiteType,
@@ -79,14 +79,14 @@ public class AuditController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AuditLog> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(auditService.findById(id));
     }
 
     /** Activité récente — fil d'activité du dashboard Pasteur. */
     @GetMapping("/recent")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getRecentActivity(
             @RequestParam(defaultValue = "20") int limit) {
         return ResponseEntity.ok(auditService.getRecentActivity(limit));
@@ -94,7 +94,7 @@ public class AuditController {
 
     /** Tendances d'audit : répartition des actions sur N jours. */
     @GetMapping("/trend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getAuditTrend(
             @RequestParam(defaultValue = "30") int jours) {
         return ResponseEntity.ok(auditService.getAuditTrend(jours));
@@ -106,7 +106,7 @@ public class AuditController {
      * Recherche paginée des événements d'audit G2.9 (nouvelle table audit_event avec hash chain).
      */
     @GetMapping("/events")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<AuditEvent>> findEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -130,7 +130,7 @@ public class AuditController {
      * Export CSV des événements d'audit G2.9 (audité : trace export).
      */
     @GetMapping(value = "/events/export", produces = "text/csv")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXPORT', 'TENANT', null)")
     public ResponseEntity<byte[]> exportEventsCsv(
             @RequestParam(required = false) UUID actorId,
             @RequestParam(required = false) String entity,
@@ -152,7 +152,7 @@ public class AuditController {
      * Vérifie l'intégrité de la chaîne de hachage (hash chain) du tenant courant.
      */
     @GetMapping("/events/verify-chain")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> verifyChain() {
         UUID tenantId = TenantContext.requireTenantId();
         return ResponseEntity.ok(auditEventService.verifyAuditChain(tenantId));
@@ -163,7 +163,7 @@ public class AuditController {
      * Distinct de l'audit technique : pas de hash chain, requêtable par objet métier.
      */
     @GetMapping("/history/{objectType}/{objectId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<BusinessHistory>> getObjectHistory(
             @PathVariable String objectType,
             @PathVariable UUID objectId) {
@@ -175,7 +175,7 @@ public class AuditController {
      * Historique métier d'un espace (dashboard espace).
      */
     @GetMapping("/history/space/{spaceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<BusinessHistory>> getSpaceHistory(
             @PathVariable UUID spaceId) {
         UUID tenantId = TenantContext.requireTenantId();

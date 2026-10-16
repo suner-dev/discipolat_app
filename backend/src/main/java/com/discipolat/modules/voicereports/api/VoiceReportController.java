@@ -20,13 +20,13 @@ public class VoiceReportController {
 
     /** Synchronisation d'un rapport dicté hors ligne. */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('VOICEREPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<VoiceReport> create(@RequestBody VoiceReport report) {
         return ResponseEntity.ok(service.create(report));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('VOICEREPORTS_EXECUTE_RECENT', 'TENANT', null)")
     public ResponseEntity<List<VoiceReport>> recent() {
         return ResponseEntity.ok(service.recent());
     }
@@ -39,14 +39,14 @@ public class VoiceReportController {
 
     /** P14 — Génère un rapport structuré Markdown à partir des entités extraites. */
     @GetMapping("/{id}/structured")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('VOICEREPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<java.util.Map<String, Object>> structured(@PathVariable java.util.UUID id) {
         return ResponseEntity.ok(service.generateStructuredReport(id));
     }
 
     /** P14 — Liste des actions à suivre (extraites de tous les rapports). */
     @GetMapping("/action-items")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('VOICEREPORTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<java.util.List<java.util.Map<String, Object>>> actionItems() {
         return ResponseEntity.ok(service.extractAllActionItems());
     }

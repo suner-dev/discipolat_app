@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/souls/{soulId}/notes")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+@PreAuthorize("@authz.can('SOULS_EXECUTE', 'TENANT', null)")
 public class SoulNoteController {
 
     private final SoulNoteService soulNoteService;
@@ -25,7 +25,7 @@ public class SoulNoteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_CREATE', 'TENANT', null)")
     public ResponseEntity<SoulNoteResponse> create(
             @PathVariable UUID soulId,
             @Valid @RequestBody CreateSoulNoteRequest request) {
@@ -38,14 +38,14 @@ public class SoulNoteController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_FINDBYSOULID', 'TENANT', null)")
     public ResponseEntity<List<SoulNoteResponse>> findBySoulId(@PathVariable UUID soulId) {
         return ResponseEntity.ok(soulNoteService.findByAmeId(soulId)
                 .stream().map(SoulNoteResponse::from).toList());
     }
 
     @PutMapping("/{noteId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_UPDATE', 'TENANT', null)")
     public ResponseEntity<SoulNoteResponse> update(
             @PathVariable UUID noteId,
             @RequestBody Map<String, String> body) {
@@ -54,7 +54,7 @@ public class SoulNoteController {
     }
 
     @DeleteMapping("/{noteId}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('SOULS_EXECUTE_DELETE2', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID noteId) {
         soulNoteService.delete(noteId);
         return ResponseEntity.noContent().build();

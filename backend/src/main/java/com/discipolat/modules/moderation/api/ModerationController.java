@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/moderation")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+@PreAuthorize("@authz.can('MODERATION_EXECUTE', 'TENANT', null)")
 public class ModerationController {
 
     private final ContentModerationService moderationService;

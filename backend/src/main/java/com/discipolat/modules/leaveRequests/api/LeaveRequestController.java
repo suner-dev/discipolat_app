@@ -55,14 +55,14 @@ public class LeaveRequestController {
     }
 
     @PatchMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('LEAVEREQUESTS_APPROVE', 'TENANT', null)")
     public ResponseEntity<LeaveRequest> approve(@PathVariable UUID id) {
         UUID userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(service.approve(id, userId));
     }
 
     @PatchMapping("/{id}/reject")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('LEAVEREQUESTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<LeaveRequest> reject(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(service.reject(id, userId, body.get("commentaire")));

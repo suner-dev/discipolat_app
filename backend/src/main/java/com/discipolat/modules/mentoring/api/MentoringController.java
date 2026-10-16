@@ -25,7 +25,7 @@ public class MentoringController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<MentorSuggestion>> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -37,20 +37,20 @@ public class MentoringController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<MentorSuggestion>> listAll(@RequestParam(required = false) UUID chefId) {
         UUID userId = chefId != null ? chefId : SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(service.listAllSuggestions(userId));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MentorSuggestion> get(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PostMapping("/generate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     @SuppressWarnings("unchecked")
     public ResponseEntity<List<MentorSuggestion>> generate(@RequestBody Map<String, Object> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
@@ -59,21 +59,21 @@ public class MentoringController {
     }
 
     @PatchMapping("/{id}/read")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> markAsRead(@PathVariable UUID id) {
         service.markAsRead(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/archive")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> archive(@PathVariable UUID id) {
         service.archive(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('MENTORING_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats(@RequestParam(required = false) UUID chefId) {
         UUID userId = chefId != null ? chefId : SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(service.getStats(userId));

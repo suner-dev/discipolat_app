@@ -37,7 +37,7 @@ public class FileController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_UPLOAD', 'TENANT', null)")
     public ResponseEntity<FileResponse> upload(@Valid @RequestBody CreateFileRequest request) {
         FileEntity file = FileEntity.builder()
                 .nom(request.nom())
@@ -54,13 +54,13 @@ public class FileController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_FINDBYID', 'TENANT', null)")
     public ResponseEntity<FileResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(FileResponse.from(fileService.findById(id)));
     }
 
     @GetMapping("/{id}/download")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_DOWNLOAD', 'TENANT', null)")
     public ResponseEntity<Resource> download(@PathVariable UUID id) {
         FileEntity file = fileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fichier non trouvé"));
@@ -152,7 +152,7 @@ public class FileController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_FINDALL', 'TENANT', null)")
     public ResponseEntity<PageResponse<FileResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -178,7 +178,7 @@ public class FileController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_UPDATE', 'TENANT', null)")
     public ResponseEntity<FileResponse> update(@PathVariable UUID id,
                                                @Valid @RequestBody UpdateFileRequest request) {
         FileEntity file = FileEntity.builder()
@@ -190,7 +190,7 @@ public class FileController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('FILES_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         fileService.delete(id);
         return ResponseEntity.noContent().build();

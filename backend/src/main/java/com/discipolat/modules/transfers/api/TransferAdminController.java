@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/admin/transfers/workflows")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('TRANSFERS_EXECUTE_R2A', 'TENANT', null)")
 public class TransferAdminController {
 
     private final TransferAdminService adminService;

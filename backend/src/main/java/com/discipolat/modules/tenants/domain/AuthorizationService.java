@@ -26,6 +26,7 @@ public class AuthorizationService {
     private final OrganizationNodeRepository orgNodeRepository;
     private final UserRepository userRepository;
     private final MemberRoleAssignmentRepository assignmentRepository;
+    private final RoleRepository roleRepository;
 
     private static final Set<String> TENANT_ADMIN_ROLE_KEYS = Set.of(
             "ADMIN", "PASTEUR", "TENANT_OWNER", "TENANT_ADMIN"
@@ -62,7 +63,14 @@ public class AuthorizationService {
         // Get user's memberships in this tenant
         List<TenantMembership> memberships = membershipRepository.findAllByUserIdAndTenantIdAndStatus(userId, tenantId, MembershipStatus.ACTIVE);
         if (memberships.isEmpty()) {
-            return false;
+            // PARAMÉTRISATION PAR ÉGLISE (Phase 1) — équivalence STRICTE avec
+            // `hasAnyRole(...)` : le garde legacy n'exigeait AUCUNE appartenance,
+            // le pont d'équivalence doit donc rester consultable ici aussi, sous
+            // peine de RÉTRÉCIR l'accès d'un porteur de jeton valide. Sans
+            // appartenance ni autorité active, la décision reste `false`
+            // (fail-closed) — le comportement des endpoint `isAuthenticated()`
+            // et `@authz.can` sans matrice dédiée n'est pas élargi.
+            return grantsViaActiveAuthorities(permissionKey, tenantId, scopeType, scopeId);
         }
 
         // Check each membership for the permission
@@ -83,7 +91,102 @@ public class AuthorizationService {
             return true;
         }
 
+        // PARAMÉTRISATION PAR ÉGLISE (Phase 1) — pont d'équivalence avec les
+        // gardes à littéral de rôle. Une permission est ENCORE accordée si l'un
+        // des RÔLES ACTIFS du porteur de jeton (autorité Spring `ROLE_<clé>`)
+        // la détient dans la matrice par défaut. La matrice (migration V258)
+        // n'accorde une clé qu'aux rôles qui la détenaient déjà dans le
+        // littéral `hasAnyRole(...)`, et le filtre JWT attribue déjà
+        // `ROLE_PASTEUR` à un ADMIN actif : la décision reproduit donc
+        // exactement `hasAnyRole`, sans jamais élargir l'accès. Purement
+        // ADDITIVE — ne retire aucun droit, et ne change rien tant qu'un
+        // endpoint n'a pas basculé de `hasAnyRole(...)` vers `@authz.can('<CLÉ>')`.
+        // Restreinte aux vérifications de portée tenant : l'isolation par scope
+        // (DEPARTMENT/CHURCH/FAMILY/ASSIGNED/OWN, éprouvée par
+        // MultiTenantSecurityTests) reste portée uniquement par les appartenances
+        // et les assignations V3 — le pont ne saute jamais par-dessus un scope.
+        return grantsViaActiveAuthorities(permissionKey, tenantId, scopeType, scopeId);
+    }
+
+    /**
+     * Le pont d'équivalence ne reproduit que les littéraux de rôle legacy,
+     * qui étaient toujours de portée tenant (le filtrage par nœud se faisait
+     * dans les services). Un appel scopé sur un nœud ({@code scopeId != null}
+     * ou scope autre que TENANT) ne doit JAMAIS être accordé par les seules
+     * autorités du jeton : sinon le pont élargirait l'accès au-delà de
+     * l'appartenance, ce qu'il est conçu pour ne jamais faire.
+     */
+    private boolean grantsViaActiveAuthorities(String permissionKey, UUID tenantId,
+                                               MembershipScopeType scopeType, UUID scopeId) {
+        if (scopeType != MembershipScopeType.TENANT || scopeId != null) {
+            return false;
+        }
+        return activeAuthorityGrants(permissionKey, tenantId);
+    }
+
+    /**
+     * Clés de rôle portées par l'authentification courante (autorité Spring
+     * {@code ROLE_<clé>}), normalisées en MAJUSCULES. Vide hors requête
+     * authentifiée. Sert au pont d'équivalence rôle-actif → permission.
+     *
+     * <p>La lecture du {@code SecurityContextHolder} est déléguée à
+     * {@link SecurityUtils#getActiveAuthorityRoleKeys()} (couche infrastructure) :
+     * le domaine reste exempt de toute dépendance Spring Security (règle R1),
+     * exactement comme pour {@link SecurityUtils#getCurrentUserId()} déjà utilisé
+     * ici.
+     */
+    private Set<String> activeRoleKeys() {
+        return SecurityUtils.getActiveAuthorityRoleKeys();
+    }
+
+    /**
+     * L'un des rôles actifs (autorité Spring) détient-il {@code permissionKey}
+     * dans la matrice ? Résolution par clé de rôle GLOBALLE (les rôles legacy
+     * ADMIN/PASTEUR/… sont des rôles système, {@code tenant_id IS NULL}) ; si
+     * l'église a créé une surcouche locale pour cette clé, elle prime.
+     */
+    private boolean activeAuthorityGrants(String permissionKey, UUID tenantId) {
+        for (String roleKey : activeRoleKeys()) {
+            Role role = roleRepository.findByTenantIdAndKey(tenantId, roleKey)
+                    .or(() -> roleRepository.findGlobalByKey(roleKey))
+                    .orElse(null);
+            if (role != null && roleHasPermission(role, permissionKey)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    /**
+     * PARAMÉTRISATION PAR ÉGLISE (Phase 2-client) — MIROIR SERVEUR du pont
+     * d'équivalence : toutes les clés permission accordées à l'authentification
+     * COURANTE par ses autorités actives (rôles globaux de la matrice V258 ;
+     * la surcouche tenant — personnalisée par chaque église — prime et redefinit
+     * l'ensemble). Vide hors requête authentifiée : le set servi reste
+     * calculable hors session (nomination, job) sans élargir quoi que ce soit.
+     *
+     * <p>Ce miroir est la condition d'équivalence du client : l'ensemble SERVI
+     * par {@code GET /api/v1/me/permissions} doit couvrir exactement ce que les
+     * gardes convertis {@code @authz.can('<CLÉ>')} admettent en portée tenant —
+     * sinon l'UI cacherait des actions qu'un porteur de jeton sans appartenance
+     * peut bel et bien exécuter (les gardes legacy ne l'exigeaient pas).
+     *
+     * <p>Pas d'annotation {@code @Transactional} ajoutée ici : la règle gelée R4
+     * (domaine sans annotations de conteneur) compte chaque méthode annotée —
+     * l'appelant ({@code PermissionResolver.resolvePermissions}, {@code can(…)})
+     * porte déjà la frontière transactionnelle readOnly.
+     */
+    public Set<String> permissionKeysForActiveAuthorities(UUID tenantId) {
+        Set<String> keys = new LinkedHashSet<>();
+        for (String roleKey : activeRoleKeys()) {
+            Role role = roleRepository.findByTenantIdAndKey(tenantId, roleKey)
+                    .or(() -> roleRepository.findGlobalByKey(roleKey))
+                    .orElse(null);
+            if (role != null && role.getPermissions() != null) {
+                role.getPermissions().forEach(p -> keys.add(p.getKey()));
+            }
+        }
+        return keys;
     }
 
     /**

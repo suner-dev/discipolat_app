@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/family-meetings")
-@PreAuthorize("hasAnyRole('ADMIN','PASTEUR','CHEF_DE_FAMILLE')")
+@PreAuthorize("@authz.can('FAMILIES_EXECUTE_R3A', 'TENANT', null)")
 public class FamilyMeetingController {
 
     private final FamilyOSService familyOSService;

@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/parallel-followups")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+@PreAuthorize("@authz.can('PARALLELFOLLOWUPS_EXECUTE_R5A', 'TENANT', null)")
 public class ParallelFollowupController {
 
     private final ParallelFollowupService service;
@@ -27,7 +27,7 @@ public class ParallelFollowupController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PARALLELFOLLOWUPS_EXECUTE_FINDALL', 'TENANT', null)")
     public ResponseEntity<PageResponse<ParallelFollowupResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -43,7 +43,7 @@ public class ParallelFollowupController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PARALLELFOLLOWUPS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<ParallelFollowupResponse> create(@Valid @RequestBody CreateParallelFollowupRequest request) {
         ParallelFollowup followup = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ParallelFollowupResponse.from(followup));
@@ -55,7 +55,7 @@ public class ParallelFollowupController {
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('PARALLELFOLLOWUPS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<ParallelFollowupResponse> close(@PathVariable UUID id) {
         return ResponseEntity.ok(ParallelFollowupResponse.from(service.close(id)));
     }

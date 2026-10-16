@@ -18,7 +18,7 @@ public class SermonAssistantController {
     }
 
     @PostMapping("/outlines")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE')")
+    @PreAuthorize("@authz.can('SERMON_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> outlines(@RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.generateOutlines(
                 body.get("passage"),

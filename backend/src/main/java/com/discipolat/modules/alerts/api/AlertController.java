@@ -27,7 +27,7 @@ public class AlertController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<AlertResponse>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -43,7 +43,7 @@ public class AlertController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<PageResponse<AlertResponse>> findActive(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -56,33 +56,33 @@ public class AlertController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AlertResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(AlertResponse.from(alertService.findById(id)));
     }
 
     /** Création manuelle d'une alerte ciblée (pasteur, responsable, chef de famille, faiseur). */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AlertResponse> createManual(@Valid @RequestBody CreateAlertRequest request) {
         return ResponseEntity.ok(AlertResponse.from(alertService.createManual(request)));
     }
 
     @PatchMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AlertResponse> resolve(@PathVariable UUID id) {
         return ResponseEntity.ok(AlertResponse.from(alertService.resolve(id)));
     }
 
     @PostMapping("/{id}/acknowledge")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<AlertResponse> acknowledge(@PathVariable UUID id) {
         return ResponseEntity.ok(AlertResponse.from(alertService.acknowledge(id)));
     }
 
     /** Résolution en lot — le Pasteur peut marquer plusieurs alertes comme résolues d'un coup. */
     @PostMapping("/resolve-batch")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE_RESOLVEBATCH', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> resolveBatch(@RequestBody List<UUID> ids) {
         int resolved = alertService.resolveBatch(ids);
         return ResponseEntity.ok(Map.of("resolved", resolved));
@@ -90,7 +90,7 @@ public class AlertController {
 
     /** Statistiques globales des alertes (pour graphiques Pasteur). */
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('ALERTS_EXECUTE_GETSTATS', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(alertService.getAlertStats());
     }

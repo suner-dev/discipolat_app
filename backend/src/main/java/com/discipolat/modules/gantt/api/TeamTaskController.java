@@ -24,7 +24,7 @@ public class TeamTaskController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('GANTT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<TeamTask>> list() {
         return ResponseEntity.ok(service.list());
     }
@@ -35,13 +35,13 @@ public class TeamTaskController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('GANTT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> stats() {
         return ResponseEntity.ok(service.getStats());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('GANTT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<TeamTask> create(@RequestBody Map<String, Object> body) {
         UUID userId = SecurityUtils.getCurrentUserId();
         TeamTask task = service.create(
@@ -58,13 +58,13 @@ public class TeamTaskController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('GANTT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<TeamTask> updateStatus(@PathVariable UUID id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(service.updateStatut(id, body.get("statut")));
     }
 
     @PatchMapping("/{id}/progression")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('GANTT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<TeamTask> updateProgression(@PathVariable UUID id, @RequestBody Map<String, Integer> body) {
         return ResponseEntity.ok(service.updateProgression(id, body.getOrDefault("progression", 0)));
     }

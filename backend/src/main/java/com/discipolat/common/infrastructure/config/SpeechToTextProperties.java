@@ -102,10 +102,10 @@ public class SpeechToTextProperties {
      */
     public boolean isConfigured() {
         return enabled
-                && OllamaProperties.isNotBlank(apiUrl)
-                && OllamaProperties.isHttpUrl(apiUrl)
-                && OllamaProperties.isNotBlank(apiKey)
-                && OllamaProperties.isNotBlank(model)
+                && UrlValidationUtils.isNotBlank(apiUrl)
+                && UrlValidationUtils.isHttpUrl(apiUrl)
+                && UrlValidationUtils.isNotBlank(apiKey)
+                && UrlValidationUtils.isNotBlank(model)
                 && isPositiveTimeout();
     }
 
@@ -118,18 +118,18 @@ public class SpeechToTextProperties {
             return "Dictée vocale (STT) désactivée : app.speech.enabled=false. "
                     + "Aucun fournisseur de transcription n'est appelé.";
         }
-        if (!OllamaProperties.isNotBlank(apiUrl)) {
+        if (!UrlValidationUtils.isNotBlank(apiUrl)) {
             return "Dictée vocale (STT) activée mais app.speech.api-url est vide : "
                     + "l'endpoint du fournisseur de transcription est inconnu.";
         }
-        if (!OllamaProperties.isHttpUrl(apiUrl)) {
+        if (!UrlValidationUtils.isHttpUrl(apiUrl)) {
             return "Dictée vocale (STT) activée mais app.speech.api-url n'est pas une URL http(s) valide.";
         }
-        if (!OllamaProperties.isNotBlank(apiKey)) {
+        if (!UrlValidationUtils.isNotBlank(apiKey)) {
             return "Dictée vocale (STT) activée mais app.speech.api-key est absente : "
                     + "aucune authentification possible. Renseignez APP_SPEECH_API_KEY.";
         }
-        if (!OllamaProperties.isNotBlank(model)) {
+        if (!UrlValidationUtils.isNotBlank(model)) {
             return "Dictée vocale (STT) activée mais app.speech.model est vide : aucun modèle à demander.";
         }
         if (!isPositiveTimeout()) {
@@ -143,12 +143,12 @@ public class SpeechToTextProperties {
      * {@code null} sinon. La longueur réelle n'est jamais déduite.
      */
     public String redactedApiKey() {
-        return OllamaProperties.isNotBlank(apiKey) ? REDACTED : null;
+        return UrlValidationUtils.isNotBlank(apiKey) ? REDACTED : null;
     }
 
     @AssertTrue(message = "app.speech.enabled=true exige app.speech.api-url ET app.speech.api-key non vides")
     public boolean isProviderCompleteWhenEnabled() {
-        return !enabled || (OllamaProperties.isNotBlank(apiUrl) && OllamaProperties.isNotBlank(apiKey));
+        return !enabled || (UrlValidationUtils.isNotBlank(apiUrl) && UrlValidationUtils.isNotBlank(apiKey));
     }
 
     @AssertTrue(message = "app.speech.timeout doit être strictement positif (ex : 60s)")

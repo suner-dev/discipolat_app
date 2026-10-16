@@ -70,7 +70,7 @@ public class SyncController {
 
     /** Réconciliation manuelle documentée (§1111) : trace la décision, ne réécrit pas. */
     @PostMapping("/conflicts/{id}/resolve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'RESPONSABLE')")
+    @PreAuthorize("@authz.can('SYNC_EXECUTE', 'TENANT', null)")
     public ResponseEntity<SyncConflict> resolve(@PathVariable UUID id,
                                                 @RequestBody(required = false) Map<String, String> body) {
         return ResponseEntity.ok(syncBatchService.resolveConflict(id,

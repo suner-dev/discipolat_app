@@ -38,47 +38,47 @@ public class LegacyMigrationController {
 
     /** Catalogue des maps source → cible (règles + champs non mappables), sources réellement présentes. */
     @GetMapping("/maps")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<LegacyMigrationService.LegacyMap>> maps() {
         return ResponseEntity.ok(service.listMaps());
     }
 
     /** Simulation complète : rapport par table, aucune écriture cible. */
     @PostMapping("/modules/{moduleCode}/dry-run")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MigrationJob> dryRun(@PathVariable String moduleCode) {
         return ResponseEntity.ok(service.dryRun(tenantId(), SecurityUtils.getCurrentUserId(), moduleCode));
     }
 
     /** Migration réelle (idempotente) — exige le toggle tenant `legacy_migration_enabled`. */
     @PostMapping("/modules/{moduleCode}/migrate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MigrationJob> migrate(@PathVariable String moduleCode) {
         return ResponseEntity.ok(service.migrate(tenantId(), SecurityUtils.getCurrentUserId(), moduleCode));
     }
 
     @GetMapping("/jobs")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<MigrationJob>> jobs() {
         return ResponseEntity.ok(service.listJobs(tenantId()));
     }
 
     @GetMapping("/jobs/{jobId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MigrationJob> job(@PathVariable UUID jobId) {
         return ResponseEntity.ok(service.getJob(tenantId(), jobId));
     }
 
     /** Traçabilité ligne à ligne du job (source_id → target_id, statut, message). */
     @GetMapping("/jobs/{jobId}/audit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<MigrationAudit>> audit(@PathVariable UUID jobId) {
         return ResponseEntity.ok(service.listAudit(tenantId(), jobId));
     }
 
     /** Annulation d'un job MIGRATE ≤ 30 jours : retire uniquement les lignes créées par ce job. */
     @PostMapping("/jobs/{jobId}/rollback")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR', 'TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('DATAMIGRATION_EXECUTE', 'TENANT', null)")
     public ResponseEntity<MigrationJob> rollback(@PathVariable UUID jobId) {
         return ResponseEntity.ok(service.rollback(tenantId(), jobId, SecurityUtils.getCurrentUserId()));
     }

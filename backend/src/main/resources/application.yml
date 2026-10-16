@@ -207,6 +207,18 @@ app:
     max-file-bytes: ${APP_SPEECH_MAX_FILE_BYTES:26214400}   # 25 MiB
 
   # ---------------------------------------------------------------------
+  # M5 — Text-to-Speech (TTS) — synthèse vocale réelle
+  # Pareil que STT : désactivé par défaut, aucune synthèse simulée.
+  # Sans APP_TTS_API_URL + APP_TTS_API_KEY → 503 TTS_NOT_CONFIGURED.
+  # ---------------------------------------------------------------------
+  tts:
+    enabled: ${APP_TTS_ENABLED:false}
+    api-url: ${APP_TTS_API_URL:}
+    api-key: ${APP_TTS_API_KEY:}
+    model: ${APP_TTS_MODEL:tts-1}
+    voice: ${APP_TTS_VOICE:alloy}
+
+  # ---------------------------------------------------------------------
   # A2 (M2) — Sauvegardes applicatives
   # ---------------------------------------------------------------------
   # Racine de stockage des archives. Relus par un tenant dans son propre

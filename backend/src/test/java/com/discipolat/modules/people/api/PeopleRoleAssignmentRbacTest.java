@@ -3,6 +3,7 @@ package com.discipolat.modules.people.api;
 import com.discipolat.DiscipolatApplication;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.infrastructure.security.JwtTokenProvider;
+import com.discipolat.common.test.TestPermissionMatrix;
 import com.discipolat.modules.tenants.domain.MembershipScopeType;
 import com.discipolat.modules.tenants.domain.MembershipStatus;
 import com.discipolat.modules.tenants.domain.Role;
@@ -72,6 +73,13 @@ class PeopleRoleAssignmentRbacTest {
         for (String key : Set.of("MEMBRE", "DEPARTMENT_LEADER", "PASTEUR", "ADMIN", "PASTOR_PRINCIPAL")) {
             ensureRole(key);
         }
+        // Les {@code ensureRole} créent des rôles LOCAUX (tenant_id = TENANT) qui
+        // ombragent les globaux seedés par import.sql. Le pont d'équivalence
+        // résolvant {@code findByTenantIdAndKey(tenant).or(global)}, un rôle local
+        // sans {@code role_permissions} primerait et viderait l'accès → 403. On
+        // rejoue l'héritage production (V259 §5 / V260 §2) : chaque rôle local
+        // homonyme hérite des capacités de son jumeau global, additivement.
+        jdbcTemplate.update(TestPermissionMatrix.INHERIT_GLOBAL_GRANTS_H2);
         membreToken = tokenFor("people.membre@test", "MEMBRE");
         departmentLeaderToken = tokenFor("people.deptlead@test", "DEPARTMENT_LEADER");
         pasteurToken = tokenFor("people.pasteur@test", "PASTEUR");

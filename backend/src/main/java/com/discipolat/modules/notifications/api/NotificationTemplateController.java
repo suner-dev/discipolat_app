@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/admin/notifications")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('NOTIFICATIONS_EXECUTE', 'TENANT', null)")
 public class NotificationTemplateController {
 
     private final NotificationTemplateService templateService;

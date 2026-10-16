@@ -17,7 +17,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/connectors")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('INTEGRATIONS_EXECUTE', 'TENANT', null)")
 public class ConnectorController {
 
     private final IntegrationConnectorService service;

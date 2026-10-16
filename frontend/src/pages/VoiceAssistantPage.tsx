@@ -35,13 +35,37 @@ const _CATEGORY_COLORS: Record<string, string> = {
   ALERTES: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400',
 };
 
-const QUICK_COMMANDS = [
-  'Montre-moi les familles en décrochement',
-  'Combien de nouveaux convertis ce mois ?',
-  'Génère un rapport de la semaine',
-  'Quels sont les prochains événements ?',
-  'Montre le taux de présence',
-  'Quelles sont les alertes actives ?',
+const QUICK_COMMANDS_FALLBACK: VoiceCommand[] = [
+  {
+    command: 'Montre-moi les familles en décrochement',
+    description: 'Affiche les familles à risque de décrochage',
+    category: 'SUIVI',
+  },
+  {
+    command: 'Combien de nouveaux convertis ce mois ?',
+    description: 'Nombre et liste des nouveaux convertis',
+    category: 'STATISTIQUES',
+  },
+  {
+    command: 'Génère un rapport de la semaine',
+    description: 'Synthèse des rapports hebdomadaires',
+    category: 'RAPPORTS',
+  },
+  {
+    command: 'Quels sont les prochains événements ?',
+    description: 'Calendrier des prochains événements',
+    category: 'ÉVÉNEMENTS',
+  },
+  {
+    command: 'Montre le taux de présence',
+    description: 'Statistiques de présence de la semaine',
+    category: 'STATISTIQUES',
+  },
+  {
+    command: 'Quelles sont les alertes actives ?',
+    description: 'Liste des alertes en cours',
+    category: 'ALERTES',
+  },
 ];
 
 export default function VoiceAssistantPage() {
@@ -305,13 +329,13 @@ export default function VoiceAssistantPage() {
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {QUICK_COMMANDS.map((cmd, i) => (
+              {QUICK_COMMANDS_FALLBACK.map((cmd) => (
                 <button
-                  key={i}
-                  onClick={() => handleQuickCommand(cmd)}
+                  key={cmd.command}
+                  onClick={() => handleQuickCommand(cmd.command)}
                   className="px-3 py-1.5 text-sm rounded-full bg-white dark:bg-gray-700 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
                 >
-                  {cmd}
+                  {cmd.command}
                 </button>
               ))}
             </div>
@@ -331,14 +355,14 @@ export default function VoiceAssistantPage() {
                 les statistiques, les alertes, les rapports et bien plus encore.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
-                {QUICK_COMMANDS.map((cmd, i) => (
+                {QUICK_COMMANDS_FALLBACK.map((cmd) => (
                   <button
-                    key={i}
-                    onClick={() => handleQuickCommand(cmd)}
+                    key={cmd.command}
+                    onClick={() => handleQuickCommand(cmd.command)}
                     className="px-4 py-2 text-sm rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-left w-64"
                   >
                     <Volume2 className="w-4 h-4 inline mr-1 text-indigo-500" />
-                    {cmd}
+                    {cmd.command}
                   </button>
                 ))}
               </div>

@@ -84,7 +84,7 @@ public class ConfigurationController {
      * Change la source de configuration d'un nœud (DEFAULT | INHERITED | OVERRIDDEN).
      */
     @PutMapping("/source/{nodeId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> setConfigSource(
             @PathVariable UUID nodeId,
             @RequestBody Map<String, String> request) {
@@ -121,7 +121,7 @@ public class ConfigurationController {
      * Ne prend effet que si config_source = OVERRIDDEN.
      */
     @PutMapping("/local/{nodeId}")
-    @PreAuthorize("hasAnyRole('TENANT_OWNER', 'TENANT_ADMIN')")
+    @PreAuthorize("@authz.can('TENANTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateLocalConfig(
             @PathVariable UUID nodeId,
             @RequestBody Map<String, Object> config) {

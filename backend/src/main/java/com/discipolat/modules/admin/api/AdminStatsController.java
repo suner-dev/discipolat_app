@@ -18,7 +18,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/admin")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('ADMIN_EXECUTE', 'TENANT', null)")
 public class AdminStatsController {
 
     private final DashboardService dashboardService;

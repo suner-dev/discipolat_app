@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/permissions")
-@PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+@PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
 public class PermissionController {
 
     private final PermissionService permissionService;
@@ -23,19 +23,19 @@ public class PermissionController {
     /* ======================== Matrice ======================== */
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getAll() {
         return ResponseEntity.ok(permissionService.getAllPermissions());
     }
 
     @GetMapping("/{role}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> getByRole(@PathVariable String role) {
         return ResponseEntity.ok(permissionService.getPermissionsByRole(role));
     }
 
     @PutMapping("/{role}/{permission}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable String role,
             @PathVariable String permission,
@@ -54,7 +54,7 @@ public class PermissionController {
     }
 
     @PutMapping("/{role}/{permission}/rwd")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> updateRWD(
             @PathVariable String role,
             @PathVariable String permission,
@@ -69,7 +69,7 @@ public class PermissionController {
     /* ======================== Catalogue ======================== */
 
     @GetMapping("/catalog")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> catalog() {
         return ResponseEntity.ok(permissionService.listPermissionCatalog());
     }
@@ -77,13 +77,13 @@ public class PermissionController {
     /* ======================== Gestion des rôles ======================== */
 
     @GetMapping("/roles")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> roles() {
         return ResponseEntity.ok(permissionService.listRoles());
     }
 
     @PostMapping("/roles")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> createRole(@RequestBody Map<String, String> body) {
         String key = body.get("key");
         String label = body.get("label");
@@ -96,7 +96,7 @@ public class PermissionController {
     }
 
     @PutMapping("/roles/{key}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> updateRole(@PathVariable String key,
                                                           @RequestBody Map<String, String> body) {
         permissionService.updateRole(key, body.get("label"), body.get("description"));
@@ -104,7 +104,7 @@ public class PermissionController {
     }
 
     @PostMapping("/roles/duplicate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> duplicateRole(@RequestBody Map<String, String> body) {
         String sourceKey = body.get("sourceKey");
         String newKey = body.get("newKey");
@@ -117,7 +117,7 @@ public class PermissionController {
     }
 
     @DeleteMapping("/roles/{key}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('AUDIT_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Void> deleteRole(@PathVariable String key) {
         permissionService.deleteRole(key);
         return ResponseEntity.noContent().build();

@@ -289,7 +289,7 @@ public class PaymentWebhookController {
 
     /** Liste paginée des logs webhook avec filtres optionnels. */
     @GetMapping("/logs")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<?> listLogs(
             @RequestParam(required = false) String provider,
             @RequestParam(required = false) String status,
@@ -305,7 +305,7 @@ public class PaymentWebhookController {
 
     /** Stats globales des webhooks (admin only). */
     @GetMapping("/logs/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PASTEUR')")
+    @PreAuthorize("@authz.can('PAYMENTS_EXECUTE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> logStats() {
         return ResponseEntity.ok(webhookLogService.stats());
     }
