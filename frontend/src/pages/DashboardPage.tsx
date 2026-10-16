@@ -75,6 +75,15 @@ const getGreeting = () => {
   return 'Bonsoir';
 };
 
+// Typographie française du pourcentage : décimale à la VIRGULE et espace
+// insécable avant le signe. `toFixed(1)` rendait « 74.4% » à un pasteur
+// francophone — une faute d'orthographe dans son propre outil.
+const pctFr = (value: number, digits = 1) =>
+  `${new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number.isFinite(value) ? value : 0)}\u00a0%`;
+
 export default function DashboardPage() {
   const { user, hasRole } = useAuth();
   const { exportReport, isExporting } = useExportReport();
@@ -85,7 +94,12 @@ export default function DashboardPage() {
     queryKey: ['dashboard', 'kpi'],
     queryFn: async () => {
       const res = await api.get('/dashboard/kpi');
-      return res.data as DashboardKPI;
+      const raw = res.data as DashboardKPI & { activeAlerts?: number };
+      // Pont de nommage : le backend rend `activeAlerts` alors que le type
+      // front et les cartes lisent `alertesActives`. Sans lui, la carte
+      // « Alertes actives » du pasteur restait VIDE (undefined affiché)
+      // pendant que la liste d'alertes, elle, était pleine.
+      return { ...raw, alertesActives: raw.alertesActives ?? raw.activeAlerts ?? 0 };
     },
     enabled: isPasteurOrAdmin,
   });
@@ -193,7 +207,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Taux de présence',
-      value: `${kpiData.tauxPresenceGlobal.toFixed(1)}%`,
+      value: pctFr(kpiData.tauxPresenceGlobal),
       icon: TrendingUp,
       gradient: kpiData.tauxPresenceGlobal >= 70 ? 'from-green-500 to-emerald-500' : 'from-red-500 to-rose-500',
       trend: kpiData.tendancePresence,
@@ -310,7 +324,7 @@ export default function DashboardPage() {
                         : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                     }`}>
                       {stat.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      {Math.abs(stat.trend).toFixed(1)}%
+                      {pctFr(Math.abs(stat.trend))}
                     </span>
                   )}
                 </div>
@@ -366,7 +380,7 @@ export default function DashboardPage() {
                     border: '1px solid rgba(255,255,255,0.2)',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                   }}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Taux de présence']}
+                  formatter={(value: number) => [pctFr(value), 'Taux de présence']}
                 />
                 <Area type="monotone" dataKey="taux" stroke="#22c55e" fill="url(#colorTaux)" strokeWidth={2} />
               </AreaChart>
@@ -403,7 +417,7 @@ export default function DashboardPage() {
                     borderRadius: '12px',
                     border: '1px solid rgba(255,255,255,0.2)',
                   }}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Taux de présence']}
+                  formatter={(value: number) => [pctFr(value), 'Taux de présence']}
                 />
                 <Bar dataKey="taux" radius={[8, 8, 0, 0]} maxBarSize={60}>
                   {presenceData.map((_, index) => (
@@ -590,22 +604,28 @@ export default function DashboardPage() {
             </div>
             {recentActivity.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {recentActivity.map((a) => (
-                  <div key={a.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0 mt-0.5">
-                      {a.utilisateurNom?.charAt(0) || '?'}
+                {recentActivity.map((a) => {
+                  const phrase = humanizeAuditAction(a.action, a.entiteType);
+                  const objet = humanizeEntite(a.entiteType);
+                  return (
+                    <div key={a.id} className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0 mt-0.5">
+                        {a.utilisateurNom?.charAt(0) || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
+                          <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
+                          {' '}{phrase}
+                        </p>
+                        {/* La phrase porte déjà la cible (« a créé une prière ») : la
+                            répéter en dessous ne fait que doubler le bruit. */}
+                        <p className="text-[9px] text-gray-400">
+                          {objet && !phrase.includes(objet) ? `${objet} · ` : ''}{relativeTimeFr(a.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
-                        <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
-                        {' '}{humanizeAuditAction(a.action, a.entiteType)}
-                      </p>
-                      <p className="text-[9px] text-gray-400">
-                        {humanizeEntite(a.entiteType) || 'action'} · {relativeTimeFr(a.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-gray-400 py-6 text-center">{tText('Aucune activité récente')}</p>

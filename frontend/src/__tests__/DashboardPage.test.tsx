@@ -117,6 +117,15 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Tendance de présence')).toBeInTheDocument();
   });
 
+  // Typographie : un pasteur francophone ne doit pas lire « 75.5% ».
+  it('formate les pourcentages à la française (virgule, espace insécable)', async () => {
+    const { container } = renderWithProviders();
+    // L'espacement insécable est normalisé en espace simple par testing-library.
+    expect(await screen.findByText(/75,5\s*%/)).toBeInTheDocument();
+    expect(screen.getByText(/2,5\s*%/)).toBeInTheDocument(); // badge de tendance
+    expect(container.textContent).not.toMatch(/\d\.\d\s*%/);
+  });
+
   it('shows non-pasteur message for other roles', () => {
     // Clear and set a non-pasteur user
     localStorage.clear();
