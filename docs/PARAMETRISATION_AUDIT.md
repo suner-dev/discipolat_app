@@ -13,8 +13,8 @@
 | Surface | Sites figés | Détail |
 |---|---|---|
 | Backend (gardes `@PreAuthorize`) | **0 restants** | 581 sites à l'origine → 11 convertis Phase 2 (MEMBERS) + 570 convertis Phase 3 (547 mécaniques + 23 guidées) ; R7 gelé à 0 |
-| Frontend (littéraux de rôle) | **2298** occurrences dans 145 fichiers | migrer vers `hasPermission`/`canAccess` (TenantContext) |
-| Mobile (littéraux de rôle) | **1176** occurrences dans 54 fichiers | migrer vers le jeu de permissions servi |
+| Frontend (littéraux de rôle) | **2298** occurrences dans 145 fichiers | **routes + garde SERVIES** ✅ (Phase 4 : `ROUTE_PERMISSIONS` 173 clés + `App.tsx` 185 props `permissions=`, repli `roles` conservé ; V261 113 clés UI) ; reste les littéraux intra-pages (boutons/sections) en tranche résiduelle |
+| Mobile (littéraux de rôle) | **1176** occurrences dans 54 fichiers | **routes + tiroir SERVIES** ✅ (Phase 5 : `routePermissions` 91 clés miroir du web, garde GoRouter + drawer filtrés par clés servies) ; reste les littéraux intra-écrans en tranche résiduelle |
 
 Légende statut : ⬜ à migrer · 🟨 migration en cours · ✅ migré (garde littérale supprimée, équivalence prouvée).
 
@@ -621,8 +621,8 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 
 | # | Fichier | Littéraux | Statut |
 |---|---|---|---|
-| 1 | `frontend/src/App.tsx` | 631 | 🟨 (tranche MEMBERS convertie : 4 routes → clés servies ; `roles` conservé en repli de transition) |
-| 2 | `frontend/src/lib/routeAccess.ts` | 591 | 🟨 (ROUTE_PERMISSIONS + canAccessPath/filterNavByAccess : primitives clés servies, registre par rôle intact) |
+| 1 | `frontend/src/App.tsx` | 631 | ✅ routes/gardes servies (Phase 4 : 185 `<ProtectedRoute permissions=[...]>` posées sur toutes les routes restreintes ; `roles` conservé en repli de transition — served-first). Littéraux intra-composants résiduels |
+| 2 | `frontend/src/lib/routeAccess.ts` | 591 | ✅ registre `ROUTE_PERMISSIONS` 173 clés servies + `canAccessPath`/`filterNavByAccess` ; verrou `routeAccessPermissions.test.ts` (registre ≡ catalogue, exhaustivité) |
 | 3 | `frontend/src/__tests__/Sidebar.test.tsx` | 47 | ⬜ |
 | 4 | `frontend/src/components/CommandPalette.tsx` | 41 | 🟨 (résultats filtrés par clés servies quand TenantContext prêt) |
 | 5 | `frontend/src/workspaces.ts` | 39 | ⬜ |
@@ -771,7 +771,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 
 | # | Fichier | Littéraux | Statut |
 |---|---|---|---|
-| 1 | `mobile/lib/app.dart` | 901 | 🟨 (tranche MEMBERS : cache servi AuthState + `routePermissions` miroir web + garde GoRouter priorité au servi ; _routeRoles repli) |
+| 1 | `mobile/lib/app.dart` | 901 | ✅ routes/gardes servies (Phase 5 : cache servi `AuthState` + `routePermissions` **91 clés** miroir exact du web — chaque clé ajoutée seulement si littéral rôles mobile ≡ matrice serveur ; garde GoRouter priorité au servi ; `_routeRoles` repli). Littéraux intra-écrans résiduels |
 | 2 | `mobile/lib/presentation/screens/users/users_list_screen.dart` | 50 | ⬜ |
 | 3 | `mobile/lib/presentation/widgets/app_drawer.dart` | 37 | 🟨 (menu filtré par clés servies + écoute permissionsEpoch + re-pull au switch-role) |
 | 4 | `mobile/lib/presentation/screens/users/user_detail_screen.dart` | 21 | ⬜ |
@@ -834,8 +834,8 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 1 | Catalogue V258 + matrice par défaut + template | toutes les clés cibles | ✅ (V258 installée, chaîne PG16 verte 11/11, test équivalence 12/12 `AuthorizationServiceEquivalenceBridgeTest`) |
 | 2 | Tranche de référence MEMBERS | sites `modules/members` + FE membres + mobile | ✅ fullstack (BE : 11/11 gardes → `@authz.can`, R7 581→570, suite 2285 verte ; client : `GET /me/permissions` rendu miroir EXACT du pont — `PermissionResolver` +5e source `permissionKeysForActiveAuthorities`, gate 77/77 ; FE : `ROUTE_PERMISSIONS`/`canAccessPath` + ProtectedRoute servie, vitest 1023/1023 + verrou `routeAccessPermissions.test.ts` 7/7 ; mobile : cache servi `AuthState.refreshServedPermissions`, garde GoRouter + drawer filtrés, flutter 682/682 + verrou `served_permissions_mobile_test.dart` 9/9) |
 | 3 | Conversion BE roulante (par module) | 570 sites → objectif 0 | ✅ (547 conversions mécaniques + 23 guidées = 570 ; R7 570→0 ; V259 : 21 clés nouvelles + 4 rôles globaux + 9 paires mortes réactivées + héritage one-shot global→surcouche locale ; gates : ArchitectureRulesTest 1/1, EquivalenceBridge 15/15, PermissionResolverPastorate 4/4, chaîne PG16 11/11 jusqu'à v259) |
-| 4 | Conversion FE | 2298 occurrences → objectif 0 | ⬜ |
-| 5 | Conversion mobile | 1176 occurrences → objectif 0 | ⬜ |
+| 4 | Conversion FE | 2298 occurrences → objectif 0 | ✅ **routes + garde servies** (registre `ROUTE_PERMISSIONS` 173 clés + `App.tsx` 185 props `permissions=` served-first, repli `roles` conservé ; V261 : 113 clés UI + 395 paires ; verrous Java `TestPermissionMatrixSeedGuardTest` + FE `routeAccessPermissions.test.ts`) ; gates : tsc 0 err, vitest sériel 1024/1024, seed guard 1/1, chaîne PG16 verte v261, suite BE H2 2299/0/0. Tranche résiduelle = littéraux intra-pages (boutons/sections), non bloquante |
+| 5 | Conversion mobile | 1176 occurrences → objectif 0 | ✅ **routes + tiroir servies** (`routePermissions` 91 clés miroir web, équivalence rôles mobile ≡ matrice prouvée contre `fe_route_map.json` ; garde GoRouter + drawer filtrés par clés servies, repli `_routeRoles`) ; gates : flutter analyze 528 lints (= base, 0 nouvelle err), flutter test 683/683 + verrou `served_permissions_mobile_test.dart` 11/11 (1 échec `beta_feedback` = flaky async prouvé vert en relance isolée). Tranche résiduelle = littéraux intra-écrans |
 | 6 | Paramétrage non-autorisation (statuts, workflows, quotas) | audit séparé | ⬜ |
 
 ## E. Méthodologie de génération (reproductible)
