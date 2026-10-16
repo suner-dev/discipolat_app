@@ -92,6 +92,15 @@ public class TestSecurityConfig {
     @Primary
     public AuthzSecurityBean authzSecurityBean() {
         AuthzSecurityBean bean = mock(AuthzSecurityBean.class);
+        // Pont d'équivalence des slices : @authz.can('CLÉ', 'TENANT', null) est
+        // résolu par la matrice par défaut V258/V259 rejouée depuis les
+        // migrations du classpath (Flyway coupé sous @WebMvcTest). Clé inconnue
+        // ou portée non-TENANT → refus (fail-closed, comme en production).
+        when(bean.can(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> TestPermissionMatrix.grantsViaActiveAuthorities(
+                        invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2)));
         when(bean.isPlatformSuperAdmin()).thenAnswer(invocation -> {
             var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             return authentication != null && authentication.getAuthorities().stream()
