@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useServedAccess } from '@/hooks/useServedAccess';
+import { useServedAccess, useRoleVocabulary } from '@/hooks/useServedAccess';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Power, PowerOff } from 'lucide-react';
@@ -74,7 +74,14 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     role: 'FAISEUR',
+    // P7b — rôle custom du catalogue servi, assignable à la création (optionnel).
+    customRole: '',
   });
+
+  // Vocabulaire des rôles servis : socle ∪ rôles custom de l'église. Les clés
+  // hors socle alimentent le sélecteur « rôle custom » de la création (P7b).
+  const servedRoleKeys = useRoleVocabulary(Object.keys(ROLE_FALLBACK));
+  const customRoleOptions = servedRoleKeys.filter((k) => !ROLE_FALLBACK[k]);
 
   // Generate a secure random password
   const generatePassword = () => {
@@ -154,7 +161,7 @@ export default function UsersPage() {
       }
       setShowModal(false);
       customFields.reset();
-      setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'FAISEUR' });
+      setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'FAISEUR', customRole: '' });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -733,6 +740,29 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
+
+              {/* P7b — rôle custom du catalogue servi (église personnalisée) */}
+              {customRoleOptions.length > 0 && (
+                <div>
+                  <label className="label">{tText('Rôle personnalisé (facultatif)')}</label>
+                  <div className="relative">
+                    <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+                    <select
+                      className="input pl-10"
+                      value={formData.customRole}
+                      onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
+                    >
+                      <option value="">{tText('— Aucun —')}</option>
+                      {customRoleOptions.map((k) => (
+                        <option key={k} value={k}>{dictionaries.label('USER_ROLE', k) || k.replace(/_/g, ' ')}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    {tText('Applique les permissions servies de ce rôle du catalogue de votre église.')}
+                  </p>
+                </div>
+              )}
 
               {/* Champs personnalisés (configurables par l'admin) */}
               {customFields.definitions.length > 0 && (

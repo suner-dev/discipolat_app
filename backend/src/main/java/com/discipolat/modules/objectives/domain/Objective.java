@@ -1,6 +1,5 @@
 package com.discipolat.modules.objectives.domain;
 
-import com.discipolat.common.domain.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,9 +26,13 @@ public class Objective {
     @Column(name = "tenant_id", nullable = false)
     private UUID tenantId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
+    /**
+     * V263 — contrat de rôle élargi : clé de rôle en texte (nom du rôle
+     * socle {@code UserRole} OU clé du catalogue de rôles servis du tenant),
+     * validée côté service contre l'union enum ∪ catalogue (P7a).
+     */
+    @Column(name = "role", nullable = false, length = 50)
+    private String role;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)

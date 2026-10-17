@@ -171,6 +171,12 @@ public class UserController {
 
         User user = builder.build();
         user = userService.create(user, request.password());
+        // P7b — rôle custom du catalogue servi, assignable dès la création :
+        // materielise l'appartenance ACTIVE de portée TENANT portant la clé
+        // (au-dela de l'enum socle UserRole), puis rafraichit les permissions
+        // servies (source #1 du PermissionResolver). Additif : sans customRole,
+        // comportement strictement identique a l'etat precedent.
+        applyCustomRoleMembership(user, request.customRole());
         // US-02: Send welcome email with activation link
         authService.sendActivationEmail(user.getId());
         // Audit log
@@ -274,6 +280,59 @@ public class UserController {
             // Jamais bloquant pour la mutation du compte ; le bump suivant
             // repartira de l'état cohérent si le catalogue est réparé.
         }
+    }
+
+    /**
+     * P7b — materiellise un role custom du catalogue servi sur le compte
+     * nouvellement cree : la tenant_membership ACTIVE de portee TENANT (une
+     * seule par user/tenant — UK V135) est pointee sur le Role du catalogue.
+     * Meme pont de cles que {@link #syncTenantMembershipRole} (V173) : lookup
+     * tenant puis global. Cle absente du catalogue -> 4xx metier (jamais un
+     * role fantome accorde). Cle = nom de l'enum socle -> idempotent avec la
+     * sync de mise a jour. Le bump suivant sert les permissions du role custom
+     * au web et au mobile sans reconnexion.
+     */
+    private void applyCustomRoleMembership(User user, String customRole) {
+        if (customRole == null || customRole.isBlank()) {
+            return;
+        }
+        String key = customRole.trim().toUpperCase(Locale.ROOT);
+        UUID tenantId = user.getTenantId() != null
+                ? user.getTenantId()
+                : com.discipolat.common.multitenancy.TenantContext.getTenantId();
+        if (tenantId == null) {
+            throw new com.discipolat.common.domain.BusinessRuleException(
+                    "Tenant introuvable pour assigner le role custom: " + customRole, "NO_TENANT_CONTEXT");
+        }
+        com.discipolat.modules.tenants.domain.Role role =
+                roleRepository.findByTenantIdAndKey(tenantId, key)
+                        .or(() -> roleRepository.findByTenantIdIsNullAndKey(key))
+                        .orElseThrow(() -> new com.discipolat.common.domain.BusinessRuleException(
+                                "Role inconnu (absent du catalogue servi du tenant): " + customRole,
+                                "UNKNOWN_CUSTOM_ROLE"));
+        java.util.List<com.discipolat.modules.tenants.domain.TenantMembership> actives =
+                tenantMembershipRepository.findAllByUserIdAndTenantIdAndStatus(
+                        user.getId(), tenantId,
+                        com.discipolat.modules.tenants.domain.MembershipStatus.ACTIVE);
+        if (actives.isEmpty()) {
+            tenantMembershipRepository.save(
+                    com.discipolat.modules.tenants.domain.TenantMembership.builder()
+                            .tenantId(tenantId)
+                            .userId(user.getId())
+                            .role(role)
+                            .scopeType(com.discipolat.modules.tenants.domain.MembershipScopeType.TENANT)
+                            .status(com.discipolat.modules.tenants.domain.MembershipStatus.ACTIVE)
+                            .invitedBy(securityUtils.getCurrentUserId())
+                            .build());
+        } else {
+            for (com.discipolat.modules.tenants.domain.TenantMembership tm : actives) {
+                if (tm.getRole() == null || !role.getId().equals(tm.getRole().getId())) {
+                    tm.setRole(role);
+                    tenantMembershipRepository.save(tm);
+                }
+            }
+        }
+        permissionResolver.bumpPermissions(tenantId, user.getId(), "USER_CREATE_CUSTOM_ROLE");
     }
 
     @PatchMapping("/{id}/deactivate")

@@ -319,6 +319,7 @@ objet|R3|objectives -> families
 objet|R3|objectives -> interactions
 objet|R3|objectives -> members
 objet|R3|objectives -> souls
+objet|R3|objectives -> tenants
 objet|R3|objectives -> users
 objet|R3|onboarding -> audit
 objet|R3|onboarding -> departments

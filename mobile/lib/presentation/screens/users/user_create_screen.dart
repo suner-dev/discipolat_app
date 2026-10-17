@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../app.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
+
+// Rôles socle (enum legacy UserRole) — la liste est complétée par le catalogue
+// de rôles servi du tenant pour le rôle personnalisé (P7b, union additive).
+const _baseRoles = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
 
 class UserCreateScreen extends StatefulWidget {
   const UserCreateScreen({super.key});
@@ -22,6 +27,10 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   String _role = 'MEMBRE';
   List<String> _roles = [];
   String? _activeRole;
+  // P7b — clé d'un rôle custom du catalogue servi, assignée à la création via
+  // la tenant_membership ACTIVE (rôle principal/rôles/rôle actif restent au
+  // socle enum ; seule cette clé accepte une clé custom servie).
+  String? _customRole;
   bool _saving = false;
 
   @override
@@ -33,6 +42,14 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   Future<void> _loadData() async {
     // Nothing to load for now
   }
+
+  /// P7b — clés de rôles servis hors socle enum (rôles custom de l'église).
+  /// Union additive via [AuthState.rolesVocabulary] ; vide tant que le
+  /// catalogue n'est pas prêt — le sélecteur ne s'affiche alors pas.
+  List<String> get _customRoleOptions => AuthState()
+      .rolesVocabulary(_baseRoles)
+      .where((k) => !_baseRoles.contains(k))
+      .toList();
 
   Future<void> _createUser() async {
     if (!_formKey.currentState!.validate()) return;
@@ -49,6 +66,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
       if (_roles.isNotEmpty) payload['roles'] = _roles;
       if (_activeRole != null) payload['activeRole'] = _activeRole;
+      if (_customRole != null && _customRole!.isNotEmpty) payload['customRole'] = _customRole;
 
       await _apiService.post('/users', data: payload);
       if (mounted) {
@@ -153,7 +171,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(labelText: 'Rôle principal *', labelStyle: TextStyle(color: Colors.white70)),
                     dropdownColor: const Color(0xFF111827),
-                    items: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']
+                    items: _baseRoles
                         .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                         .toList(),
                     onChanged: (v) => setState(() => _role = v ?? 'MEMBRE'),
@@ -162,7 +180,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'].map((r) {
+                    children: _baseRoles.map((r) {
                       final isSelected = _roles.contains(r);
                       return FilterChip(
                         label: Text(r, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 11)),
@@ -190,11 +208,30 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                     dropdownColor: const Color(0xFF111827),
                     items: [
                       const DropdownMenuItem(value: '', child: Text('— Aucun —')),
-                      ...['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']
+                      ..._baseRoles
                           .map((e) => DropdownMenuItem(value: e, child: Text(e))),
                     ],
                     onChanged: (v) => setState(() => _activeRole = v?.isEmpty == true ? null : v),
                   ),
+                  // P7b — rôle custom du catalogue servi (église personnalisée).
+                  if (_customRoleOptions.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _customRole,
+                      isExpanded: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: 'Rôle personnalisé (facultatif)',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                      ),
+                      dropdownColor: const Color(0xFF111827),
+                      items: [
+                        const DropdownMenuItem(value: '', child: Text('— Aucun —')),
+                        ..._customRoleOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+                      ],
+                      onChanged: (v) => setState(() => _customRole = (v == null || v.isEmpty) ? null : v),
+                    ),
+                  ],
                 ],
               ),
             ),
