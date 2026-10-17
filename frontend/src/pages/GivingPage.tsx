@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useI18n } from '@/i18n';
 import {
   Loader2,
@@ -75,10 +76,11 @@ interface RecurringDonation {
 /** Tithe & Offering 2.0 — dons par Mobile Money avec suivi temps réel + dons récurrents. */
 export default function GivingPage() {
   const { activeRole } = useAuth();
+  const { can } = useServedAccess();
   const { t, locale } = useI18n();
   const queryClient = useQueryClient();
-  const canManage =
-    activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
+  const canManage = can('FINANCES_EXECUTE', () =>
+    activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE');
 
   // --- Don unique ---
   const [operator, setOperator] = useState('ORANGE_MONEY');

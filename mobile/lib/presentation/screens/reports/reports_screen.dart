@@ -124,7 +124,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       const Color(0xFF3B82F6),
                       const Color(0xFF6366F1),
                     ),
-                    if (AuthState().hasActiveRole(['RESPONSABLE', 'ADMIN', 'PASTEUR']))
+                    if (AuthState().canServed('DEPARTMENTS_EXECUTE',
+                        legacy: () => AuthState().hasActiveRole(['RESPONSABLE', 'ADMIN', 'PASTEUR'])))
                       _buildNavCard(
                         'Rapport du département',
                         'Rapport hebdomadaire d\'un département',

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import DataTable from '@/components/shared/DataTable';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
@@ -161,6 +162,7 @@ function eventForm(
 
 export default function EventsPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const queryClient = useQueryClient();
   const { locale } = useI18n();
   const dictionaries = useDictionaries();
@@ -197,7 +199,7 @@ export default function EventsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   // Espace métier : le rôle ACTIF détermine ce qui est visible (et non l'ensemble des rôles)
-  const isPasteurOrAdmin = user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN';
+  const isPasteurOrAdmin = can('UI_EVENTS_CONSOLIDATED_ACCESS', () => user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN');
   const [showEdit, setShowEdit] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evenement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -464,7 +466,7 @@ export default function EventsPage() {
       className: 'w-px whitespace-nowrap',
       cell: (evt) => {
         const isOrganizer = evt.organisateurId === user?.id;
-        const canManage = isOrganizer || user?.role === 'PASTEUR' || user?.role === 'RESPONSABLE';
+        const canManage = isOrganizer || can('EVENTS_EXECUTE_DELETE', () => user?.role === 'PASTEUR' || user?.role === 'RESPONSABLE');
         return (
           <div className="flex items-center gap-1 flex-nowrap">
             {evt.statut === 'PLANIFIE' && (

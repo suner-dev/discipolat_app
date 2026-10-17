@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import api from '@/lib/api';
 import { humanizeAuditAction, humanizeEntite, relativeTimeFr } from '@/lib/auditLabels';
 import { useExportReport } from '@/hooks/useExportReport';
@@ -86,9 +87,10 @@ const pctFr = (value: number, digits = 1) =>
 
 export default function DashboardPage() {
   const { user, hasRole } = useAuth();
+  const { can } = useServedAccess();
   const { exportReport, isExporting } = useExportReport();
 
-  const isPasteurOrAdmin = hasRole('PASTEUR') || hasRole('ADMIN');
+  const isPasteurOrAdmin = can('DASHBOARD_EXECUTE', () => hasRole('PASTEUR') || hasRole('ADMIN'));
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['dashboard', 'kpi'],

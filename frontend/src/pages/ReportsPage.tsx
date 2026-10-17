@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import api from '@/lib/api';
 import { useExportReport } from '@/hooks/useExportReport';
 import {
@@ -50,6 +51,7 @@ const _COLORS = ['#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899
 
 export default function ReportsPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const { exportReport, isExporting } = useExportReport();
   const [view, setView] = useState<'overview' | 'maker' | 'family'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,7 +59,7 @@ export default function ReportsPage() {
   const [detailReport, setDetailReport] = useState<MakerReportEntry | FamilyReportEntry | null>(null);
   const [detailType, setDetailType] = useState<'maker' | 'family'>('maker');
 
-  const isPasteurOrAdmin = user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN';
+  const isPasteurOrAdmin = can('UI_REPORTS_EXPORT_ACCESS', () => user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN');
 
   const { data: completion } = useQuery({
     queryKey: ['reports', 'completion'],

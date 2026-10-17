@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess, useRoleVocabulary } from '@/hooks/useServedAccess';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
 import {
@@ -29,12 +30,16 @@ const CIBLE_ICONS: Record<string, typeof Globe> = {
 };
 
 const ALL_ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+// Phase 6 — la liste des rôles destinataires n'est plus figée : le catalogue
+// de rôles SERVI par l'église (rôles custom inclus) complète ces literals
+// (union additive — voir useRoleVocabulary).
 
 export default function CommunicationsPage() {
   const { moduleEnabled } = usePlatformConfig();
   const { activeRole } = useAuth();
+  const { can } = useServedAccess();
   const queryClient = useQueryClient();
-  const canManage = activeRole === 'ADMIN' || activeRole === 'PASTEUR';
+  const canManage = can('COMMUNICATIONS_EXECUTE', () => activeRole === 'ADMIN' || activeRole === 'PASTEUR');
   const [modal, setModal] = useState<null | { edit?: Communication }>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['communications'] });
@@ -211,6 +216,7 @@ function CommunicationModal({ edit, onClose, onSave, pending }: {
   const [contenu, setContenu] = useState(edit?.contenu || '');
   const [cible, setCible] = useState<CommunicationCible>(edit?.cible || 'TOUS');
   const [roles, setRoles] = useState<string[]>(edit?.roles || []);
+  const roleOptions = useRoleVocabulary(ALL_ROLES);
   const [familleId, setFamilleId] = useState(edit?.familleId || '');
   const [departmentId, setDepartmentId] = useState(edit?.departmentId || '');
 
@@ -268,7 +274,7 @@ function CommunicationModal({ edit, onClose, onSave, pending }: {
           <div className="mb-3">
             <label className="label">{tText('Rôles destinataires')}</label>
             <div className="flex flex-wrap gap-2">
-              {ALL_ROLES.map((r) => (
+              {roleOptions.map((r) => (
                 <button key={r} type="button" onClick={() => toggleRole(r)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${roles.includes(r) ? 'bg-primary-600 border-primary-600 text-white' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'}`}>
                   {r}

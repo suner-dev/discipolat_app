@@ -1421,9 +1421,10 @@ class _AppDrawerState extends State<AppDrawer> {
       widgets.add(_groupBlock(context, group, groupItems));
     }
 
-    // Admin section header (only if admin items exist and role is ADMIN)
-    if (adminItems.isNotEmpty &&
-        (activeRole == 'ADMIN' || activeRole == 'PASTEUR')) {
+    // Admin section header : adminItems est déjà filtré served-first via le
+    // registre de permissions de routes (phase 5) — plus aucun littéral de
+    // rôle figé n'est nécessaire ici.
+    if (adminItems.isNotEmpty) {
       widgets.add(Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
         child: Row(

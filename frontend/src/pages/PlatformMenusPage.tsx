@@ -6,11 +6,15 @@ import { Menu, Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Save } from 'l
 import type { MenuEntry, PlatformModule } from '@/types';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useRoleVocabulary } from '@/hooks/useServedAccess';
 import { MENU_ICON_KEYS, resolveIcon } from '@/lib/menuIcons';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
 import { tText } from '@/i18n';
 const ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+// Phase 6 — « rôles visibles » : le catalogue de rôles de l'église (rôles
+// custom) complète ces literals (union additive ; MenuEntry stocke des clés
+// de rôle en chaînes libres, comparées aux autorités actives du compte).
 
 interface MenuForm {
   key: string;
@@ -29,6 +33,7 @@ const EMPTY_FORM: MenuForm = { key: '', label: '', href: '/', icon: 'Menu', sect
 export default function PlatformMenusPage() {
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
+  const roleOptions = useRoleVocabulary(ROLES);
   const { refetch } = usePlatformConfig();
   const [createOpen, setCreateOpen] = useState(false);
   const [_editing, setEditing] = useState<MenuForm | null>(null);
@@ -289,7 +294,7 @@ export default function PlatformMenusPage() {
               <div>
                 <label className="label">{tText('Rôles visibles')}</label>
                 <div className="flex flex-wrap gap-2">
-                  {ROLES.map((r) => (
+                  {roleOptions.map((r) => (
                     <button
                       key={r}
                       onClick={() => setForm({ ...form, roles: form.roles.includes(r) ? form.roles.filter((x) => x !== r) : [...form.roles, r] })}

@@ -15,6 +15,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { tText } from '@/i18n';
 import type {
@@ -45,8 +46,9 @@ const ROLES: UserRole[] = ['FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR
 
 export default function ObjectivesPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
-  const isAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
+  const isAdmin = can('OBJECTIVES_EXECUTE', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')));
   const queryClient = useQueryClient();
 
   /** Libellé d'un rôle (dictionnaire USER_ROLE, repli sur le code). */

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import AttachmentPicker from '@/components/shared/AttachmentPicker';
 import AttachmentLinks from '@/components/shared/AttachmentLinks';
 import { useDictionaries } from '@/hooks/useDictionaries';
@@ -40,6 +41,7 @@ export default function TransferDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const { locale } = useI18n();
   const [modal, setModal] = useState<DecisionType | null>(null);
@@ -115,7 +117,7 @@ export default function TransferDetailPage() {
     setEditingPieces(true);
   };
   const peutArchiver = !estTerminal && t.statut !== 'BROUILLON' && t.statut !== 'SOUMIS'
-    && ['ADMIN', 'PASTEUR'].includes(user?.activeRole ?? '');
+    && can('TRANSFERS_EXECUTE_ARCHIVE', () => ['ADMIN', 'PASTEUR'].includes(user?.activeRole ?? ''));
 
   const openModal = (d: DecisionType) => {
     setMotivation('');

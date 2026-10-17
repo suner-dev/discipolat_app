@@ -27,7 +27,8 @@ class _CommunicationsScreenState extends State<CommunicationsScreen> {
   List<Map<String, dynamic>> _all = [];
   bool _isLoading = true;
 
-  bool get _canManage => AuthState().hasActiveRole(['ADMIN', 'PASTEUR']);
+  bool get _canManage => AuthState().canServed('COMMUNICATIONS_EXECUTE',
+      legacy: () => AuthState().hasActiveRole(['ADMIN', 'PASTEUR']));
 
   @override
   void initState() {
@@ -350,6 +351,10 @@ class _CommunicationSheet extends StatefulWidget {
 
 class _CommunicationSheetState extends State<_CommunicationSheet> {
   static const _roles = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+  // Phase 6 — la liste des rôles destinataires est complétée par le
+  // catalogue de rôles de l'église (rôles custom) : union additive via
+  // AuthState().rolesVocabulary ; le backend résout désormais ces clés par
+  // memberships actifs (CommunicationService.customRoleUserIds).
 
   late final TextEditingController _titreCtrl;
   late final TextEditingController _contenuCtrl;
@@ -459,7 +464,7 @@ class _CommunicationSheetState extends State<_CommunicationSheet> {
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: _roles.map((r) {
+                  children: AuthState().rolesVocabulary(_roles).map((r) {
                     final active = _selectedRoles.contains(r);
                     return GestureDetector(
                       onTap: () => setState(() {

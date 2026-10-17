@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { Plus, Pencil, Trash2, Loader2, Save, GripVertical, Search, Eye, EyeOff, X } from 'lucide-react';
 import type { CustomFieldDefinition } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useRoleVocabulary } from '@/hooks/useServedAccess';
 
 import { tText } from '@/i18n';
 const ENTITY_TYPES = ['SOUL', 'USER', 'DEPARTMENT', 'FAMILY'];
@@ -13,6 +14,9 @@ const ENTITY_ICONS: Record<string, string> = { SOUL: '💕', USER: '👤', DEPAR
 const FIELD_TYPES = ['TEXTE', 'NOMBRE', 'DATE', 'DATE_HEURE', 'BOOLEEN', 'SELECTION', 'SELECTION_MULTIPLE', 'FICHIER', 'IMAGE', 'TELEPHONE', 'EMAIL', 'URL', 'TEXTAREA'];
 const FIELD_TYPE_ICONS: Record<string, string> = { TEXTE: 'Aa', NOMBRE: '#', DATE: '📅', DATE_HEURE: '🕐', BOOLEEN: '✓', SELECTION: '▼', SELECTION_MULTIPLE: '☑', FICHIER: '📎', IMAGE: '🖼', TELEPHONE: '📞', EMAIL: '✉', URL: '🔗', TEXTAREA: '¶' };
 const ROLES = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+// Phase 6 — lecture/écriture des champs personnalisés : le catalogue de
+// rôles de l'église (rôles custom) complète ces literals (union additive ;
+// le backend stocke rolesLecture/rolesEcriture en chaînes libres, jsonb).
 
 interface DefForm {
   code: string;
@@ -36,6 +40,7 @@ const EMPTY_FORM: DefForm = {
 export default function AdminCustomFieldsPage() {
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
+  const roleOptions = useRoleVocabulary(ROLES);
   const [entityType, setEntityType] = useState('SOUL');
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -361,7 +366,7 @@ export default function AdminCustomFieldsPage() {
               <div>
                 <label className="label">{tText('Rôles pouvant lire')}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {ROLES.map((r) => (
+                  {roleOptions.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesLecture: form.rolesLecture.includes(r) ? form.rolesLecture.filter((x) => x !== r) : [...form.rolesLecture, r] })}
                       className={`px-2 py-0.5 rounded text-xs font-medium border ${form.rolesLecture.includes(r) ? 'bg-primary-500/15 border-primary-500/30 text-primary-700' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
                       {dictionaries.label('USER_ROLE', r) || r}
@@ -372,7 +377,7 @@ export default function AdminCustomFieldsPage() {
               <div>
                 <label className="label">{tText('Rôles pouvant modifier')}</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {ROLES.map((r) => (
+                  {roleOptions.map((r) => (
                     <button key={r} onClick={() => setForm({ ...form, rolesEcriture: form.rolesEcriture.includes(r) ? form.rolesEcriture.filter((x) => x !== r) : [...form.rolesEcriture, r] })}
                       className={`px-2 py-0.5 rounded text-xs font-medium border ${form.rolesEcriture.includes(r) ? 'bg-primary-500/15 border-primary-500/30 text-primary-700' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
                       {dictionaries.label('USER_ROLE', r) || r}

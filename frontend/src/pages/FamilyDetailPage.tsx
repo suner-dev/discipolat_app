@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { Family, Soul, FamilyReport, User, FamilyRiskAssessment, TransferRequest, FamilyChiefHistoryEntry } from '@/types';
 import {
@@ -26,6 +27,7 @@ export default function FamilyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const { locale } = useI18n();
   const [showChiefModal, setShowChiefModal] = useState(false);
@@ -33,10 +35,10 @@ export default function FamilyDetailPage() {
 
   // Espace métier : le rôle ACTIF détermine les actions autorisées.
   const activeRole = user?.activeRole;
-  const canSetRisk = activeRole === 'PASTEUR' || activeRole === 'ADMIN';
-  const canChangeChief = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE';
-  const canViewFaiseurPerf = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE' || activeRole === 'FAISEUR';
-  const canAddSoul = activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE';
+  const canSetRisk = can('FAMILIES_EXECUTE_SETNIVEAURISQUE', () => activeRole === 'PASTEUR' || activeRole === 'ADMIN');
+  const canChangeChief = can('FAMILIES_EXECUTE_REASSIGNCHIEF', () => activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE');
+  const canViewFaiseurPerf = can('UI_FAMILIES_VIEWFAISEURPERF_ACCESS', () => activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE' || activeRole === 'FAISEUR');
+  const canAddSoul = can('UI_FAMILIES_ADDSOUL_ACCESS', () => activeRole === 'PASTEUR' || activeRole === 'ADMIN' || activeRole === 'CHEF_DE_FAMILLE');
 
   const { data: family, isLoading } = useQuery({
     queryKey: ['family', id],
@@ -217,7 +219,7 @@ export default function FamilyDetailPage() {
       {id && (
         <FamilyOsPanel
           familyId={id}
-          canWrite={!!activeRole && ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'].includes(activeRole)}
+          canWrite={can('FAMILIES_EXECUTE_R4A', () => !!activeRole && ['ADMIN', 'PASTEUR', 'CHEF_DE_FAMILLE', 'FAISEUR'].includes(activeRole))}
         />
       )}
 

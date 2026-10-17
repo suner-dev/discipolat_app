@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
 import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Power, PowerOff } from 'lucide-react';
@@ -51,8 +52,9 @@ export default function UsersPage() {
   const { user } = useAuth();
   const dictionaries = useDictionaries();
   const isResponsable = user?.activeRole === 'RESPONSABLE';
-  const canManageRoles = user?.role === 'ADMIN' || user?.role === 'PASTEUR' ||
-    user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR';
+  const { can } = useServedAccess();
+  const canManageRoles = can('USERS_EXECUTE', () => user?.role === 'ADMIN' || user?.role === 'PASTEUR' ||
+    user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR');
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

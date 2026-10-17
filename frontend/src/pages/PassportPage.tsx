@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { tText } from '@/i18n';
@@ -77,10 +78,11 @@ function EntryTypeBadge({ type }: { type: string }) {
 
 export default function PassportPage() {
   const { hasRole } = useAuth();
+  const { can } = useServedAccess();
   const queryClient = useQueryClient();
   const [memberId, setMemberId] = useState('');
   const [showQr, setShowQr] = useState(false);
-  const canManage = hasRole('ADMIN', 'PASTEUR', 'RESPONSABLE');
+  const canManage = can('UI_PASSPORT_ISSUE_ACCESS', () => hasRole('ADMIN', 'PASTEUR', 'RESPONSABLE'));
 
   const { data: passport, isPending, isError, refetch } = useQuery({
     queryKey: ['my-passport'],
@@ -215,8 +217,9 @@ export default function PassportPage() {
 function PassportCard({ passport, onChanged }: { passport: Passport; onChanged: () => void }) {
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
-  const canManageAll = hasRole('ADMIN', 'PASTEUR');
-  const canAddEntry = hasRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR');
+  const { can } = useServedAccess();
+  const canManageAll = can('PASSPORT_EXECUTE', () => hasRole('ADMIN', 'PASTEUR'));
+  const canAddEntry = can('PASSPORT_EXECUTE_ADDENTRY', () => hasRole('ADMIN', 'PASTEUR', 'RESPONSABLE', 'FAISEUR'));
 
   const [adding, setAdding] = useState(false);
   const [entryType, setEntryType] = useState('BAPTISM');

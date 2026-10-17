@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
 import type { Family, PageResponse } from '@/types';
@@ -24,6 +25,7 @@ const toStatutFilter = (v: string): StatutFilter =>
 
 export default function FamiliesPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const { locale } = useI18n();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -250,13 +252,13 @@ export default function FamiliesPage() {
             <Filter className="w-4 h-4" />
             Filtres
           </button>
-          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR') && (
+          {can('UI_FAMILIES_COMPARE_ACCESS', () => user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR') && (
             <Link to="/families/compare" className="btn-secondary btn-sm">
               <BarChart3 className="w-4 h-4" />
               Comparer
             </Link>
           )}
-          {(user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR' || user?.activeRole === 'CHEF_DE_FAMILLE') && (
+          {can('FAMILIES_EXECUTE_CREATE', () => user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR' || user?.activeRole === 'CHEF_DE_FAMILLE') && (
             <Link to="/families/new" className="btn-primary btn-sm">
               <Plus className="w-4 h-4" />
               {tText('Nouvelle famille')}

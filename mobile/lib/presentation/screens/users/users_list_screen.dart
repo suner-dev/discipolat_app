@@ -343,7 +343,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
               _actionBtn(Icons.history, () => _showActionModal(u, 'history'), const Color(0xFFA855F7), tooltip: l10n.usersListActionHistory),
             ],
           ]),
-          if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR' || AuthState().hasAnyRole(['ADMIN', 'PASTEUR']))
+          if (role == 'FAISEUR' || role == 'RESPONSABLE' || role == 'PASTEUR' || AuthState().canServed('USERS_EXECUTE',
+                      legacy: () => AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])))
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(children: [
@@ -352,11 +353,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   const SizedBox(width: 4),
                   _actionBtn(Icons.swap_horiz, () => _showActionModal(u, 'transfer'), Colors.blue),
                 ],
-                if (role != 'FAISEUR' && role != 'ADMIN' && AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
+                if (role != 'FAISEUR' && role != 'ADMIN' && AuthState().canServed('USERS_EXECUTE',
+                      legacy: () => AuthState().hasAnyRole(['ADMIN', 'PASTEUR']))) ...[
                   const SizedBox(width: 4),
                   _actionBtn(Icons.arrow_upward, () => _showActionModal(u, 'promote'), Colors.green),
                 ],
-                if (AuthState().hasAnyRole(['ADMIN', 'PASTEUR'])) ...[
+                if (AuthState().canServed('USERS_EXECUTE',
+                      legacy: () => AuthState().hasAnyRole(['ADMIN', 'PASTEUR']))) ...[
                   const SizedBox(width: 4),
                   _actionBtn(Icons.admin_panel_settings, () => _showActionModal(u, 'roles'), const Color(0xFF6366F1), tooltip: l10n.usersListActionRoles),
                 ],

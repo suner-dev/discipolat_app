@@ -6,6 +6,7 @@ import com.discipolat.common.enums.CanalNotification;
 import com.discipolat.common.enums.TypeNotification;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.communications.api.CommunicationRequest;
 import com.discipolat.modules.departments.domain.Department;
@@ -14,6 +15,8 @@ import com.discipolat.modules.notifications.domain.NotificationService;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulDepartmentRepository;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.tenants.domain.MembershipStatus;
+import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.modules.users.domain.UserRepository;
 import com.discipolat.modules.users.domain.UserStatus;
@@ -44,6 +47,7 @@ public class CommunicationService {
     private final SoulRepository soulRepository;
     private final SoulDepartmentRepository soulDepartmentRepository;
     private final DepartmentRepository departmentRepository;
+    private final TenantMembershipRepository membershipRepository;
 
     public CommunicationService(CommunicationRepository communicationRepository,
                                 NotificationService notificationService,
@@ -53,7 +57,8 @@ public class CommunicationService {
                                 UserRepository userRepository,
                                 SoulRepository soulRepository,
                                 SoulDepartmentRepository soulDepartmentRepository,
-                                DepartmentRepository departmentRepository) {
+                                DepartmentRepository departmentRepository,
+                                TenantMembershipRepository membershipRepository) {
         this.communicationRepository = communicationRepository;
         this.notificationService = notificationService;
         this.securityUtils = securityUtils;
@@ -63,6 +68,7 @@ public class CommunicationService {
         this.soulRepository = soulRepository;
         this.soulDepartmentRepository = soulDepartmentRepository;
         this.departmentRepository = departmentRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     /* ------------------------------ Lecture ------------------------------ */
@@ -176,19 +182,54 @@ public class CommunicationService {
                     .collect(Collectors.toSet());
             case ROLE -> {
                 Set<UUID> ids = new HashSet<>();
+                List<String> customKeys = new ArrayList<>();
                 for (String role : c.getRoles()) {
                     try {
                         ids.addAll(userRepository.findByRolesContaining(UserRole.valueOf(role)).stream()
                                 .map(User::getId).toList());
-                    } catch (IllegalArgumentException ignored) {
-                        // rôle inconnu : ignoré
+                    } catch (IllegalArgumentException unknown) {
+                        // Phase 6 — rôle hors enum (rôle custom de l'église) :
+                        // résolu par les memberships ACTIFS du tenant courant,
+                        // au lieu d'être silencieusement ignoré.
+                        customKeys.add(role);
                     }
                 }
+                ids.addAll(customRoleUserIds(customKeys));
                 yield ids;
             }
             case FAMILLE -> familyUserIds(c.getFamilleId());
             case DEPARTEMENT -> departmentUserIds(c.getDepartmentId());
         };
+    }
+
+    /**
+     * Phase 6 (paramétration par église) — destinataires portant un rôle du
+     * catalogue LOCAL de l'église (clé absente de l'enum UserRole), via leurs
+     * memberships ACTIFS du tenant courant (rôle entité ou roleLegacy). Hors
+     * contexte tenant (jobs, tests unitaires) : ensemble vide — le comportement
+     * historique (ignorer la clé) est conservé, jamais élargi.
+     */
+    private Set<UUID> customRoleUserIds(List<String> customKeys) {
+        if (customKeys.isEmpty()) return Set.of();
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return Set.of();
+        Set<String> wanted = new HashSet<>();
+        customKeys.forEach(k -> wanted.add(k.trim().toUpperCase(Locale.ROOT)));
+        Set<UUID> candidateIds = membershipRepository
+                .findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE).stream()
+                .filter(m -> {
+                    String roleKey = m.getRole() != null ? m.getRole().getKey() : m.getRoleLegacy();
+                    return roleKey != null && wanted.contains(roleKey.trim().toUpperCase(Locale.ROOT));
+                })
+                .map(com.discipolat.modules.tenants.domain.TenantMembership::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (candidateIds.isEmpty()) return Set.of();
+        // Même discipline que la cible TOUS : uniquement des comptes actifs non supprimés.
+        return userRepository.findAllById(candidateIds).stream()
+                .filter(u -> u.getStatut() == UserStatus.ACTIVE && !u.isDeleted())
+                .map(User::getId)
+                .collect(Collectors.toSet());
     }
 
     private Set<UUID> familyUserIds(UUID familleId) {

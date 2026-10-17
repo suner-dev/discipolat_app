@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
 import { isPriereExaucee } from '@/lib/prayerStatus';
@@ -108,6 +109,7 @@ const initials = (p?: MemberDashboard['user']) =>
 export default function MemberDashboardPage() {
   const { t, locale } = useI18n();
   const { user, activeRole } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const canManage = activeRole === 'MEMBRE'; // Les autres rôles voient en lecture seule
   const queryClient = useQueryClient();
@@ -722,7 +724,7 @@ export default function MemberDashboardPage() {
               value={requestForm.message}
               onChange={(e) => setRequestForm({ ...requestForm, message: e.target.value })}
             />
-            {canAccessFilesModule(user?.role) && (
+            {can('UI_FILES_PICKER_ACCESS', () => canAccessFilesModule(user?.role)) && (
               <div className="mt-3">
                 <label className="label flex items-center gap-1.5">
                   <Paperclip className="w-3.5 h-3.5 text-primary-500" /> {tText('Pièces jointes')}

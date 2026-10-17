@@ -20,6 +20,7 @@ import {
   BookMarked,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { tText } from '@/i18n';
 import type {
   Course,
@@ -49,7 +50,8 @@ const NIVEAU_LABEL: Record<string, string> = {
 
 export default function TrainingsPage() {
   const { user } = useAuth();
-  const isAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
+  const { can } = useServedAccess();
+  const isAdmin = can('TRAININGS_EXECUTE_CREATECOURSE', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')));
   const queryClient = useQueryClient();
   const { moduleEnabled } = usePlatformConfig();
 

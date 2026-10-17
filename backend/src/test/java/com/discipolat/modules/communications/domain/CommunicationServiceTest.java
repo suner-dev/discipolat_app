@@ -44,6 +44,7 @@ class CommunicationServiceTest {
     @Mock private SoulRepository soulRepository;
     @Mock private SoulDepartmentRepository soulDepartmentRepository;
     @Mock private DepartmentRepository departmentRepository;
+    @Mock private com.discipolat.modules.tenants.domain.TenantMembershipRepository membershipRepository;
 
     private CommunicationService service;
 
@@ -53,7 +54,13 @@ class CommunicationServiceTest {
     void setUp() {
         SecurityTestHelper.loginAs(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         service = new CommunicationService(communicationRepository, notificationService, securityUtils,
-                auditService, propagationPublisher, userRepository, soulRepository, soulDepartmentRepository, departmentRepository);
+                auditService, propagationPublisher, userRepository, soulRepository, soulDepartmentRepository,
+                departmentRepository, membershipRepository);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearTenant() {
+        com.discipolat.common.multitenancy.TenantContext.clear();
     }
 
     private User user(UUID id, UserRole role) {
@@ -94,6 +101,50 @@ class CommunicationServiceTest {
 
         assertThat(result).containsEntry("destinataires", 1);
         verify(notificationService).create(eq(resp), any(), any(), any(), any(), eq(c.getId()), eq("COMMUNICATION"));
+    }
+
+    @Test
+    void publish_byCustomTenantRole_targetsActiveMemberships() {
+        // Phase 6 — rôle custom de l'église (hors enum) : résolu par membership actif.
+        UUID tenantId = UUID.randomUUID();
+        com.discipolat.common.multitenancy.TenantContext.setTenantId(tenantId);
+        UUID diacreUserId = UUID.randomUUID();
+        Communication c = Communication.builder().id(UUID.randomUUID())
+                .titre("Diaconie").contenu("Réunion des diacres.")
+                .cible(Communication.Cible.ROLE).roles(List.of("DIACRE")).build();
+        when(communicationRepository.findById(c.getId())).thenReturn(Optional.of(c));
+        when(communicationRepository.save(any(Communication.class))).thenReturn(c);
+        com.discipolat.modules.tenants.domain.Role diacre = new com.discipolat.modules.tenants.domain.Role();
+        diacre.setKey("DIACRE");
+        com.discipolat.modules.tenants.domain.TenantMembership tm =
+                com.discipolat.modules.tenants.domain.TenantMembership.builder()
+                        .tenantId(tenantId).userId(diacreUserId).role(diacre)
+                        .status(com.discipolat.modules.tenants.domain.MembershipStatus.ACTIVE).build();
+        when(membershipRepository.findByTenantIdAndStatus(tenantId,
+                com.discipolat.modules.tenants.domain.MembershipStatus.ACTIVE)).thenReturn(List.of(tm));
+        when(userRepository.findAllById(Set.of(diacreUserId)))
+                .thenReturn(List.of(user(diacreUserId, UserRole.MEMBRE)));
+
+        java.util.Map<String, Object> result = service.publish(c.getId());
+
+        assertThat(result).containsEntry("destinataires", 1);
+        verify(notificationService).create(eq(diacreUserId), any(), any(), any(), any(), eq(c.getId()), eq("COMMUNICATION"));
+    }
+
+    @Test
+    void publish_byUnknownRole_withoutTenantContext_isIgnored() {
+        // Hors contexte tenant (jobs, legacy) : comportement historique conservé —
+        // la clé inconnue ne cible personne, jamais d'élargissement.
+        Communication c = Communication.builder().id(UUID.randomUUID())
+                .titre("X").contenu("Y").cible(Communication.Cible.ROLE)
+                .roles(List.of("DIACRE")).build();
+        when(communicationRepository.findById(c.getId())).thenReturn(Optional.of(c));
+        when(communicationRepository.save(any(Communication.class))).thenReturn(c);
+
+        java.util.Map<String, Object> result = service.publish(c.getId());
+
+        assertThat(result).containsEntry("destinataires", 0);
+        verifyNoInteractions(membershipRepository);
     }
 
     @Test

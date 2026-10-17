@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../app.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import 'transfer_labels.dart';
 
 const List<String> kRoles = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+// Phase 6 — les initiateurs/validateurs d'un circuit ne sont plus limités à
+// cette liste : le catalogue de rôles de l'église (rôles custom) complète
+// ces literals via AuthState().rolesVocabulary (union additive ; le backend
+// stocke et compare des clés de rôle en chaîne libre).
 const List<String> kModes = ['SEQUENTIEL', 'PARALLELE', 'N_VALIDATIONS_REQUISES'];
 
 class TransferAdminScreen extends StatefulWidget {
@@ -122,6 +127,7 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
   /// Éditeur simple : rôles initiateurs, mode, nombre requis, délai, étapes.
   Future<void> _openEditor(Map<String, dynamic> config) async {
     final l10n = AppLocalizations.of(context);
+    final roleVocab = AuthState().rolesVocabulary(kRoles);
     var mode = (config['modeValidation'] ?? 'SEQUENTIEL') as String;
     final nbRequisCtrl = TextEditingController(text: '${(config['nombreValidationsRequises'] as num?)?.toInt() ?? 1}');
     final delaiCtrl = TextEditingController(text: '${(config['delaiTraitementHeures'] as num?)?.toInt() ?? 72}');
@@ -154,7 +160,7 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
                 const SizedBox(height: 16),
                 _sectionTitle(l10n.initiatorRoles),
                 Wrap(spacing: 6, runSpacing: 6, children: [
-                  for (final r in kRoles)
+                  for (final r in roleVocab)
                     FilterChip(
                       label: Text(r, style: const TextStyle(fontSize: 11)),
                       selected: roles.contains(r),
@@ -201,7 +207,7 @@ class _TransferAdminScreenState extends State<TransferAdminScreen> {
                         Text(l10n.stepLabel(i + 1, steps[i]['label'] as String? ?? ''), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         Wrap(spacing: 6, runSpacing: 6, children: [
-                          for (final r in kRoles)
+                          for (final r in roleVocab)
                             FilterChip(
                               label: Text(r, style: const TextStyle(fontSize: 10)),
                               selected: (steps[i]['rolesValidateurs'] as List).contains(r),

@@ -150,6 +150,7 @@ objet|R3|communications -> audit
 objet|R3|communications -> departments
 objet|R3|communications -> notifications
 objet|R3|communications -> souls
+objet|R3|communications -> tenants
 objet|R3|communications -> users
 objet|R3|compliance -> audit
 objet|R3|compliance -> gdpr

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import {
   Star, Loader2, ThumbsUp, Shield,
   UserCheck, BarChart3, Send, Eye,
@@ -28,9 +29,10 @@ interface EvalStats {
 
 export default function EvaluationsPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
-  const isPasteurOrAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
+  const isPasteurOrAdmin = can('UI_EVALUATIONS_ADMIN_VIEW_ACCESS', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')));
   const [activeTab, setActiveTab] = useState<'evaluate' | 'my-results' | 'all'>('evaluate');
   const [selectedPerson, setSelectedPerson] = useState<PersonToEvaluate | null>(null);
   const [note, setNote] = useState(0);

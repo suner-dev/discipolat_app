@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { tText } from '@/i18n';
 import type { OrganizationNode } from '@/types/tenant';
 import {
@@ -49,13 +50,14 @@ type Tab = 'mandates' | 'orgchart' | 'transfers' | 'history';
 
 export default function PastoralMinistryPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('mandates');
 
   // PASTOR_PRINCIPAL est un rôle de tenant (pas un UserRole plateforme) — d'où le string large.
   const activeRole = user?.activeRole as string | undefined;
-  // Parité exacte des @PreAuthorize serveur.
-  const canWrite = activeRole === 'ADMIN' || activeRole === 'PASTOR_PRINCIPAL';
+  // Parité exacte des @PreAuthorize serveur (clé servie FAMILIES_EXECUTE).
+  const canWrite = can('FAMILIES_EXECUTE', () => activeRole === 'ADMIN' || activeRole === 'PASTOR_PRINCIPAL');
 
   const { data: appointments } = useQuery({
     queryKey: ['pastorate', 'appointments'],

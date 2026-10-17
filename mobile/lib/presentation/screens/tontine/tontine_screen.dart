@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/app_drawer.dart';
 import '../../../data/services/api_service.dart';
+import '../../../app.dart';
 
 /// Tontine Numérique — groupes d'épargne solidaire et échéanciers.
 /// Lecture ouverte à tous ; écritures réservées aux gestionnaires
@@ -273,7 +274,8 @@ class _TontineScreenState extends State<TontineScreen> {
                       style: const TextStyle(color: Colors.white,
                           fontWeight: FontWeight.w600)),
                 ),
-                if (_canManage)
+                if (AuthState().canServed('TONTINE_EXECUTE_NEXTROUND',
+                    legacy: () => _canManage))
                   IconButton(
                     tooltip: 'Tour suivant',
                     icon: const Icon(Icons.skip_next_rounded, color: Color(0xFFFFB300)),
@@ -318,7 +320,9 @@ class _TontineScreenState extends State<TontineScreen> {
                       child: Text(mem['nom'] ?? '',
                           style: const TextStyle(color: Colors.white)),
                     ),
-                    if (!paye && _canManage)
+                    if (!paye &&
+                        AuthState().canServed('TONTINE_EXECUTE_NEXTROUND',
+                            legacy: () => _canManage))
                       TextButton(
                         onPressed: () =>
                             _markPaid(group['id'] as String, mem['id'] as String),

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import type { FileEntity } from '@/types';
 import { Paperclip, X, FileText, Plus, Loader2 } from 'lucide-react';
 
@@ -43,6 +44,7 @@ export function canAccessFilesModule(role: string | null | undefined): boolean {
  */
 export default function AttachmentPicker({ value, onChange }: AttachmentPickerProps) {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -54,7 +56,7 @@ export default function AttachmentPicker({ value, onChange }: AttachmentPickerPr
   const [categorie, setCategorie] = useState('AUTRE');
   const queryClient = useQueryClient();
 
-  const canAccessFiles = canAccessFilesModule(user?.role);
+  const canAccessFiles = can('UI_FILES_PICKER_ACCESS', () => canAccessFilesModule(user?.role));
 
   const { data: files } = useQuery({
     queryKey: FILES_QUERY_KEY,
