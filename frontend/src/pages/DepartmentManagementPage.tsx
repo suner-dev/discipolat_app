@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { usePlatformConfig } from '@/contexts/PlatformContext';
 import {
   Building2, ArrowLeft, Network, Briefcase, Users2, ListTodo, History,
@@ -44,22 +45,26 @@ export default function DepartmentManagementPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { activeRole } = useAuth();
+  const { can } = useServedAccess();
   const initialTab = (searchParams.get('tab') as TabKey) || 'members';
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
   const { moduleEnabled } = usePlatformConfig();
 
-  // Filtrer les onglets selon le rôle actif ET les modules activés
+  // Filtrer les onglets selon la permission SERVIE (tous les onglets partagent
+  // le même ensemble {ADMIN, PASTEUR, RESPONSABLE} → clé unique DEPARTMENTS_EXECUTE)
+  // et les modules activés.
+  const deptAccess = can('DEPARTMENTS_EXECUTE', () =>
+    !!activeRole && ['ADMIN', 'PASTEUR', 'RESPONSABLE'].includes(activeRole));
   const visibleTabs = useMemo(() => {
     return ALL_TABS.filter((t) => {
-      // Visibilité par rôle
-      if (!activeRole) return false;
-      if (!(t.roles as readonly string[]).includes(activeRole)) return false;
+      // Visibilité par permission (gardé : l'accès gestion du département)
+      if (!deptAccess) return false;
       // Visibilité par module
       if ('module' in t && t.module && !moduleEnabled(t.module)) return false;
       return true;
     });
-  }, [activeRole, moduleEnabled]);
+  }, [deptAccess, moduleEnabled]);
 
   // Si l'onglet actif n'est plus visible, revenir au premier onglet visible
   useEffect(() => {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/app_drawer.dart';
+import '../../../app.dart';
 
 /// Passeport Spirituel — carte de vérification de l'historique spirituel.
 /// Connecté à l'API Backend : /api/v1/passports
@@ -117,7 +118,9 @@ class _PassportScreenState extends State<PassportScreen> {
         backgroundColor: Colors.transparent,
         title: const Text('Passeport Spirituel'),
         actions: [
-          if (_passport != null && _canManage)
+          if (_passport != null &&
+              AuthState().canServed('UI_PASSPORT_QR_VERIFY_ACCESS',
+                  legacy: () => _canManage))
             IconButton(
                 icon: const Icon(Icons.qr_code_scanner),
                 onPressed: _showQrDialog,

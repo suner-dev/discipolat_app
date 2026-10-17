@@ -1,10 +1,12 @@
 package com.discipolat.modules.objectives.domain;
 
+import com.discipolat.common.domain.BusinessRuleException;
 import com.discipolat.common.domain.EntityNotFoundException;
 import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.domain.UserRole;
 import com.discipolat.common.enums.StatutAme;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
+import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.departments.domain.Department;
 import com.discipolat.modules.departments.domain.DepartmentRepository;
 import com.discipolat.modules.evangelism.domain.EvangelismEtape;
@@ -21,6 +23,7 @@ import com.discipolat.modules.objectives.api.CreateObjectiveRequest;
 import com.discipolat.modules.objectives.api.ObjectiveProgressResponse;
 import com.discipolat.modules.souls.domain.Soul;
 import com.discipolat.modules.souls.domain.SoulRepository;
+import com.discipolat.modules.tenants.domain.RoleRepository;
 import com.discipolat.modules.users.domain.User;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.modules.users.domain.UserRepository;
@@ -55,6 +58,7 @@ public class ObjectiveService {
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
     private final EntityPropagationPublisher propagationPublisher;
+    private final RoleRepository roleRepository;
 
     public ObjectiveService(ObjectiveRepository objectiveRepository,
                             SoulRepository soulRepository,
@@ -66,7 +70,8 @@ public class ObjectiveService {
                             FamilyRepository familyRepository,
                             UserRepository userRepository,
                             SecurityUtils securityUtils,
-                            EntityPropagationPublisher propagationPublisher) {
+                            EntityPropagationPublisher propagationPublisher,
+                            RoleRepository roleRepository) {
         this.objectiveRepository = objectiveRepository;
         this.soulRepository = soulRepository;
         this.interactionRepository = interactionRepository;
@@ -78,6 +83,7 @@ public class ObjectiveService {
         this.userRepository = userRepository;
         this.securityUtils = securityUtils;
         this.propagationPublisher = propagationPublisher;
+        this.roleRepository = roleRepository;
     }
 
     // ============================================================
@@ -90,8 +96,12 @@ public class ObjectiveService {
     }
 
     public Objective create(CreateObjectiveRequest request) {
+        // V263 — P7a : la cible « rôle » accepte désormais les clés du
+        // catalogue de rôles servi du tenant, pas seulement les noms de
+        // l'enum socle UserRole (union additive, jamais de rétrécissement).
+        String roleKey = requireKnownRoleKey(request.role());
         Objective objective = Objective.builder()
-                .role(request.role())
+                .role(roleKey)
                 .type(request.type())
                 .cible(request.cible())
                 .periode(request.periode())
@@ -133,7 +143,8 @@ public class ObjectiveService {
      */
     @Transactional(readOnly = true)
     public List<ObjectiveProgressResponse> myProgress() {
-        UserRole role = activeRole();
+        String role = activeRole();
+        if (role == null || role.isEmpty()) return List.of();
         List<Objective> objectives = objectiveRepository.findByRoleAndActifTrue(role);
         if (objectives.isEmpty()) return List.of();
 
@@ -206,12 +217,50 @@ public class ObjectiveService {
 
     private record Scope(List<UUID> soulIds) {}
 
-    /** Rôle actif (multi-rôles supportés) converti en enum. */
-    private UserRole activeRole() {
-        return UserRole.valueOf(securityUtils.getCurrentUserRole());
+    /** Rôle actif (multi-rôles supportés) en clé de rôle — socle ou custom servi. */
+    private String activeRole() {
+        String raw = securityUtils.getCurrentUserRole();
+        return raw == null ? null : raw.trim().toUpperCase(Locale.ROOT);
     }
 
-    private Scope resolveScope(UUID userId, UserRole role) {
+    /**
+     * V263 — P7a : normalise et valide la clé de rôle d'un objectif contre
+     * l'union {noms de l'enum socle UserRole} ∪ {catalogue de rôles du tenant
+     * servi} (rôles globaux inclus — même pont de clés que
+     * {@code UserController#syncTenantMembershipRole}, V173). Clé inconnue →
+     * 4xx métier, jamais de crash {@code Enum.valueOf} sur un rôle custom.
+     */
+    private String requireKnownRoleKey(String rawRole) {
+        String key = rawRole == null ? "" : rawRole.trim().toUpperCase(Locale.ROOT);
+        if (!key.matches("[A-Z][A-Z0-9_]{0,49}")) {
+            throw new BusinessRuleException("Clé de rôle d'objectif invalide: " + rawRole,
+                    "INVALID_OBJECTIVE_ROLE");
+        }
+        if (parseLegacyRole(key) != null) {
+            return key;
+        }
+        UUID tenantId = TenantContext.getTenantId();
+        boolean known = (tenantId != null && roleRepository.findByTenantIdAndKey(tenantId, key).isPresent())
+                || roleRepository.findByTenantIdIsNullAndKey(key).isPresent();
+        if (!known) {
+            throw new BusinessRuleException(
+                    "Rôle inconnu pour le ciblage d'objectif (ni rôle socle, ni catalogue du tenant): " + key,
+                    "UNKNOWN_OBJECTIVE_ROLE");
+        }
+        return key;
+    }
+
+    /** Rôle socle historique depuis une clé de rôle ; null si clé custom servie. */
+    private static UserRole parseLegacyRole(String roleKey) {
+        try {
+            return UserRole.valueOf(roleKey);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private Scope resolveScope(UUID userId, String roleKey) {
+        UserRole role = parseLegacyRole(roleKey);
         // Pasteur / admin : toutes les âmes
         if (role == UserRole.PASTEUR || role == UserRole.ADMIN) {
             return new Scope(null);
@@ -238,6 +287,8 @@ public class ObjectiveService {
                     .filter(s -> !s.isDeleted())
                     .forEach(s -> soulIds.add(s.getId()));
         }
+        // Clé custom servie (hors rôles socle) : pas de sémantique de périmètre
+        // historique connue — périmètre vide (mesure à 0), plus de crash.
         return new Scope(List.copyOf(soulIds));
     }
 

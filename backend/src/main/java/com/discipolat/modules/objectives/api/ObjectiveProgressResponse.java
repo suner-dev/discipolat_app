@@ -1,6 +1,5 @@
 package com.discipolat.modules.objectives.api;
 
-import com.discipolat.common.domain.UserRole;
 import com.discipolat.modules.objectives.domain.Objective;
 import com.discipolat.modules.objectives.domain.ObjectiveType;
 
@@ -8,7 +7,7 @@ import java.util.UUID;
 
 public record ObjectiveProgressResponse(
         UUID id,
-        UserRole role,
+        String role,
         ObjectiveType type,
         int cible,
         Objective.Periode periode,

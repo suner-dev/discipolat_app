@@ -80,7 +80,7 @@ class EntityBuilderDefaultsTest {
         assertEquals(Visit.StatutVisite.PLANIFIEE,
                 Visit.builder().soulId(UUID.randomUUID()).build().getStatut());
         assertEquals(Objective.Periode.MENSUEL,
-                Objective.builder().role(com.discipolat.common.domain.UserRole.FAISEUR).build().getPeriode());
+                Objective.builder().role("FAISEUR").build().getPeriode());
         assertEquals(StatutValidation.BROUILLON,
                 FamilyReport.builder().familleId(UUID.randomUUID()).build().getStatutValidation());
     }

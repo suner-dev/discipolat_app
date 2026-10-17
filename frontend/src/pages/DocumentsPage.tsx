@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import DataTable from '@/components/shared/DataTable';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { FileEntity, PageResponse, CategorieDocument } from '@/types';
@@ -33,6 +34,7 @@ const INITIAL_FORM = { nom: '', description: '', chemin: '', typeFichier: 'appli
 
 export default function DocumentsPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const queryClient = useQueryClient();
   const dictionaries = useDictionaries();
   const [page, setPage] = useState(0);
@@ -170,7 +172,7 @@ export default function DocumentsPage() {
             className="btn-ghost btn-sm text-primary-600 hover:text-primary-700">
             <Download className="w-4 h-4" />
           </a>
-          {(file.auteurId === user?.id || user?.role === 'PASTEUR') && (
+          {(file.auteurId === user?.id || can('UI_DOCUMENTS_DELETEANY_ACCESS', () => user?.role === 'PASTEUR')) && (
             <button onClick={() => { if (confirm('Supprimer ce document ?')) deleteMutation.mutate(file.id); }}
               disabled={deleteMutation.isPending} className="btn-ghost btn-sm text-red-500 hover:text-red-600">
               <Trash2 className="w-4 h-4" />

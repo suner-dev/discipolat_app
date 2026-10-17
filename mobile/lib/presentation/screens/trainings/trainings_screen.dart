@@ -44,7 +44,8 @@ class _TrainingsScreenState extends State<TrainingsScreen> with SingleTickerProv
       final certRes = await _apiService.get('/trainings/my-certificates');
       // KPIs de la formation : réservés aux super-utilisateurs (ADMIN / PASTEUR).
       Map<String, dynamic>? stats;
-      if (AuthState().hasActiveRole(['ADMIN', 'PASTEUR'])) {
+      if (AuthState().canServed('TRAININGS_EXECUTE_STATS',
+          legacy: () => AuthState().hasActiveRole(['ADMIN', 'PASTEUR']))) {
         try {
           stats = (await _apiService.get('/trainings/stats')).data as Map<String, dynamic>?;
         } catch (_) {

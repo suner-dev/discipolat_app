@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import type { WeeklyProgramTemplate, Evenement, JourSemaine } from '@/types';
 import {
@@ -54,6 +55,7 @@ function formatDate(d: Date): string {
 
 export default function WeeklyProgramPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const queryClient = useQueryClient();
   const { locale } = useI18n();
@@ -229,25 +231,25 @@ export default function WeeklyProgramPage() {
           <p className="page-subtitle">{tText('Définissez les événements récurrents et générez le programme')}</p>
         </div>
         <div className="flex gap-2 animate-fade-in">
-          {user?.role === 'PASTEUR' && (
-            <>
-              <button
-                onClick={() => generateMonthMutation.mutate()}
-                disabled={generateMonthMutation.isPending}
-                className="btn-secondary btn-sm"
-              >
-                {generateMonthMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Générer le mois
-              </button>
-              <button
-                onClick={() => generateWeekMutation.mutate(weekParam)}
-                disabled={generateWeekMutation.isPending || !templates || templates.length === 0}
-                className="btn-primary btn-sm"
-              >
-                {generateWeekMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-                Générer la semaine
-              </button>
-            </>
+          {can('EVENTS_EXECUTE_GENERATEMONTHPROGRAM', () => user?.role === 'PASTEUR') && (
+            <button
+              onClick={() => generateMonthMutation.mutate()}
+              disabled={generateMonthMutation.isPending}
+              className="btn-secondary btn-sm"
+            >
+              {generateMonthMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Générer le mois
+            </button>
+          )}
+          {can('EVENTS_EXECUTE_GENERATEWEEKPROGRAM', () => user?.role === 'PASTEUR') && (
+            <button
+              onClick={() => generateWeekMutation.mutate(weekParam)}
+              disabled={generateWeekMutation.isPending || !templates || templates.length === 0}
+              className="btn-primary btn-sm"
+            >
+              {generateWeekMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+              Générer la semaine
+            </button>
           )}
         </div>
       </div>
@@ -317,8 +319,8 @@ export default function WeeklyProgramPage() {
         })}
       </div>
 
-      {/* Template management (Pasteur only) */}
-      {user?.role === 'PASTEUR' && (
+      {/* Template management (clé servie par église — défaut : Pasteur seul) */}
+      {can('UI_WEEKLYPROGRAM_TEMPLATES_ACCESS', () => user?.role === 'PASTEUR') && (
         <>
           <div className="page-header mt-8">
             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">

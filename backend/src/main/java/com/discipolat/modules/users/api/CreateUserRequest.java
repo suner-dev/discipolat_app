@@ -15,5 +15,11 @@ public record CreateUserRequest(
         @NotBlank String password,
         @NotNull UserRole role,
         Set<UserRole> roles,
-        UserRole activeRole
+        UserRole activeRole,
+        // P7b — contrat élargi : clé d'un rôle custom du catalogue SERVI du
+        // tenant, assignable à la création (au-delà de l'enum socle UserRole).
+        // Optionnelle ; si présente, la tenant_membership ACTIVE de portée
+        // TENANT du compte est pointée sur ce rôle du catalogue (pont V173)
+        // et les permissions servies sont rafraîchies. Clé inconnue → 4xx.
+        String customRole
 ) {}

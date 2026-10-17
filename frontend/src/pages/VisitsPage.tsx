@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import {
   Plus, CalendarCheck, DoorOpen, CheckCircle2, XCircle, Clock, FileText,
   Search, Filter, Loader2, Calendar,
@@ -29,8 +30,9 @@ const MOTIF_LABELS: Record<string, string> = {
 
 export default function VisitsPage() {
   const { user } = useAuth();
-  const isLeader = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')
-    || user.roles.includes('RESPONSABLE') || user.roles.includes('CHEF_DE_FAMILLE'));
+  const { can } = useServedAccess();
+  const isLeader = can('UI_VISITS_LEADER_UPCOMING_ACCESS', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')
+    || user.roles.includes('RESPONSABLE') || user.roles.includes('CHEF_DE_FAMILLE')));
   const queryClient = useQueryClient();
 
   const [showCreate, setShowCreate] = useState(false);

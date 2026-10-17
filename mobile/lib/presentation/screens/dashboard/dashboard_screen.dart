@@ -77,7 +77,10 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final activeRole = AuthState().activeRole;
-    final isAdminPasteur = activeRole == 'ADMIN' || activeRole == 'PASTEUR';
+    // served-first : la matrice de l'église (DASHBOARD_EXECUTE) prime ; le
+    // littéral de rôle actif reste le repli legacy.
+    final isAdminPasteur = AuthState().canServed('DASHBOARD_EXECUTE',
+        legacy: () => activeRole == 'ADMIN' || activeRole == 'PASTEUR');
     final hasFullKpi = _kpi?.containsKey('totalAmes') ?? false;
 
     final stats = _kpi != null ? (hasFullKpi ? [

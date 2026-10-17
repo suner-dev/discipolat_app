@@ -346,6 +346,46 @@ class AuthState {
   bool get isServedPermissionsReady => _servedPermissionsReady;
   Set<String> get servedPermissions => _servedPermissions;
 
+  // ── Rôles SERVIS (Phase 6, paramétration par église) ──
+  // Cache des clés du catalogue de rôles du tenant (GET
+  // /admin/roles/overview — inclut les rôles custom créés par l'église).
+  // Les sélecteurs de rôles figés (initiateurs de workflow, visibilité de
+  // menus, ciblage d'annonces) sont COMPLÉTÉS par ce catalogue via
+  // [rolesVocabulary] : union additive, les literals legacy restent toujours.
+  List<String> _servedRoleKeys = const <String>[];
+  bool _servedRoleKeysReady = false;
+
+  /// Re-pull du catalogue de rôles du tenant (best-effort, jamais de logout
+  /// forcé — même discipline que [refreshServedPermissions]).
+  Future<void> refreshServedRoles() async {
+    try {
+      final api = servedPermissionsApi ?? livePermissionsApi ?? ApiService();
+      final res = await api.get('/admin/roles/overview');
+      final data = res.data;
+      if (data is! List) return;
+      _servedRoleKeys = data
+          .whereType<Map>()
+          .map((m) => (m['key'] ?? '').toString().toUpperCase())
+          .where((k) => k.isNotEmpty)
+          .toList();
+      _servedRoleKeysReady = true;
+    } catch (e) {
+      debugPrint('[AuthState] refreshServedRoles ignoré: $e');
+    }
+  }
+
+  /// Vocabulaire de rôles additif : `legacy` d'abord (ordre conservé), puis
+  /// les clés custom servies. Tant que le catalogue n'est pas prêt (ou vide),
+  /// retourne `legacy` à l'identique — jamais de régression.
+  List<String> rolesVocabulary(List<String> legacy) {
+    if (!_servedRoleKeysReady || _servedRoleKeys.isEmpty) return legacy;
+    final out = List<String>.from(legacy);
+    for (final k in _servedRoleKeys) {
+      if (!out.contains(k)) out.add(k);
+    }
+    return out;
+  }
+
   /// Vrai si l'ensemble servi contient la clé du catalogue. Normalisation
   /// uppercase côté serveur (PermissionResolver) → comparaison insensible.
   bool hasPermission(String permission) =>
@@ -398,6 +438,8 @@ class AuthState {
       // d'autorités actives dépend du JWT re-validé). Miroir de la boucle
       // web useRealtimeBus → refreshContext().
       await refreshServedPermissions();
+      // Le catalogue de rôles peut changer aussi (rôle custom créé/supprimé).
+      await refreshServedRoles();
     } catch (e) {
       // Best-effort : REST indisponible → le prochain événement ou un
       // refresh manuel rattrapera ; jamais de logout forcé (§G4.4-4).
@@ -455,6 +497,9 @@ class AuthState {
       // Phase 2-client — amorçage du cache de permissions servies ; tant
       // qu'il n'est pas prêt, la garde retombe sur le littéral par rôle.
       unawaited(refreshServedPermissions());
+      // Phase 6 — amorçage du catalogue de rôles servis (sélecteurs
+      // « served-first » des écrans d'administration).
+      unawaited(refreshServedRoles());
     }
   }
 
@@ -477,6 +522,18 @@ class AuthState {
     return checkRoles.contains(_activeRole);
   }
 
+  /// Phase 4/5 — gardes INTRA-ÉCRANS « served-first » : le cache de
+  /// permissions servies (GET /me/permissions, matrice personnalisable par
+  /// église) prime quand il est prêt ; sinon on retombe sur le littéral de
+  /// rôles legacy. Même sémantique que le garde GoRouter (L1674 : la clé
+  /// servie prime dès `isServedPermissionsReady`, sans exigence de non-vide).
+  /// Règle additive : la clé passée doit avoir une matrice ≡ au littéral
+  /// legacy remplacé (V258-V262).
+  bool canServed(String permissionKey, {required bool Function() legacy}) {
+    if (_servedPermissionsReady) return hasPermission(permissionKey);
+    return legacy();
+  }
+
   void logout() {
     _isAuthenticated = false;
     _userId = null;
@@ -496,6 +553,9 @@ class AuthState {
     // authentification (jamais de fuite de droits entre sessions).
     _servedPermissions = const <String>{};
     _servedPermissionsReady = false;
+    // Phase 6 — idem pour le catalogue de rôles servis.
+    _servedRoleKeys = const <String>[];
+    _servedRoleKeysReady = false;
     // Clear tenant config on logout
     TenantConfig.clearOrgId();
     // §G4.4 — stopper l'écoute des rôles vivants.

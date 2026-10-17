@@ -75,11 +75,13 @@ class FlywayMigrationChainPostgreSqlTest {
     // (niveaux configurables, intitulés, affiliations, modules/thème par
     // nœud, snapshots agrégés). LOT 2 §GR — V229 (groupes de navigation).
     // LOT 2 §LB — V230 (surcharges de libellés + fonctionnalités par écran).
-    // Ce gate est le SEUL qui applique la chaîne
-    // sur PostgreSQL réel (le profil `test` tourne sur H2, Flyway coupé) :
-    // sans cette remontée, une erreur SQL dans V224..V230 n'apparaît
-    // qu'en production.
-    private static final int EXPECTED_MIN_VERSION = 230;
+    // Paramétrisation par église — V258..V263 (catalogue de permissions servi,
+    // clés UI routes V261, clés UI intra-pages V262, contrat rôle objectif
+    // élargi au catalogue servi V263) : sans remontée, une
+    // erreur SQL dans ces migrations n'apparaît qu'en production.
+    // Ce gate est le SEUL qui applique la chaîne sur PostgreSQL réel (le profil
+    // `test` tourne sur H2, Flyway coupé) — d'où le plancher à remonter à chaque vague.
+    private static final int EXPECTED_MIN_VERSION = 263;
 
     // Note d'environnement : Docker Engine 29 refuse les clients d'API < 1.40 et
     // docker-java (shadé par Testcontainers 1.21.0) retombe sur 1.32 sans
@@ -105,7 +107,7 @@ class FlywayMigrationChainPostgreSqlTest {
     }
 
     @Test
-    @DisplayName("La chaîne Flyway V1→V205 s'applique intégralement sur PostgreSQL 16 neuf")
+    @DisplayName("La chaîne Flyway V1→V263 s'applique intégralement sur PostgreSQL 16 neuf")
     void fullMigrationChainAppliesOnRealPostgres() {
         assertThat(firstPass.success)
                 .as("la chaîne complète V1..V%d doit s'appliquer sans erreur", EXPECTED_MIN_VERSION)

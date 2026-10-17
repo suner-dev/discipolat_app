@@ -967,7 +967,9 @@ export type ObjectivePeriode = 'MENSUEL' | 'TRIMESTRIEL' | 'ANNUEL';
 
 export interface Objective {
   id: string;
-  role: UserRole;
+  // Contrat élargi (P7a/V263) : nom du rôle socle OU clé custom du catalogue
+  // de rôles servi du tenant — plus restreint à l'enum UserRole.
+  role: string;
   type: ObjectiveType;
   cible: number;
   periode: ObjectivePeriode;
@@ -976,7 +978,7 @@ export interface Objective {
 }
 
 export interface CreateObjectiveRequest {
-  role: UserRole;
+  role: string;
   type: ObjectiveType;
   cible: number;
   periode: ObjectivePeriode;
@@ -984,7 +986,7 @@ export interface CreateObjectiveRequest {
 
 export interface ObjectiveProgress {
   id: string;
-  role: UserRole;
+  role: string;
   type: ObjectiveType;
   cible: number;
   periode: ObjectivePeriode;

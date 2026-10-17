@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantOptional } from '@/contexts/TenantContext';
+import { permissionsForPath } from '@/lib/routeAccess';
 import { useState } from 'react';
 import { tText } from '@/i18n';
 import {
@@ -18,12 +20,21 @@ const quickLinks = [
 
 export default function NotFoundPage() {
   const { user, hasRole } = useAuth();
+  const tenant = useTenantOptional();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredLinks = quickLinks.filter(
-    (link) => user && link.roles.some((r) => hasRole(r))
-  );
+  // Miroir du garde de routes (served-first, cf. CommandPalette) : quand le
+  // tenant est initialisé, les permissions SERVIES de l'église priment sur le
+  // littéral de rôles historique ; sinon le littéral sert de repli transitoire.
+  const filteredLinks = quickLinks.filter((link) => {
+    if (!user) return false;
+    if (tenant?.isInitialized) {
+      const keys = permissionsForPath(link.href);
+      return !keys || keys.some((k) => tenant.hasPermission(k));
+    }
+    return link.roles.some((r) => hasRole(r));
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

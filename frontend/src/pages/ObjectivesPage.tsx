@@ -15,6 +15,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess, useRoleVocabulary } from '@/hooks/useServedAccess';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { tText } from '@/i18n';
 import type {
@@ -23,7 +24,6 @@ import type {
   ObjectiveType,
   ObjectivePeriode,
   CreateObjectiveRequest,
-  UserRole,
 } from '@/types';
 
 const TYPE_META: Record<ObjectiveType, { label: string; icon: React.ReactNode; color: string }> = {
@@ -41,12 +41,17 @@ const PERIODE_LABEL: Record<ObjectivePeriode, string> = {
   ANNUEL: 'Annuel',
 };
 
-const ROLES: UserRole[] = ['FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR'];
+// Socle de rôles historiquement proposés ; la liste est complétée par le
+// catalogue de rôles SERVI du tenant (P7a/V263 — contrat élargi, additif).
+const ROLE_BASE = ['FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR'];
 
 export default function ObjectivesPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const dictionaries = useDictionaries();
-  const isAdmin = !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR'));
+  const isAdmin = can('OBJECTIVES_EXECUTE', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')));
+  // Vocabulaire effectif : socle ∪ rôles custom servis (union additive).
+  const roleOptions = useRoleVocabulary(ROLE_BASE);
   const queryClient = useQueryClient();
 
   /** Libellé d'un rôle (dictionnaire USER_ROLE, repli sur le code). */
@@ -127,10 +132,10 @@ export default function ObjectivesPage() {
               <label className="text-xs font-medium text-gray-500 mb-1 block">{tText('Rôle')}</label>
               <select
                 value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value as UserRole })}
+                onChange={e => setForm({ ...form, role: e.target.value })}
                 className="input w-full"
               >
-                {ROLES.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
+                {roleOptions.map(r => <option key={r} value={r}>{roleLabel(r)}</option>)}
               </select>
             </div>
             <div>

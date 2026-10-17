@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../app.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import 'platform_icons.dart';
 
 const List<String> kMenuRoles = ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'];
+// Phase 6 — « rôles visibles » n'est plus une liste figée : le catalogue de
+// rôles de l'église (rôles custom) complète ces literals via
+// AuthState().rolesVocabulary (union additive ; le backend compare des clés
+// de rôle en chaîne libre, PlatformConfigService).
 
 /// Administration des entrées de menu (ADMIN).
 ///
@@ -103,6 +108,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
 
   Future<void> _openEditor([Map<String, dynamic>? menu]) async {
     final isEdit = menu != null;
+    final roleVocab = AuthState().rolesVocabulary(kMenuRoles);
     final keyCtrl = TextEditingController(text: isEdit ? (menu['key'] as String? ?? '') : '');
     final labelCtrl = TextEditingController(text: isEdit ? (menu['label'] as String? ?? '') : '');
     final hrefCtrl = TextEditingController(text: isEdit ? (menu['href'] as String? ?? '/') : '/');
@@ -197,7 +203,7 @@ class _PlatformMenusScreenState extends State<PlatformMenusScreen> {
                 Text('Rôles visibles', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12)),
                 const SizedBox(height: 6),
                 Wrap(spacing: 6, runSpacing: 6, children: [
-                  for (final r in kMenuRoles)
+                  for (final r in roleVocab)
                     FilterChip(
                       label: Text(r, style: const TextStyle(fontSize: 11)),
                       selected: roles.contains(r),

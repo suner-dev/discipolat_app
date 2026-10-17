@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { Loader2, HandCoins, Plus, CheckCircle2, ArrowRightCircle, Users, Landmark, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
@@ -64,9 +65,10 @@ interface OverdueRow {
 /** Tontine Numérique — groupes de contribution et suivi des versements. */
 export default function TontinePage() {
   const { activeRole } = useAuth();
+  const { can } = useServedAccess();
   // Lecture ouverte à tous ; écritures (créer, marquer payé, ajouter membre,
   // tour suivant) réservées aux gestionnaires — cohérent avec l'API.
-  const canManage = activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE';
+  const canManage = can('TONTINE_EXECUTE_NEXTROUND', () => activeRole === 'ADMIN' || activeRole === 'PASTEUR' || activeRole === 'RESPONSABLE');
   const queryClient = useQueryClient();
   const { locale } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(null);

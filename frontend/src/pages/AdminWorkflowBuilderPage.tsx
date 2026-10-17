@@ -9,6 +9,7 @@ import {
 import type { WorkflowConfig, TransferType, ValidationMode, UserRole, WorkflowStep } from '@/types';
 import { TRANSFER_TYPE_LABELS, ROLES } from '@/types';
 import { useDictionaries } from '@/hooks/useDictionaries';
+import { useRoleVocabulary } from '@/hooks/useServedAccess';
 import ConfigRevisionHistory from '@/components/ConfigRevisionHistory';
 
 import { tText } from '@/i18n';
@@ -91,6 +92,10 @@ const MODE_VALIDATION_DESCRIPTIONS: Record<ValidationMode, string> = {
 export default function AdminWorkflowBuilderPage() {
   const queryClient = useQueryClient();
   const _dictionaries = useDictionaries();
+  // Phase 6 — initiateurs/validateurs : le catalogue de rôles de l'église
+  // (rôles custom) complète la liste enum legacy — union additive, le
+  // backend stocke et compare ces clés en chaîne libre (workflow_configs).
+  const roleOptions = useRoleVocabulary(ROLES);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<ConfigDraft>(emptyDraft());
@@ -465,7 +470,7 @@ export default function AdminWorkflowBuilderPage() {
               <div>
                 <label className="label">Rôles initiateurs (qui peuvent lancer le workflow)</label>
                 <div className="flex flex-wrap gap-2">
-                  {ROLES.map((r) => (
+                  {roleOptions.map((r) => (
                     <button
                       key={r}
                       type="button"
@@ -542,7 +547,7 @@ export default function AdminWorkflowBuilderPage() {
                       <div>
                         <label className="text-[10px] text-gray-500 uppercase">Validateurs</label>
                         <div className="flex flex-wrap gap-1.5 mt-1">
-                          {ROLES.map((r) => (
+                          {roleOptions.map((r) => (
                             <button
                               key={r}
                               type="button"
