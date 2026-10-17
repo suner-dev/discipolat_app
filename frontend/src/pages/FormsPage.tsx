@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   FileText, Plus, Loader2, RefreshCw, Edit3, Trash2, Send,
   BarChart3, Users, Clock, CheckCircle, Archive, X,
@@ -138,7 +139,7 @@ export default function FormsPage() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white">
                   <FileText className="w-5 h-5" />
                 </div>
-                <span className={`badge text-[10px] ${getStatusColor(f.status)}`}>{f.status}</span>
+                <span className={`badge text-[10px] ${getStatusColor(f.status)}`}>{formatEnum(f.status)}</span>
               </div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">{f.title}</h3>
               <p className="text-xs text-gray-400 mb-3 line-clamp-2">{f.description}</p>

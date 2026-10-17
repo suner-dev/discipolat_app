@@ -158,6 +158,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/network': ["UI_NETWORK_ACCESS"],
   '/passport': ["UI_PASSPORT_ACCESS"],
   '/ai-predictions': ["UI_AI_PREDICTIONS_ACCESS"],
+  '/ai-dashboard': ["UI_AI_PREDICTIONS_ACCESS"],
   '/ai-assistant': ["UI_AI_ASSISTANT_2_ACCESS"],
   '/voice-assistant': ["UI_VOICE_ASSISTANT_2_ACCESS"],
   '/exports': ["UI_EXPORTS_ACCESS"],
@@ -362,6 +363,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/network': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/passport': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  '/ai-dashboard': ['ADMIN', 'PASTEUR'],
 
   // IA, Voice, Exports, Imports - accessibles à tous les rôles
   '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   Shield, CheckCircle2, XCircle, AlertTriangle, Eye, Clock, RefreshCw,
   Loader2, Search, Ban, Check, MessageSquare,
@@ -154,8 +155,8 @@ export default function ModerationPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="badge text-[10px]">{item.contentType}</span>
-                  <span className={`badge text-[10px] ${STATUS_COLORS[item.status] || ''}`}>{item.status}</span>
+                  <span className="badge text-[10px]">{formatEnum(item.contentType)}</span>
+                  <span className={`badge text-[10px] ${STATUS_COLORS[item.status] || ''}`}>{formatEnum(item.status)}</span>
                 </div>
                 <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">{item.content}</p>
                 <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
@@ -193,8 +194,8 @@ export default function ModerationPage() {
             </div>
             <div className="modal-body space-y-4">
               <div>
-                <span className={`badge ${STATUS_COLORS[selectedItem.status]}`}>{selectedItem.status}</span>
-                <span className="badge ml-2">{selectedItem.contentType}</span>
+                <span className={`badge ${STATUS_COLORS[selectedItem.status]}`}>{formatEnum(selectedItem.status)}</span>
+                <span className="badge ml-2">{formatEnum(selectedItem.contentType)}</span>
               </div>
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40">
                 <p className="text-sm text-gray-900 dark:text-gray-100">{selectedItem.content}</p>

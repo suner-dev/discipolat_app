@@ -5,6 +5,8 @@ import api from '@/lib/api';
 import type { AuditRecentActivity } from '@/types';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { humanizeAuditAction, humanizeEntite } from '@/lib/auditLabels';
+import { formatEnum } from '@/lib/labels';
 import {
   Shield, Search, Filter, FileDown, Eye, Clock, ChevronRight,
 } from 'lucide-react';
@@ -151,10 +153,10 @@ export default function PasteurAuditTab() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                       <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
-                      {' '}<span className={`${color} font-semibold`}>{a.action?.toLowerCase().replace(/_/g, ' ')}</span>
+                      {' '}<span className={`${color} font-semibold`}>{humanizeAuditAction(a.action, a.entiteType)}</span>
                     </p>
                     <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-400">
-                      <span className={`badge text-[9px] ${typeInfo.color}`}>{typeInfo.emoji} {a.entiteType}</span>
+                      <span className={`badge text-[9px] ${typeInfo.color}`}>{typeInfo.emoji} {humanizeEntite(a.entiteType) || formatEnum(a.entiteType)}</span>
                       <span>·</span>
                       <Clock className="w-3 h-3" />
                       <span>{new Date(a.createdAt).toLocaleDateString(getI18nLocale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>

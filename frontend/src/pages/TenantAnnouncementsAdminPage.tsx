@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Megaphone, Plus, Send, Trash2 } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 
 /**
  * SPEC_ONBOARDING_FLOWS (FE-3) — annonces publiques d'une église.
@@ -156,7 +157,7 @@ export default function TenantAnnouncementsAdminPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{a.title}</p>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_TONE[a.status] ?? ''}`}>{a.status}</span>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${STATUS_TONE[a.status] ?? ''}`}>{formatEnum(a.status)}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {[a.city, a.country].filter(Boolean).join(', ')}

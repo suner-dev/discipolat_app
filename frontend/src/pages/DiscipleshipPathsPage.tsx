@@ -8,6 +8,7 @@ import SkeletonLoader from '@/components/shared/SkeletonLoader';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface DiscipleshipPath {
   id: string;
   memberId: string;
@@ -100,7 +101,7 @@ export default function DiscipleshipPathsPage() {
           {Object.entries(stats.byStatus || {}).slice(0, 2).map(([key, val]) => (
             <div key={key} className="glass-card p-4 text-center">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{val}</div>
-              <div className="text-xs text-gray-500">{key}</div>
+              <div className="text-xs text-gray-500">{formatEnum(key)}</div>
             </div>
           ))}
         </div>
@@ -121,7 +122,7 @@ export default function DiscipleshipPathsPage() {
                     {STAGE_LABELS[p.currentStage] || p.currentStage}
                   </span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : p.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {p.status}
+                    {formatEnum(p.status)}
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 mb-2">Membre: {p.memberId.slice(0, 8)}...</div>

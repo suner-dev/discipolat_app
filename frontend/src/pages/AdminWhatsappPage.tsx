@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, getErrorMessage } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   MessageCircle,
   Send,
@@ -284,7 +285,7 @@ export default function AdminWhatsappPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-xs text-muted">{m.kind}</span>
-                  <span className={statusBadge(m.status)}>{m.status}</span>
+                  <span className={statusBadge(m.status)}>{formatEnum(m.status)}</span>
                 </div>
               </div>
             ))}

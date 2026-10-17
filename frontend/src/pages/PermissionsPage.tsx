@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
-import { Shield, Check, X, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, Check, X, Save, Plus, Copy, Pencil, Trash2, BadgeCheck, Eye, Pencil as PencilIcon, Trash, ChevronDown, ChevronRight, Code2 } from 'lucide-react';
 
 import { tText } from '@/i18n';
+import Modal from '@/components/ui/Modal';
+
 interface PermissionEntry {
   role: string;
   permission: string;
@@ -45,6 +47,9 @@ export default function PermissionsPage() {
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [rwdMode, setRwdMode] = useState<boolean>(false); // false = ancien mode (enabled), true = mode R/W/D
+  // Révélation ponctuelle des clés techniques (dépannage admin). Désactivée par
+  // défaut : un utilisateur standard ne doit jamais voir « USER_CREATE ».
+  const [showKeys, setShowKeys] = useState<boolean>(false);
 
   const { data: permissions, isLoading: permLoading } = useQuery({
     queryKey: ['permissions'],
@@ -270,22 +275,60 @@ export default function PermissionsPage() {
             Gérez les rôles, permissions granulaires (lecture/écriture/suppression) et scopes d'accès.
           </p>
         </div>
-        <div className="page-header-actions flex items-center gap-2">
-          {/* Toggle RWD mode */}
+        <div className="page-header-actions flex flex-wrap items-center gap-2">
+          {/* Bascule mode simple <-> granulaire. Le `title` explique le mode. */}
           <button
-            onClick={() => setRwdMode(!rwdMode)}
+            type="button"
+            onClick={() => setRwdMode((v) => !v)}
+            aria-pressed={rwdMode}
+            title={rwdMode
+              ? tText('Mode détaillé : pour chaque rôle, réglez Lecture, Écriture, Suppression et la portée (global, département, famille, équipe, soi).')
+              : tText('Mode simple : un seul interrupteur Activer/Désactiver par permission et par rôle.')}
             className={`btn-sm rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
               rwdMode
                 ? 'bg-primary-500 text-white shadow-md'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >
-            {rwdMode ? 'Mode R/W/D ✓' : 'Mode simple'}
+            <span className="flex items-center gap-1.5">
+              {rwdMode ? <Check className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
+              {rwdMode ? tText('Mode détaillé (L/É/S)') : tText('Mode simple')}
+            </span>
+          </button>
+          {/* Révélation des clés techniques (dépannage) — jamais visible par défaut. */}
+          <button
+            type="button"
+            onClick={() => setShowKeys((v) => !v)}
+            aria-pressed={showKeys}
+            title={tText('Afficher les clés techniques des permissions (dépannage)')}
+            className={`btn-sm rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+              showKeys
+                ? 'bg-gray-700 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            <span className="flex items-center gap-1"><Code2 className="w-3.5 h-3.5" /> {tText('Clés')}</span>
           </button>
           <button className="btn-primary btn-sm" onClick={() => { setCreateForm({ key: '', label: '', description: '' }); setCreateOpen(true); }}>
             <Plus className="w-4 h-4" /> {tText('Nouveau rôle')}
           </button>
         </div>
+      </div>
+
+      {/* Légende pédagogique — explique le mode courant et l'interactivité réelle. */}
+      <div className="glass-card p-3 mb-6 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {rwdMode ? (
+          <>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{tText('Légende :')}</span>
+            <span className="inline-flex items-center gap-1"><Eye className="w-3.5 h-3.5 text-blue-500" /> {tText('Lecture')}</span>
+            <span className="inline-flex items-center gap-1"><PencilIcon className="w-3.5 h-3.5 text-amber-500" /> {tText('Écriture')}</span>
+            <span className="inline-flex items-center gap-1"><Trash className="w-3.5 h-3.5 text-red-500" /> {tText('Suppression')}</span>
+            <span className="text-gray-400">· {tText('le menu sous chaque icône définit la portée de l\'accès.')}</span>
+          </>
+        ) : (
+          <span>{tText('Cliquez sur une case pour activer (✓) ou désactiver (✕) une permission pour ce rôle.')}</span>
+        )}
+        <span className="ml-auto hidden md:inline text-gray-400">{tText('Faites défiler horizontalement pour afficher tous les rôles →')}</span>
       </div>
 
       {/* Rôles */}
@@ -298,7 +341,7 @@ export default function PermissionsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{role.label}</span>
-                  <span className="font-mono text-[10px] text-gray-400">({role.key})</span>
+                  {showKeys && <span className="font-mono text-[10px] text-gray-400">({role.key})</span>}
                   {role.system && <span className="badge badge-info text-[10px]">{tText('Système')}</span>}
                 </div>
                 {role.description && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{role.description}</p>}
@@ -326,7 +369,7 @@ export default function PermissionsPage() {
               onClick={() => toggleModule(module)}
             >
               {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">{module}</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{module}</h3>
               <span className="text-[10px] text-gray-400 ml-2">({perms.length} permission{perms.length > 1 ? 's' : ''})</span>
             </button>
             {isExpanded && (
@@ -358,9 +401,9 @@ export default function PermissionsPage() {
                         <tr key={permKey}>
                           <td className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             <span className="block">{perm.label}</span>
-                            <span className="block text-[10px] text-gray-400">{permKey}</span>
+                            {showKeys && <span className="block text-[10px] text-gray-400 font-mono">{permKey}</span>}
                             {rwdMode && perm.defaultScope && perm.defaultScope !== 'GLOBAL' && (
-                              <span className="block text-[9px] text-primary-500">Scope par défaut: {perm.defaultScope}</span>
+                              <span className="block text-[9px] text-primary-500">{tText('Portée par défaut :')} {SCOPE_OPTIONS.find((s) => s.value === perm.defaultScope)?.label ?? perm.defaultScope}</span>
                             )}
                           </td>
                           {roleKeys.map((role) => renderRwdCell(role, permKey))}
@@ -375,33 +418,32 @@ export default function PermissionsPage() {
         );
       })}
 
-      {/* Modal créer rôle */}
-      {createOpen && (
-        <div className="modal-overlay" onClick={() => setCreateOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouveau rôle')}</h3>
-              <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setCreateOpen(false)}>×</button></div>
-            <div className="modal-body space-y-4">
-              <div><label className="label">Clé (unique)</label><input className="input font-mono" value={createForm.key} onChange={(e) => setCreateForm({ ...createForm, key: e.target.value.toUpperCase() })} placeholder="NOUVEAU_ROLE" /></div>
-              <div><label className="label">{tText('Libellé')}</label><input className="input" value={createForm.label} onChange={(e) => setCreateForm({ ...createForm, label: e.target.value })} /></div>
-              <div><label className="label">Description</label><input className="input" value={createForm.description} onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })} /></div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
-              <button className="btn-primary btn-sm" onClick={() => { createRoleMutation.mutate(createForm); setCreateOpen(false); }} disabled={createRoleMutation.isPending}>
-                <Plus className="w-4 h-4" /> {tText('Créer')}
-              </button>
-            </div>
-          </div>
+      {/* Modal créer rôle — rendue via portal (voir components/ui/Modal). */}
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} size="lg" ariaLabel={tText('Nouveau rôle')}>
+        <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Nouveau rôle')}</h3>
+          <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setCreateOpen(false)} aria-label={tText('Fermer')}>×</button></div>
+        <div className="modal-body space-y-4">
+          <div><label className="label">{tText('Clé (unique)')}</label><input className="input font-mono" value={createForm.key} onChange={(e) => setCreateForm({ ...createForm, key: e.target.value.toUpperCase() })} placeholder="NOUVEAU_ROLE" /></div>
+          <div><label className="label">{tText('Libellé')}</label><input className="input" value={createForm.label} onChange={(e) => setCreateForm({ ...createForm, label: e.target.value })} /></div>
+          <div><label className="label">{tText('Description')}</label><input className="input" value={createForm.description} onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })} /></div>
         </div>
-      )}
+        <div className="modal-footer">
+          <button className="btn-ghost btn-sm" onClick={() => setCreateOpen(false)}>{tText('Annuler')}</button>
+          <button className="btn-primary btn-sm" onClick={() => {
+            if (!createForm.key.trim() || !createForm.label.trim()) { toast.error(tText('La clé et le libellé sont requis.')); return; }
+            createRoleMutation.mutate(createForm); setCreateOpen(false);
+          }} disabled={createRoleMutation.isPending}>
+            <Plus className="w-4 h-4" /> {tText('Créer')}
+          </button>
+        </div>
+      </Modal>
 
       {/* Modal renommer */}
-      {renameRole && (
-        <div className="modal-overlay" onClick={() => setRenameRole(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Renommer {renameRole.label}</h3>
-              <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setRenameRole(null)}>×</button></div>
+      <Modal open={renameRole !== null} onClose={() => setRenameRole(null)} size="lg" ariaLabel={renameRole ? `${tText('Renommer')} ${renameRole.label}` : undefined}>
+        {renameRole && (
+          <>
+            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Renommer')} {renameRole.label}</h3>
+              <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setRenameRole(null)} aria-label={tText('Fermer')}>×</button></div>
             <div className="modal-body">
               <div><label className="label">{tText('Nouveau libellé')}</label>
                 <input className="input" defaultValue={renameRole.label} id="rename-label" autoFocus
@@ -412,31 +454,36 @@ export default function PermissionsPage() {
               <button className="btn-ghost btn-sm" onClick={() => setRenameRole(null)}>{tText('Annuler')}</button>
               <button className="btn-primary btn-sm" onClick={() => {
                 const input = document.getElementById('rename-label') as HTMLInputElement;
-                renameRoleMutation.mutate({ key: renameRole.key, label: input?.value || renameRole.label });
+                const next = input?.value?.trim();
+                if (!next) { toast.error(tText('Le libellé est requis.')); return; }
+                renameRoleMutation.mutate({ key: renameRole.key, label: next });
                 setRenameRole(null);
-              }}><Save className="w-4 h-4" /> Enregistrer</button>
+              }}><Save className="w-4 h-4" /> {tText('Enregistrer')}</button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Modal dupliquer */}
-      {duplicateTarget && (
-        <div className="modal-overlay" onClick={() => setDuplicateTarget(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">Dupliquer {duplicateTarget.label}</h3>
-              <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setDuplicateTarget(null)}>×</button></div>
+      <Modal open={duplicateTarget !== null} onClose={() => setDuplicateTarget(null)} size="lg" ariaLabel={duplicateTarget ? `${tText('Dupliquer')} ${duplicateTarget.label}` : undefined}>
+        {duplicateTarget && (
+          <>
+            <div className="modal-header"><h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Dupliquer')} {duplicateTarget.label}</h3>
+              <button className="btn-icon text-gray-400 hover:text-gray-600" onClick={() => setDuplicateTarget(null)} aria-label={tText('Fermer')}>×</button></div>
             <div className="modal-body space-y-4">
               <div><label className="label">{tText('Clé du nouveau rôle')}</label><input className="input font-mono" value={dupForm.newKey} onChange={(e) => setDupForm({ ...dupForm, newKey: e.target.value.toUpperCase() })} /></div>
               <div><label className="label">{tText('Libellé')}</label><input className="input" value={dupForm.label} onChange={(e) => setDupForm({ ...dupForm, label: e.target.value })} /></div>
             </div>
             <div className="modal-footer">
               <button className="btn-ghost btn-sm" onClick={() => setDuplicateTarget(null)}>{tText('Annuler')}</button>
-              <button className="btn-primary btn-sm" onClick={() => { duplicateRoleMutation.mutate({ sourceKey: duplicateTarget.key, ...dupForm }); setDuplicateTarget(null); }}><Copy className="w-4 h-4" /> Dupliquer</button>
+              <button className="btn-primary btn-sm" onClick={() => {
+                if (!dupForm.newKey.trim() || !dupForm.label.trim()) { toast.error(tText('La clé et le libellé sont requis.')); return; }
+                duplicateRoleMutation.mutate({ sourceKey: duplicateTarget.key, ...dupForm }); setDuplicateTarget(null);
+              }}><Copy className="w-4 h-4" /> {tText('Dupliquer')}</button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

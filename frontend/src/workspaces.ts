@@ -324,6 +324,7 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Réseau inter-églises', href: '/network', icon: Globe, subtitle: 'Ressources, événements & annuaire' },
       { name: 'Passeport spirituel', href: '/passport', icon: ShieldCheck, subtitle: 'Historique vérifiable & portable' },
       { name: 'Prédictions IA', href: '/ai-predictions', icon: Sparkles, subtitle: 'Forecasting & analytics' },
+      { name: 'Console IA', href: '/ai-dashboard', icon: Activity, subtitle: 'Modèles, usage & crédits IA' },
       { name: 'Objectifs spirituels', href: '/personal-objectives', icon: Target, subtitle: 'Mes objectifs personnels' },
       { name: 'Cohésion familiale', href: '/family-cohesion', icon: Heart, subtitle: 'Santé de la famille' },
       { name: 'Plan de succession', href: '/succession', icon: GitBranch, subtitle: 'Préparer les futurs leaders' },

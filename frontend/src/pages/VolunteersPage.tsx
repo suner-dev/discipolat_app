@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   Users, Plus, Loader2, RefreshCw, Star, Calendar, Wrench, UserPlus, CheckCircle, X, Clock,
 } from 'lucide-react';
@@ -139,7 +140,7 @@ export default function VolunteersPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-900 dark:text-gray-100">{v.userName}</span>
-                  <span className={`badge text-[10px] ${getStatusColor(v.status)}`}>{v.status}</span></div>
+                  <span className={`badge text-[10px] ${getStatusColor(v.status)}`}>{formatEnum(v.status)}</span></div>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {v.skills.map(s => <span key={s} className="px-1.5 py-0.5 rounded text-[9px] bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400">{s}</span>)}
                 </div>

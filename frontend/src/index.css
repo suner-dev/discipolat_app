@@ -599,9 +599,19 @@
   transform: none;
 }
 
+/* IMPORTANT (correctif 2026-10-17) — ne PAS utiliser `animation-fill-mode: both`
+   ni `will-change: transform` ici. Une valeur de `transform` persistante (même
+   `translate3d(0,0,0)`) ou un `will-change: transform` fait de ce conteneur un
+   *containing block* pour tout descendant en `position: fixed`. Les modales
+   (`.modal-overlay`, `fixed inset-0`) s'y retrouvaient donc ancrées sur la hauteur
+   totale de la page au lieu du viewport : la fenêtre modale surgissait « au milieu »
+   et il fallait scroller pour l'atteindre (bug constaté en démo sur Utilisateurs,
+   Rôles & permissions, etc.). L'animation s'arrête donc sur l'état de base
+   (`transform: none`), ce qui libère le containing block dès la fin du fondu.
+   Le vrai garde-fou reste le rendu des modales via portal (components/ui/Modal). */
 .page-enter-active {
-  animation: pageEnter 380ms cubic-bezier(0, 0, 0.2, 1) both;
-  will-change: opacity, transform;
+  animation: pageEnter 380ms cubic-bezier(0, 0, 0.2, 1);
+  will-change: opacity;
 }
 
 /* ============================================

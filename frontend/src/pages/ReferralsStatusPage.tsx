@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface Referral {
   id: string;
   referrerName?: string;
@@ -57,7 +58,7 @@ export default function ReferralsStatusPage() {
         {statuses.map((s) => (
           <div key={s} className="stat-card">
             <p className="stat-value">{referrals.filter((r) => r.status === s).length}</p>
-            <p className="stat-label">{s.replace(/_/g, ' ')}</p>
+            <p className="stat-label">{formatEnum(s)}</p>
           </div>
         ))}
       </div>
@@ -73,7 +74,7 @@ export default function ReferralsStatusPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{r.status}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(r.status)}</span>
                   </div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                     {r.referredName ?? r.referredEmail ?? 'Inconnu'}
@@ -90,7 +91,7 @@ export default function ReferralsStatusPage() {
                       {statuses.filter((s) => s !== r.status).map((s) => (
                         <button key={s} onClick={() => updateStatusMutation.mutate({ id: r.id, status: s })} disabled={updateStatusMutation.isPending}
                           className="btn-sm px-2 py-1 rounded bg-white/5 text-[10px] text-gray-400 hover:bg-white/10">
-                          {s.replace(/_/g, ' ')}
+                          {formatEnum(s)}
                         </button>
                       ))}
                       <button onClick={() => setUpdatingId(null)} className="text-[10px] text-gray-400 hover:text-white ml-1">✕</button>

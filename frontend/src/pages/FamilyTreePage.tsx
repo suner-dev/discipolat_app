@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { humanizeAuditAction } from '@/lib/auditLabels';
 interface FamilyTreeNode {
   id: string;
   name: string;
@@ -135,7 +136,7 @@ export default function FamilyTreePage() {
                   <p className="text-xs text-gray-700 dark:text-gray-300">
                     <span className="font-semibold">{entry.actorName}</span> — {entry.description}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{entry.action}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{humanizeAuditAction(entry.action)}</p>
                 </div>
                 <span className="text-[10px] text-gray-400 shrink-0">
                   {new Date(entry.timestamp).toLocaleDateString(getI18nLocale())}

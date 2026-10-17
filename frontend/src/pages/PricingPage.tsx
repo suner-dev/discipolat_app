@@ -4,6 +4,7 @@ import { AlertCircle, ArrowRight, Bot, Check, CreditCard, Loader2, Minus, Shield
 import { tText, useI18n } from '@/i18n';
 import api, { getErrorMessage } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { usePricing } from '@/features/pricing/usePricing';
 import { formatMinor } from '@/lib/money';
 import type { BillingCycleName, PublicPlanView } from '@/features/pricing/types';
@@ -256,6 +257,7 @@ function PlanCard({
   onCheckout: () => void;
 }) {
   const { t } = useI18n();
+  const { branding } = useSettings();
   const display = plan.display;
   // Un plan est gratuit parce que son prix est nul — pas parce qu'il s'appelle
   // DISCOVERY. Le nommer « gratuit » parce que la clé a changé, c'est facturer
@@ -361,12 +363,14 @@ function PlanCard({
         )}
 
         {!display?.available && (
-          <Link
-            to="/contact"
+          <a
+            href={`mailto:${branding.email || 'demo@discipolat.app'}?subject=${encodeURIComponent(
+              `${t('pricing.contactUs')} — ${tText(plan.name)}`,
+            )}`}
             className="inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             {t('pricing.contactUs')}
-          </Link>
+          </a>
         )}
       </div>
     </article>

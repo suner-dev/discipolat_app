@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { useI18n } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   Shield, Download, Trash2, Loader2, Clock, CheckCircle2, FileText, ExternalLink,
 } from 'lucide-react';
@@ -221,7 +222,7 @@ export default function ComplianceExportsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{exp.type}</span>
-                        <span className={`badge text-[10px] ${statusColor(exp.status)}`}>{exp.status}</span>
+                        <span className={`badge text-[10px] ${statusColor(exp.status)}`}>{formatEnum(exp.status)}</span>
                       </div>
                       <div className="flex items-center gap-3 text-[10px] text-gray-400 mt-0.5">
                         <span className="flex items-center gap-1">
@@ -266,7 +267,7 @@ export default function ComplianceExportsPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{req.requestType}</span>
-                        <span className={`badge text-[10px] ${statusColor(req.status)}`}>{req.status}</span>
+                        <span className={`badge text-[10px] ${statusColor(req.status)}`}>{formatEnum(req.status)}</span>
                       </div>
                       <p className="text-[10px] text-gray-400 mt-0.5">
                         Utilisateur : {req.userName || req.userId}

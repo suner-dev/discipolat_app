@@ -4,6 +4,7 @@ import { ArrowLeftRight, Loader2, TrendingUp } from 'lucide-react';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface Exchange {
   id: string;
   fromType: string;
@@ -86,7 +87,7 @@ export default function AidExchangePage() {
                 </div>
                 <p className="text-[11px] text-gray-500">{new Date(ex.createdAt).toLocaleDateString(getI18nLocale())} — Taux: {ex.rate}</p>
               </div>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ex.status === 'COMPLETED' ? 'text-green-400 bg-green-500/20' : ex.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/20' : 'text-gray-400 bg-gray-500/20'}`}>{ex.status}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ex.status === 'COMPLETED' ? 'text-green-400 bg-green-500/20' : ex.status === 'PENDING' ? 'text-yellow-400 bg-yellow-500/20' : 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(ex.status)}</span>
             </div>
           ))}
         </div>

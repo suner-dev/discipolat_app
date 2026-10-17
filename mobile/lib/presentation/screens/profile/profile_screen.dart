@@ -266,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // et responsables par niveau (GET /hierarchy/me).
                       MyHierarchyCard(
                         apiService: widget.apiService,
-                        onOpenProfile: (id) => context.push('/user/$id'),
+                        onOpenProfile: (id) => context.push('/users/$id'),
                       ),
                       const SizedBox(height: 16),
 

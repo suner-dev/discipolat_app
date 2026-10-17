@@ -198,6 +198,7 @@ const RewardsPage = lazy(() => import('@/pages/RewardsPage'));
 const MarketplacePage = lazy(() => import('@/pages/MarketplacePage'));
 const CommunityPage = lazy(() => import('@/pages/CommunityPage'));
 const AiPredictionsPage = lazy(() => import('@/pages/AiPredictionsPage'));
+const AiDashboardPage = lazy(() => import('@/pages/ai/AiDashboardPage'));
 const PersonalObjectivesPage = lazy(() => import('@/pages/PersonalObjectivesPage'));
 const FamilyCohesionPage = lazy(() => import('@/pages/FamilyCohesionPage'));
 const SuccessionPage = lazy(() => import('@/pages/SuccessionPage'));
@@ -1075,6 +1076,11 @@ export default function App() {
           <Route path="/ai-predictions" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE']} permissions={['UI_AI_PREDICTIONS_ACCESS']}>
               <AiPredictionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/ai-dashboard" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_AI_PREDICTIONS_ACCESS']}>
+              <AiDashboardPage />
             </ProtectedRoute>
           } />
           <Route path="/personal-objectives" element={
