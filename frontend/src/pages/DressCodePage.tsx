@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useTenant } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useServedAccess } from "@/hooks/useServedAccess";
 import api from "@/lib/api";
 
 interface DressCodeRule {
@@ -23,10 +24,34 @@ interface DressCode {
 }
 
 export default function DressCodePage() {
-  const { hasPermission } = useTenant();
+  // PARAMÉTRISATION PAR ÉGLISE — les 3 actions d'écriture sont gardées par les
+  // MÊMES clés que les gardes serveur de `DressCodeController` :
+  //   POST   /dress-codes            → @authz.can('DRESSCODE_EXECUTE')
+  //   PUT    /dress-codes/{id}       → @authz.can('DRESSCODE_EXECUTE')
+  //   POST   /dress-codes/{id}/archive → @authz.can('DRESSCODE_EXECUTE')
+  //   DELETE /dress-codes/{id}       → @authz.can('DRESSCODE_EXECUTE_DELETE')
+  // Les matrices par défaut (V258) valent {PASTEUR, RESPONSABLE, TENANT_ADMIN,
+  // TENANT_OWNER} et {TENANT_ADMIN, TENANT_OWNER} — identiques aux anciens
+  // littéraux `hasAnyRole('TENANT_OWNER','TENANT_ADMIN','PASTEUR','RESPONSABLE')`.
+  // Aucune conversion antérieure n'existait ici : les clés `DRESS_CODE_*` n'ont
+  // jamais figuré au catalogue, donc `hasPermission` ne pouvait rien accorder et
+  // les trois boutons n'ont jamais été rendus (boutons morts) — voir
+  // docs/PARAMETRISATION_AUDIT.md, défaut P1.
+  const { activeRole } = useAuth();
+  const { can } = useServedAccess();
+  // L'union `UserRole` du web ne modélise que les 6 rôles d'église legacy
+  // (TENANT_ADMIN / TENANT_OWNER en sont absents) : on compare donc sur la
+  // forme chaîne du rôle actif, comme le fait le reste des gardes fallback.
+  const roleKey: string = activeRole ?? "";
+  const canWrite = can("DRESSCODE_EXECUTE", () =>
+    ["PASTEUR", "RESPONSABLE", "TENANT_ADMIN", "TENANT_OWNER"].includes(roleKey));
+  const canDelete = can("DRESSCODE_EXECUTE_DELETE", () =>
+    ["TENANT_ADMIN", "TENANT_OWNER"].includes(roleKey));
   const [dressCodes, setDressCodes] = useState<DressCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [editing, setEditing] = useState<DressCode | null>(null);
   const [form, setForm] = useState<Partial<DressCode>>({
     title: "",
@@ -86,6 +111,23 @@ export default function DressCodePage() {
     }
   };
 
+  // Suppression DÉFINITIVE : confirmation en deux temps obligatoire avant
+  // l'appel (convention du dépôt pour les actions destructives —cf. EventsPage).
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/dress-codes/${id}`);
+      setMessage({ type: "success", text: "Dress code supprimé" });
+      setDeletingId(null);
+      setPendingDelete(null);
+      fetchDressCodes();
+    } catch {
+      setMessage({ type: "error", text: "Erreur lors de la suppression" });
+      setDeletingId(null);
+      setPendingDelete(null);
+    }
+  };
+
   const addRule = () => {
     setForm({ ...form, rules: [...(form.rules || []), { groupName: "", description: "", imageUrl: "" }] });
   };
@@ -108,7 +150,7 @@ export default function DressCodePage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dress Codes</h1>
-        {hasPermission("DRESS_CODE_CREATE") && (
+        {canWrite && (
           <button
             onClick={() => { setShowForm(true); setEditing(null); setForm({ title: "", serviceName: "", status: "DRAFT", rules: [] }); }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -191,11 +233,39 @@ export default function DressCodePage() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  {hasPermission("DRESS_CODE_UPDATE") && (
-                    <button onClick={() => handleEdit(dc)} className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50">Modifier</button>
+                  {canWrite && (
+                    <>
+                      <button onClick={() => handleEdit(dc)} className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50">Modifier</button>
+                      <button onClick={() => handleArchive(dc.id)} className="px-3 py-1 text-sm text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50">Archiver</button>
+                    </>
                   )}
-                  {hasPermission("DRESS_CODE_ARCHIVE") && (
-                    <button onClick={() => handleArchive(dc.id)} className="px-3 py-1 text-sm text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50">Archiver</button>
+                  {canDelete && (
+                    pendingDelete === dc.id ? (
+                      <>
+                        <span className="self-center text-xs text-red-700">Supprimer définitivement&nbsp;?</span>
+                        <button
+                          onClick={() => handleDelete(dc.id)}
+                          disabled={deletingId === dc.id}
+                          className="px-3 py-1 text-sm text-white bg-red-600 border border-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {deletingId === dc.id ? 'Suppression…' : 'Confirmer'}
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete(null)}
+                          disabled={deletingId === dc.id}
+                          className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Annuler
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setPendingDelete(dc.id)}
+                        className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                      >
+                        Supprimer
+                      </button>
+                    )
                   )}
                 </div>
               </div>

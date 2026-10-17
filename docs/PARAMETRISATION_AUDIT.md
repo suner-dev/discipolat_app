@@ -13,8 +13,8 @@
 | Surface | Sites figés | Détail |
 |---|---|---|
 | Backend (gardes `@PreAuthorize`) | **0 restants** | 581 sites à l'origine → 11 convertis Phase 2 (MEMBERS) + 570 convertis Phase 3 (547 mécaniques + 23 guidées) ; R7 gelé à 0 |
-| Frontend (littéraux de rôle) | **2298** occurrences dans 145 fichiers | **routes + garde SERVIES** ✅ (Phase 4 : `ROUTE_PERMISSIONS` 173 clés + `App.tsx` 185 props `permissions=`, repli `roles` conservé ; V261 113 clés UI) ; reste les littéraux intra-pages (boutons/sections) en tranche résiduelle |
-| Mobile (littéraux de rôle) | **1176** occurrences dans 54 fichiers | **routes + tiroir SERVIES** ✅ (Phase 5 : `routePermissions` 91 clés miroir du web, garde GoRouter + drawer filtrés par clés servies) ; reste les littéraux intra-écrans en tranche résiduelle |
+| Frontend (littéraux de rôle) | **2298** occurrences dans 145 fichiers | **routes + garde SERVIES** ✅ (Phase 4 : `ROUTE_PERMISSIONS` 173 clés + `App.tsx` 185 props `permissions=`, repli `roles` conservé ; V261 113 clés UI) ; **intra-pages servi-first** ✅ (29 gardes `can/canAny`, V262 puis V270) ; **résiduel = 6 sites nommés** (liste blanche + plafond chiffré de `parametrisationGate.test.ts`) ; **ratchet CI** phase 8 : existence des clés servies + parité de matrice + liste blanche |
+| Mobile (littéraux de rôle) | **1176** occurrences dans 54 fichiers | **routes + tiroir SERVIES** ✅ (Phase 5 : `routePermissions` 91 clés, **miroir exact du web sur les 79 routes communes — 0 divergence**) ; **intra-écrans servi-first** ✅ (9 `canServed`, V262 puis V270) ; **résiduel = 1 site** (libellé d'une portée calculée par le serveur) ; **ratchet CI** `served_permissions_parity_test.dart` (phase 8) |
 
 Légende statut : ⬜ à migrer · 🟨 migration en cours · ✅ migré (garde littérale supprimée, équivalence prouvée).
 
@@ -641,8 +641,8 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 18 | `frontend/src/__tests__/CommandPalette.test.tsx` | 16 | ⬜ |
 | 19 | `frontend/src/__tests__/routeAccessV3.test.ts` | 16 | ⬜ |
 | 20 | `frontend/src/__tests__/SoulCustomFields.test.tsx` | 15 | ⬜ |
-| 21 | `frontend/src/pages/DashboardPage.tsx` | 15 | ⬜ |
-| 22 | `frontend/src/pages/MemberDashboardPage.tsx` | 13 | ⬜ |
+| 21 | `frontend/src/pages/DashboardPage.tsx` | 15 | ✅ blocs « Vue Responsable » / « Mes ames » servis (V270 `UI_DASHBOARD_RESPONSABLE_SECTION_ACCESS` / `UI_DASHBOARD_FAISER_SECTION_ACCESS`, matrices parité exacte) ; les `hasRole` restants sont les replis `legacy` des gardes |
+| 22 | `frontend/src/pages/MemberDashboardPage.tsx` | 13 | ✅ `canManage` servi (V270 `UI_DASHBOARD_MEMBRE_MANAGE_ACCESS` {MEMBRE}) — `useServedAccess` était déjà importé mais inutilisé |
 | 23 | `frontend/src/pages/PlatformPagesPage.tsx` | 13 | ⬜ |
 | 24 | `frontend/src/pages/ProfilePage.tsx` | 13 | ⬜ |
 | 25 | `frontend/src/__tests__/CommandPalette.develop1.test.tsx` | 12 | ⬜ |
@@ -676,7 +676,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 53 | `frontend/src/__tests__/MemberRequestsPage.test.tsx` | 6 | ⬜ |
 | 54 | `frontend/src/__tests__/TenantAdminInvitationsPage.test.tsx` | 6 | ⬜ |
 | 55 | `frontend/src/__tests__/TrainingsPage.test.tsx` | 6 | ⬜ |
-| 56 | `frontend/src/pages/MemberRequestsPage.tsx` | 6 | ⬜ |
+| 56 | `frontend/src/pages/MemberRequestsPage.tsx` | 6 | ✅ vue « Toute l'église » servie (V270 `UI_MEMBER_REQUESTS_GLOBAL_SCOPE_ACCESS` {ADMIN, PASTEUR}) |
 | 57 | `frontend/src/pages/PlatformMenusPage.tsx` | 6 | ⬜ |
 | 58 | `frontend/src/components/layout/Navbar.tsx` | 6 | ⬜ |
 | 59 | `frontend/src/components/shared/AttachmentPicker.tsx` | 6 | ⬜ |
@@ -685,7 +685,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 62 | `frontend/src/hooks/useInvitations.ts` | 5 | ⬜ |
 | 63 | `frontend/src/pages/AdminWorkflowBuilderPage.tsx` | 5 | ⬜ |
 | 64 | `frontend/src/pages/FamiliesPage.tsx` | 5 | ⬜ |
-| 65 | `frontend/src/pages/ResponsableDashboardPage.tsx` | 5 | ⬜ |
+| 65 | `frontend/src/pages/ResponsableDashboardPage.tsx` | 5 | ✅ `canManage` servi (V270 `UI_DASHBOARD_RESPONSABLE_MANAGE_ACCESS` {RESPONSABLE}) |
 | 66 | `frontend/src/navigation/NavigationContext.tsx` | 4 | 🟨 (filterNavByAccess — nav latérale pilotée par clés servies) |
 | 67 | `frontend/src/__tests__/AdminNotificationTemplatesPage.test.tsx` | 4 | ⬜ |
 | 68 | `frontend/src/__tests__/AuthJourneys.test.tsx` | 4 | ⬜ |
@@ -698,7 +698,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 75 | `frontend/src/pages/EventsPage.tsx` | 4 | ⬜ |
 | 76 | `frontend/src/pages/FamilyCreatePage.tsx` | 4 | ⬜ |
 | 77 | `frontend/src/pages/FollowUpRequestsPage.tsx` | 4 | ⬜ |
-| 78 | `frontend/src/pages/PeopleDirectoryPage.tsx` | 4 | ⬜ |
+| 78 | `frontend/src/pages/PeopleDirectoryPage.tsx` | 4 | ✅ `canRegister` servi sur la clé du garde serveur `POST /people/register` (`PEOPLE_EXECUTE` {ADMIN, PASTEUR}) — conversion MANQUANTE, débusquée par le ratchet phase 8 |
 | 79 | `frontend/src/pages/PrayersPage.tsx` | 4 | ⬜ |
 | 80 | `frontend/src/pages/VisitsPage.tsx` | 4 | ⬜ |
 | 81 | `frontend/src/__tests__/ChurchJoinChain.test.tsx` | 3 | ⬜ |
@@ -753,7 +753,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 130 | `frontend/src/pages/AdminIntegrationsPage.tsx` | 1 | ⬜ |
 | 131 | `frontend/src/pages/AdminSystemPage.tsx` | 1 | ⬜ |
 | 132 | `frontend/src/pages/AuditPage.tsx` | 1 | ⬜ |
-| 133 | `frontend/src/pages/ChefFamilleDashboardPage.tsx` | 1 | ⬜ |
+| 133 | `frontend/src/pages/ChefFamilleDashboardPage.tsx` | 1 | ✅ `canManage` servi (V270 `UI_DASHBOARD_CHEF_FAMILLE_MANAGE_ACCESS` {CHEF_DE_FAMILLE}) |
 | 134 | `frontend/src/pages/DepartmentMemberDossierPage.tsx` | 1 | ⬜ |
 | 135 | `frontend/src/pages/DocumentsPage.tsx` | 1 | ⬜ |
 | 136 | `frontend/src/pages/PrayerJournalPage.tsx` | 1 | ⬜ |
@@ -772,7 +772,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | # | Fichier | Littéraux | Statut |
 |---|---|---|---|
 | 1 | `mobile/lib/app.dart` | 901 | ✅ routes/gardes servies (Phase 5 : cache servi `AuthState` + `routePermissions` **91 clés** miroir exact du web — chaque clé ajoutée seulement si littéral rôles mobile ≡ matrice serveur ; garde GoRouter priorité au servi ; `_routeRoles` repli). Littéraux intra-écrans résiduels |
-| 2 | `mobile/lib/presentation/screens/users/users_list_screen.dart` | 50 | ⬜ |
+| 2 | `mobile/lib/presentation/screens/users/users_list_screen.dart` | 50 | ✅ `hardDelete` désormais gardé par la clé du garde serveur (`USERS_EXECUTE_HARDDELETE` {ADMIN}) : c'était la SEULE action de la rangée sans garde, visible par le seul filtre de rôle de la LIGNE — donc visible à un PASTEUR qui prenait un 403. Les littéraux `role == ...` restants sont des sélecteurs de CIBLE (rôle de la personne affichée), par design |
 | 3 | `mobile/lib/presentation/widgets/app_drawer.dart` | 37 | 🟨 (menu filtré par clés servies + écoute permissionsEpoch + re-pull au switch-role) |
 | 4 | `mobile/lib/presentation/screens/users/user_detail_screen.dart` | 21 | ⬜ |
 | 5 | `mobile/lib/presentation/screens/users/user_create_screen.dart` | 20 | ⬜ |
@@ -783,7 +783,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 10 | `mobile/lib/presentation/screens/platform/platform_menus_screen.dart` | 7 | ⬜ |
 | 11 | `mobile/lib/features/users/UserRolesScreen.dart` | 6 | ⬜ |
 | 12 | `mobile/lib/presentation/screens/tontine/tontine_screen.dart` | 6 | ⬜ |
-| 13 | `mobile/lib/presentation/screens/reports/reports_screen.dart` | 6 | ⬜ |
+| 13 | `mobile/lib/presentation/screens/reports/reports_screen.dart` | 6 | ✅ portée « tous les départements » servie (V270 `UI_REPORTS_DEPARTMENTS_GLOBAL_SCOPE_ACCESS` {ADMIN, PASTEUR} — clé dédiée, `DEPARTMENTS_EXECUTE` aurait élargi à RESPONSABLE) |
 | 14 | `mobile/lib/presentation/screens/users/permissions_screen.dart` | 6 | ⬜ |
 | 15 | `mobile/lib/presentation/screens/tenant/users_screen.dart` | 5 | ⬜ |
 | 16 | `mobile/lib/l10n/app_localizations.dart` | 4 | ⬜ |
@@ -838,6 +838,7 @@ Le défaut codé `activeRole = 'FAISEUR'` (`AuthContext.tsx`) doit disparaître 
 | 5 | Conversion mobile | 1176 occurrences → objectif 0 | ✅ **routes + tiroir servies** (`routePermissions` 91 clés miroir web, équivalence rôles mobile ≡ matrice prouvée contre `fe_route_map.json` ; garde GoRouter + drawer filtrés par clés servies, repli `_routeRoles`) ; gates : flutter analyze 528 lints (= base, 0 nouvelle err), flutter test 684/684. **Résiduel intra-écrans ✅ (9 fichiers)** : `AuthState.canServed(clé, {legacy})` (sémantique du garde GoRouter L1674) posé sur trainings/communications/users/dashboard/reports/app_drawer/tontine/passport ; matrices ≡ littéraux vérifiées dans le seed avant conversion |
 | 6 | Paramétrage non-autorisation (statuts, workflows, quotas) | audit séparé | ✅ **audit + branchement** : (1) *workflows transferts* — déjà paramétrables par église (row `workflow_configs` V98, `rolesInitiateurs`/`rolesValidateurs` en chaînes libres comparées au rôle actif ; le `['PASTEUR']` des services n'est qu'un défaut à la création, pas une garde) ; (2) *quotas* — déjà servies par plan (`QuotaService`/`SaasPlanService`, fail-closed `QUOTA_*`, API quotas dans TenantContext + mobile tenant_session) ; (3) *vocabulaires de rôles figés* — branchés sur le catalogue SERVI (`GET /admin/roles/overview`, rôles custom inclus) en **union additive** : FE `useRoleVocabulary` (CommunicationsPage cible ROLE, AdminWorkflowBuilderPage initiateurs/validateurs, AdminCustomFieldsPage lecture/écriture, PlatformMenusPage rôles visibles) + mobile `AuthState().rolesVocabulary` (transfer_admin, platform_menus, communications) avec cache `_servedRoleKeys` amorce/refresh/ràz-session comme les permissions ; (4) *ciblage par rôle custom* — `CommunicationService.targetUserIds` résout désormais les clés hors enum par les memberships ACTIFS du tenant (additif : hors contexte tenant = comportement historique ignorer ; filtre actif-non-supprimé identique à la cible TOUS) + 2 tests unitaires ; (5) *contrats enum restants* (documentés, non modifiables sans migrer le contrat JPA — **migrés en phase 7**, voir ligne 7) : `User.role/roles` (enum `UserRole`) → création d'utilisateur FE/mobile bornée à l'enum — l'attribution de rôles custom passe déjà par le catalogue (`/admin/roles`, invitations via `useAssignableRoles`, `TenantAdminMembersPage` servi) ; `Objective.role` (enum) → select ObjectivesPage borné ; statuts d'entités (`Communication.statut`, `UserStatus`, etc.) = machines à états de contrat, traduits à l'affichage, non des listes de réglage ; (6) **re-gel R3 délibéré** — l'arête `objet|R3|communications -> tenants` a été ajoutée explicitement au gel (`architecture-freeze.txt`) : le ciblage par rôle custom impose que `CommunicationService` lise les `TenantMembership` (repo du contexte tenants), précédent : ~30 modules déjà gelés avec la même arête (events, families, messages, notifications, passport, payments, people, platform…) ; garde : `ArchitectureRulesTest` 1/1 vert puis suite BE complète verte |
 | 7 | Contrats enum restants (P7a/P7b) | `Objective.role` (ciblage objectifs + progression) + création `User` (rôle custom) | ✅ **contrats terminés sur les deux joints documentés** — ciblage d'objectif et affectation à la création acceptent les clés du catalogue servi ; les champs de compte de base `role`/`roles`/`activeRole` et leurs endpoints (switch-role, addRole/replaceRoles, filtre `?role=`, import CSV) restent l'enum socle **par design** (cf ligne 6, point (5)) ; rejet d'une clé custom sur ces endpoints = erreur de validation polie (400 try/catch ou handler), jamais 500 observé côté UI puisque les sélecteurs bornés ne les exposent pas. (P7a) `objectives.role` enum→clé texte : V263 (`VARCHAR(50)` + CHECK sémantique liste fermée → motif syntaxique `^[A-Z][A-Z0-9_]*$`, les 8 objectifs par défaut V22 restent conformes), entité/repo/DTO en `String`, `ObjectiveService.requireKnownRoleKey` = **union additive** noms enum ∪ catalogue servi du tenant (rejet 4xx `INVALID_/UNKNOWN_OBJECTIVE_ROLE`, plus de 500), `activeRole()` en `String` + `parseLegacyRole` — l'ancien `UserRole.valueOf(getCurrentUserRole())` non gardé (null → NPE, clé hors enum → 500) est neutralisé ; le JWT ne portant aujourd'hui que des rôles socle, c'est un **durcissement préventif**, pas un plantage observé en production, `resolveScope` garde la sémantique historique par rôle socle et clé custom → périmètre restreint (aucun élargissement de vue) ; FE : types `role: string` + `ObjectivesPage` `useRoleVocabulary(ROLE_BASE)` ; mobile objectives : déjà agnostique du rôle (0 modif). (P7b) `CreateUserRequest.customRole` (clé facultative) → `UserController.applyCustomRoleMembership` : clé du catalogue → entité `Role` → `TenantMembership` ACTIVE portée TENANT créée si le nouvel utilisateur n'en a aucune (UK V135 `user_id,tenant_id` jamais dropping = une membership par user/tenant ; mise à jour sinon) → permissions effectives via `PermissionResolver` source #1 + `bumpPermissions(USER_CREATE_CUSTOM_ROLE)` ; FE `UsersPage` sélecteur rôle custom (`useRoleVocabulary`, union additive) + mobile `user_create_screen` (`AuthState().rolesVocabulary`, sélecteur masqué tant que le catalogue est vide). **Re-gel R3 délibéré** `objet|R3|objectives -> tenants` (ObjectiveService lit `RoleRepository`, précédent ~30 modules avec l'arête vers tenants) ; 3 tests unitaires dans `ObjectiveServiceTest` + 3 tests API `UserControllerCustomRoleTest` (couverture P7b : membership ACTIVE créée + bump, clé inconnue → 400 `UNKNOWN_CUSTOM_ROLE`, sans customRole → comportement historique strict). Gates : suite BE complète 2307/0/0 (13 skipped, dont les 3 tests API P7b), tsc 0 err, vitest 1024/1024, debt:audit 13 (= plafond), flutter analyze 0 err (529 lints), flutter test 684/684, chaîne PG16 11/11 jusqu'à v263 |
+| 8 | **Audit profond + ratchets CI** (interne) | ré-audit des 3 surfaces + gaps de CI | ✅ **constats** : (1) `DressCodePage` consommait `DRESS_CODE_CREATE|UPDATE|ARCHIVE`, clés **absentes du catalogue** — les 3 boutons n'ont jamais été rendus, pour aucun rôle (défaut né avec le module G3.4, jamais vu par un test) ; (2) 6 gardes d'UI encore figées sur un littéral de rôle actif (`MemberDashboardPage`, `ResponsableDashboardPage`, `ChefFamilleDashboardPage`, `DashboardPage` ×2 blocs, `MemberRequestsPage`) ; (3) `PeopleDirectoryPage.canRegister` non converti ; (4) mobile `hardDelete` non gardé (visible à un PASTEUR qui prenait un 403) ; (5) `reports_screen` portée départements figée alors que la garde voisine était servie. **Vérifié SANS correction** : R7 backend à 0 (616 `@authz.can`, 0 littéral en `@PreAuthorize`) ; **0 clé consommée hors catalogue** côté registre ; **0 divergence de matrice** sur les 173 routes et les 29 gardes intra-pages ; **miroir mobile/web exact sur les 79 routes communes** ; `/me/permissions` + invalidation temps réel (`useRealtimeBus` → `refreshContext`, mobile `permissionsEpoch`) en place. **Correctifs** : V270 (7 clés UI, matrices parité exacte des littéraux remplacés), suppression définitive branchée sur `DRESSCODE_EXECUTE_DELETE`, `useServedAccess` aligné sur la sémantique de `ProtectedRoute`/`canServed` (divergence documentée supprimée). **Ratchets ajoutés** : `frontend/src/__tests__/parametrisationGate.test.ts` (8 tests — existence des clés servies lues dans les MIGRATIONS, parité de matrice routes + intra-pages, liste blanche du résiduel + plafond chiffré 6) et `mobile/test/served_permissions_parity_test.dart` (5 tests, résiduel 1). Le ratchet a débusqué (3) dès sa première exécution. Gates : tsc 0 err, vitest 1032/1032, test Java du seed H2 vert, `served_permissions_parity_test` 5/5 |
 
 ## E. Méthodologie de génération (reproductible)
 
