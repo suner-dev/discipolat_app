@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import { useI18n } from '@/i18n';
 import api from '@/lib/api';
 import { isPriereExaucee } from '@/lib/prayerStatus';
@@ -27,9 +28,12 @@ const getGreeting = (t: (k: string) => string) => {
 export default function ChefFamilleDashboardPage() {
   const { t, locale } = useI18n();
   const { user, activeRole } = useAuth();
+  // PARAMÉTRISATION PAR ÉGLISE — les actions du chef de famille suivent la clé
+  // servie (matrice par défaut {CHEF_DE_FAMILLE} = ancien littéral).
+  const { can } = useServedAccess();
+  const canManage = can('UI_DASHBOARD_CHEF_FAMILLE_MANAGE_ACCESS', () => activeRole === 'CHEF_DE_FAMILLE');
   const navigate = useNavigate();
   const { exportReport, isExporting } = useExportReport();
-  const canManage = activeRole === 'CHEF_DE_FAMILLE';
   const familleId = user?.familleGereeId;
 
   const { data: dashboard, isLoading } = useQuery({
