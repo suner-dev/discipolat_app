@@ -3,6 +3,7 @@ import api, { getErrorMessage } from '@/lib/api';
 import { PlaneTakeoff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 
 import { tText } from '@/i18n';
 interface LeaveRequest {
@@ -81,7 +82,7 @@ export default function LeaveRequestsPage() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium text-yellow-400 bg-yellow-500/20">En attente</span>
-                        <span className="text-xs text-gray-400">{r.type}</span>
+                        <span className="text-xs text-gray-400">{formatEnum(r.type)}</span>
                       </div>
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
                       <div className="flex gap-4 mt-1 text-xs text-gray-500">
@@ -114,8 +115,8 @@ export default function LeaveRequestsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status]}`}>{r.status}</span>
-                        <span className="text-xs text-gray-400">{r.type}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status]}`}>{formatEnum(r.status)}</span>
+                        <span className="text-xs text-gray-400">{formatEnum(r.type)}</span>
                       </div>
                       <p className="text-sm text-gray-800 dark:text-gray-200">{r.requesterName ?? 'Membre inconnu'}</p>
                       <div className="flex gap-4 mt-1 text-xs text-gray-500">

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface Emergency {
   id: string;
   title: string;
@@ -123,8 +124,8 @@ export default function EmergencyAidPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[e.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{e.status}</span>
-                    <span className="text-xs text-gray-400">{e.severity}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[e.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(e.status)}</span>
+                    <span className="text-xs text-gray-400">{formatEnum(e.severity)}</span>
                   </div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{e.title}</p>
                   <p className="text-xs text-gray-500 mt-1">{e.description}</p>

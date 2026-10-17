@@ -134,7 +134,7 @@ export default function ApiDocsPage() {
         </div>
         <div className="flex gap-2">
           <a
-            href="/swagger-ui.html"
+            href="/swagger-ui/index.html"
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"

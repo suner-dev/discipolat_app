@@ -10,6 +10,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useI18n } from '@/i18n';
 
 import { tText } from '@/i18n';
+import { humanizeAuditAction, relativeTimeFr } from '@/lib/auditLabels';
 interface SystemHealth {
   jvm: { heapUsed: number; heapMax: number; nonHeapUsed: number; threads: number; };
   database: { status: string; totalUsers: number; totalSouls: number; tableCount: number; };
@@ -248,20 +249,20 @@ export default function AdminDashboardPage() {
           </div>
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {recentAudit && recentAudit.length > 0 ? recentAudit.map(a => (
-              <div key={a.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+              <Link key={a.id} to="/audit" className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 mt-0.5">
                   {a.utilisateurNom?.charAt(0) || '?'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-medium text-gray-900 dark:text-gray-100 truncate">
                     <span className="text-primary-600 dark:text-primary-400">{a.utilisateurNom}</span>
-                    {' '}<span className={actionColor(a.action)}>{a.action?.toLowerCase().replace(/_/g, ' ')}</span>
+                    {' '}<span className={actionColor(a.action)}>{humanizeAuditAction(a.action, a.entiteType)}</span>
                   </p>
                   <p className="text-[9px] text-gray-400">
-                    {entityTypeIcon[a.entiteType] || '📝'} {a.entiteType} · {new Date(a.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {entityTypeIcon[a.entiteType] || '📝'} {relativeTimeFr(a.createdAt)}
                   </p>
                 </div>
-              </div>
+              </Link>
             )) : (
               <div className="text-center py-6"><Activity className="w-8 h-8 text-gray-300 mx-auto mb-2" /><p className="text-xs text-gray-400">{tText('Aucune activité récente')}</p></div>
             )}

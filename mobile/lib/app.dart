@@ -215,6 +215,7 @@ import 'presentation/screens/streaming/streaming_chat_screen.dart';
 import 'features/events/screens/events_screen.dart';
 import 'features/events/screens/event_detail_screen.dart';
 import 'features/events/screens/event_create_screen.dart';
+import 'features/events/models/event_model.dart';
 import 'features/finances/screens/finances_screen.dart';
 import 'features/health/screens/health_screen.dart';
 import 'features/assets/screens/assets_screen.dart';
@@ -2637,7 +2638,11 @@ final appRouter = GoRouter(
     GoRoute(
         path: '/events/create',
         name: 'event-create',
-        builder: (ctx, s) => const EventCreateScreen()),
+        // `extra` porte l'Event à éditer depuis EventDetailScreen (« Modifier ») ;
+        // sans lui, le même écran sert de création vide. EventCreateScreen
+        // pré-remplit et bascule en mode édition dès que `event != null`.
+        builder: (ctx, s) =>
+            EventCreateScreen(event: s.extra is Event ? s.extra as Event : null)),
     GoRoute(
         path: '/finances',
         name: 'finances',

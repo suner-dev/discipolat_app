@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface DevPlan {
   id: string;
   title: string;
@@ -110,7 +111,7 @@ export default function DevelopmentPlansPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{plan.title}</h3>
-                      <span className={`badge text-[10px] ${statusColor(plan.status)}`}>{plan.status}</span>
+                      <span className={`badge text-[10px] ${statusColor(plan.status)}`}>{formatEnum(plan.status)}</span>
                     </div>
                     <p className="text-xs text-gray-400 line-clamp-2">{plan.description}</p>
                   </div>

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface SpiritualChallenge {
   id: string;
   title: string;
@@ -80,7 +81,7 @@ export default function SpiritualChallengesPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[c.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{c.status}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[c.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(c.status)}</span>
                     <span className="text-xs text-gray-400">{c.category}</span>
                     {c.points != null && <span className="text-xs text-yellow-400">{c.points} pts</span>}
                   </div>

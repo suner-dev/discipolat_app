@@ -12,6 +12,7 @@ import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
 import { useDictionaries } from '@/hooks/useDictionaries';
 import { UserDetailModal } from '@/components/users/UserDetailModal';
+import Modal from '@/components/ui/Modal';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
@@ -682,11 +683,9 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Create user modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+      {/* Create user modal — rendue via portal (voir components/ui/Modal). */}
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="md" ariaLabel={tText('Nouvel utilisateur')}>
+        <div className="modal-header">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-sm">
                   <UserIcon className="w-5 h-5" />
@@ -816,9 +815,7 @@ export default function UsersPage() {
                 Créer le compte
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* User detail modal — fiche complète + évaluations */}
       {actionModal === 'detail' && selectedUser && (

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   TrendingUp, Plus, Loader2, RefreshCw, Sparkles, CheckCircle, User, X,
 } from 'lucide-react';
@@ -84,7 +85,7 @@ export default function DevPlanPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{plan.membreName}</h3>
-                    <span className={`badge text-[10px] ${getStatusColor(plan.status)}`}>{plan.status}</span>
+                    <span className={`badge text-[10px] ${getStatusColor(plan.status)}`}>{formatEnum(plan.status)}</span>
                   </div>
                 </div>
                 <div className="text-right">

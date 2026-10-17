@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "@/lib/api";
 
 interface AiSummary {
@@ -248,18 +249,18 @@ export default function AiDashboardPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a href="/ai/predictions" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
+        <Link to="/ai-predictions" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
           <h3 className="font-semibold">Prédictions</h3>
           <p className="text-sm text-gray-500 mt-1">Croissance, risque, engagement</p>
-        </a>
-        <a href="/ai/family-cohesion" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
+        </Link>
+        <Link to="/family-cohesion" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
           <h3 className="font-semibold">Cohésion Familiale</h3>
           <p className="text-sm text-gray-500 mt-1">Analyse de la santé des familles</p>
-        </a>
-        <a href="/ai/sermon" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
+        </Link>
+        <Link to="/sermon-assistant" className="rounded-xl bg-white dark:bg-gray-800 border p-5 hover:shadow-md">
           <h3 className="font-semibold">Assistant Sermon</h3>
           <p className="text-sm text-gray-500 mt-1">Génération de plans de sermon</p>
-        </a>
+        </Link>
       </div>
     </div>
   );

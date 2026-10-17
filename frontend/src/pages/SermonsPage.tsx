@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   BookOpen, Plus, Loader2, RefreshCw, Play, Clock,
   Users, CheckCircle, Mic, Search, X,
@@ -161,7 +162,7 @@ export default function SermonsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{sermon.title}</h3>
-                  <span className={`badge text-[10px] ${statusColor(sermon.status)}`}>{sermon.status}</span>
+                  <span className={`badge text-[10px] ${statusColor(sermon.status)}`}>{formatEnum(sermon.status)}</span>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-gray-400">
                   <span>{sermon.speaker}</span>

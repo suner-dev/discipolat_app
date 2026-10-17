@@ -129,7 +129,7 @@ class _SermonsScreenState extends State<SermonsScreen> {
           IconButton(
             icon: const Icon(Icons.translate),
             tooltip: 'Traductions',
-            onPressed: () => context.push('/sermons/translations'),
+            onPressed: () => context.push('/sermon-translations'),
           ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],

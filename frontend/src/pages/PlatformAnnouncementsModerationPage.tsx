@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Loader2, Megaphone, X } from 'lucide-react';
 import api, { getErrorMessage } from '@/lib/api';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 
 /**
  * SPEC_ONBOARDING_FLOWS (FE-3 / D4) — file de modération des annonces
@@ -101,7 +102,7 @@ export default function PlatformAnnouncementsModerationPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{a.title}</p>
-                    <span className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">{a.status}</span>
+                    <span className="shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">{formatEnum(a.status)}</span>
                   </div>
                   {a.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{a.description}</p>}
                   <p className="text-[11px] text-gray-400 mt-1">

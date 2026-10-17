@@ -23,6 +23,11 @@ const LABEL_OVERRIDES: Record<string, string> = {
   SOUMISE: 'Soumise', TRAITEE: 'Traitée',
   ACCEPTED: 'Acceptée', ACCEPTEE: 'Acceptée', RESOLVED: 'Résolue', RESOLUE: 'Résolue',
   ESCALATED: 'Escaladé',
+  // Aide d'urgence
+  OPEN: 'Ouverte', OUVERTE: 'Ouverte', COLLECTING: 'Collecte en cours',
+  // Défis / visites / parrainages
+  FAILED: 'Échoué', ECHOUÉ: 'Échoué', CONTACTED: 'Contacté', JOINED: 'Rejoint',
+  DECLINED: 'Refusé', RESCHEDULED: 'Reprogrammé',
   // Cibles d'annonces
   ALL: 'Tous', DEPARTMENT: 'Département', DEPARTEMENT: 'Département',
   FAMILY: 'Famille', FAMILLE: 'Famille', USER: 'Utilisateur', MEMBRE: 'Membre',

@@ -8,6 +8,7 @@ import { useState } from 'react';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface RewardClaim {
   id: string;
   rewardId: number;
@@ -135,7 +136,7 @@ export default function RewardsClaimsPage() {
                   )}
                 </div>
               </div>
-              <span className={`badge text-[10px] ${statusColor(claim.status)}`}>{claim.status}</span>
+              <span className={`badge text-[10px] ${statusColor(claim.status)}`}>{formatEnum(claim.status)}</span>
             </div>
           ))}
         </div>

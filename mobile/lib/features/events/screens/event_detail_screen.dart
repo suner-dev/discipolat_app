@@ -368,7 +368,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 if (isOrganizer)
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => context.push('/events/${event.id}/edit'),
+                      onPressed: () =>
+                          context.push('/events/create', extra: event),
                       icon: const Icon(Icons.edit_rounded),
                       label: const Text('Modifier'),
                     ),
@@ -453,7 +454,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         _addToCalendar(event);
         break;
       case 'edit':
-        context.push('/events/${event.id}/edit');
+        context.push('/events/create', extra: event);
         break;
       case 'stats':
         context.push('/events/${event.id}/stats');

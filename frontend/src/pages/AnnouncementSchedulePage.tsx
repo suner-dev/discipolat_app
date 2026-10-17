@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 interface Announcement {
   id: string;
   title: string;
@@ -73,7 +74,7 @@ export default function AnnouncementSchedulePage() {
           <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3">{announcement.content}</p>
           <div className="flex items-center gap-2 mt-3">
             <span className={`badge text-[10px] ${announcement.status === 'DRAFT' ? 'badge-warning' : 'badge-info'}`}>
-              {announcement.status}
+              {formatEnum(announcement.status)}
             </span>
             {announcement.scheduledAt && (
               <span className="text-[10px] text-gray-400">

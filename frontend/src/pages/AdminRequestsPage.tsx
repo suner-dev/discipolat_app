@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
+import { formatEnum } from '@/lib/labels';
 import {
   Shield,
   Loader2,
@@ -266,7 +267,7 @@ export default function AdminRequestsPage() {
                     <p className="text-xs text-gray-500">{d.fullName} — {d.email}</p>
                     <p className="text-[11px] text-gray-500 mt-1">{new Date(d.createdAt).toLocaleDateString(getI18nLocale())}</p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[d.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{d.status}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[d.status] ?? 'text-gray-400 bg-gray-500/20'}`}>{formatEnum(d.status)}</span>
                 </div>
               </div>
             ))}
