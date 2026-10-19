@@ -30,6 +30,15 @@ const SRC = resolve(process.cwd(), 'src');
 const catalog = loadServedCatalog();
 const KEY_IN_LIST = /['"]([A-Z][A-Z0-9_]{2,})['"]/g;
 /**
+ * Appel d'un garde servi. ⚠ `can`/`canAny` sont APPELÉS NU (hook déstructuré :
+ * `const { can } = useServedAccess()` puis `can('CLÉ', …)`) — pas en méthode
+ * `.can(`. Une regex exigeant le point ne matche donc AUCUN site de
+ * production et rend les règles (A)/(B) vacantes : c'est exactement le défaut
+ * corrigé ici. Le lookbehind exclut `.` et les caractères de mot pour ne pas
+ * compter deux fois un même appel ni attraper un suffixe (`scan(`).
+ */
+const SERVED_CALL_RE = /(?<![\w.$])(?:can|canAny|hasPermission)\(\s*(?:['"]([A-Z][A-Z0-9_]{2,})['"]|\[([^\]]*)\])/g;
+/**
  * littéral de rôledecisionnaire. Volontairement restreint aux expressions qui
  * désignent le rôle de l'ACTEUR (`activeRole`, `user.role`, `hasRole(...)`) :
  * un `a.role === 'CHEF'` de tableau ou un libellé de badge ne sont pas des
@@ -56,11 +65,33 @@ const files: { rel: string; text: string }[] = (() => {
   return acc;
 })();
 
-/** Rôles littéraux d'un prédicat `legacy:` — sert à prouver la parité (B2). */
+/**
+ * Rôles d'un prédicat `legacy:` — extraction STRUCTURELLE, jamais « tous les
+ * tokens en majuscules » : une garde comme
+ * `hasPermission('BRANDING_UPDATE') && locale === 'EUR'` contient `'EUR'`,
+ * `'XAF'`, `'PENDING'`… qui ne sont pas des rôles. Les confondre produisait des
+ * faux positifs (et donc, en pratique, des gens qui suppriment la garde pour
+ * faire passer le build — le pire scénario pour un ratchet).
+ *
+ * Seul un littéral EN POSITION DE RÔLE est retenu : comparaison à
+ * `activeRole`/`user.role`, ou membre d'un tableau passé à `.includes`/
+ * `hasActiveRole`/`hasAnyRole`.
+ */
 function legacyRoles(body: string): Set<string> {
   const out = new Set<string>();
-  for (const m of body.matchAll(/['"]([A-Z][A-Z0-9_]*)['"]/g)) out.add(m[1]);
-  // on ne garde que les rôles : le prédicat ne contient que des littéraux de rôle
+  const add = (re: RegExp) => { for (const m of body.matchAll(re)) out.add(m[1]); };
+  add(/(?:activeRole|_activeRole|user\?\.role|user\.role|user\?\.activeRole|user\.activeRole|currentRole)\s*(?:===|!==|==|!=)\s*['"]([A-Z][A-Z0-9_]*)['"]/g);
+  add(/roles\??\.includes\(\s*['"]([A-Z][A-Z0-9_]*)['"]/g);
+  add(/hasRole\(\s*['"]([A-Z][A-Z0-9_]*)['"]/g);
+  for (const m of body.matchAll(/hasRole\(\s*((?:['"][A-Z][A-Z0-9_]*['"]\s*,?\s*)+)\)/g)) {
+    for (const k of m[1].matchAll(KEY_IN_LIST)) out.add(k[1]);
+  }
+  for (const m of body.matchAll(/(?:hasActiveRole|hasAnyRole)\(\s*\[([^\]]*)\]/g)) {
+    for (const k of m[1].matchAll(KEY_IN_LIST)) out.add(k[1]);
+  }
+  for (const m of body.matchAll(/\[\s*((?:['"][A-Z][A-Z0-9_]*['"]\s*,\s*)+['"][A-Z][A-Z0-9_]*['"])\s*\]\s*\.includes\(/g)) {
+    for (const k of m[1].matchAll(KEY_IN_LIST)) out.add(k[1]);
+  }
   out.delete('INCONNU');
   return out;
 }
@@ -83,16 +114,33 @@ describe('ratchet parametrisation — catalogue servi', () => {
       const push = (key: string, index: number) => {
         if (!catalog.keys.has(key)) missing.push(`${key} — ${rel}:${lineOf(text, index)}`);
       };
-      for (const m of text.matchAll(/hasPermission\(\s*['"]([A-Z][A-Z0-9_]{2,})['"]/g)) push(m[1], m.index!);
-      for (const m of text.matchAll(/\.(?:can|canAny)\(\s*['"]([A-Z][A-Z0-9_]{2,})['"]/g)) push(m[1], m.index!);
-      for (const m of text.matchAll(/\.(?:can|canAny)\(\s*\[([^\]]*)\]/g)) {
-        for (const k of m[1].matchAll(KEY_IN_LIST)) push(k[1], m.index!);
+      for (const m of text.matchAll(SERVED_CALL_RE)) {
+        if (m[1]) push(m[1], m.index!);
+        for (const k of (m[2] ?? '').matchAll(KEY_IN_LIST)) push(k[1], m.index!);
       }
     }
     expect(
       missing,
       'clés consommées absentes du catalogue servi : le contrôle d’accès ne peut JAMAIS être accordé (bouton mort)',
     ).toEqual([]);
+  });
+
+  it('(A2) TOUTE clé des props `permissions=` de ProtectedRoute existe au catalogue', () => {
+    // 185 props `permissions={[…]}` dans App.tsx (146 clés) : une faute de frappe
+    // y ferme une ROUTE entière en silence. Vérifié explicitement car ces clés ne
+    // passent par aucun appel de fonction (le ratchet (A) ne les voyait pas :
+    // contrôle négatif effectué, le build restait vert).
+    const missing: string[] = [];
+    for (const { rel, text } of files) {
+      for (const m of text.matchAll(/permissions=\{\[([^\]]*)\]\}/g)) {
+        for (const k of m[1].matchAll(KEY_IN_LIST)) {
+          if (!catalog.keys.has(k[1])) {
+            missing.push(`${k[1]} — ${rel}:${lineOf(text, m.index!)}`);
+          }
+        }
+      }
+    }
+    expect(missing, 'clé absente du catalogue dans une prop `permissions=` = route morte').toEqual([]);
   });
 
   it('(A) le registre ROUTE_PERMISSIONS ne consomme que des clés servies', () => {
@@ -121,7 +169,7 @@ describe('ratchet parametrisation — parité de matrice (aucun élargissement s
   it('(B2) chaque garde intra-page : matrice de la clé ≡ rôles du prédicat legacy', () => {
     const drift: string[] = [];
     for (const { rel, text } of files) {
-      for (const m of text.matchAll(/\.(?:can|canAny)\(\s*(?:['"]([A-Z][A-Z0-9_]{2,})['"]|\[([^\]]*)\])/g)) {
+      for (const m of text.matchAll(SERVED_CALL_RE)) {
         const keys = m[1] ? [m[1]] : [...(m[2] ?? '').matchAll(KEY_IN_LIST)].map((k) => k[1]);
         if (!keys.length) continue;
         const legacy = legacyRoles(legacyBody(text, m.index!));

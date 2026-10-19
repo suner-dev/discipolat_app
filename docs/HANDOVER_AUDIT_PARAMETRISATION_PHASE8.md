@@ -76,11 +76,14 @@ Le backend est gelé par la règle d'architecture **R7** (`plafond|R7|0`), le we
 
 ### Gates ajoutés (reproductibles en CI, sans fixture à maintenir)
 
-- **`frontend/src/__tests__/parametrisationGate.test.ts`** (8 tests) +
+- **`frontend/src/__tests__/parametrisationGate.test.ts`** (9 tests) +
   `helpers/servedCatalog.ts` (parseur échappe-aware des migrations) +
   `helpers/sourceScan.ts` (neutralisation des commentaires).
   - (A) toute clé consommée (`hasPermission`, `can`, `canAny`, registre) existe
     dans le catalogue **lu dans `backend/.../db/migration` à l'exécution** ;
+  - (A2) idem pour les **185 props `permissions={[…]}`** de `ProtectedRoute`
+    dans `App.tsx` (146 clés) : une faute de frappe y ferme une route entière,
+    et ces clés ne passent par aucun appel de fonction ;
   - (B1) parité de matrice `ROUTE_PERMISSIONS` ≡ `ROUTE_ROLES` (173 routes) ;
   - (B2) parité de matrice de chaque garde `can`/`canAny` ≡ son `legacy` ;
   - (C) liste blanche des 6 sites résiduels assumés + **plafond chiffré
@@ -92,11 +95,18 @@ Les deux ratchets lisent les **migrations** et non un JSON figé : c'est
 délibéré, un fixture se désynchronise au premier `INSERT` oublié — précisément
 la panne qu'ils évitent.
 
-**Preuve qu'ils mordent** (contrôle négatif effectué pendant ce chantier) :
-réintroduire `hasPermission("DRESS_CODE_CREATE")` → le test (A) échoue avec
-`DRESS_CODE_CREATE — src/pages/DressCodePage.tsx:42` ; ajouter
-`const canSecret = activeRole === 'PASTEUR'` → le test (C) échoue en nommant le
-site. Restauré, tout repasse au vert.
+**Preuve qu'ils mordent — 4 contrôles négatifs exécutés un par un** (cette
+démarche a très nearly raté, voir §4.7 ; les trois premiers contrôles ont été
+refaits après correction) :
+
+| Injection | Règle qui la voit |
+|---|---|
+| `can('UI_VISITS_TYPO_KEY', …)` (clé fantôme dans un appel `can` **nu**) | (A) rouge, site nommé |
+| `permissions={['UI_NEXISTE_PAS']}` sur une route d'`App.tsx` | (A2) rouge, site nommé |
+| `can('DASHBOARD_EXECUTE', …)` à la place d'une clé de matrice ≠ littéral | (B2) rouge : `-RESPONSABLE,CHEF_DE_FAMILLE` |
+| `const canSecret = activeRole === 'PASTEUR'` | (C) rouge, site nommé |
+
+Chacun restauré ensuite : tout repasse au vert.
 
 ---
 
@@ -130,6 +140,28 @@ site. Restauré, tout repasse au vert.
 5. **Détecteur de littéraux de rôle et commentaires** : sans neutralisation des
    commentaires, le ratchet lit `@authz.can('X')` cité dans une phrase comme une
    clé consommée. C'est ce qui rendait la première version du test bruyante.
+6. **Un ratchet regex peut être VACANT tout en annonçant « tests verts »** —
+   le piège le plus sérieux rencontré. Ma première version de la règle de parité
+   (B2) cherchait `\.can(`, alors que le hook est déstructuré
+   (`const { can } = useServedAccess()` puis `can('CLÉ', …)`) : **zéro**
+   occurrence dans tout le code de production, donc la règle ne testait
+   strictement rien. Elle est restée verte sur une rupture de parité réelle
+   (`DASHBOARD_EXECUTE` substitué à une clé de matrice différente, soit
+   RESPONSABLE et CHEF_DE_FAMILLE perdant l'accès). Même famille d'erreur côté
+   extraction : « tous les tokens `['A-Z_]+` sont des rôles » lisait `'EUR'`,
+   `'XAF'`, `'PENDING'` comme des rôles (faux positifs). Règle tenue depuis :
+   **aucun ratchet regex n'est crédité sans avoir exécuté son contrôle négatif**,
+   et l'extraction doit être structurelle (position), pas lexicale.
+7. **`test/church_picker_test.dart` bloque la suite mobile sur cette machine** :
+   `flutter test` s'y arrête indéfiniment (le widget utilise un vrai
+   `Timer(300 ms)` + `pumpAndSettle`). Reproduit **en isolement** sur le fichier
+   seul, donc sans rapport avec ce diff (il n'importe que `church_picker.dart` et
+   `api_service.dart`, tous deux intacts). Mesuré ici en excluant ce fichier :
+   **679/679 verts**. À surveiller côté CI : si le job mobile passe en CI, c'est
+   une instabilité propre à la machine partagée.
+8. **Suivi d'un `flutter test` lancé en arrière-plan** : la sortie est
+   block-buffered sans TTY, un fichier vide ne prouve pas un blocage. Utiliser
+   `script -q -e -c 'flutter test' /dev/null > log` pour obtenir du flux.
 
 ---
 
@@ -138,7 +170,7 @@ site. Restauré, tout repasse au vert.
 ```bash
 # web
 cd frontend && npx tsc --noEmit
-cd frontend && npx vitest run --no-file-parallelism      # 1032/1032 (1024 + 8 ratchet)
+cd frontend && npx vitest run --no-file-parallelism      # 1033/1033 (1024 + 9 ratchet)
 cd frontend && npx vitest run src/__tests__/parametrisationGate.test.ts
 
 # mobile
@@ -158,10 +190,21 @@ Régénérer le seed après une nouvelle matrice :
 
 ## 6. Reste à faire (hors de cette branche, par ordre de valeur)
 
-1. **Gates manquants sur les autres surfaces du dépôt** : les ratchets (A)/(B)
-   cover web + mobile. Le **seed H2 et le générateur de `import.sql`** gagneraient
-   à être remplacés par le parseur échappe-aware (cf. §4.1) — aujourd'hui un
-   libellé à apostrophe reste un piège.
+1. **Gates manquants, par ordre d'importance** :
+   a. **Backend : aucun équivalent de (A)/(B)** — une clé `@authz.can('…')`
+      absente du catalogue (faute de frappe) ferme l'endpoint pour tout le
+      monde, silencieusement ; `TestPermissionMatrixSeedGuardTest` ne compare
+      que seed ↔ migrations. C'est le même trou que D1, côté serveur.
+   b. **Liste blanche (C) par FICHIER et non par site** : une nouvelle garde à
+      littéral dans un fichier déjà listé (`App.tsx`, `ProfilePage.tsx`,
+      `Sidebar.tsx`…) passe. Passer à une liste de sites (fichier:ligne + motif)
+      supprimerait cette fuite.
+   c. **Clés construites dynamiquement** : `canAccess('RESOURCE','ACTION')`
+      compose `${RESOURCE}_${ACTION}` ; le jour où une page l'utilise, le
+      ratchet ne verra pas la clé. Aucun usage en production aujourd'hui
+      (vérifié) — à re-vérifier le jour où ça change.
+   d. Le **seed H2 et `gen_h2_seed.py`** gagneraient à être remplacés par le
+      parseur échappe-aware (cf. §4.1) — un libellé à apostrophe reste un piège.
 2. **Élaguer la dette de rôles dupliquée** : le catalogue mélange des clés
    historiques (`MEMBER_READ`, `EVENT_*` de V135/V136) et des clés
    paramétrables (`MEMBERS_EXECUTE*` de V258) pour le même domaine. Les
