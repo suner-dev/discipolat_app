@@ -12,8 +12,11 @@ import { useTenantOptional } from '@/contexts/TenantContext';
  * suivre la matrice, sans jamais régresser pendant le chargement.
  *
  * Règle d'or (additif) : la clé passée ici doit avoir une matrice ≡ au
- * littéral legacy remplacé (inventaire .e2e-tmp/param/keys_modules.txt,
- * migrations V258-V262), ou être une clé UI_* dédiée mintée pour ce site.
+ * littéral legacy remplacé (migrations V258-V270), ou être une clé UI_*
+ * dédiée mintée pour ce site. Cette parité n'est pas une recommandation :
+ * elle est vérifiée en CI par `src/__tests__/parametrisationGate.test.ts`
+ * (règle B2), qui lit les migrations et échoue si une clé s'écarte du
+ * littéral qu'elle remplace.
  */
 export function useServedAccess() {
   const tenant = useTenantOptional();
