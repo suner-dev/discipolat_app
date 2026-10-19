@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import AiDashboardPage from '@/pages/ai/AiDashboardPage';
 
 const { apiGet } = vi.hoisted(() => ({ apiGet: vi.fn() }));
@@ -36,7 +37,7 @@ describe('AiDashboardPage — self-service crédits IA (§G6.2, audit parité G6
         byModel: [{ model: 'groq', count: 30, credits: 150 }],
       },
     });
-    render(<AiDashboardPage />);
+    render(<MemoryRouter><AiDashboardPage /></MemoryRouter>);
     await waitFor(() =>
       expect(apiGet).toHaveBeenCalledWith('/ai/credits/dashboard'),
     );
@@ -55,7 +56,7 @@ describe('AiDashboardPage — self-service crédits IA (§G6.2, audit parité G6
         byType: [], byModel: [],
       },
     });
-    render(<AiDashboardPage />);
+    render(<MemoryRouter><AiDashboardPage /></MemoryRouter>);
     expect(await screen.findByText(/Plan sans quota IA mensuel/)).toBeInTheDocument();
   });
 });
