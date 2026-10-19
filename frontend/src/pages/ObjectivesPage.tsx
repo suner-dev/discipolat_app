@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -47,6 +48,7 @@ const ROLE_BASE = ['FAISEUR', 'CHEF_DE_FAMILLE', 'RESPONSABLE', 'PASTEUR'];
 
 export default function ObjectivesPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { can } = useServedAccess();
   const dictionaries = useDictionaries();
   const isAdmin = can('OBJECTIVES_EXECUTE', () => !!user && (user.roles.includes('ADMIN') || user.roles.includes('PASTEUR')));
@@ -122,6 +124,19 @@ export default function ObjectivesPage() {
             <Plus className="w-4 h-4" /> Nouvel objectif
           </button>
         )}
+        {/* Non-admin (RESPONSABLE / CHEF_DE_FAMILLE / FAISEUR) : la création
+            d'objectif « par rôle » est réservée à la hiérarchie (permission
+            OBJECTIVES_EXECUTE ≡ ADMIN/PASTEUR, cf. V258). Ces rôles peuvent
+            néanmoins créer leur propre objectif personnel ; on rend ce chemin
+            découvrable depuis cet écran plutôt que de les laisser sans action. */}
+        {!isAdmin && (
+          <button
+            onClick={() => navigate('/personal-objectives')}
+            className="btn btn-secondary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> {tText('Créer mon objectif personnel')}
+          </button>
+        )}
       </div>
 
       {showCreate && isAdmin && (
@@ -193,6 +208,14 @@ export default function ObjectivesPage() {
           </p>
           {isAdmin && (
             <p className="text-xs text-gray-400 mt-1">Créez un objectif avec le bouton « Nouvel objectif ».</p>
+          )}
+          {!isAdmin && (
+            <button
+              onClick={() => navigate('/personal-objectives')}
+              className="btn btn-secondary text-sm mt-3 inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> {tText('Créer mon objectif personnel')}
+            </button>
           )}
         </div>
       ) : (
