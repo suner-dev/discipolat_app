@@ -1,5 +1,5 @@
 -- PARAMÉTRISATION PAR ÉGLISE — seed H2 des tests d'intégration.
--- Généré par .e2e-tmp/param/p4/gen_h2_seed.py depuis V258..V262 + V270 (vérité = migrations).
+-- Généré par tools/parametrisation/gen_h2_seed.py depuis V258+V259+V260+V261+V262+V270 (vérité = migrations).
 -- Exécuté par Hibernate après ddl-auto create-drop (profil test, Flyway coupé).
 -- Le pont d'équivalence @authz.can a besoin des lignes globales
 -- roles/permissions/role_permissions ; la dérive est bloquée par
