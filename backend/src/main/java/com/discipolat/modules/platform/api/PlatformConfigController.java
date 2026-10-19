@@ -56,23 +56,39 @@ public class PlatformConfigController {
     @GetMapping("/menus")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MenuEntry>> myMenus() {
-        List<String> roles = securityUtils.getAllUserRoles();
-        if (roles.isEmpty()) {
-            String activeRole = securityUtils.getCurrentUserRole();
-            if (activeRole != null) roles = List.of(activeRole);
-        }
-        return ResponseEntity.ok(platformService.menusForRoles(roles));
+        return ResponseEntity.ok(platformService.menusForRoles(menuRolesForActiveWorkspace()));
     }
 
     @GetMapping("/gating")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<MenuGateInfo>> gating() {
-        List<String> roles = securityUtils.getAllUserRoles();
-        if (roles.isEmpty()) {
-            String activeRole = securityUtils.getCurrentUserRole();
-            if (activeRole != null) roles = List.of(activeRole);
+        return ResponseEntity.ok(platformService.gateInfo(menuRolesForActiveWorkspace()));
+    }
+
+    /**
+     * Rôles qui déterminent l'espace de travail affiché.
+     *
+     * <p>Un compte peut détenir plusieurs rôles (ex. {@code RESPONSABLE +
+     * FAISEUR}), mais l'UI navigue selon un unique rôle ACTIF. Parer le menu de
+     * l'UNION des rôles détenus faisait apparaître au responsable les écrans
+     * réservés au faiseur (CRM Faiseur, Rapport faiseur, Cercle des faiseurs…)
+     * — exactement ce que la convention {@link SecurityUtils#hasActiveRole}
+     * proscrit : « access controls must use [the active role], not the full set
+     * of roles held ».
+     *
+     * <p>Les super-utilisateurs (ADMIN/PASTEUR) ne sont pas cloisonnés par rôle
+     * : ils conservent la vue complète de l'église (union de leurs rôles). Si
+     * aucun rôle actif n'est résoluble (jeton sans claim {@code activeRole}),
+     * on retombe sur l'ancien comportement par sûreté — jamais un menu vide.
+     */
+    private List<String> menuRolesForActiveWorkspace() {
+        String activeRole = securityUtils.getCurrentUserRole();
+        if (activeRole == null || securityUtils.isSuperUser()) {
+            List<String> all = securityUtils.getAllUserRoles();
+            if (!all.isEmpty()) return all;
+            return activeRole != null ? List.of(activeRole) : List.of();
         }
-        return ResponseEntity.ok(platformService.gateInfo(roles));
+        return List.of(activeRole);
     }
 
     @GetMapping("/admin/menus")
