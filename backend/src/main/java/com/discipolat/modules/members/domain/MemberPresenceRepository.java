@@ -37,5 +37,9 @@ public interface MemberPresenceRepository extends JpaRepository<MemberPresence, 
     // AI module methods
     long countByTenantIdAndCreatedAtAfter(UUID tenantId, java.time.LocalDateTime date);
     @Query("SELECT (COUNT(DISTINCT CASE WHEN mp.present = true THEN mp.soulId END) * 1.0d) / NULLIF(COUNT(DISTINCT mp.soulId), 0) FROM MemberPresence mp WHERE mp.tenantId = :tenantId AND mp.semaine BETWEEN :start AND :end")
-    double calculatePresenceRate(@Param("tenantId") UUID tenantId, @Param("start") java.time.LocalDate start, @Param("end") java.time.LocalDate end);
+    // Retourne null quand la période ne contient aucune présence (COUNT=0 →
+    // NULLIF → division NULL). Type enveloppe `Double` (et non le primitif
+    // `double`) pour ne pas lever AopInvocationException sur une valeur nulle ;
+    // l'appelant applique le repli 0.0.
+    Double calculatePresenceRate(@Param("tenantId") UUID tenantId, @Param("start") java.time.LocalDate start, @Param("end") java.time.LocalDate end);
 }
