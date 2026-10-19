@@ -88,6 +88,21 @@ Le backend est gelé par la règle d'architecture **R7** (`plafond|R7|0`), le we
   - (B2) parité de matrice de chaque garde `can`/`canAny` ≡ son `legacy` ;
   - (C) liste blanche des 6 sites résiduels assumés + **plafond chiffré
     committé** (`RESIDUAL_BASELINE = 6`), plus une garde anti-périmption.
+- **Backend — le même trou, côté serveur** (c'était la fuite la plus grave) :
+  - `PermissionKeyCatalogGuardTest` (2 tests, **statique, sans Docker**) : toute
+    clé `@authz.can('…')` existe dans le catalogue, + un détecteur de faute par
+    distance de Levenshtein qui **nomme la clé voisine** (`AUDIT_RED` →
+    `AUDIT_READ`). Le pont est fail-closed : une clé inconnue = 403 pour TOUT
+    le monde, silencieusement.
+  - `PermissionMatrixEffectivenessPostgreSqlTest` (2 tests, **PostgreSQL réel**) :
+    après application de la chaîne Flyway, chaque clé de garde est **détenue par
+    au moins un rôle global**. Volontairement une base et non un parseur de SQL :
+    les grants « blanket » de V135/V136 (`p.scope = 'TENANT'`, `p.key NOT IN (…)`)
+    s'évaluent mal par regex, et un parseur optimiste déclare « couvertes » des
+    clés qui ne le sont pas — l'erreur inverse de celle que le garde combat.
+  - `@perm.has('DOMAIN','ACTION')` est **hors périmètre, volontairement** : ce
+    bean est *permissif* en l'absence de ligne de matrice, donc une faute y
+    dégrade l'accès ouvert au lieu de le fermer.
 - **`mobile/test/served_permissions_parity_test.dart`** (5 tests) : mêmes règles
   (A)/(B) côté mobile + ratchet chiffré du résiduel (`= 1`).
 
@@ -106,7 +121,17 @@ refaits après correction) :
 | `can('DASHBOARD_EXECUTE', …)` à la place d'une clé de matrice ≠ littéral | (B2) rouge : `-RESPONSABLE,CHEF_DE_FAMILLE` |
 | `const canSecret = activeRole === 'PASTEUR'` | (C) rouge, site nommé |
 
-Chacun restauré ensuite : tout repasse au vert.
+Chaque r.restore ensuite : tout repasse au vert.
+
+**Contrôles négatifs du complément (fermeture des trois fuites nommées)** :
+
+| Injection | Règle | Avant la correction |
+|---|---|---|
+| `canAccess(r, a)` method-style, arguments dynamiques | (A3) | **passait** |
+| `canAccess('FAMILIESS','READ')` — clé composée absente | (A3) | **règle inexistante** |
+| `const canDeleteAll = user?.activeRole === 'ADMIN'` dans `UsersPage.tsx` (**fichier déjà listé**) | (C) | **passait** (liste par fichier) |
+| `canAccess` dynamique dans un composant générique non listé | (A3) | **passait** |
+| `@authz.can('AUDIT_RED')` côté serveur | garde backend | **aucun gate** |
 
 ---
 
@@ -170,7 +195,7 @@ Chacun restauré ensuite : tout repasse au vert.
 ```bash
 # web
 cd frontend && npx tsc --noEmit
-cd frontend && npx vitest run --no-file-parallelism      # 1033/1033 (1024 + 9 ratchet)
+cd frontend && npx vitest run --no-file-parallelism      # 1034/1034 (1024 + 10 ratchet)
 cd frontend && npx vitest run src/__tests__/parametrisationGate.test.ts
 
 # mobile
@@ -179,8 +204,10 @@ cd mobile && flutter test test/served_permissions_parity_test.dart   # 5/5
 cd mobile && flutter test                                             # 679/679
 
 # backend (seed H2 ↔ migrations : OBLIGATOIRE après toute nouvelle matrice)
-cd backend && mvn -o -Dtest=TestPermissionMatrixSeedGuardTest test
-cd backend && mvn -o -Dtest=FlywayMigrationChainPostgreSqlTest test   # chaîne PG16 réelle
+cd backend && mvn -o -Dtest=PermissionKeyCatalogGuardTest test                  # statique, sans Docker
+cd backend && mvn -o -Dtest=PermissionMatrixEffectivenessPostgreSqlTest test    # PostgreSQL réel
+cd backend && mvn -o -Dtest=TestPermissionMatrixSeedGuardTest test               # seed H2 ↔ migrations
+cd backend && mvn -o -Dtest=FlywayMigrationChainPostgreSqlTest test             # chaîne PG16 réelle
 ```
 
 Régénérer le seed après une nouvelle matrice :
@@ -190,21 +217,22 @@ Régénérer le seed après une nouvelle matrice :
 
 ## 6. Reste à faire (hors de cette branche, par ordre de valeur)
 
-1. **Gates manquants, par ordre d'importance** :
-   a. **Backend : aucun équivalent de (A)/(B)** — une clé `@authz.can('…')`
-      absente du catalogue (faute de frappe) ferme l'endpoint pour tout le
-      monde, silencieusement ; `TestPermissionMatrixSeedGuardTest` ne compare
-      que seed ↔ migrations. C'est le même trou que D1, côté serveur.
-   b. **Liste blanche (C) par FICHIER et non par site** : une nouvelle garde à
-      littéral dans un fichier déjà listé (`App.tsx`, `ProfilePage.tsx`,
-      `Sidebar.tsx`…) passe. Passer à une liste de sites (fichier:ligne + motif)
-      supprimerait cette fuite.
-   c. **Clés construites dynamiquement** : `canAccess('RESOURCE','ACTION')`
-      compose `${RESOURCE}_${ACTION}` ; le jour où une page l'utilise, le
-      ratchet ne verra pas la clé. Aucun usage en production aujourd'hui
-      (vérifié) — à re-vérifier le jour où ça change.
-   d. Le **seed H2 et `gen_h2_seed.py`** gagneraient à être remplacés par le
-      parseur échappe-aware (cf. §4.1) — un libellé à apostrophe reste un piège.
+Les trois fuites annoncées en fin d'audit sont **fermées et prouvées**
+(règles (A2), (A3), liste blanche par site, deux gates backend). Restent
+ouvert, par ordre de valeur :
+
+1. **Gardes génériques orphelines** : `RouteGuards.tsx` (`RequireTenantAccess`,
+   câblé dans `App.tsx`) et `RouteGuardsG54.tsx` (`RequirePermission`,
+   **importé uniquement par son propre test**) exposent une garde
+   `canAccess(resource, action)` dont la clé est fournie par l'appelant —
+   invérifiable par construction. Le premier est câblé, le second est du code
+   mort. Arbitrage à faire : les câbler avec des clés littérales, ou les
+   supprimer. Les deux sont listés explicitement dans `GENERIC_GUARDS` de la
+   règle (A3) pour que l'exception soit visible et non implicite.
+2. **Le seed H2 et `gen_h2_seed.py`** gagneraient à être remplacés par le
+   parseur échappe-aware (cf. §4.1) — un libellé à apostrophe reste un piège,
+   et mon premier `PermissionKeyCatalogGuardTest` est lui-même tombé dedans
+   (13 fausses clés « manquantes » avant correction du parseur).
 2. **Élaguer la dette de rôles dupliquée** : le catalogue mélange des clés
    historiques (`MEMBER_READ`, `EVENT_*` de V135/V136) et des clés
    paramétrables (`MEMBERS_EXECUTE*` de V258) pour le même domaine. Les
