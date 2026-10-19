@@ -45,7 +45,10 @@ public class AiKpiNarrativeService {
         long newSoulsWeek = soulRepo.countByTenantIdAndDateIntegrationAfter(tenantId, weekStart);
         long newSoulsMonth = soulRepo.countByTenantIdAndDateIntegrationAfter(tenantId, monthStart);
         long activeReports = reportRepo.countByTenantIdAndCreatedAtAfter(tenantId, weekStart.atStartOfDay());
-        double presenceRate = presenceRepo.calculatePresenceRate(tenantId, weekStart, now);
+        Double presenceRateRaw = presenceRepo.calculatePresenceRate(tenantId, weekStart, now);
+        // Repli 0.0 : aucune présence sur la période → taux 0 (sinon NPE
+        // d'unboxing du Double null et /ai/module/kpi-narrative renvoyait 500).
+        double presenceRate = presenceRateRaw == null ? 0.0 : presenceRateRaw;
 
         Map<String, Object> narrative = new LinkedHashMap<>();
         narrative.put("period", Map.of("start", weekStart.toString(), "end", now.toString()));
