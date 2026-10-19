@@ -210,8 +210,14 @@ cd backend && mvn -o -Dtest=TestPermissionMatrixSeedGuardTest test              
 cd backend && mvn -o -Dtest=FlywayMigrationChainPostgreSqlTest test             # chaîne PG16 réelle
 ```
 
-Régénérer le seed après une nouvelle matrice :
-`python3 .e2e-tmp/param/p4/gen_h2_seed.py` (ajouter la migration à `FILES`).
+Régénérer le seed après une nouvelle matrice (outil **versionné dans le dépôt**,
+exécutable depuis n'importe quelle machine) :
+```bash
+python3 tools/parametrisation/gen_h2_seed.py --check   # vérifie sans écrire
+python3 tools/parametrisation/gen_h2_seed.py           # régénère import.sql
+```
+Après ajout d'une migration de permissions : l'ajouter à `FILES` dans le
+générateur, régénérer, puis rejouer `TestPermissionMatrixSeedGuardTest`.
 
 ---
 
