@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Verrou anti-dérive du seed H2 — PARAMÉTRISATION PAR ÉGLISE (Phase 3).
  *
  * <p>Le profil test (H2, Flyway coupé) rejoue la matrice rôle→permission de
- * V258/V259 via {@code import.sql} (généré par .e2e-tmp/param/p4/gen_h2_seed.py).
+ * V258..V262 + V270 via {@code import.sql} (généré par .e2e-tmp/param/p4/gen_h2_seed.py).
  * Si une migration modifie la matrice sans régénérer le seed — ou inversement si
  * le seed est édité à la main — les tests d'intégration mentiraient sur les
  * gardes réelles. Ce test compare les paires {@code ('RÔLE','CLÉ')} effectives :
@@ -32,7 +32,7 @@ class TestPermissionMatrixSeedGuardTest {
             "\\(\\s*'([A-Z][A-Z0-9_]*)'\\s*,\\s*'([A-Z][A-Z0-9_]*)'\\s*\\)");
 
     @Test
-    @DisplayName("import.sql (seed H2) porte exactement les paires effectives de V258..V262")
+    @DisplayName("import.sql (seed H2) porte exactement les paires effectives de V258..V262 + V270")
     void seedMatrixEquivalatesMigrations() throws Exception {
         Set<String> migrationPairs = migrationEffectivePairs();
         String seed = read("import.sql");
@@ -45,7 +45,7 @@ class TestPermissionMatrixSeedGuardTest {
             seedPairs.add(bm.group(1) + "\u0000" + bm.group(2));
         }
         assertThat(seedPairs)
-                .as("le seed H2 doit être strictement équivalent à la matrice V258/V259 "
+                .as("le seed H2 doit être strictement équivalent à la matrice V258..V262+V270 "
                         + "— régénérer via gen_h2_seed.py")
                 .isEqualTo(migrationPairs);
     }
@@ -65,7 +65,8 @@ class TestPermissionMatrixSeedGuardTest {
                 "db/migration/V259__parametrisation_permissions_suite_phase3.sql",
                 "db/migration/V260__parametrisation_admin_events_read.sql",
                 "db/migration/V261__parametrisation_cles_ui_routes.sql",
-                "db/migration/V262__parametrisation_cles_ui_intra_pages.sql"}) {
+                "db/migration/V262__parametrisation_cles_ui_intra_pages.sql",
+                "db/migration/V270__parametrisation_cles_ui_residuel_dashboard.sql"}) {
             String sql = read(res);
             // 1) rôles créés par ces migrations : tuples ('KEY','Label',N) des blocs INSERT INTO roles
             Matcher rm = Pattern.compile("\\(\\s*'([A-Z][A-Z0-9_]*)'\\s*,\\s*'[^']*'\\s*,\\s*\\d+\\s*\\)")

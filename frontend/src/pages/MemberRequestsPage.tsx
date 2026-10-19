@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import api, { getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
 import type {
@@ -62,6 +63,7 @@ const tauxPresence = (p: MemberPresence) => {
 
 export default function MemberRequestsPage() {
   const { user } = useAuth();
+  const { can } = useServedAccess();
   const _dictionaries = useDictionaries();
   const { locale } = useI18n();
   const queryClient = useQueryClient();
@@ -120,7 +122,11 @@ export default function MemberRequestsPage() {
   }, [requests, searchTerm, typeFilter, statusFilter]);
 
   const openRequests = requests.filter((r) => r.statut === 'OUVERT' || r.statut === 'EN_COURS');
-  const isPasteurOrAdmin = user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN';
+  // PARAMÉTRISATION PAR ÉGLISE — la vue « Toute l'église » était figée sur le rôle
+  // actif ; elle suit la clé servie (matrice par défaut {ADMIN, PASTEUR}, parité
+  // EXACTE avec l'ancien littéral). Le libellé de périmètre suit le même flag.
+  const isPasteurOrAdmin = can('UI_MEMBER_REQUESTS_GLOBAL_SCOPE_ACCESS', () =>
+    user?.activeRole === 'PASTEUR' || user?.activeRole === 'ADMIN');
 
   // Stats
   const stats = useMemo(() => ({

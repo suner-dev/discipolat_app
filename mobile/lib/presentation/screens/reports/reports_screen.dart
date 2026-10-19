@@ -252,7 +252,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
   /// ou tous les départements pour les super-utilisateurs.
   Future<List<Map<String, dynamic>>> _loadDepartments() async {
     final auth = AuthState();
-    final isSuper = auth.hasActiveRole(['ADMIN', 'PASTEUR']);
+    // PARAMÉTRISATION PAR ÉGLISE — la portée « tous les départements » était
+    // figée sur le littéral de rôle actif, alors que la garde voisine (carte
+    // « Rapport du département ») est déjà servie-first. On lui dédie une clé
+    // dont la matrice par défaut vaut EXACTEMENT {ADMIN, PASTEUR} : réemployer
+    // `DEPARTMENTS_EXECUTE` élargirait à RESPONSABLE (il verrait alors les
+    // départements des autres). Clé V270
+    // `UI_REPORTS_DEPARTMENTS_GLOBAL_SCOPE_ACCESS`.
+    final isSuper = auth.canServed('UI_REPORTS_DEPARTMENTS_GLOBAL_SCOPE_ACCESS',
+        legacy: () => auth.hasActiveRole(['ADMIN', 'PASTEUR']));
     if (!isSuper) {
       final userId = auth.userId;
       if (userId != null) {

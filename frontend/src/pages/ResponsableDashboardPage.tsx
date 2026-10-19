@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { useServedAccess } from '@/hooks/useServedAccess';
 import api, { getErrorMessage } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import {
@@ -35,7 +36,13 @@ const formatDate = (d?: string) => {
 
 export default function ResponsableDashboardPage() {
   const { user, activeRole } = useAuth();
-  const canManage = activeRole === 'RESPONSABLE'; // ADMIN/PASTEUR voient en lecture seule
+  // PARAMÉTRISATION PAR ÉGLISE — les actions de gestion (présences, affectations)
+  // dépendaient du rôle actif figé ; elles suivent la clé servie, dont la matrice
+  // par défaut {RESPONSABLE} est identique à l'ancien littéral. ADMIN/PASTEUR
+  // continuent de voir l'écran en lecture seule tant que la clé ne leur est pas
+  // accordée par l'église (surcouche tenant).
+  const { can } = useServedAccess();
+  const canManage = can('UI_DASHBOARD_RESPONSABLE_MANAGE_ACCESS', () => activeRole === 'RESPONSABLE');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>(undefined);

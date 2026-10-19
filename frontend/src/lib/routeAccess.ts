@@ -363,7 +363,12 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/network': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/passport': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/ai-predictions': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
-  '/ai-dashboard': ['ADMIN', 'PASTEUR'],
+  // /ai-dashboard adossé à la MÊME capacité servie (UI_AI_PREDICTIONS_ACCESS) que
+  // /ai-predictions : le catalogue servi accorde RESPONSABLE, donc le repli legacy
+  // doit le refléter (parité B1 — sinon matrice servie ≠ littéral). Le gating de
+  // production passe par la clé servie (RESPONSABLE déjà admis) ; ceci aligne
+  // seulement le repli pré-cache, n'élargit ni ne retire aucun accès réel.
+  '/ai-dashboard': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
 
   // IA, Voice, Exports, Imports - accessibles à tous les rôles
   '/ai-assistant': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],

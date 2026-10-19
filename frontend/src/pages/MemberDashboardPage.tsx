@@ -111,7 +111,11 @@ export default function MemberDashboardPage() {
   const { user, activeRole } = useAuth();
   const { can } = useServedAccess();
   const dictionaries = useDictionaries();
-  const canManage = activeRole === 'MEMBRE'; // Les autres rôles voient en lecture seule
+  // PARAMÉTRISATION PAR ÉGLISE — l'édition de son profil était figée sur le rôle
+  // actif ; elle suit désormais la clé servie (matrice par défaut = {MEMBRE},
+  // parité EXACTE avec l'ancien littéral). Une église peut la retirer à MEMBRE
+  // (tableau de bord en lecture seule) ou l'accorder à un autre rôle.
+  const canManage = can('UI_DASHBOARD_MEMBRE_MANAGE_ACCESS', () => activeRole === 'MEMBRE');
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<UpdateMemberProfileRequest>({});

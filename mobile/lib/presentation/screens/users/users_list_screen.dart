@@ -363,8 +363,19 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   const SizedBox(width: 4),
                   _actionBtn(Icons.admin_panel_settings, () => _showActionModal(u, 'roles'), const Color(0xFF6366F1), tooltip: l10n.usersListActionRoles),
                 ],
-                const SizedBox(width: 4),
-                _actionBtn(Icons.delete_forever, () => _showActionModal(u, 'hardDelete'), Colors.red),
+                // PARAMÉTRISATION PAR ÉGLISE — la suppression DÉFINITIVE était la
+                // seule action de la rangée sans garde : elle n'était visible que
+                // grâce au filtre de rôle de la LIGNE (rôle de la personne visée),
+                // jamais sur la capacité de l'ACTEUR. Or le serveur l'exige via
+                // `@authz.can('USERS_EXECUTE_HARDDELETE') && @perm.has('USER','DELETE')`
+                // — matrice par défaut {ADMIN} seulement. Un PASTEUR voyait donc
+                // un bouton rouge qui partait en 403. La clé servie est désormais
+                // la source unique : repli legacy = rôle actif ADMIN, parité exacte.
+                if (AuthState().canServed('USERS_EXECUTE_HARDDELETE',
+                      legacy: () => AuthState().hasActiveRole(['ADMIN']))) ...[
+                  const SizedBox(width: 4),
+                  _actionBtn(Icons.delete_forever, () => _showActionModal(u, 'hardDelete'), Colors.red),
+                ],
               ]),
             ),
         ]),

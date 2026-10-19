@@ -92,6 +92,16 @@ export default function DashboardPage() {
 
   const isPasteurOrAdmin = can('DASHBOARD_EXECUTE', () => hasRole('PASTEUR') || hasRole('ADMIN'));
 
+  // PARAMÉTRISATION PAR ÉGLISE — les blocs « Vue Responsable » / « Mes âmes »
+  // étaient figés sur un littéral de rôle (`hasRole('RESPONSABLE')` /
+  // `hasRole('FAISEUR')`) : une église ne pouvait ni les retirer à un rôle, ni
+  // les accorder à un rôle personnalisé. Les deux matrices par défaut valent
+  // exactement {RESPONSABLE} et {FAISEUR} (parité avec les littéraux), donc
+  // aucun accès n'est élargi ni rétréci à l'installation ; le repli legacy
+  // reproduit le comportement historique tant que le cache servi n'est pas prêt.
+  const canResponsableSection = can('UI_DASHBOARD_RESPONSABLE_SECTION_ACCESS', () => hasRole('RESPONSABLE'));
+  const canFaiseurSection = can('UI_DASHBOARD_FAISER_SECTION_ACCESS', () => hasRole('FAISEUR'));
+
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['dashboard', 'kpi'],
     queryFn: async () => {
@@ -645,10 +655,10 @@ export default function DashboardPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {hasRole('RESPONSABLE') ? 'Vue Responsable' : 'Mon tableau de bord'}
+                {canResponsableSection ? 'Vue Responsable' : 'Mon tableau de bord'}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {hasRole('RESPONSABLE')
+                {canResponsableSection
                   ? 'Aperçu de vos départements et familles'
                   : 'Vos statistiques personnelles de suivi'}
               </p>
@@ -666,7 +676,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {hasRole('FAISEUR') && (
+              {canFaiseurSection && (
                 <>
                   <div className="stat-card">
                     <span className="stat-label">{tText('Mes âmes')}</span>
@@ -724,7 +734,7 @@ export default function DashboardPage() {
                   </div>
                 </>
               )}
-              {hasRole('RESPONSABLE') && (
+              {canResponsableSection && (
                 <>
                   <div className="stat-card">
                     <span className="stat-label">{tText('Départements')}</span>
