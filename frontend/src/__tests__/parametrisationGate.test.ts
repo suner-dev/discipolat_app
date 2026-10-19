@@ -37,7 +37,7 @@ const KEY_IN_LIST = /['"]([A-Z][A-Z0-9_]{2,})['"]/g;
  * corrigé ici. Le lookbehind exclut `.` et les caractères de mot pour ne pas
  * compter deux fois un même appel ni attraper un suffixe (`scan(`).
  */
-const SERVED_CALL_RE = /(?<![\w.$])(?:can|canAny|hasPermission)\(\s*(?:['"]([A-Z][A-Z0-9_]{2,})['"]|\[([^\]]*)\])/g;
+const SERVED_CALL_RE = /(?<![\w$])(?:can|canAny|hasPermission)\(\s*(?:['"]([A-Z][A-Z0-9_]{2,})['"]|\[([^\]]*)\])/g;
 /**
  * littéral de rôledecisionnaire. Volontairement restreint aux expressions qui
  * désignent le rôle de l'ACTEUR (`activeRole`, `user.role`, `hasRole(...)`) :
@@ -143,6 +143,39 @@ describe('ratchet parametrisation — catalogue servi', () => {
     expect(missing, 'clé absente du catalogue dans une prop `permissions=` = route morte').toEqual([]);
   });
 
+  it('(A3) les clés COMPOSÉES par `canAccess(resource, action)` sont vérifiables', () => {
+    // `canAccess('FAMILIES','READ')` compose `${RESOURCE}_${ACTION}` : la clé
+    // n'apparaît nulle part dans le code, donc (A) ne la voit pas — une faute de
+    // frappe fermerait silencieusement l'accès. Règle : les deux premiers
+    // arguments doivent être des littéraux (seule forme vérifiable contre le
+    // catalogue) ET la clé composée doit exister.
+    //
+    // Exception : les deux GARDES GÉNÉRIQUES (`RequirePermission` /
+    // `RequireTenantAccess`) transmettent `resource`/`action` en props — ce ne
+    // sont pas des sites d'appel, ce sont des fabriques. Les voirlistés, et le
+    // constat « aucun appelant en production » est tracé au handover §6.
+    const GENERIC_GUARDS = ['src/components/guards/RouteGuards.tsx',
+      'src/components/guards/RouteGuardsG54.tsx'];
+    const problems: string[] = [];
+    for (const { rel, text } of files) {
+      for (const m of text.matchAll(/(?<![\w$])canAccess\(([^()]*)\)/g)) {
+        if (GENERIC_GUARDS.includes(rel)) continue;
+        const args = m[1].split(',').map((a) => a.trim());
+        const [res, act] = args;
+        const lit = (e?: string) => !!e && /^['"][A-Za-z][A-Za-z0-9_]*['"]$/.test(e);
+        if (!lit(res) || !lit(act)) {
+          problems.push(`${rel}:${lineOf(text, m.index!)} canAccess(${m[1].trim()}) — arguments non litteraux : cle non verifiable`);
+          continue;
+        }
+        const key = `${res!.replace(/['"]/g, '').toUpperCase()}_${act!.replace(/['"]/g, '').toUpperCase()}`;
+        if (!catalog.keys.has(key)) {
+          problems.push(`${rel}:${lineOf(text, m.index!)} canAccess -> ${key} ABSENT du catalogue servi`);
+        }
+      }
+    }
+    expect(problems, 'canAccess : passer des litteraux, et verifier la cle composee').toEqual([]);
+  });
+
   it('(A) le registre ROUTE_PERMISSIONS ne consomme que des clés servies', () => {
     const missing: string[] = [];
     for (const [path, keys] of Object.entries(ROUTE_PERMISSIONS)) {
@@ -191,45 +224,44 @@ describe('ratchet parametrisation — résiduel de gardes à littéral de rôle'
    * Sites de PRODUCTION où un littéral de rôle décide encore d'un affichage ou
    * d'une action. Chacun est soit un sélecteur de contexte assumé (le rôle de la
    * DONNÉE visée, pas la capacité de l'acteur), soit un reliquat documenté.
-   * Liste fermée : toute nouvelle garde à littéral fait échouer le build.
-   * Clé = chemin du fichier (relatif à `frontend/`) — le motif est documenté.
+   *
+   * ⚠ Liste par SITE, pas par fichier. Une version antérieure listait le
+   * fichier (`App.tsx`, `ProfilePage.tsx`…) : n'importe quelle nouvelle garde
+   * à littéral ajoutée dans un fichier déjà listé passait — exactement la fuite
+   * qu'un ratchet doit fermer. Une entrée = `fichier::début du code normalisé`
+   * (espaces compactés, coupée à 60 caractères) : stable malgré les insertions
+   * de lignes, assez précis pour interdire l'ajout ailleurs dans le fichier.
    */
   const ALLOWED_RESIDUAL: Record<string, string> = {
-    'src/App.tsx': 'repli `roles` de ProtectedRoute (gardes servies en tête) + bascule ADMIN/PASTEUR',
-    'src/contexts/AuthContext.tsx': 'activeRole : source de session, pas une décision d’accès',
-    'src/components/layout/Sidebar.tsx': 'libellé de badge + `enabled` de requête (perf, pas accès)',
-    'src/pages/UsersPage.tsx': 'rôle de la FICHE observée (isResponsable)',
-    "src/pages/TransferCreatePage.tsx": "filtre des cibles faiseur (donnee)",
-    "src/pages/FamilyCreatePage.tsx": "portee par defaut du formulaire (donnee)",
-    "src/pages/PastoralMinistryPage.tsx": "role propose par defaut dans le formulaire (donnee)",
-    "src/pages/ObjectivesPage.tsx": "valeurs de filtre du formulaire (donnee)",
-    'src/pages/MarketplacePage.tsx': '_isMine : prédicat inutilisé',
-    'src/pages/EventsPage.tsx': 'sélecteur de rôle actif dans les filtres (donnée)',
-    'src/lib/routeAccess.ts': 'helpers de repli legacy (canRoleAccessPath) : le chemin servi prime en amont',
-    "src/pages/ProfilePage.tsx": "libelle daide 2FA (Obligatoire pour les administrateurs), pas une garde",
-    "src/pages/UserRolesPage.tsx": "roles de la fiche observee (donnee), pas la capacite de lacteur",
+    "src/pages/ProfilePage.tsx::{user?.role === 'ADMIN' ? 'Obligatoire":
+      "libelle d'aide 2FA, pas une garde",
+    "src/pages/ProfilePage.tsx::Statut: {user?.role === 'ADMIN'":
+      "libelle du statut 2FA, pas une garde",
+    "src/pages/TransferCreatePage.tsx::const faiseurs = useMemo":
+      "filtre des cibles faiseur (donnee)",
+    "src/pages/UsersPage.tsx::const isResponsable = user?.activeRole":
+      "role de la FICHE observee, pas la capacite de l'acteur",
+    "src/pages/UsersPage.tsx::{user.role === 'FAISEUR' && (":
+      "actions proposees pour une cible FAISEUR (donnee)",
+    "src/pages/UsersPage.tsx::{user.role !== 'FAISEUR' && user.role !== 'ADMIN'":
+      "actions proposees pour une cible non-FAISEUR (donnee)",
   };
 
-  /**
-   * Plafond CHIFFRÉ du résiduel toléré (constante committée, et non un budget
-   * par variable d'environnement : un ratchet que l'on peut relever au
-   * grattage n'est pas un ratchet). Chaque conversion de garde fait BAISSER le compte :
-   * on met alors la constante à jour — la dette ne peut pas croître en silence.
-   * Mesuré après l'audit profond (DressCodePage, MemberDashboardPage,
-   * ResponsableDashboardPage, ChefFamilleDashboardPage, MemberRequestsPage,
-   * PeopleDirectoryPage, blocs DashboardPage, hardDelete mobile).
-   */
+  const normalise = (line: string) => line.replace(/\s+/g, ' ').trim().slice(0, 60);
+
+  /** Plafond CHIFFRÉ du résiduel toléré (constante committée, pas un budget par
+   *  variable d'environnement : un ratchet que l'on peut relever au grattage
+   *  n'est pas un ratchet). Chaque conversion fait BAISSER le compte. */
   const RESIDUAL_BASELINE = 6;
 
-  /** Sites résiduels : décision d'affichage ou d'action portée par un littéral de rôle. */
+  /** Sites résiduels : décision d'affichage ou d'action portée par un littéral. */
   const residuals: string[] = [];
   for (const { rel, text } of files) {
     const lines = text.split('\n');
     lines.forEach((line, i) => {
-      // une garde servie-first : le littéral est le repli `legacy`, jamais une garde
+      // garde servie-first : le littéral est le repli `legacy`, jamais une garde
       if (/\b(?:can|canAny|hasPermission)\(/.test(line) || /\blegacy\s*:/.test(line)) return;
       if (!ROLE_LITERAL.test(line)) return;
-      // on ne retient que les décisions de garde (variable/JSX conditionnel)
       const isDecision =
         /\b(?:const|let)\s+(?:can|has|is|show|allow)[A-Z]\w*\s*=/.test(line) ||
         /\{\s*(?:!{0,2})?[A-Za-z_$][\w.?[\]]*\s*(?:===|!==|==|!=)\s*['"][A-Z][A-Z0-9_]*['"]\s*(&&|\?|})/.test(line) ||
@@ -238,28 +270,27 @@ describe('ratchet parametrisation — résiduel de gardes à littéral de rôle'
       if (!isDecision) return;
       // suite d'une décision servie (ligne de continuation) : déjà couverte
       if (/^\s*(?:\|\||&&|\?|:)\s*/.test(line) && !/\b(?:const|let)\s+/.test(line)) return;
-      residuals.push(`${rel}:${i + 1}`);
+      residuals.push(`${rel}::${normalise(line)}`);
     });
   }
 
+  const covered = (site: string) => Object.keys(ALLOWED_RESIDUAL).some((k) => site.startsWith(k));
+
   it('(C) aucune nouvelle garde à littéral de rôle hors liste blanche', () => {
-    const uncovered = residuals.filter((r) => !(r.split(':')[0] in ALLOWED_RESIDUAL));
     expect(
-      uncovered,
-      'nouvelles gardes à littéral de rôle : convertir en `can(<CLÉ>, legacy)` — une église doit pouvoir les retirer/accorder',
+      residuals.filter((s) => !covered(s)),
+      "nouvelles gardes a litteral de role : convertir en can(<CLE>, legacy) une eglise doit pouvoir les retirer/accorder",
     ).toEqual([]);
   });
 
-  it('(C) la liste blanche ne doit pas périmer (fichiers toujours présents)', () => {
-    const stale = Object.keys(ALLOWED_RESIDUAL).filter((f) => !statSync(join(process.cwd(), f)).isFile());
-    expect(stale, 'entrées de liste blanche obsolètes : retirer ou déplacer la garde').toEqual([]);
+  it('(C) la liste blanche ne doit pas périmer (chaque entrée correspond à un site réel)', () => {
+    const stale = Object.keys(ALLOWED_RESIDUAL).filter(
+      (entry) => !residuals.some((s) => s.startsWith(entry)),
+    );
+    expect(stale, "entrees de liste blanche obsoletes : convertir le site ou retirer l'entree").toEqual([]);
   });
 
-  it('(C) le résiduel compte-tenu des listes blanches est bien connu', () => {
-    // Trace de l'audit : fige le nombre de sites résiduels tolérés (ratchet
-    // chiffré). Toute conversion fait baisser le compte : on régénère alors
-    // cette constante au lieu de laisser la dette croître en silence.
-    const tolerated = residuals.filter((r) => r.split(':')[0] in ALLOWED_RESIDUAL).length;
-    expect(tolerated).toBeLessThanOrEqual(RESIDUAL_BASELINE);
+  it('(C) le résiduel toléré ne peut pas croître', () => {
+    expect(residuals.length).toBeLessThanOrEqual(RESIDUAL_BASELINE);
   });
 });
