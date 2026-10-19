@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useServedAccess } from "@/hooks/useServedAccess";
 import { useI18n } from "@/i18n";
 import api, { getErrorMessage } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -49,7 +50,14 @@ export default function PeopleDirectoryPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
 
-  const canRegister = user?.role === "ADMIN" || user?.role === "PASTEUR";
+  // PARAMÉTRISATION PAR ÉGLISE — l'enregistrement d'une personne était figé sur le
+  // rôle : la clé servie est celle du garde serveur `POST /people/register`
+  // (`@authz.can('PEOPLE_EXECUTE')`), matrice par défaut {ADMIN, PASTEUR} =
+  // parité EXACTE avec l'ancien littéral. Une église peut donc retirer la
+  // capacité, ou l'accorder à un rôle personnalisé.
+  const { can } = useServedAccess();
+  const canRegister = can("PEOPLE_EXECUTE", () =>
+    user?.role === "ADMIN" || user?.role === "PASTEUR");
 
   const fetchPeople = useCallback(async () => {
     setLoading(true);
