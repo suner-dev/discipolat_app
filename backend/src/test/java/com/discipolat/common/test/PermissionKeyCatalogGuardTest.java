@@ -58,7 +58,8 @@ class PermissionKeyCatalogGuardTest {
             "V260__parametrisation_admin_events_read.sql",
             "V261__parametrisation_cles_ui_routes.sql",
             "V262__parametrisation_cles_ui_intra_pages.sql",
-            "V270__parametrisation_cles_ui_residuel_dashboard.sql");
+            "V270__parametrisation_cles_ui_residuel_dashboard.sql",
+            "V271__visibilite_archives_et_assistants.sql");
 
     private static final Pattern KEY_TOKEN = Pattern.compile("^([A-Z][A-Z0-9_]*)$");
 
