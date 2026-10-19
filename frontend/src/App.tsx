@@ -162,6 +162,8 @@ const SermonAssistantPage = lazy(() => import('@/pages/SermonAssistantPage'));
 const VoiceReportsPage = lazy(() => import('@/pages/VoiceReportsPage'));
 const KingdomMappingPage = lazy(() => import('@/pages/KingdomMappingPage'));
 const AiAssistantPage = lazy(() => import('@/pages/AiAssistantPage'));
+// V271 — écran « Archives » (menu latéral + route, consultation §G3.4).
+const ArchivesPage = lazy(() => import('@/pages/ArchivesPage'));
 const TicketsPage = lazy(() => import('@/pages/TicketsPage'));
 const OnboardingWizardPage = lazy(() => import('@/pages/OnboardingWizardPage'));
 const SurveysPage = lazy(() => import('@/pages/SurveysPage'));
@@ -947,6 +949,11 @@ export default function App() {
           <Route path="/ai-assistant" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR']} permissions={['UI_AI_ASSISTANT_ACCESS']}>
               <AiAssistantPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/archives" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_ARCHIVES_ACCESS']}>
+              <ArchivesPage />
             </ProtectedRoute>
           } />
           <Route path="/tickets" element={

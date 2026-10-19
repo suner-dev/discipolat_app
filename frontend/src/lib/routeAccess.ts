@@ -207,6 +207,8 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/tasks': ["TASKS_EXECUTE_CREATE"],
   '/health': ["HEALTH_EXECUTE_R4A"],
   '/finance-modules': ["UI_FINANCE_MODULES_ACCESS"],
+  // V271 — écran « Archives » (consultation des snapshots d'événements).
+  '/archives': ["UI_ARCHIVES_ACCESS"],
 };
 
 /** Routes restreintes : motif de chemin (segments `:param` dynamiques) → rôles autorisés. */
@@ -424,6 +426,9 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/health': ['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD'],
   '/finance-modules': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  // V271 — parité exacte avec la matrice servie de UI_ARCHIVES_ACCESS (= les
+  // détenteurs de la garde serveur EVENTS_EXECUTE_R6A2 sur /church-events).
+  '/archives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
 };
 
 function splitSegments(path: string): string[] {

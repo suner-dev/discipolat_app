@@ -66,6 +66,7 @@ FILES = [
     "V261__parametrisation_cles_ui_routes.sql",
     "V262__parametrisation_cles_ui_intra_pages.sql",
     "V270__parametrisation_cles_ui_residuel_dashboard.sql",
+    "V271__visibilite_archives_et_assistants.sql",
 ]
 
 # Rôles cités par la matrice sans ligne de création dans V258/V259 : en

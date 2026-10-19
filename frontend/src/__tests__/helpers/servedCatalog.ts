@@ -48,6 +48,7 @@ const CATALOG_MIGRATIONS = [
   'V261__parametrisation_cles_ui_routes.sql',
   'V262__parametrisation_cles_ui_intra_pages.sql',
   'V270__parametrisation_cles_ui_residuel_dashboard.sql',
+  'V271__visibilite_archives_et_assistants.sql',
 ];
 
 const KEY_RE = /^[A-Z][A-Z0-9_]*$/;

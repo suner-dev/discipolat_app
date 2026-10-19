@@ -5,6 +5,7 @@ import {
   Star as StarIcon, MessageSquare, MessagesSquare, Bell, FolderOpen, GraduationCap,
   Trophy, CalendarClock, UserCog, User, Sparkles, Church, HandHeart, ArrowLeftRight,
   Workflow, Palette, Boxes, Menu as MenuIcon, LayoutTemplate, CircleDot,
+  Mic, Archive,
 } from 'lucide-react';
 
 /**
@@ -48,6 +49,8 @@ export const MENU_ICONS: Record<string, LucideIcon> = {
   Boxes,
   Menu: MenuIcon,
   LayoutTemplate,
+  Mic,
+  Archive,
 };
 
 export const MENU_ICON_KEYS = Object.keys(MENU_ICONS).sort();

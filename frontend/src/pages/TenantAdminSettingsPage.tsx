@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTenant } from "@/contexts/TenantContext";
+import { tText } from "@/i18n";
 import api from "@/lib/api";
 
 export default function TenantAdminSettingsPage() {
@@ -74,15 +75,16 @@ export default function TenantAdminSettingsPage() {
           <p className="text-sm text-gray-500 mb-3">
             Contrôle ce que les appareils mobiles peuvent écrire sans connexion (file de synchronisation idempotente, rejeu par lot à la reconnexion).
           </p>
-          <label className="block text-sm font-medium mb-1">offline_mode</label>
+          <label className="block text-sm font-medium mb-1">{tText("Mode hors ligne")}</label>
+          {/* Valeurs stockées (LECTURE/FIELD_OPS/FULL) inchangées ; seul l'affichage est humanisé. */}
           <select
             className="border rounded-lg px-3 py-2 w-full"
             value={settings?.offlineMode || "LECTURE"}
             onChange={(e) => setSettings({ ...settings, offlineMode: e.target.value })}
           >
-            <option value="LECTURE">LECTURE — aucune écriture hors-ligne</option>
-            <option value="FIELD_OPS">FIELD_OPS — opérations critiques terrain (pointage QR, sortie/retour matériel + photo)</option>
-            <option value="FULL">FULL — toutes les opérations synchronisables</option>
+            <option value="LECTURE">{tText("Lecture seule — aucune écriture hors-ligne")}</option>
+            <option value="FIELD_OPS">{tText("Opérations terrain — pointage QR, sortie/retour matériel + photo")}</option>
+            <option value="FULL">{tText("Complet — toutes les opérations synchronisables")}</option>
           </select>
         </div>
         <div className="bg-white rounded-lg border p-6">
