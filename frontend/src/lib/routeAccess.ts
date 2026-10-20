@@ -314,6 +314,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/admin/dictionaries': ['ADMIN', 'PASTEUR'],
   '/admin/tenants': ['ADMIN', 'PASTEUR'],
   '/admin/notifications': ['ADMIN', 'PASTEUR'],
+  '/admin/dress-codes': ['ADMIN', 'PASTEUR'],
   '/admin/system': ['ADMIN', 'PASTEUR'],
   '/admin/integrations': ['ADMIN', 'PASTEUR'],
   '/admin/gdpr': ['ADMIN', 'PASTEUR'],

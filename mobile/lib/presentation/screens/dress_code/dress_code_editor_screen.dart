@@ -20,6 +20,16 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   late final ApiService _apiService = widget.apiService ?? ApiService();
 
+  // Controllers du formulaire : la saisie utilisateur doit survivre à un
+  // rechargement de l'entité, et les champs doivent refléter la valeur
+  // chargée depuis l'API (un `initialValue` figé ne se met pas à jour).
+  final _titleController = TextEditingController();
+  final _serviceNameController = TextEditingController();
+  final _spaceIdController = TextEditingController();
+  final _eventIdController = TextEditingController();
+  final _beginsAtController = TextEditingController();
+  final _endsAtController = TextEditingController();
+
   String? _title;
   String? _serviceName;
   String? _status;
@@ -29,19 +39,21 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
   String? _eventId;
   final List<_RuleForm> _rules = [];
   bool _isSaving = false;
+  bool _isLoading = false;
   String? _error;
   String? _success;
 
   @override
   void initState() {
     super.initState();
+    _isLoading = widget.id != null;
     _loadIfEditing();
   }
 
   Future<void> _loadIfEditing() async {
     if (widget.id == null) return;
     try {
-      final res = await _apiService.get('/dress-codes/$widget.id');
+      final res = await _apiService.get('/dress-codes/${widget.id}');
       final data = res.data as Map<String, dynamic>;
       if (mounted) {
         setState(() {
@@ -63,10 +75,27 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
               ));
             }
           }
+          _error = null;
+          _isLoading = false;
+          // Les champs du formulaire sont alimentés par des TextEditingController :
+          // sans cette révocation, les controllers recyclés par le framework
+          // conserveraient la valeur saisie AVANT le chargement (bug : le
+          // formulaire affichait une valeur périmée au lieu de l'entité).
+          _titleController.text = _title ?? '';
+          _serviceNameController.text = _serviceName ?? '';
+          _spaceIdController.text = _spaceId ?? '';
+          _eventIdController.text = _eventId ?? '';
+          _beginsAtController.text = _beginsAt ?? '';
+          _endsAtController.text = _endsAt ?? '';
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Impossible de charger le dress code');
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger le dress code';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -78,7 +107,8 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
 
   void _removeRule(int index) {
     setState(() {
-      _rules.removeAt(index);
+      final removed = _rules.removeAt(index);
+      removed.dispose();
     });
   }
 
@@ -104,7 +134,7 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
           ? 'Dress code mis à jour'
           : 'Dress code créé';
       if (widget.id != null) {
-        await _apiService.put('/dress-codes/$widget.id', data: body);
+        await _apiService.put('/dress-codes/${widget.id}', data: body);
       } else {
         await _apiService.post('/dress-codes', data: body);
       }
@@ -114,9 +144,8 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
           _success = successMessage;
           _isSaving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
+        // Pas de SnackBar ici : l'écran affiche déjà un écran de confirmation
+        // complet (_success) — le double affichage était trompeur.
       }
     } catch (e) {
       if (mounted) {
@@ -126,6 +155,20 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _serviceNameController.dispose();
+    _spaceIdController.dispose();
+    _eventIdController.dispose();
+    _beginsAtController.dispose();
+    _endsAtController.dispose();
+    for (final rule in _rules) {
+      rule.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -139,12 +182,14 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
         foregroundColor: Colors.white,
       ),
       drawer: const AppDrawer(),
-      body: _error != null || _success != null
-          ? _buildMessage()
-          : Form(
-              key: _formKey,
-              child: _buildForm(),
-            ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null || _success != null
+              ? _buildMessage()
+              : Form(
+                  key: _formKey,
+                  child: _buildForm(),
+                ),
     );
   }
 
@@ -203,17 +248,26 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
         children: [
           _buildSectionTitle('Informations générales'),
           const SizedBox(height: 8),
-          _buildTextField('Titre *', _title, (v) => _title = v),
+          _buildTextField('Titre *', _title, (v) => _title = v,
+              controller: _titleController),
           const SizedBox(height: 8),
-          _buildTextField('Service (événement/espace)', _serviceName, (v) => _serviceName = v),
+          _buildTextField('Service (événement/espace)', _serviceName,
+              (v) => _serviceName = v, required: false,
+              controller: _serviceNameController),
           const SizedBox(height: 8),
-          _buildTextField('Espace (UUID, optionnel)', _spaceId, (v) => _spaceId = v),
+          _buildTextField('Espace (UUID, optionnel)', _spaceId, (v) => _spaceId = v,
+              required: false, controller: _spaceIdController,
+              validator: _uuidValidator),
           const SizedBox(height: 8),
-          _buildTextField('Événement (UUID, optionnel)', _eventId, (v) => _eventId = v),
+          _buildTextField('Événement (UUID, optionnel)', _eventId,
+              (v) => _eventId = v, required: false, controller: _eventIdController,
+              validator: _uuidValidator),
           const SizedBox(height: 8),
-          _buildDateTimePicker('Date de début', _beginsAt, (v) => _beginsAt = v),
+          _buildDateTimePicker('Date de début', _beginsAt, (v) => _beginsAt = v,
+              controller: _beginsAtController),
           const SizedBox(height: 8),
-          _buildDateTimePicker('Date de fin', _endsAt, (v) => _endsAt = v),
+          _buildDateTimePicker('Date de fin', _endsAt, (v) => _endsAt = v,
+              controller: _endsAtController),
           const SizedBox(height: 8),
           _buildStatusDropdown(),
           const SizedBox(height: 16),
@@ -257,21 +311,54 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
     return Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold));
   }
 
-  Widget _buildTextField(String label, String? value, Function(String) onChanged) {
+  Widget _buildTextField(
+    String label,
+    String? value,
+    Function(String) onChanged, {
+    bool required = true,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+  }) {
     return TextFormField(
-      initialValue: value,
+      initialValue: controller == null ? value : null,
+      controller: controller,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      validator: (v) => v == null || v.isEmpty ? 'Champ requis' : null,
+      // Seuls les champs marqués « * » sont obligatoires : « Espace » et
+      // « Événement » sont des UUID optionnels (un dress code peut concerner
+      // un service sans espace ni événement), et le nom de service est libre.
+      validator: validator ??
+          (required
+              ? (v) => v == null || v.isEmpty ? 'Champ requis' : null
+              : (v) => null),
       onChanged: onChanged,
     );
   }
 
-  Widget _buildDateTimePicker(String label, String? value, Function(String) onChanged) {
+  /// Validateur des UUID optionnels (Espace / Événement).
+  static String? _uuidValidator(String? v) {
+    if (v == null || v.isEmpty) return null;
+    return _isUuid(v) ? null : 'UUID invalide';
+  }
+
+  /// UUID (avec ou sans tirets) — validation souple des champs optionnels.
+  static final _uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$',
+  );
+
+  static bool _isUuid(String value) => _uuidPattern.hasMatch(value.trim());
+
+  Widget _buildDateTimePicker(
+    String label,
+    String? value,
+    Function(String) onChanged, {
+    TextEditingController? controller,
+  }) {
     return TextFormField(
-      initialValue: value,
+      initialValue: controller == null ? value : null,
+      controller: controller,
       decoration: InputDecoration(
         labelText: label,
         hintText: 'YYYY-MM-DDTHH:MM:SS',
@@ -289,7 +376,9 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
 
   Widget _buildStatusDropdown() {
     return DropdownButtonFormField<String>(
-      value: _status,
+      // `initialValue` (et non `value`) : la valeur doit suivre l'entité
+      // chargée sans être réinitialisée à chaque rebuild.
+      initialValue: _status,
       decoration: const InputDecoration(
         labelText: 'Statut',
         border: OutlineInputBorder(),
@@ -297,7 +386,7 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
       items: ['DRAFT', 'PUBLISHED', 'ARCHIVED']
           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
           .toList(),
-      onChanged: (v) => _status = v,
+      onChanged: (v) => setState(() => _status = v),
     );
   }
 
@@ -311,7 +400,7 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
               Expanded(
                 flex: 2,
                 child: TextFormField(
-                  initialValue: r.groupName,
+                  controller: r.groupNameController,
                   decoration: const InputDecoration(labelText: 'Groupe'),
                   onChanged: (v) => r.groupName = v,
                 ),
@@ -319,7 +408,7 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
               Expanded(
                 flex: 3,
                 child: TextFormField(
-                  initialValue: r.description,
+                  controller: r.descriptionController,
                   decoration: const InputDecoration(labelText: 'Description'),
                   onChanged: (v) => r.description = v,
                 ),
@@ -336,10 +425,28 @@ class _DressCodeEditorScreenState extends State<DressCodeEditorScreen> {
   }
 }
 
+/// Une ligne de règle de tenue.
+///
+/// Les champs utilisent des `TextEditingController` : avec un `initialValue`,
+/// Flutter recycle l'état du champ et peut réafficher la valeur d'une règle
+/// supprimée (ou d'une autre règle) au lieu de la nouvelle.
 class _RuleForm {
   String groupName;
   String description;
   String imageUrl;
 
-  _RuleForm({this.groupName = '', this.description = '', this.imageUrl = ''});
+  final TextEditingController groupNameController;
+  final TextEditingController descriptionController;
+
+  _RuleForm({
+    this.groupName = '',
+    this.description = '',
+    this.imageUrl = '',
+  })  : groupNameController = TextEditingController(text: groupName),
+        descriptionController = TextEditingController(text: description);
+
+  void dispose() {
+    groupNameController.dispose();
+    descriptionController.dispose();
+  }
 }

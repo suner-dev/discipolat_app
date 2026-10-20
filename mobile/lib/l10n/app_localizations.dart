@@ -996,6 +996,7 @@ class AppLocalizations {
   String get navGraceActions => translate('navGraceActions');
   String get navEvents => translate('navEvents');
   String get navEvangelism => translate('navEvangelism');
+  String get navDressCode => translate('navDressCode');
   String get navObjectives => translate('navObjectives');
   String get navVisits => translate('navVisits');
   String get navParallelFollowups => translate('navParallelFollowups');

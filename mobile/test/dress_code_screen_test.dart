@@ -3,6 +3,8 @@
 // (POST /dress-codes, PUT /dress-codes/{id}) avec vérification des payloads.
 //
 // AUCUN appel réseau : l'API est injectée via le paramètre `apiService`.
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/presentation/screens/dress_code/dress_code_editor_screen.dart';
@@ -17,6 +19,7 @@ class _FakeDressCodeApi extends ApiService {
     this.detail,
     this.failGet = false,
     this.failSave = false,
+    this.pendingGet,
   }) : super(baseUrl: 'http://fake');
 
   /// Réponse de `GET /dress-codes`.
@@ -31,6 +34,10 @@ class _FakeDressCodeApi extends ApiService {
   /// Provoque une erreur réseau sur POST/PUT.
   final bool failSave;
 
+  /// Si non nul, le GET reste en vol jusqu'à la complétion du completer :
+  /// permet d'observer l'état « chargement ».
+  final Completer<void>? pendingGet;
+
   final List<String> getPaths = [];
   final List<String> postPaths = [];
   final List<String> putPaths = [];
@@ -43,6 +50,9 @@ class _FakeDressCodeApi extends ApiService {
     Map<String, dynamic>? queryParameters,
   }) async {
     getPaths.add(path);
+    if (pendingGet != null) {
+      await pendingGet!.future;
+    }
     if (failGet) {
       throw DioException(
         requestOptions: RequestOptions(path: path),
@@ -113,6 +123,25 @@ Map<String, dynamic> _dressCodeJson({
       'rules': rules,
     };
 
+/// Fait défiler le formulaire jusqu'à ce que le widget cible soit visible,
+/// puis le tape. Le formulaire de l'éditeur est un `SingleChildScrollView` :
+/// sans ce scroll, les widgets du bas sont hors écran et le tap est ignoré.
+Future<void> _scrollAndTap(
+  WidgetTester tester,
+  Finder finder, {
+  Finder? scrollable,
+}) async {
+  final target = scrollable ?? find.byType(Scrollable).first;
+  await tester.scrollUntilVisible(
+    finder,
+    120,
+    scrollable: target,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('DressCodeScreen — lecture seule', () {
     testWidgets('affiche "Aucun dress code" quand la liste est vide',
@@ -127,13 +156,20 @@ void main() {
 
     testWidgets('affiche le chargement en cours avant la réponse',
         (tester) async {
+      final gate = Completer<void>();
+      final api = _FakeDressCodeApi(pendingGet: gate);
+
       await tester.pumpWidget(
-        MaterialApp(home: DressCodeScreen(apiService: _FakeDressCodeApi())),
+        MaterialApp(home: DressCodeScreen(apiService: api)),
       );
-      // Premier pump : l'écran est construit, la requête est en vol.
+      // La requête est en vol : l'écran affiche l'indicateur de chargement.
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
     testWidgets('affiche le titre, le service, le statut et les règles',
@@ -255,8 +291,7 @@ void main() {
 
       expect(find.text('Groupe'), findsNothing);
 
-      await tester.tap(find.text('Ajouter une règle'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Ajouter une règle'));
 
       expect(find.text('Groupe'), findsOneWidget);
       expect(find.text('Description'), findsOneWidget);
@@ -269,10 +304,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Ajouter une règle'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Ajouter une règle'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Ajouter une règle'));
+      await _scrollAndTap(tester, find.text('Ajouter une règle'));
 
       expect(find.text('Groupe'), findsNWidgets(2));
 
@@ -294,8 +327,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sauvegarder'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Sauvegarder'));
 
       expect(find.text('Champ requis'), findsWidgets);
       // Aucun appel réseau : la validation a bloqué la soumission.
@@ -323,16 +355,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Ajouter une règle'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Ajouter une règle'));
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Groupe'),
         'Protocole',
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sauvegarder'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Sauvegarder'));
 
       expect(api.postPaths, ['/dress-codes']);
       expect(api.putPaths, isEmpty);
@@ -366,8 +396,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sauvegarder'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Sauvegarder'));
 
       expect(api.putPaths, ['/dress-codes/dc-42']);
       expect(api.postPaths, isEmpty);
@@ -390,8 +419,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Sauvegarder'));
-      await tester.pumpAndSettle();
+      await _scrollAndTap(tester, find.text('Sauvegarder'));
 
       expect(find.text('Erreur lors de l\'enregistrement'), findsOneWidget);
     });

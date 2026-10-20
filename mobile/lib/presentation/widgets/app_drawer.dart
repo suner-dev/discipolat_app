@@ -872,6 +872,8 @@ class _AppDrawerState extends State<AppDrawer> {
         return l10n.navEvents;
       case '/evangelism':
         return l10n.navEvangelism;
+      case '/dress-codes':
+        return l10n.navDressCode;
       case '/objectives':
         return l10n.navObjectives;
       case '/visits':
