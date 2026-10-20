@@ -88,7 +88,16 @@ class _SuperAdminProvisioningScreenState
   final _orgName = TextEditingController();
   final _countryController = TextEditingController();
   String? _orgPlan;
-  String? _orgKind;
+  // A4 (contrat §3.5) — nature de l'organisation. CHURCH par défaut ; la clé
+  // n'est envoyée que si l'utilisateur choisit explicitement autre chose.
+  String? _orgKind = 'CHURCH';
+  static const List<_Option> _kindOptions = <_Option>[
+    _Option('CHURCH', 'Église isolée'),
+    _Option('DENOMINATION', 'Dénomination'),
+    _Option('ASSOCIATION', 'Association'),
+    _Option('ORGANIZATION', 'Organisation'),
+    _Option('MEGA_ASSOCIATION', 'Méga-association'),
+  ];
   String? _currency;
   String? _timezone;
   String _locale = 'fr';
@@ -440,6 +449,7 @@ class _SuperAdminProvisioningScreenState
       _owner = null;
       _orgName.clear();
       _orgPlan = null;
+      _orgKind = 'CHURCH';
       _countryController.clear();
       _currency = null;
       _timezone = null;
@@ -582,13 +592,13 @@ class _SuperAdminProvisioningScreenState
                 hint: _plansFromApi ? null : 'Liste minimale (API indisponible)',
                 onChanged: (v) => setState(() => _orgPlan = v),
               ),
+              const SizedBox(height: 12),
               _LabeledDropdown(
                   label: 'Type organisation',
                   value: _orgKind,
                   items: _kindOptions,
                   onChanged: (v) => setState(() => _orgKind = v),
                 ),
-              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _countryController,
@@ -636,17 +646,6 @@ class _SuperAdminProvisioningScreenState
               const SizedBox(height: 8),
               Text('Slug : ${_slugify(_orgName.text)}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey)),
-
-              // ── A4 (contrat §3.5) — nature de l'organisation : CHURCH par défaut.
-              // N'envoyé que si explicitement choisi (≠ CHURCH), sinon serveur applique valeur par défaut.
-              _orgKind = 'CHURCH';
-              final _kindOptions = <_Option>[
-                _Option('CHURCH', 'Église isolée'),
-                _Option('DENOMINATION', 'Dénomination'),
-                _Option('ASSOCIATION', 'Association'),
-                _Option('ORGANIZATION', 'Organisation'),
-                _Option('MEGA_ASSOCIATION', 'Méga-association'),
-              ];
 
               // ── B10 — Owner (pasteur) obligatoire, contrat §3.5 ──
               const SizedBox(height: 20),

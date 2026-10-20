@@ -10,6 +10,7 @@ import com.discipolat.modules.families.api.CreateFamilyRequest;
 import com.discipolat.modules.families.domain.Family;
 import com.discipolat.modules.families.domain.FamilyService;
 import com.discipolat.common.multitenancy.CrossTenantScopeAccess;
+import com.discipolat.modules.tenants.api.CreateTenantRequest;
 import com.discipolat.modules.tenants.api.TenantResponse;
 import com.discipolat.modules.tenants.domain.OrganizationNode;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -113,7 +115,7 @@ class PlatformProvisioningServiceTest {
         PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
                 saasPlanService, organizationNodeService, departmentService, familyService, auditService,
                 ownerProvisioningService, crossTenant);
-        PlatformProvisioningService.ProvisioningResult result = service.provision(command());
+        PlatformProvisioningService.ProvisioningResult result = service.provision(command(), "CHURCH");
 
         assertThat(result.tenant()).isEqualTo(tenant);
         assertThat(result.church()).isEqualTo(church);
@@ -142,7 +144,7 @@ class PlatformProvisioningServiceTest {
                 ownerProvisioningService, crossTenant);
 
         // Constructeur de compatibilité (avant A5) => aucun owner fourni.
-        assertThatThrownBy(() -> service.provision(commandWithoutOwner()))
+        assertThatThrownBy(() -> service.provision(commandWithoutOwner(), "CHURCH"))
                 .isInstanceOf(com.discipolat.common.domain.BusinessRuleException.class)
                 .hasMessage("Le propriétaire (owner) de l'église est requis")
                 .extracting(thrown -> ((com.discipolat.common.domain.BusinessRuleException) thrown).getCode())
@@ -155,6 +157,49 @@ class PlatformProvisioningServiceTest {
         verify(departmentService, never()).create(any(CreateDepartmentRequest.class));
         verify(familyService, never()).create(any(CreateFamilyRequest.class));
         verify(planRepository, never()).findByKeyIgnoreCaseAndIsActiveTrue(any());
+    }
+
+    @Test
+    @DisplayName("A4 (contrat §3.5) — la nature choisie est transmise à la création du tenant")
+    void provisionsTenantWithRequestedKind() {
+        SecurityTestHelper.loginAs(UUID.randomUUID());
+        UUID tenantId = UUID.randomUUID();
+        TenantResponse tenant = new TenantResponse(tenantId, "Dénomination Bethel", "denomination-bethel",
+                com.discipolat.modules.tenants.domain.TenantStatus.ACTIVE, "free", null, null,
+                null, "fr", null, null, null, null, Instant.now(), Instant.now());
+        OrganizationNode church = OrganizationNode.builder().id(UUID.randomUUID()).tenantId(tenantId)
+                .name("Église Bethel").type(OrganizationNodeType.ROOT_CHURCH)
+                .code("ROOT_CHURCH_TEST").path("ROOT_CHURCH_TEST").level(0)
+                .status(OrganizationNodeStatus.ACTIVE).build();
+        Department department = Department.builder().id(UUID.randomUUID()).tenantId(tenantId)
+                .nom("Accueil").responsableId(UUID.randomUUID()).build();
+        OrganizationNode departmentNode = OrganizationNode.builder().id(UUID.randomUUID())
+                .tenantId(tenantId).name("Accueil").type(OrganizationNodeType.DEPARTMENT)
+                .code("DEPARTMENT_TEST").path("ROOT_CHURCH_TEST.DEPARTMENT_TEST").level(1)
+                .status(OrganizationNodeStatus.ACTIVE).build();
+        Family family = Family.builder().id(UUID.randomUUID()).tenantId(tenantId).nom("Famille Test")
+                .chefFamilleId(UUID.randomUUID()).build();
+
+        when(tenantService.create(any())).thenReturn(tenant);
+        when(organizationNodeService.createRootChurch(eq(tenantId), any(), any(), any())).thenReturn(church);
+        when(ownerProvisioningService.provisionOwner(eq(tenantId), any(), any(), any(), any()))
+                .thenReturn(new TenantOwnerProvisioningService.OwnerProvisioningResult(
+                        UUID.randomUUID(), "jean@example.com", true, false));
+        when(departmentService.create(any(CreateDepartmentRequest.class))).thenReturn(department);
+        when(organizationNodeService.createNode(eq(tenantId), eq(OrganizationNodeType.DEPARTMENT), any(), any(),
+                eq(church.getId()), eq(department.getResponsableId()), any())).thenReturn(departmentNode);
+        when(familyService.create(any(CreateFamilyRequest.class))).thenReturn(family);
+
+        PlatformProvisioningService service = new PlatformProvisioningService(tenantService, planRepository,
+                saasPlanService, organizationNodeService, departmentService, familyService, auditService,
+                ownerProvisioningService, crossTenant);
+        service.provision(command(), "DENOMINATION");
+
+        // La clé du contrat A4 : le kind saisi au provisioning voyage jusqu'à
+        // la création du tenant — ni perdu, ni réécrit.
+        ArgumentCaptor<CreateTenantRequest> captor = ArgumentCaptor.forClass(CreateTenantRequest.class);
+        verify(tenantService).create(captor.capture());
+        assertThat(captor.getValue().kind()).isEqualTo("DENOMINATION");
     }
 
     private PlatformProvisioningService.Command commandWithoutOwner() {

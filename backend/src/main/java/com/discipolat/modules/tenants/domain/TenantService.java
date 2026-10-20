@@ -94,10 +94,11 @@ public class TenantService {
             throw new BusinessRuleException(
                     "Un tenant avec ce slug existe déjà : " + slug, "SLUG_TAKEN");
         }
-        String kind = request.kind();
-        if (kind == null || kind.isBlank()) {
-            kind = "CHURCH";
-        }
+        // A4 (contrat §3.5) — analyse fail-closed alignée sur
+        // SelfServiceChurchService : valeur inconnue = refus explicite (code
+        // ORG_KIND_INVALID), jamais un 500 ni une catégorie devinée.
+        String rawKind = request.kind();
+        TenantKind kind = parseKind(rawKind);
 
         Tenant tenant = Tenant.builder()
                 .name(request.name())
@@ -136,6 +137,22 @@ public class TenantService {
             }
         }
         return TenantResponse.from(tenant);
+    }
+
+    /** Valeur nulle/vide = {@code CHURCH} (comportement historique) ; valeur
+     *  inconnue = refus explicite {@code ORG_KIND_INVALID}. */
+    private static TenantKind parseKind(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return TenantKind.CHURCH;
+        }
+        String value = raw.trim().toUpperCase(java.util.Locale.ROOT);
+        for (TenantKind candidate : TenantKind.values()) {
+            if (candidate.name().equals(value)) {
+                return candidate;
+            }
+        }
+        throw new BusinessRuleException(
+                "Type d'organisation non reconnu : " + raw, "ORG_KIND_INVALID");
     }
 
     private void ensureInitialSubscription(Tenant tenant) {

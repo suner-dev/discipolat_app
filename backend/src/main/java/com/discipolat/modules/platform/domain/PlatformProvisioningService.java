@@ -59,7 +59,7 @@ public class PlatformProvisioningService {
         this.ownerProvisioningService = ownerProvisioningService;
     }
 
-@Transactional
+    @Transactional
     public ProvisioningResult provision(Command command, String kind) {
         // Fail-closed : l'owner est valide EN TETE, donc AVANT toute ecriture.
         // Un tenant sans propriétaire ne doit jamais exister.
@@ -212,59 +212,42 @@ public class PlatformProvisioningService {
         return value == null || value.isBlank();
     }
 
-/** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
-     *  ce que {@code provision} refuse explicitement (OWNER_REQUIRED). */
-    public Command(
-            String name, String slug, String plan, String country, String currency, String timezone,
-            String locale, String churchName, String departmentName, String departmentDescription,
-            UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
-            String newResponsableLastName, String newResponsiveEmail, String newResponsablePhone,
-            String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
-            String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
-            String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
-        this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
-                departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
-                newResponsableLastName, newResponsiveEmail, newResponsablePhone, familyName,
-                chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
-                newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                null, null, null, "CHURCH");
-    }
-
-    /** Constructeur de compatibilité avant A5 + sans owner. */
-    public Command(
-            String name, String slug, String plan, String country, String currency, String timezone,
-            String locale, String churchName, String departmentName, String departmentDescription,
-            UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
-            String newResponsableLastName, String newResponsiveEmail, String newResponsablePhone,
-            String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
-            String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
-            String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
-        this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
-                departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
-                newResponsableLastName, newResponsiveEmail, newResponsablePhone, familyName,
-                chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
-                newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                null, null, null);
-    }
+    public record Command(
+            String name,
+            String slug,
+            String plan,
+            String country,
+            String currency,
+            String timezone,
+            String locale,
+            String churchName,
+            String departmentName,
+            String departmentDescription,
+            UUID responsableId,
+            Boolean createNewResponsable,
+            String newResponsableFirstName,
+            String newResponsableLastName,
+            String newResponsableEmail,
+            String newResponsablePhone,
+            String familyName,
+            UUID chefFamilleId,
+            UUID chefAdjointId,
+            Boolean createNewChef,
+            String newChefFirstName,
+            String newChefLastName,
+            String newChefEmail,
+            String newChefPhone,
+            String newChefSexe,
+            String newChefDateNaissance,
+            String newChefAdresse,
+            // Additifs A5 (contrat §3.5) — en fin de record pour ne pas
+            // décaler l'index des champs existants.
+            String ownerEmail,
+            String ownerFirstName,
+            String ownerLastName
+    ) {
         /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
          *  ce que {@code provision} refuse explicitement (OWNER_REQUIRED). */
-        public Command(
-                String name, String slug, String plan, String country, String currency, String timezone,
-                String locale, String churchName, String departmentName, String departmentDescription,
-                UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
-                String newResponsableLastName, String newResponsableEmail, String newResponsablePhone,
-                String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
-                String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
-                String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
-            this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
-                    departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
-                    newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
-                    chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
-                    newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                    null, null, null, null);
-        }
-
-        /** Constructeur de compatibilité avant A5 + sans kind. */
         public Command(
                 String name, String slug, String plan, String country, String currency, String timezone,
                 String locale, String churchName, String departmentName, String departmentDescription,

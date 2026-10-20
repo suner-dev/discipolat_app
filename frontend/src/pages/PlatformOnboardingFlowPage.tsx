@@ -46,15 +46,10 @@ export default function PlatformOnboardingFlowPage() {
   const [department, setDepartment] = useState<DepartmentResult | null>(null);
   const [family, setFamily] = useState<FamilyResult | null>(null);
 
-  // === NOUVEAU : Formulaire type organisation ===
-  const [orgKind, setOrgKind] = useState<'CHURCH' | 'DENOMINATION' | 'ASSOCIATION' | 'ORGANIZATION' | 'MEGA_ASSOCIATION'>('CHURCH');
-  const kindOptions = [
-    { key: 'CHURCH', label: 'Église isolée' },
-    { key: 'DENOMINATION', label: 'Dénomination' },
-    { key: 'ASSOCIATION', label: 'Association' },
-    { key: 'ORGANIZATION', label: 'Organisation' },
-    { key: 'MEGA_ASSOCIATION', label: 'Méga-association' },
-  ] as const;
+  // A4 (contrat §3.5) — nature de l'organisation. CHURCH par défaut ; la clé
+  // n'est envoyée que si l'utilisateur choisit explicitement autre chose.
+  type OrgKind = 'CHURCH' | 'DENOMINATION' | 'ASSOCIATION' | 'ORGANIZATION' | 'MEGA_ASSOCIATION';
+  const [orgKind, setOrgKind] = useState<OrgKind>('CHURCH');
 
   // Formulaires
   // B12 — AUCUNE valeur géo/plan n'est pré-remplie.
@@ -245,6 +240,7 @@ export default function PlatformOnboardingFlowPage() {
   const resetAll = () => {
     setStep(0); setTenant(null); setChurch(null); setDepartment(null); setFamily(null); setOwner(null);
     // Reset symétrique de l'initialisation : aucun plan/géo pré-rempli (cf. plus haut).
+    setOrgKind('CHURCH');
     setTenantForm({ name: '', slug: '', plan: '', country: '', currency: '', timezone: '', locale: 'fr' });
     setOwnerForm({ email: '', firstName: '', lastName: '' });
     setSlugTouched(false);
@@ -351,7 +347,7 @@ export default function PlatformOnboardingFlowPage() {
             <select
               className={inputCls}
               value={orgKind}
-              onChange={(e) => setOrgKind(e.target.value)}>
+              onChange={(e) => setOrgKind(e.target.value as OrgKind)}>
               <option value="CHURCH">{tText("Église isolée")}</option>
               <option value="DENOMINATION">{tText("Dénomination")}</option>
               <option value="ASSOCIATION">{tText("Association")}</option>

@@ -25,85 +25,17 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * Requête complète envoyée par le super-admin en un seul appel POST
- * (flux pas à pas : tenant → église → département → famille).
- * B12 — seules les valeurs EXPLICITEMENT choisies voyagent ; le reste est
- * omis pour que le serveur applique sa valeur par défaut.
- * A4 (contrat §3.5) — le champ `kind` de l'organisation est transmis en option.
- * S'il est absent, le serveur utilise CHURCH par défaut (comportement existant).
+ * Provisionnement guidé Super Admin — flux pas à pas :
+ *   1. Tenant      → POST /api/v1/platform/admin/tenants (SuperAdminController, existant)
+ *   2. Église      → POST /api/v1/platform/admin/provisioning/church      (ci-dessous)
+ *   3. Département → POST /api/v1/platform/admin/provisioning/department  (ci-dessous)
+ *   4. Famille     → POST /api/v1/platform/admin/provisioning/family      (ci-dessous)
+ *
+ * Chaque étape exécute la logique métier existante (aucune duplication) dans le
+ * contexte du tenant cible via TenantContext (l'auto-listener Hibernate rattache
+ * alors tenant_id aux entités créées), puis journalise l'action en audit avec
+ * l'identité réelle du super admin.
  */
-public record AtomicProvisioningRequest(
-        String name,
-        String slug,
-        String plan,
-        String country,
-        String currency,
-        String timezone,
-        String locale,
-        String churchName,
-        String departmentName,
-        String departmentDescription,
-        UUID responsableId,
-        Boolean createNewResponsable,
-        String newResponsableFirstName,
-        String newResponsableLastName,
-        String newResponsableEmail,
-        String newResponsablePhone,
-        String familyName,
-        UUID chefFamilleId,
-        UUID chefAdjointId,
-        Boolean createNewChef,
-        String newChefFirstName,
-        String newChefLastName,
-        String newChefEmail,
-        String newChefPhone,
-        String newChefSexe,
-        String newChefDateNaissance,
-        String newChefAdresse,
-        // Additifs A5 (contrat §3.5) — volontairement en FIN de record pour
-        // ne pas décaler l'index des champs déjà exploités.
-        String ownerEmail,
-        String ownerFirstName,
-        String ownerLastName,
-        // A4 (contrat §3.5) — nature de l'organisation : DÉNOMINATION, ASSOCIATION,
-        // ORGANIZATION, MEGA_ASSOCIATION ou CHURCH (par défaut).
-        String kind
-) {
-        /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
-         *  ce que le service refuse avec OWNER_REQUIRED (fail-closed). */
-        public AtomicProvisioningRequest(
-                String name, String slug, String plan, String country, String currency, String timezone,
-                String locale, String churchName, String departmentName, String departmentDescription,
-                UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
-                String newResponsableLastName, String newResponsableEmail, String newResponsablePhone,
-                String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
-                String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
-                String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
-            this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
-                    departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
-                    newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
-                    chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
-                    newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                    null, null, null, null);
-        }
-
-        /** Constructeur de compatibilité avant A5 : owner absent + kind absent. */
-        public AtomicProvisioningRequest(
-                String name, String slug, String plan, String country, String currency, String timezone,
-                String locale, String churchName, String departmentName, String departmentDescription,
-                UUID responsableId, Boolean createNewResponsable, String newResponsableFirstName,
-                String newResponsableLastName, String newResponsableEmail, String newResponsablePhone,
-                String familyName, UUID chefFamilleId, UUID chefAdjointId, Boolean createNewChef,
-                String newChefFirstName, String newChefLastName, String newChefEmail, String newChefPhone,
-                String newChefSexe, String newChefDateNaissance, String newChefAdresse) {
-            this(name, slug, plan, country, currency, timezone, locale, churchName, departmentName,
-                    departmentDescription, responsableId, createNewResponsable, newResponsableFirstName,
-                    newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
-                    chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
-                    newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                    null, null, null);
-        }
-    }
 @RestController
 @RequestMapping("/api/v1/platform/admin/provisioning")
 public class PlatformProvisioningController {
@@ -144,8 +76,7 @@ public class PlatformProvisioningController {
                         request.newChefPhone(), request.newChefSexe(), request.newChefDateNaissance(),
                         request.newChefAdresse(),
                         request.ownerEmail(), request.ownerFirstName(), request.ownerLastName()
-                ), request.kind()
-        );
+                ), request.kind());
         // Le `tenant_id` n'est PAS porté par les entités Department/Family en
         // memoire : il est pose a l'ecriture (trigger/colonne), donc
         // `department.getTenantId()` vaut null et l'ancien code levait un NPE.
@@ -377,7 +308,10 @@ public class PlatformProvisioningController {
             // ne pas décaler l'index des champs déjà exploités.
             String ownerEmail,
             String ownerFirstName,
-            String ownerLastName
+            String ownerLastName,
+            // A4 (contrat §3.5) — nature de l'organisation : DENOMINATION,
+            // ASSOCIATION, ORGANIZATION, MEGA_ASSOCIATION ou CHURCH (par defaut).
+            String kind
     ) {
         /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
          *  ce que le service refuse avec OWNER_REQUIRED (fail-closed). */
@@ -394,7 +328,7 @@ public class PlatformProvisioningController {
                     newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
                     chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
                     newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                    null, null, null);
+                    null, null, null, null);
         }
     }
 
