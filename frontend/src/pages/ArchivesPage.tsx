@@ -17,6 +17,32 @@ import { tText } from '@/i18n';
  * rien n'y est supprimé ni modifiable.
  */
 
+/**
+ * Sections du snapshot d'événement archivé. Le payload est un JSON
+ * historique : chaque champ est optionnel et les tableaux sont gardés par
+ * Array.isArray à l'usage — typé, sans `any`.
+ */
+interface SnapSpace { spaceName?: string; role?: string }
+interface SnapTeam { name?: string; description?: string }
+interface SnapTask { title?: string; status?: string; dueAt?: string }
+interface SnapScheduleItem { title?: string; startAt?: string }
+interface SnapAsset { quantity?: number }
+interface SnapDressRule { groupName?: string; description?: string }
+interface SnapDressCode { title?: string; serviceName?: string; status?: string; rules?: SnapDressRule[] }
+interface EventSnapshot {
+  startAt?: string;
+  endAt?: string;
+  type?: string;
+  description?: string;
+  attendanceCount?: number;
+  spaces?: SnapSpace[];
+  teams?: SnapTeam[];
+  tasks?: SnapTask[];
+  schedule?: SnapScheduleItem[];
+  assets?: SnapAsset[];
+  dressCodes?: SnapDressCode[];
+}
+
 interface EventArchive {
   id: string;
   eventId: string;
@@ -27,7 +53,7 @@ interface EventArchive {
   spaceId?: string | null;
   version: number;
   archivedAt: string;
-  snapshotJson: Record<string, any>;
+  snapshotJson: EventSnapshot;
 }
 
 const MOIS = [
@@ -85,12 +111,12 @@ function SnapshotSection({ icon: Icon, title, empty, children }: {
 /** Détail d'une archive : snapshot rendu en libellés français. */
 function ArchiveDetail({ archive, onClose }: { archive: EventArchive; onClose: () => void }) {
   const snap = archive.snapshotJson || {};
-  const spaces: any[] = Array.isArray(snap.spaces) ? snap.spaces : [];
-  const teams: any[] = Array.isArray(snap.teams) ? snap.teams : [];
-  const tasks: any[] = Array.isArray(snap.tasks) ? snap.tasks : [];
-  const schedule: any[] = Array.isArray(snap.schedule) ? snap.schedule : [];
-  const assets: any[] = Array.isArray(snap.assets) ? snap.assets : [];
-  const dressCodes: any[] = Array.isArray(snap.dressCodes) ? snap.dressCodes : [];
+  const spaces = Array.isArray(snap.spaces) ? snap.spaces : [];
+  const teams = Array.isArray(snap.teams) ? snap.teams : [];
+  const tasks = Array.isArray(snap.tasks) ? snap.tasks : [];
+  const schedule = Array.isArray(snap.schedule) ? snap.schedule : [];
+  const assets = Array.isArray(snap.assets) ? snap.assets : [];
+  const dressCodes = Array.isArray(snap.dressCodes) ? snap.dressCodes : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -163,7 +189,7 @@ function ArchiveDetail({ archive, onClose }: { archive: EventArchive; onClose: (
 
         <SnapshotSection icon={Package} title={tText('Matériel')} empty={assets.length === 0}>
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            {assets.reduce((n: number, a: any) => n + (typeof a.quantity === 'number' ? a.quantity : 0), 0)} {tText('articles réservés')}
+            {assets.reduce((n, a) => n + (typeof a.quantity === 'number' ? a.quantity : 0), 0)} {tText('articles réservés')}
           </p>
         </SnapshotSection>
 
@@ -176,7 +202,7 @@ function ArchiveDetail({ archive, onClose }: { archive: EventArchive; onClose: (
                 {humanStatut(d.status) && <span className="badge text-[10px] badge-gray ml-2">{humanStatut(d.status)}</span>}
                 {Array.isArray(d.rules) && d.rules.length > 0 && (
                   <ul className="ml-4 mt-1 space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {d.rules.map((r: any, j: number) => (
+                    {d.rules.map((r, j) => (
                       <li key={j}>{r.groupName}{r.description ? ` — ${r.description}` : ''}</li>
                     ))}
                   </ul>

@@ -9,7 +9,13 @@
 // Ce qu'il mesure (sur frontend/src, hors *.test.* / *.d.ts) :
 //   1. `any` explicites (`: any`, `as any`, `<any>`) — dette de typage ;
 //   2. fichiers de plus de LARGE_LIGNES lignes — dette de découpage ;
-//   3. `TODO|FIXME|HACK` — dette de finition ;
+//   3. `TODO|FIXME|HACK` en commentaire — dette de finition. Le mot nu dans
+//      une chaîne ou une clé d'objet (statut métier « TODO » des tâches,
+//      libellé de colonne…) est du VOCABULAIRE, pas une annotation de dette :
+//      la version initiale le comptait et 5 des 6 occurrences de référence
+//      étaient des faux positifs. Un marker hors commentaire reste visible
+//      aux humains ; seul le comptage change, dans le sens PLUS STRICT
+//      (moins de bruit, la moindre vraie annotation fait grimper la métrique).
 //   4. `console.*` hors error/warn/info — dette de journalisation.
 //
 // Sortie : rapport texte + code de sortie 1 si une métrique DÉPASSE la
@@ -49,6 +55,21 @@ function collect(dir, acc = []) {
   return acc;
 }
 
+/** Vrai si la ligne porte une annotation de dette EN COMMENTAIRE (ligne
+ *  entière `//`, `/*`, `* …`/ ou segment après le premier `//`/`/*`). Une
+ *  valeur métier contenant le mot (« TODO: 'À faire' ») n'est pas comptée. */
+function hasDebtMarker(line) {
+  const trimmed = line.trim();
+  let zone = null;
+  if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
+    zone = trimmed;
+  } else {
+    const idx = line.search(/\/\/|\/\*/);
+    if (idx >= 0) zone = line.slice(idx);
+  }
+  return zone !== null && /\b(TODO|FIXME|HACK)\b/.test(zone);
+}
+
 function measure() {
   const files = collect(SRC_DIR);
   let anyCount = 0;
@@ -64,7 +85,7 @@ function measure() {
     }
     for (const line of lines) {
       if (/:\s*any\b|\bas\s+any\b|<any>/.test(line)) anyCount++;
-      if (/\bTODO\b|\bFIXME\b|\bHACK\b/.test(line)) todoCount++;
+      if (hasDebtMarker(line)) todoCount++;
       if (/console\.(log|debug|trace)\(/.test(line)) consoleCount++;
     }
   }

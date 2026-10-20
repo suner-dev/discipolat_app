@@ -59,7 +59,10 @@ export default function UserRolesPage() {
     queryFn: async () => {
       const res = await api.get('/families', { params: { size: 100 } });
       const content = res.data?.content ?? res.data ?? [];
-      return (Array.isArray(content) ? content : []).map((f: any) => ({ id: f.id, nom: f.nom || f.name || f.id })) as FamilySummary[];
+      // Pagination serveur (Page<T>) ou liste brute : une ligne de famille
+      // expose au minimum un identifiant et un nom sous l'un de ces mots.
+      const rows = (Array.isArray(content) ? content : []) as Array<{ id?: string; nom?: string; name?: string }>;
+      return rows.map((f): FamilySummary => ({ id: f.id ?? '', nom: f.nom || f.name || f.id || '' }));
     },
     enabled: showChefPicker,
   });
