@@ -29,7 +29,17 @@ interface Member {
   isActive: boolean;
 }
 
-interface RoleOption { key: string; label: string }
+/**
+ * Rôles proposés à l'affectation. `effectiveForTenant` vient de la projection
+ * additive Phase 9 de `GET /admin/roles` : faux quand une surcouche locale
+ * homonyme a pris la main sur la ligne globale.
+ */
+interface RoleOption { key: string; label: string; effectiveForTenant?: boolean }
+
+/** Libellé d'une clé de rôle, avec repli technique assumé dans `title`. */
+function roleLabelOf(roles: RoleOption[], key: string): string {
+  return roles.find((r) => r.key === key)?.label ?? key;
+}
 
 export default function TenantAdminMembersPage() {
   const { t } = useI18n();
@@ -56,8 +66,13 @@ export default function TenantAdminMembersPage() {
 
   useEffect(() => {
     // Rôles du tenant pour l'éditeur d'affectation + le formulaire d'invitation.
+    // Phase 9 : la liste contient désormais les rôles globaux ET la surcouche de
+    // l'église. Sans filtre, chaque clé surchargée apparaissait deux fois (deux
+    // <option key={r.key}> identiques) et choisir la ligne globale n'aurait rien
+    // personnalisé pour l'église — la surcouche primant côté serveur.
     api.get("/admin/roles")
-      .then((res) => setRoles((res.data || []).map((r: RoleOption) => ({ key: r.key, label: r.label }))))
+      .then((res) => setRoles((((res.data || []) as RoleOption[])
+        .filter((r) => r.effectiveForTenant !== false))))
       .catch(() => setRoles([]));
   }, []);
 
@@ -172,8 +187,9 @@ export default function TenantAdminMembersPage() {
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">{member.email}</td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">
-                    {member.role}
+                  <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700"
+                    title={member.role}>
+                    {roleLabelOf(roles, member.role)}
                   </span>
                 </td>
                 <td className="px-6 py-4">

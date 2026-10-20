@@ -33,8 +33,17 @@ public class TenantAdminController {
     private final TenantMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final TenantMembershipService membershipService;
-    private final RoleService roleService;
-    private final PermissionService permissionService;
+    /**
+     * Parametrisation par eglise (Phase 9) — projection unique des roles pour
+     * l'editeur (rôles globaux + surcouche locale de l'eglise, matrice en clés)
+     * ET résolution d'une clé de rôle (surcouche en priorité, repli global).
+     *
+     * <p>Les injections {@code RoleService} et {@code PermissionService} qui
+     * précédaient ont été retirées ici : après la résolution par clé, plus
+     * aucune méthode du contrôleur ne les appelait (une dépendance morte est un
+     * faux signal sur « quelle matrice decide »).
+     */
+    private final RoleManagementService roleManagementService;
     private final AuditService auditService;
     private final OrganizationNodeService orgNodeService;
     private final TenantService tenantService;
@@ -43,8 +52,7 @@ public class TenantAdminController {
                                  TenantMembershipRepository membershipRepository,
                                  UserRepository userRepository,
                                  TenantMembershipService membershipService,
-                                 RoleService roleService,
-                                 PermissionService permissionService,
+                                 RoleManagementService roleManagementService,
                                  AuditService auditService,
                                  OrganizationNodeService orgNodeService,
                                  TenantService tenantService) {
@@ -52,8 +60,7 @@ public class TenantAdminController {
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.membershipService = membershipService;
-        this.roleService = roleService;
-        this.permissionService = permissionService;
+        this.roleManagementService = roleManagementService;
         this.auditService = auditService;
         this.orgNodeService = orgNodeService;
         this.tenantService = tenantService;
@@ -168,8 +175,20 @@ public class TenantAdminController {
     /**
      * §58 / §G3.2 — Affectation : changer le rôle d'un membre dans CE tenant.
      * La membership doit appartenir au tenant courant (isolation), le rôle
-     * cible doit exister dans le tenant, et le dernier propriétaire actif ne
+     * cible doit exister, et le dernier propriétaire actif ne
      * peut pas être rétrogradé. Action auditée.
+     *
+     * <p><strong>Phase 9 (D13) — comment le rôle cible est résolu.</strong> La
+     * recherche passait par {@code roleService.getRoles(tenantId)}, soit
+     * {@code WHERE tenant_id = :tenantId}. Or les rôles du catalogue sont des
+     * lignes <b>globales</b> ({@code tenant_id IS NULL}) : tant qu'une église
+     * n'a pas créé de surcouche, cette liste est vide et <b>tout</b> changement
+     * de rôle échouait (« Rôle inconnu dans ce tenant : MEMBRE ») — le défaut
+     * était invisible en test car {@code getRoles} y est simulé. On résout
+     * désormais exactement comme le moteur d'autorisation : surcouche locale
+     * homonyme en priorité, repli sur la ligne globale
+     * ({@link RoleManagementService#findByKey}), donc la permission personnalisée
+     * s'applique réellement au membre affecté.
      */
     @PutMapping("/members/{membershipId}/role")
     @PreAuthorize("@authz.can('PLATFORM_EXECUTE_UPDATEMEMBERROLE', 'TENANT', null)")
@@ -185,9 +204,7 @@ public class TenantAdminController {
         if (roleKey == null || roleKey.isBlank()) {
             throw new IllegalArgumentException("roleKey requis");
         }
-        Role newRole = roleService.getRoles(tenantId).stream()
-            .filter(r -> r.getKey().equalsIgnoreCase(roleKey.trim()))
-            .findFirst()
+        Role newRole = roleManagementService.findByKey(tenantId, roleKey.trim())
             .orElseThrow(() -> new IllegalArgumentException("Rôle inconnu dans ce tenant : " + roleKey));
 
         Role currentRole = membership.getRole();
@@ -279,24 +296,33 @@ public class TenantAdminController {
 
     /**
      * Gérer les rôles
+     *
+     * <p><strong>Phase 9 — l'écran était structurellement vide.</strong> Cette
+     * liste se contentait de {@code roleService.getRoles(tenantId)}, soit
+     * {@code WHERE tenant_id = :tenantId} — alors que les 25 rôles du catalogue
+     * ({@code ADMIN}, {@code PASTEUR}, {@code MEMBRE}…) sont des lignes
+     * <b>globales</b> ({@code tenant_id IS NULL}) : une installation neuve ne
+     * possède aucune ligne locale. Constat en base de démonstration : 25 rôles,
+     * 0 avec {@code tenant_id} non nul → {@code GET /admin/roles} renvoyait
+     * {@code []}. En aval, {@code TenantAdminRolesPage} affichait deux sections
+     * vides — « Rôles & permissions » ne pouvait rien éditer — et le sélecteur de
+     * {@code MemberRolesPage} (assignation d'un rôle-capacité sur un nœud) n'avait
+     * aucune option : la fonctionnalité V3 §6.2 était inatteignable par l'UI.
+     *
+     * <p>La correction délègue à la projection {@code listRolesForEditor}, qui
+     * assemble globaux + locaux, trie par priorité et lit la matrice en une
+     * requête — une seule source de vérité pour les deux routes d'édition, et les
+     * quatre champs additifs ({@code local}, {@code effectiveForTenant},
+     * {@code customizable}, {@code customized}) qui disent au client quelle ligne
+     * décide réellement. La garde {@code PLATFORM_EXECUTE_LISTROLES} est
+     * inchangée : rien n'est élargi côté autorisation, ce sont les DONNÉES que
+     * l'église est censée voir qui reviennent.
      */
     @GetMapping("/roles")
     @PreAuthorize("@authz.can('PLATFORM_EXECUTE_LISTROLES', 'TENANT', null)")
     public ResponseEntity<List<Map<String, Object>>> listRoles() {
         UUID tenantId = TenantContext.requireTenantId();
-        
-        List<Role> roles = roleService.getRoles(tenantId);
-        
-        return ResponseEntity.ok(roles.stream().map(r -> Payloads.of(
-            "id", r.getId().toString(),
-            "key", r.getKey(),
-            "label", r.getLabel(),
-            "description", r.getDescription(),
-            "priority", r.getPriority(),
-            "isSystem", r.getSystem(),
-            "permissions", r.getPermissions() != null ? 
-                r.getPermissions().stream().map(p -> p.getKey()).collect(Collectors.toList()) : List.of()
-        )).collect(Collectors.toList()));
+        return ResponseEntity.ok(roleManagementService.listRolesForEditor(tenantId));
     }
 
 

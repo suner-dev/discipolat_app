@@ -33,6 +33,7 @@ import {
   Download,
   List,
   Grid3X3,
+  Archive,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -67,8 +68,11 @@ export default function EventsPage() {
     return Object.entries(STATUT_LABELS).map(([code, label]) => ({ code, label }));
   }, [dictionaries]);
 
+  // V272 — ARCHIVED n'est pas dans STATUT_LABELS (statut serveur exclusif,
+  // non saisissable en formulaire) : libellé dédié ici pour l'affichage.
   const statusLabel = (code: string) =>
-    dictionaries.label('EVENT_STATUS', code) || STATUT_LABELS[code] || code;
+    dictionaries.label('EVENT_STATUS', code) || STATUT_LABELS[code]
+    || (code === 'ARCHIVED' ? tText('Archivé') : code);
   const [view, setView] = useState<'list' | 'consolidated'>('list');
   const [displayMode, setDisplayMode] = useState<'table' | 'calendar'>('table');
   const [page, setPage] = useState(0);
@@ -82,6 +86,13 @@ export default function EventsPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evenement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  // V272 — clôture/archivage : modale de confirmation avant POST /archive.
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState<Evenement | null>(null);
+  // Garde « servi d'abord » : clé EVENTS_EXECUTE_ARCHIVEEVENT (détenteurs
+  // matriciels ADMIN/DEPARTMENT_LEADER/PASTEUR/RESPONSABLE, V258) ; repli
+  // legacy sur le rôle actif tant que le contexte tenant n'est pas chargé.
+  const canArchive = can('EVENTS_EXECUTE_ARCHIVEEVENT', () =>
+    ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'DEPARTMENT_LEADER'].includes(String(user?.activeRole ?? user?.role)));
   const [showAttendance, setShowAttendance] = useState<Evenement | null>(null);
   const [newEvent, setNewEvent] = useState({
     titre: '',
@@ -182,6 +193,23 @@ export default function EventsPage() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success(tText('Événement supprimé'));
       setShowDeleteConfirm(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // V272 — clôture versionnée : POST /church-events/{id}/archive (seule voie
+  // qui écrit le statut ARCHIVED + l'instantané). Le serveur incrémente la
+  // version à chaque re-clôture ; rien n'écrase ni ne supprime l'historique.
+  const archiveEventMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/church-events/${id}/archive`);
+      return res.data as { version: number };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['church-event-archives'] });
+      toast.success(tText('Événement clôturé et archivé') + ` (v${data.version})`);
+      setShowArchiveConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -383,6 +411,19 @@ export default function EventsPage() {
                 </button>
               </>
             )}
+            {/* V272 — clôture : un événement déjà archivé reste re-clôturable
+                (le serveur crée une nouvelle version), mais le bouton n'a de
+                sens que si l'acteur porte EVENTS_EXECUTE_ARCHIVEEVENT. */}
+            {canArchive && (
+              <button
+                onClick={() => setShowArchiveConfirm(evt)}
+                className="btn-ghost btn-sm text-indigo-600"
+                title={evt.statut === 'ARCHIVED' ? tText('Re-clôturer (nouvelle version)') : tText('Clôturer et archiver')}
+                aria-label={tText('Clôturer et archiver')}
+              >
+                <Archive className="w-4 h-4" />
+              </button>
+            )}
           </div>
         );
       },
@@ -403,7 +444,7 @@ export default function EventsPage() {
       rows.push([
         e.titre,
         TYPE_LABELS[e.typeEvenement] || e.typeEvenement,
-        STATUT_LABELS[e.statut] || e.statut,
+        statusLabel(e.statut),
         e.dateDebut ? new Date(e.dateDebut).toLocaleDateString(locale) : '',
         e.dateFin ? new Date(e.dateFin).toLocaleDateString(locale) : '',
         e.lieu || '',
@@ -682,6 +723,37 @@ export default function EventsPage() {
               >
                 {deleteEventMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* V272 — confirmation de clôture : crée l'instantané, ne supprime rien */}
+      {showArchiveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowArchiveConfirm(null)}>
+          <div className="card p-6 w-full max-w-sm mx-4 animate-slide-up" role="dialog" aria-modal="true" aria-label={tText('Clôturer et archiver')} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <Archive className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tText('Clôturer et archiver')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{showArchiveConfirm.titre}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              {tText('L\'événement passera au statut archivé et un instantané complet sera créé dans les Archives. Les clôtures successives créent des versions ; rien n\'est écrasé ni supprimé.')}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowArchiveConfirm(null)} className="btn-secondary btn-sm">{tText('Annuler')}</button>
+              <button
+                onClick={() => archiveEventMutation.mutate(showArchiveConfirm.id)}
+                disabled={archiveEventMutation.isPending}
+                className="btn-primary btn-sm"
+              >
+                {archiveEventMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
+                {tText('Clôturer et archiver')}
               </button>
             </div>
           </div>

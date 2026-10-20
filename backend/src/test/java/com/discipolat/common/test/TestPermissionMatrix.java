@@ -114,6 +114,30 @@ public final class TestPermissionMatrix {
     }
 
     private static Map<String, Set<String>> loadMatrix() {
+        // Phase 9 (p9g) — bascule sur la SOURCE UNIQUE. Avant : cette classe ne
+        // lisait que 4 fichiers (V258..V261) — 3 fichiers manquaient (V262, V270,
+        // V271) : les accords ajoutés par ces migrations étaient invisibles ici,
+        // alors qu'ils sont bien servis en production ET dans le seed H2
+        // (vérifié par `TestPermissionMatrixSeedGuardTest`). La matrice du
+        // fixture n'était donc pas l'image du serveur ; un @WebMvcTest pouvait
+        // passer au vert sur une clé que le fixture refusait.
+        Map<String, Set<String>> matrix = new java.util.LinkedHashMap<>(PermissionCatalogSource.matrix());
+        if (matrix.isEmpty()) {
+            throw new IllegalStateException(
+                    "matrice vide — vérifier le manifeste `parametrisation/catalog-migrations.txt` "
+                            + "et le tag « matrix » des migrations V258..");
+        }
+        return Collections.unmodifiableMap(matrix);
+    }
+
+    /**
+     * Chargeur historique (regex naïve {@code indexOf(';')} + {@code PAIR}),
+     * conservé sans référence pour la trace de l'algorithmique et le texte
+     * d'avertissement d'origine — non supprimé conformément à la doctrine
+     * « ne rien supprimer ».
+     */
+    @SuppressWarnings("unused")
+    private static Map<String, Set<String>> loadMatrixLegacy() {
         Map<String, Set<String>> matrix = new HashMap<>();
         for (String resource : MATRIX_MIGRATIONS) {
             String sql = readClasspath(resource);

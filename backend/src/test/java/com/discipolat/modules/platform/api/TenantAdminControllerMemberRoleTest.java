@@ -4,9 +4,8 @@ import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditService;
 import com.discipolat.modules.tenants.domain.OrganizationNodeService;
 import com.discipolat.modules.tenants.domain.MembershipStatus;
-import com.discipolat.modules.tenants.domain.PermissionService;
 import com.discipolat.modules.tenants.domain.Role;
-import com.discipolat.modules.tenants.domain.RoleService;
+import com.discipolat.modules.tenants.domain.RoleManagementService;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantMembership;
 import com.discipolat.modules.tenants.domain.TenantMembershipRepository;
@@ -51,8 +50,7 @@ class TenantAdminControllerMemberRoleTest {
     @Mock private TenantMembershipRepository membershipRepository;
     @Mock private UserRepository userRepository;
     @Mock private TenantMembershipService membershipService;
-    @Mock private RoleService roleService;
-    @Mock private PermissionService permissionService;
+    @Mock private RoleManagementService roleManagementService;
     @Mock private AuditService auditService;
     @Mock private OrganizationNodeService orgNodeService;
     @Mock private TenantService tenantService;
@@ -68,7 +66,7 @@ class TenantAdminControllerMemberRoleTest {
     @BeforeEach
     void setUp() {
         controller = new TenantAdminController(tenantRepository, membershipRepository,
-                userRepository, membershipService, roleService, permissionService,
+                userRepository, membershipService, roleManagementService,
                 auditService, orgNodeService, tenantService);
         TenantContext.setTenantId(tenantId);
         SecurityContextHolder.getContext().setAuthentication(
@@ -104,8 +102,8 @@ class TenantAdminControllerMemberRoleTest {
         UUID newRoleId = UUID.randomUUID();
         TenantMembership m = membership(tenantId, role(oldRoleId, "MEMBRE"));
         when(membershipRepository.findById(membershipId)).thenReturn(Optional.of(m));
-        when(roleService.getRoles(tenantId)).thenReturn(List.of(
-                role(newRoleId, "RESPONSABLE"), role(oldRoleId, "MEMBRE")));
+        when(roleManagementService.findByKey(tenantId, "responsable"))
+                .thenReturn(Optional.of(role(newRoleId, "RESPONSABLE")));
 
         Map<String, Object> result = controller.updateMemberRole(
                 membershipId, Map.of("roleKey", "responsable"), null).getBody();
@@ -135,11 +133,54 @@ class TenantAdminControllerMemberRoleTest {
     void unknownRoleKeyRejected() {
         when(membershipRepository.findById(membershipId))
                 .thenReturn(Optional.of(membership(tenantId, role(UUID.randomUUID(), "MEMBRE"))));
-        when(roleService.getRoles(tenantId)).thenReturn(List.of(role(UUID.randomUUID(), "MEMBRE")));
+        when(roleManagementService.findByKey(tenantId, "SUPER_DICTATEUR")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
                 () -> controller.updateMemberRole(membershipId, Map.of("roleKey", "SUPER_DICTATEUR"), null));
         verify(membershipRepository, never()).save(any());
+    }
+
+    /**
+     * Controle negatif D13 — le defaut qui rendait TOUTE affectation impossible.
+     * Une installation qui n'a cree aucune surcouche ne possede que des lignes
+     * GLOBALES ({@code tenant_id IS NULL}) : l'ancienne resolution,
+     * {@code roleService.getRoles(tenantId)} — un {@code WHERE tenant_id = ?} —
+     * renvoyait une liste vide et levait « Rôle inconnu dans ce tenant » meme pour
+     * MEMBRE/ADMIN. Ici la resolution delegate a {@code findByKey} trouve la ligne
+     * globale et l'affectation aboutit.
+     */
+    @Test
+    void affecterUneCleQuinexisteQuEnLigneGlobaleReussit() {
+        UUID globalRoleId = UUID.randomUUID();
+        TenantMembership m = membership(tenantId, role(UUID.randomUUID(), "MEMBRE"));
+        when(membershipRepository.findById(membershipId)).thenReturn(Optional.of(m));
+        when(roleManagementService.findByKey(tenantId, "FAISEUR"))
+                .thenReturn(Optional.of(role(globalRoleId, "FAISEUR")));
+
+        Map<String, Object> result = controller.updateMemberRole(
+                membershipId, Map.of("roleKey", "FAISEUR"), null).getBody();
+
+        assertEquals(globalRoleId, m.getRole().getId());
+        verify(membershipRepository).save(m);
+        assertEquals("FAISEUR", result.get("roleKey"));
+    }
+
+    /**
+     * Une surcouche locale homonyme prime : {@code findByKey} rend la ligne de
+     * l'eglise, donc c'est elle (et non le modele global) que la membership pointe.
+     */
+    @Test
+    void laSurcoucheLocalePrimeSurLeRoleGlobal() {
+        UUID localRoleId = UUID.randomUUID();
+        TenantMembership m = membership(tenantId, role(UUID.randomUUID(), "MEMBRE"));
+        when(membershipRepository.findById(membershipId)).thenReturn(Optional.of(m));
+        when(roleManagementService.findByKey(tenantId, "MEMBRE"))
+                .thenReturn(Optional.of(role(localRoleId, "MEMBRE")));
+
+        controller.updateMemberRole(membershipId, Map.of("roleKey", "MEMBRE"), null);
+
+        assertEquals(localRoleId, m.getRole().getId());
+        verify(roleManagementService).findByKey(tenantId, "MEMBRE");
     }
 
     @Test
@@ -147,8 +188,8 @@ class TenantAdminControllerMemberRoleTest {
         Role owner = role(UUID.randomUUID(), "TENANT_OWNER");
         TenantMembership m = membership(tenantId, owner);
         when(membershipRepository.findById(membershipId)).thenReturn(Optional.of(m));
-        when(roleService.getRoles(tenantId)).thenReturn(List.of(
-                owner, role(UUID.randomUUID(), "ADMIN")));
+        when(roleManagementService.findByKey(tenantId, "ADMIN"))
+                .thenReturn(Optional.of(role(UUID.randomUUID(), "ADMIN")));
         when(membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE))
                 .thenReturn(List.of(m));
 

@@ -260,4 +260,58 @@ void main() {
     expect(payload['ownerEmail'], 'pasteur@bethel.cm');
     expect(payload['locale'], 'fr');
   });
+
+  // ── A4 (contrat §3.5) — nature de l'organisation : omise par défaut,
+  // transmise seulement si choisie explicitement (même règle G-B §5 que
+  // plan/géo ; le serveur applique CHURCH en l'absence de la clé). ──
+
+  testWidgets('A4 : kind omis du payload quand le type reste Église isolée',
+      (tester) async {
+    final api = _FakeApiService();
+    await _pump(tester, api);
+
+    await _fillOrgAndOwner(tester);
+    // Aucun toucher du sélecteur « Type organisation » : la valeur initiale
+    // CHURCH ne doit PAS être plaquée au serveur.
+    await _completeFlow(tester);
+
+    final payload = api.postDatas.single;
+    expect(payload.containsKey('kind'), isFalse);
+    expect(payload.containsValue('CHURCH'), isFalse,
+        reason: 'CHURCH sans choix explicite = valeur inventée (G-B §5)');
+  });
+
+  testWidgets('A4 : kind transmis quand Dénomination est explicitement choisie',
+      (tester) async {
+    final api = _FakeApiService();
+    await _pump(tester, api);
+
+    await _fillOrgAndOwner(tester);
+    await _choose(tester, 'Type organisation', 'Dénomination');
+    await _completeFlow(tester);
+
+    final payload = api.postDatas.single;
+    expect(payload['kind'], 'DENOMINATION');
+    // Le reste du contrat est intact.
+    expect(payload['ownerEmail'], 'pasteur@bethel.cm');
+    expect(payload['name'], 'Église Bethel');
+  });
+}
+
+/// Enchaîne les étapes 2 à 4 puis la soumission, l'étape 1 étant déjà
+/// renseignée (nom + owner). Utilisé par les parcours A4 pour éviter de
+/// dupliquer le trajet complet déjà validé par les tests B10/G-B.
+Future<void> _completeFlow(WidgetTester tester) async {
+  await _tap(tester, 'Continuer'); // → église
+  await _tap(tester, 'Continuer'); // → département
+  await _type(tester, 'Nom du département *', 'Accueil & Louange');
+  await _type(tester, 'Prénom du responsable *', 'Marie');
+  await _type(tester, 'Nom du responsable *', 'Ngono');
+  await _type(tester, 'Email du responsable *', 'marie@bethel.cm');
+  await _tap(tester, 'Continuer'); // → famille
+  await _type(tester, 'Nom de la famille *', 'Famille Mbarga');
+  await _type(tester, 'Prénom du chef *', 'Pierre');
+  await _type(tester, 'Nom du chef *', 'Mbarga');
+  await _type(tester, 'Email du chef *', 'pierre@bethel.cm');
+  await _tap(tester, "Provisionner l'organisation");
 }

@@ -5,7 +5,29 @@
 > [docs/CHANGELOG.md](docs/CHANGELOG.md). Ce fichier racine résume les versions
 > publiquement significatives et suit le format [Keep a Changelog](https://keepachangelog.com/fr/).
 
-Le projet respecte le [Semantic Versioning](https://semver.org/lang/fr/).
+Le projet respecte le [Semantic Versioning](https://semver.org/lang/fr).
+
+---
+
+## [Non publié] — Parcours « Archives » complet (V272)
+
+Lecture et clôture d'archives enfin utilisables partout, **additif strict**
+(aucun endpoint supprimé, aucun comportement legacy modifié) :
+
+- **Backend** : migration `V272` (parité UI_ARCHIVES_ACCESS ≡ R6A2 sur 6
+  rôles, unicité `(event_id, version)`, colonne `attendance_count`) ;
+  `GET /church-events/archives/search` (paginé, sans snapshot) et
+  `GET /church-events/archives/facets` ; `eventId` et `status` effectifs ;
+  verrou pessimiste à la clôture ; archives dans la rétention conformité
+  (opt-in). 28 tests dédiés.
+- **Web** : bouton « Clôturer et archiver » dans `EventsPage` ; `ArchivesPage`
+  refondue (filtres serveur, pagination, détail par version, Échap + focus
+  trap, mois localisés) ; i18n 6 locales ; tests de parité UI ≡ matrice servie.
+- **Mobile** : écran `ArchivesScreen` + détail versionné, action « Clôturer et
+  archiver » dans `EventDetailScreen`, route `/archives` gardée par rôle et
+  par clé servie, drawer et i18n 6 locales, test de contrat dédié.
+
+Détail complet : [docs/CHANGELOG.md](docs/CHANGELOG.md).
 
 ---
 

@@ -7,12 +7,17 @@ import java.util.List;
 
 /**
  * Bean de vérification des permissions utilisable dans les expressions
- * {@code @PreAuthorize("@perm.has('USER','DELETE')")}.
+ * {@code @PreAuthorize("@perm.has('FAMILY','DELETE')")}.
  *
  * Logique :
  * - Les super-utilisateurs (ADMIN, PASTEUR) passent toujours.
- * - Permission explicitement désactivée dans la matrice → refus.
- * - Aucune ligne dans la matrice → accord (permissif, rétrocompatible).
+ * - Permission accordée dans la matrice (ligne présente dans role_permissions)
+ *   → refus seulement si la ligne est retirée.
+ * - Aucune ligne dans la matrice → REFUS (restrictif) : {@code userHasPermission}
+ *   ne rend vrai que sur une clé réellement accordée. C'est le comportement du
+ *   service depuis toujours ; la note « permissif » de ce commentaire était
+ *   fausse et a été corrigée ici plutôt qu'ailleurs, pour que la lecture de la
+ *   garde corresponde à la garde.
  */
 @Component("perm")
 public class PermissionGuard {
@@ -41,7 +46,7 @@ public class PermissionGuard {
 
     /**
      * Vérifie un niveau de permission granulaire (READ, WRITE, DELETE, MANAGE).
-     * Utilisation : @perm.hasLevel('SOULS', 'WRITE')
+     * Utilisation : @perm.hasLevel('FAMILY', 'DELETE')
      */
     public boolean hasLevel(String domain, String action, String level) {
         List<String> roles = securityUtils.getAllUserRoles();

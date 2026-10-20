@@ -1,0 +1,54 @@
+# ============================================================
+# SOURCE UNIQUE — migrations qui portent le catalogue de permissions
+# et la matrice role->permission par defaut.
+# ============================================================
+#
+# Pourquoi ce fichier existe. Cinq listes de migrations vivaient en parallele
+# (PermissionKeyCatalogGuardTest, TestPermissionMatrixSeedGuardTest,
+# TestPermissionMatrix, tools/parametrisation/gen_h2_seed.py,
+# frontend/src/__tests__/helpers/servedCatalog.ts) et avaient deja derive :
+# 9 fichiers ici, 7 la, 4 ailleurs. Or ces listes decident de ce que les gardes
+# croient savoir du contrat serveur : une liste en retard fait disparaitre une
+# cle SILENCIEUSEMENT du seed H2, et des tests d'integration passent alors au
+# vert sur des gardes @authz.can qui ne sont plus reelles (reussite factice —
+# defaut consigne dans V270).
+#
+# Format : `nom-du-fichier.sql  tag1 tag2`, un par ligne. `#` = commentaire.
+# Chemins relatifs a `backend/src/main/resources/db/migration/`.
+#
+# Tags :
+#   catalog  le fichier insere des LIGNES dans `permissions` (ou `roles`) :
+#            on en extrait les cles servies.
+#   matrix   le fichier insere des PAIRES litterales ('ROLE','CLE') dans
+#            `role_permissions` : on en extrait la matrice par defaut.
+#
+# Un fichier peut porter les deux tags. V135/V136 ne sont PAS `matrix` : leurs
+# INSERT sont des `INSERT ... SELECT` dont les `p.key IN ('A','B',…)` ressemblent
+# a des paires sans en etre — les compter comme matrice fabrique des droits
+# inventes (MEMBER_READ→FAMILY_READ etc.). C'est la raison d'etre du tag explicite
+# plutot qu'une derivation automatique par recherche du texte
+# « INSERT INTO role_permissions ».
+#
+# Le garde `PermissionCatalogSourceTest` refuse desormais :
+#  - toute migration >= V135 qui insere dans `permissions`/`role_permissions`
+#    et qui n'est PAS declaree ici (oubli de declaration) ;
+#  - tout fichier declare ici mais absent du depot.
+
+# Socle multi-tenant : cles nees ici (BRANDING_*, ROLE_*, PERMISSION_ASSIGN,
+# MODULES_*, ORG_NODE_*…) reellement servies — les omettre produirait des faux
+# positifs de garde en cascade.
+V135__create_multi_tenant_core_tables.sql      catalog
+V136__add_membership_scope_and_role_fk.sql     catalog
+
+# Chantier « parametrisation par eglise » : catalogue + matrice, phases 3 a 9.
+V258__parametrisation_permissions_par_eglise.sql        catalog matrix
+V259__parametrisation_permissions_suite_phase3.sql      catalog matrix
+V260__parametrisation_admin_events_read.sql             catalog matrix
+V261__parametrisation_cles_ui_routes.sql                catalog matrix
+V262__parametrisation_cles_ui_intra_pages.sql           catalog matrix
+V270__parametrisation_cles_ui_residuel_dashboard.sql    catalog matrix
+V271__visibilite_archives_et_assistants.sql             catalog matrix
+# V272 n'insère AUCUNE permission nouvelle : il élargit la matrice
+# UI_ARCHIVES_ACCESS à DEPARTMENT_LEADER/FAMILY_LEADER (parité avec la garde
+# serveur EVENTS_EXECUTE_R6A2) — donc tag `matrix` seul.
+V272__archives_parcours_complet.sql                     matrix

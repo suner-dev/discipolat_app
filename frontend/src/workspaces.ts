@@ -441,7 +441,11 @@ const FULL_NAV: WorkspaceSection[] = [
       { name: 'Demandes admin', href: '/admin-requests', icon: MessageSquare, subtitle: 'Requêtes' },
       { name: 'Conflits hors-ligne', href: '/admin/sync-conflicts', icon: AlertTriangle, subtitle: 'Réconciliation LWW' },
       { name: 'Réclamations', href: '/rewards/claims', icon: Trophy, subtitle: 'Récompenses' },
-      { name: 'Rôles utilisateurs', href: '/users/roles', icon: UserCog, subtitle: 'Permissions' },
+      // Phase 9 — l'écran /users/roles était mort (aucun :id, endpoints inexistants) ;
+      // l'attribution des rôles par utilisateur vit dans la modale « Gérer les rôles »
+      // de /users. L'entrée mène donc à la surface réelle, sans doublon : les href en
+      // double sont dédupliqués au regroupement de navigation.
+      { name: 'Rôles utilisateurs', href: '/users', icon: UserCog, subtitle: 'Comptes & rôles' },
       { name: 'Exports conformité', href: '/admin/compliance-exports', icon: Shield, subtitle: 'RGPD/audit' },
       { name: 'Conversations', href: '/conversations', icon: MessageCircle, subtitle: 'Messagerie' },
       { name: 'Formations', href: '/courses', icon: GraduationCap, subtitle: 'Cours & modules' },
@@ -797,6 +801,10 @@ export function navForRole(
         items: s.items.filter((i) => !ADMIN_ONLY_HREFS.includes(i.href)),
       })).filter((s) => s.items.length > 0);
     default:
+      // V272 — couverture vérifiée : les rôles legacy sans espace dédié
+      // (DEPARTMENT_LEADER, FAMILY_LEADER, TENANT_*, etc.) retombent sur
+      // FULL_NAV, qui contient déjà l'entrée « Archives » (/archives) —
+      // cohérent avec l'élargissement de UI_ARCHIVES_ACCESS par V272.
       return FULL_NAV;
   }
 }

@@ -655,7 +655,10 @@ export interface WeeklyProgramTemplate {
   createdBy: string;
   createdAt: string;
 }
-export type StatutEvenement = 'PLANIFIE' | 'EN_COURS' | 'TERMINE' | 'ANNULE';
+// V272 — « ARCHIVED » est exclusif à la clôture d'archive : seul le serveur
+// l'écrit (POST /church-events/{id}/archive). Il est en lecture dans les
+// listes, mais volontairement absent des libellés de formulaire (non saisissable).
+export type StatutEvenement = 'PLANIFIE' | 'EN_COURS' | 'TERMINE' | 'ANNULE' | 'ARCHIVED';
 export type StatutInscription = 'INSCRIT' | 'EN_ATTENTE' | 'ANNULEE';
 
 export interface Evenement {

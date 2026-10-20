@@ -109,6 +109,7 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/admin/dictionaries': ["ADMIN_EXECUTE"],
   '/admin/tenants': ["ADMIN_EXECUTE"],
   '/admin/notifications': ["ADMIN_EXECUTE"],
+  '/admin/dress-codes': ["ADMIN_EXECUTE"],
   '/admin/system': ["ADMIN_EXECUTE"],
   '/admin/integrations': ["ADMIN_EXECUTE"],
   '/admin/gdpr': ["ADMIN_EXECUTE"],
@@ -197,7 +198,13 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/tickets/:id': ["UI_TICKETS_2_ACCESS"],
   '/testimonies/:id': ["UI_TESTIMONIES_ACCESS"],
   '/rewards/claims': ["UI_REWARDS_CLAIMS_ACCESS"],
-  '/users/roles': ["USERS_EXECUTE_HARDDELETE"],
+  // Phase 9 — /users/roles n'est plus qu'une redirection de compatibilité vers
+  // /users (l'écran UserRolesPage appelait des endpoints inexistants et un
+  // énuméré fermé de six rôles). Le verrou est aligné sur celui de /users, que
+  // la garde de route applique et que le menu utilise pour masquer l'entrée.
+  '/users/roles': ["USERS_EXECUTE_CREATE"],
+  // Phase 9 — UserRolesPage réparée avec le paramètre :id (nouvelle route).
+  '/users/:id/roles': ["USERS_EXECUTE"],
   '/admin/compliance-exports': ["UI_ADMIN_COMPLIANCE_EXPORTS_ACCESS"],
   '/conversations': ["UI_CONVERSATIONS_ACCESS"],
   '/courses': ["UI_COURSES_ACCESS"],
@@ -307,6 +314,7 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/admin/dictionaries': ['ADMIN', 'PASTEUR'],
   '/admin/tenants': ['ADMIN', 'PASTEUR'],
   '/admin/notifications': ['ADMIN', 'PASTEUR'],
+  '/admin/dress-codes': ['ADMIN', 'PASTEUR'],
   '/admin/system': ['ADMIN', 'PASTEUR'],
   '/admin/integrations': ['ADMIN', 'PASTEUR'],
   '/admin/gdpr': ['ADMIN', 'PASTEUR'],
@@ -415,7 +423,10 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tickets/:id': ['ADMIN', 'PASTEUR'],
   '/testimonies/:id': ['ADMIN', 'PASTEUR'],
   '/rewards/claims': ['ADMIN', 'PASTEUR', 'FAISEUR'],
-  '/users/roles': ['ADMIN'],
+  // Phase 9 — parité avec '/users' : la route ne fait plus que rediriger vers lui.
+  '/users/roles': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  // Phase 9 — UserRolesPage avec paramètre :id : accessible ADMIN/PASTEUR.
+  '/users/:id/roles': ['ADMIN', 'PASTEUR'],
   '/admin/compliance-exports': ['ADMIN'],
   '/conversations': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
   '/courses': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE'],
@@ -426,9 +437,11 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/health': ['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD'],
   '/finance-modules': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
-  // V271 — parité exacte avec la matrice servie de UI_ARCHIVES_ACCESS (= les
-  // détenteurs de la garde serveur EVENTS_EXECUTE_R6A2 sur /church-events).
-  '/archives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  // V271 — parité avec la matrice servie de UI_ARCHIVES_ACCESS ; V272 élargit
+  // cette matrice à 6 rôles (= les détenteurs de la garde serveur
+  // EVENTS_EXECUTE_R6A2 sur /church-events) : + DEPARTMENT_LEADER, FAMILY_LEADER.
+  // La liste ci-dessous suit : 6 rôles côté UI = 6 rôles côté R6A2, parité exacte.
+  '/archives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER'],
 };
 
 function splitSegments(path: string): string[] {

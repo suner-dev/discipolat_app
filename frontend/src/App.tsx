@@ -80,7 +80,6 @@ const DocumentsPage = lazy(() => import('@/pages/DocumentsPage'));
 const AuditPage = lazy(() => import('@/pages/AuditPage'));
 const MemberActivitiesPage = lazy(() => import('@/pages/MemberActivitiesPage'));
 const DisciplinePage = lazy(() => import('@/pages/DisciplinePage'));
-const PermissionsPage = lazy(() => import('@/pages/PermissionsPage'));
 const CompareFamiliesPage = lazy(() => import('@/pages/CompareFamiliesPage'));
 const SoulRetractionsPage = lazy(() => import('@/pages/SoulRetractionsPage'));
 const ActionsDeGracePage = lazy(() => import('@/pages/ActionsDeGracePage'));
@@ -124,6 +123,8 @@ const PlatformOnboardingFlowPage = lazy(() => import('@/pages/PlatformOnboarding
 const TenantAdminDashboardRoute = lazy(() => import('@/pages/TenantAdminDashboard'));
 const TenantAdminMembersPage = lazy(() => import('@/pages/TenantAdminMembersPage'));
 const TenantAdminRolesPage = lazy(() => import('@/pages/TenantAdminRolesPage'));
+const PermissionsPage = lazy(() => import('@/pages/PermissionsPage'));
+const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
 const TenantAdminInvitationsPage = lazy(() => import('@/pages/TenantAdminInvitationsPage'));
 const TenantAdminModulesPage = lazy(() => import('@/pages/TenantAdminModulesPage'));
 const TenantAdminSettingsPage = lazy(() => import('@/pages/TenantAdminSettingsPage'));
@@ -270,7 +271,6 @@ const DocumentDetailPage = lazy(() => import('@/pages/DocumentDetailPage'));
 const TicketDetailPage = lazy(() => import('@/pages/TicketDetailPage'));
 const TestimonyDetailPage = lazy(() => import('@/pages/TestimonyDetailPage'));
 const RewardsClaimsPage = lazy(() => import('@/pages/RewardsClaimsPage'));
-const UserRolesPage = lazy(() => import('@/pages/UserRolesPage'));
 const ComplianceExportsPage = lazy(() => import('@/pages/ComplianceExportsPage'));
 const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
@@ -789,7 +789,13 @@ export default function App() {
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['AUDIT_EXECUTE']}>
               <AuditPage />
             </ProtectedRoute>
-          } />          <Route path="/permissions" element={
+          } />
+          {/* PARAMÉTRISATION PAR ÉGLISE (Phase 9 — réparée) — /permissions
+              rend PermissionsPage qui lit et écrit la matrice canonique
+              (roles/role_permissions/permissions via PermissionService).
+              Le backend répare a été vérifié (51 tests H2 + mock verts).
+              /admin/roles reste accessible comme éditeur rapide par église. */}
+          <Route path="/permissions" element={
             <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_PERMISSIONS_ACCESS']}>
               <PermissionsPage />
             </ProtectedRoute>} />
@@ -951,8 +957,11 @@ export default function App() {
               <AiAssistantPage />
             </ProtectedRoute>
           } />
+          {/* V272 — 6 rôles = parité exacte avec UI_ARCHIVES_ACCESS servi
+              (élargi à DEPARTMENT_LEADER/FAMILY_LEADER) et la garde serveur
+              EVENTS_EXECUTE_R6A2 sur /church-events. */}
           <Route path="/archives" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_ARCHIVES_ACCESS']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER']} permissions={['UI_ARCHIVES_ACCESS']}>
               <ArchivesPage />
             </ProtectedRoute>
           } />
@@ -1201,7 +1210,14 @@ export default function App() {
           <Route path="/tickets/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_TICKETS_2_ACCESS']}><TicketDetailPage /></ProtectedRoute>} />
           <Route path="/testimonies/:id" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['UI_TESTIMONIES_ACCESS']}><TestimonyDetailPage /></ProtectedRoute>} />
           <Route path="/rewards/claims" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'FAISEUR']} permissions={['UI_REWARDS_CLAIMS_ACCESS']}><RewardsClaimsPage /></ProtectedRoute>} />
-          <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN']} permissions={['USERS_EXECUTE_HARDDELETE']}><UserRolesPage /></ProtectedRoute>} />
+          {/* UserRolesPage — route avec :id, réparée sur le contrat réel.
+              La redirection /users/roles → /users est conservée pour les
+              anciens bookmarks sans paramètre :id. */}
+          <Route path="/users/roles" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR', 'MEMBRE']} permissions={['UI_USERS_ACCESS']}><Navigate to="/users" replace /></ProtectedRoute>} />
+          <Route path="/users/:id/roles" element={
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['USERS_EXECUTE']}>
+              <UserRolesPage />
+            </ProtectedRoute>} />
           <Route path="/admin/compliance-exports" element={<ProtectedRoute roles={['ADMIN']} permissions={['UI_ADMIN_COMPLIANCE_EXPORTS_ACCESS']}><ComplianceExportsPage /></ProtectedRoute>} />
           <Route path="/admin/space-import-export" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><SpaceImportExportPage /></ProtectedRoute>} />
           <Route path="/admin/legacy-migration" element={<ProtectedRoute roles={['ADMIN', 'PASTEUR']} permissions={['ADMIN_EXECUTE']}><LegacyMigrationPage /></ProtectedRoute>} />

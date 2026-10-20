@@ -88,6 +88,16 @@ class _SuperAdminProvisioningScreenState
   final _orgName = TextEditingController();
   final _countryController = TextEditingController();
   String? _orgPlan;
+  // A4 (contrat §3.5) — nature de l'organisation. CHURCH par défaut ; la clé
+  // n'est envoyée que si l'utilisateur choisit explicitement autre chose.
+  String? _orgKind = 'CHURCH';
+  static const List<_Option> _kindOptions = <_Option>[
+    _Option('CHURCH', 'Église isolée'),
+    _Option('DENOMINATION', 'Dénomination'),
+    _Option('ASSOCIATION', 'Association'),
+    _Option('ORGANIZATION', 'Organisation'),
+    _Option('MEGA_ASSOCIATION', 'Méga-association'),
+  ];
   String? _currency;
   String? _timezone;
   String _locale = 'fr';
@@ -371,6 +381,7 @@ class _SuperAdminProvisioningScreenState
         'name': _orgName.text.trim(),
         'slug': _slugify(_orgName.text),
         if (_orgPlan != null) 'plan': _orgPlan,
+        if (_orgKind != null && _orgKind != 'CHURCH') 'kind': _orgKind,
         if (country.isNotEmpty) 'country': country,
         if (_currency != null) 'currency': _currency,
         if (_timezone != null) 'timezone': _timezone,
@@ -438,6 +449,7 @@ class _SuperAdminProvisioningScreenState
       _owner = null;
       _orgName.clear();
       _orgPlan = null;
+      _orgKind = 'CHURCH';
       _countryController.clear();
       _currency = null;
       _timezone = null;
@@ -580,6 +592,13 @@ class _SuperAdminProvisioningScreenState
                 hint: _plansFromApi ? null : 'Liste minimale (API indisponible)',
                 onChanged: (v) => setState(() => _orgPlan = v),
               ),
+              const SizedBox(height: 12),
+              _LabeledDropdown(
+                  label: 'Type organisation',
+                  value: _orgKind,
+                  items: _kindOptions,
+                  onChanged: (v) => setState(() => _orgKind = v),
+                ),
               const SizedBox(height: 12),
               TextField(
                 controller: _countryController,

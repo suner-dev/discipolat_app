@@ -153,12 +153,19 @@ class _AppDrawerState extends State<AppDrawer> {
       'route': '/prayers/actions-de-grace'
     },
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    // V272 — Archives : porteur UI_ARCHIVES_ACCESS (6 rôles côté V272 ; ici
+    // les espaces legacy desservis par le drawer — FAISEUR/MEMBRE non porteurs).
+    {'icon': Icons.archive_rounded, 'title': 'Archives', 'route': '/archives'},
     {
       'icon': Icons.route_rounded,
       'title': 'Évangélisation',
       'route': '/evangelism'
     },
-    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {
+      'icon': Icons.style_rounded,
+      'title': 'Tenues de service',
+      'route': '/dress-codes'
+    },
     {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {
       'icon': Icons.swap_horiz_rounded,
@@ -517,6 +524,8 @@ class _AppDrawerState extends State<AppDrawer> {
       'route': '/alerts'
     },
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    // V272 — Archives (RESPONSABLE porte UI_ARCHIVES_ACCESS, parité web).
+    {'icon': Icons.archive_rounded, 'title': 'Archives', 'route': '/archives'},
     {
       'icon': Icons.favorite_border_rounded,
       'title': 'Actions de grâce',
@@ -709,6 +718,8 @@ class _AppDrawerState extends State<AppDrawer> {
     },
     {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {'icon': Icons.event_rounded, 'title': 'Événements', 'route': '/events'},
+    // V272 — Archives (CHEF_DE_FAMILLE porte UI_ARCHIVES_ACCESS, parité web).
+    {'icon': Icons.archive_rounded, 'title': 'Archives', 'route': '/archives'},
     {
       'icon': Icons.warning_amber_rounded,
       'title': 'Alertes',
@@ -866,8 +877,12 @@ class _AppDrawerState extends State<AppDrawer> {
         return l10n.navGraceActions;
       case '/events':
         return l10n.navEvents;
+      case '/archives':
+        return l10n.navArchives;
       case '/evangelism':
         return l10n.navEvangelism;
+      case '/dress-codes':
+        return l10n.navDressCode;
       case '/objectives':
         return l10n.navObjectives;
       case '/visits':
@@ -1036,7 +1051,11 @@ class _AppDrawerState extends State<AppDrawer> {
         return _mainNav
             .where((item) =>
                 item['route'] == '/admin/dashboard' ||
-                item['route'] == '/tenant/settings')
+                item['route'] == '/tenant/settings' ||
+                // V272 — le Pasteur porte UI_ARCHIVES_ACCESS : l'entrée
+                // Archives rejoint son espace minimal (additif strict, les
+                // deux entrées existantes sont inchangées).
+                item['route'] == '/archives')
             .toList();
       case 'ADMIN':
         return _fullNav;

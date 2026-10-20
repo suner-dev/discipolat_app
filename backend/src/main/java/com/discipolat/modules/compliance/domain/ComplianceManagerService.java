@@ -4,6 +4,8 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditLog;
 import com.discipolat.modules.audit.domain.AuditLogRepository;
+import com.discipolat.modules.events.domain.ChurchEventArchive;
+import com.discipolat.modules.events.repository.ChurchEventArchiveRepository;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +40,14 @@ public class ComplianceManagerService {
     private final AuditHashLinkRepository hashLinkRepository;
     private final AuditLogRepository auditLogRepository;
     private final TenantRepository tenantRepository;
+    /**
+     * V272 — purge de rétention des archives d'événements (RGPD art. 5-1-e).
+     * Porte de purge UNIQUE de la table {@code event_archive} : elle ne s'ouvre
+     * que si l'église a créé explicitement une politique {@code EventArchive} ;
+     * aucune purge n'est active par défaut, et toute suppression est précédée
+     * d'un export (cf. {@code purgePolicy}).
+     */
+    private final ChurchEventArchiveRepository archiveRepository;
 
     /** Adaptateur minimal sur GdprRequestRepository (évite le couplage direct au module gdpr). */
     public interface GdprRequestAdapter {
@@ -52,7 +62,8 @@ public class ComplianceManagerService {
                                     DataExportRecordRepository exportRepository,
                                     AuditHashLinkRepository hashLinkRepository,
                                     AuditLogRepository auditLogRepository,
-                                    TenantRepository tenantRepository) {
+                                    TenantRepository tenantRepository,
+                                    ChurchEventArchiveRepository archiveRepository) {
         this.consentRepository = consentRepository;
         this.gdprAdapter = gdprAdapter;
         this.policyRepository = policyRepository;
@@ -60,6 +71,7 @@ public class ComplianceManagerService {
         this.hashLinkRepository = hashLinkRepository;
         this.auditLogRepository = auditLogRepository;
         this.tenantRepository = tenantRepository;
+        this.archiveRepository = archiveRepository;
     }
 
     // ── Politiques de rétention ──────────────────────────────────
@@ -206,6 +218,40 @@ public class ComplianceManagerService {
                 policy.setLastPurgeAt(LocalDateTime.now());
                 policyRepository.save(policy);
             }
+        } else if ("EventArchive".equalsIgnoreCase(policy.getDataType())) {
+            // V272 §4 — UNIQUE porte de purge de la table event_archive (la
+            // base n'offre aucun DELETE applicatif hors ici). Activée seulement
+            // si l'église a créé explicitement la politique ; toute suppression
+            // est précédée d'un export consigné (RGPD art. 17-3-e / 5-1-e).
+            List<ChurchEventArchive> expired = archiveRepository.findByTenantId(tenantId).stream()
+                    .filter(a -> a.getArchivedAt() != null
+                            && a.getArchivedAt().toLocalDateTime().isBefore(cutoff))
+                    .toList();
+            purged = expired.size();
+            if (purged > 0) {
+                if (policy.isHardDelete()) {
+                    exportAndRecord(tenantId, null, "EventArchive", purged,
+                            Map.of("type", "event_archives",
+                                    "count", purged,
+                                    "archiveIds", expired.stream()
+                                            .map(a -> a.getId().toString()).toList()),
+                            DataExportRecord.Motif.AVANT_PURGE);
+                    archiveRepository.deleteAll(expired);
+                } else {
+                    // Soft : la trace d'existence (dates, compteur de présences)
+                    // reste pour l'intégrité des listes, tout ce qui identifie
+                    // ou raconte le service est anonymisé.
+                    expired.forEach(a -> {
+                        a.setEventTitle("Archive anonymisée (rétention)");
+                        a.setSnapshotJson(Map.of("anonymized", true,
+                                "anonymizedAt", LocalDateTime.now().toString()));
+                        a.setArchivedBy(null);
+                    });
+                    archiveRepository.saveAll(expired);
+                }
+                policy.setLastPurgeAt(LocalDateTime.now());
+                policyRepository.save(policy);
+            }
         }
         Map<String, Object> d = new LinkedHashMap<>();
         d.put("dataType", policy.getDataType());
@@ -236,6 +282,12 @@ public class ComplianceManagerService {
                 .mapToLong(p -> switch (p.getDataType()) {
                     case "ConsentLog" -> consentRepository.findByTenantId(tenantId).stream()
                             .filter(c -> c.getCreatedAt().isBefore(LocalDateTime.now().minusDays(p.getRetentionDays())))
+                            .count();
+                    // V272 — les archives deviennent comptables de la rétention
+                    // affichée au tableau de bord conformité.
+                    case "EventArchive" -> archiveRepository.findByTenantId(tenantId).stream()
+                            .filter(a -> a.getArchivedAt() != null && a.getArchivedAt().toLocalDateTime()
+                                    .isBefore(LocalDateTime.now().minusDays(p.getRetentionDays())))
                             .count();
                     default -> 0L;
                 })
@@ -368,7 +420,18 @@ public class ComplianceManagerService {
         return List.of(
                 policy("GdprRequest", tenantId, 365, "Demandes RGPD conservées 1 an"),
                 policy("ConsentLog", tenantId, 730, "Journal des consentements conservé 2 ans"),
-                policy("AuditLog", tenantId, 1095, "Journal d'audit conservé 3 ans (immuable)"));
+                policy("AuditLog", tenantId, 1095, "Journal d'audit conservé 3 ans (immuable)"),
+                // V272 §4 — proposition d'affichage : 5 ans, NON active. Une
+                // purge d'archives n'existe que si l'église l'active
+                // explicitement (setRetentionPolicy) ; aucune purge par défaut.
+                eventArchivePolicy(tenantId));
+    }
+
+    private RetentionPolicy eventArchivePolicy(UUID tenantId) {
+        RetentionPolicy p = policy("EventArchive", tenantId, 1825,
+                "Archives d'événements — proposition 5 ans, purge jamais active par défaut");
+        p.setActive(false);
+        return p;
     }
 
     private RetentionPolicy policy(String type, UUID tenantId, int days, String description) {

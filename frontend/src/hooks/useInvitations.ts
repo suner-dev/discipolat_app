@@ -216,6 +216,9 @@ const RoleSchema = z.object({
   label: z.string().min(1),
   system: z.boolean().optional(),
   priority: z.number().optional(),
+  // Phase 9 — une surcouche locale est une ligne homonyme portée par le tenant ;
+  // ce champ dit laquelle des deux lignes EST le rôle pour cette église.
+  tenantId: z.string().uuid().nullable().optional(),
 });
 export type AssignableRole = z.infer<typeof RoleSchema>;
 
@@ -244,6 +247,16 @@ export const FALLBACK_ROLES: readonly AssignableRole[] = [
  * L'API est la seule autorité : un tenant peut définir ses propres rôles
  * (RoleManagementController → /admin/roles/overview = rôles système + rôles
  * custom du tenant). Une liste en dur dans l'écran ne peut pas les connaître.
+ *
+ * <p>Phase 9 — {@code /overview} concatène les lignes globales et les lignes du
+ * tenant sans dédoublonner. Dès qu'une église a « personnalisé » un rôle
+ * système, la clé homonyme revient donc deux fois et le menu d'invitation
+ * proposerait deux fois le même rôle. La règle appliquée ici est celle du
+ * serveur ({@code RoleManagementService#findByKey}, {@code AuthorizationService}) :
+ * le local prime, le global homonyme ne décide plus rien — on ne garde que la
+ * ligne locale. L'invitation, elle, transporte une CLÉ que
+ * {@code InvitationService#resolveCreatableRole} résout de la même façon ;
+ * dédoublonner ne change donc aucune décision d'autorisation.
  */
 export function useAssignableRoles() {
   const { currentTenant } = useTenant();
@@ -253,7 +266,14 @@ export function useAssignableRoles() {
     queryKey: ['t', tenantKey, 'admin', 'roles'] as const,
     queryFn: async (): Promise<AssignableRole[]> => {
       const response = await api.get('/admin/roles/overview');
-      return z.array(RoleSchema).parse(response.data);
+      const roles = z.array(RoleSchema).parse(response.data);
+      const byKey = new Map<string, AssignableRole>();
+      for (const role of roles) {
+        const k = role.key.toUpperCase();
+        const kept = byKey.get(k);
+        if (!kept || (role.tenantId != null && kept.tenantId == null)) byKey.set(k, role);
+      }
+      return [...byKey.values()];
     },
     staleTime: 5 * 60 * 1000,
     retry: shouldRetry,

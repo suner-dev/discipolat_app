@@ -217,6 +217,21 @@ const fr = {
   'admin.keyLbl': "Clé",
   'admin.delete': "Supprimer",
   'admin.rolesCustom': "Rôles personnalisés",
+  // Phase 9 — surcouche locale par église. Ces onze clés existent dans les cinq
+  // autres dictionnaires : fr.ts étant le dictionnaire de REPLI de t(), les y
+  // oublier faisait afficher la clé technique (« admin.roleCustomize ») dans
+  // l'interface française par défaut.
+  'admin.rolesGlobal': "Rôles du catalogue global",
+  'admin.rolesGlobalHint': "Socle commun à toutes les églises. Pour ajuster un rôle ici, personnalisez-le d'abord pour votre église.",
+  'admin.roleCustomize': "Personnaliser pour mon église",
+  'admin.roleLocalized': "Rôle personnalisé pour votre église",
+  'admin.roleRevert': "Réinitialiser",
+  'admin.roleRevertQ': "Rétablir les droits du catalogue global pour « {label} » ? Les membres portant cette personnalisation seront réancrés sur le rôle global.",
+  'admin.roleReverted': "Personnalisation supprimée, droits globaux rétablis",
+  'admin.roleSurcouche': "Personnalisé pour cette église",
+  'admin.roleCustomized': "Personnalisé ici",
+  'admin.roleOverriddenHint': "Supplanté par la personnalisation de votre église.",
+  'admin.roleGlobalOnly': "Rôle global : personnalisez-le pour votre église avant d'éditer ses permissions.",
   'admin.memberRoleLbl': "Rôle dans l'organisation",
   'admin.memberRoleSaved': "Rôle mis à jour",
   'admin.memberRemove': "Retirer de l'organisation",
@@ -3622,6 +3637,27 @@ const fr = {
   'quotas.percentLabel': 'Pourcentage : {value}',
   'quotas.sourceLabel': 'Source : {value}',
   'quotas.megabytes': '{value} Mo',
+
+  // V272 — parcours « Archives » : écran ArchivesPage + bouton de clôture
+  // EventsPage. Source FR ; les 5 autres locales portent les mêmes clés.
+  'archives.title': 'Archives',
+  'archives.subtitle': 'Consultez les instantanés des événements clôturés — par année et par mois.',
+  'archives.yearAll': 'Toutes les années',
+  'archives.month': 'Mois',
+  'archives.monthAll': 'Tous les mois',
+  'archives.loadError': "Impossible de charger les archives.",
+  'archives.empty': 'Aucune archive pour cette période. Un événement apparaît ici après sa clôture.',
+  'archives.archivedAt': 'Archivé le',
+  'archives.version': 'Version',
+  'archives.end': 'Fin',
+  'archives.otherVersions': 'Autres versions de cet événement',
+  'archives.itemsReserved': 'articles réservés',
+  'archives.dressCodes': 'Tenues (dress-codes)',
+  'archives.immutability': 'Instantané immuable : les archives ne sont jamais écrasées, chaque nouvelle clôture crée une version.',
+  'events.archiveAction': 'Clôturer et archiver',
+  'events.archiveReclose': 'Re-clôturer (nouvelle version)',
+  'events.archivedToast': 'Événement clôturé et archivé',
+  'events.archiveConfirmText': "L'événement passera au statut archivé et un instantané complet sera créé dans les Archives. Les clôtures successives créent des versions ; rien n'est écrasé ni supprimé.",
 
 };
 

@@ -1,62 +1,62 @@
 {
-  "generatedAt": "2026-10-12T11:07:37.627Z",
+  "generatedAt": "2026-10-20T16:29:02.264Z",
   "thresholds": {
     "largeFileLines": 1000
   },
   "metrics": {
     "anyCount": 269,
     "largeFileCount": 13,
-    "todoCount": 6,
+    "todoCount": 1,
     "consoleDebugCount": 0
   },
   "largeFiles": [
     {
       "file": "i18n/es.ts",
-      "lines": 3744
+      "lines": 3758
     },
     {
       "file": "i18n/sw.ts",
-      "lines": 3728
+      "lines": 3742
     },
     {
       "file": "i18n/ar.ts",
-      "lines": 3656
+      "lines": 3670
     },
     {
       "file": "i18n/fr.ts",
-      "lines": 3626
+      "lines": 3644
     },
     {
       "file": "i18n/en.ts",
-      "lines": 3567
+      "lines": 3581
     },
     {
       "file": "i18n/pt.ts",
-      "lines": 3513
+      "lines": 3527
     },
     {
       "file": "types/index.ts",
-      "lines": 2048
+      "lines": 2060
     },
     {
       "file": "App.tsx",
-      "lines": 1327
+      "lines": 1370
     },
     {
       "file": "pages/SoulDetailPage.tsx",
       "lines": 1245
     },
     {
+      "file": "pages/UsersPage.tsx",
+      "lines": 1154
+    },
+    {
       "file": "pages/DepartmentMemberDossierPage.tsx",
       "lines": 1138
     },
     {
-      "file": "pages/UsersPage.tsx",
-      "lines": 1125
-    },
-    {
       "file": "pages/MemberDashboardPage.tsx",
-      "lines": 1078
+      "lines": 1085
     },
     {
       "file": "components/users/UserDetailModal.tsx",

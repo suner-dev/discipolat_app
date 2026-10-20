@@ -76,7 +76,7 @@ public class PlatformProvisioningController {
                         request.newChefPhone(), request.newChefSexe(), request.newChefDateNaissance(),
                         request.newChefAdresse(),
                         request.ownerEmail(), request.ownerFirstName(), request.ownerLastName()
-                ));
+                ), request.kind());
         // Le `tenant_id` n'est PAS porté par les entités Department/Family en
         // memoire : il est pose a l'ecriture (trigger/colonne), donc
         // `department.getTenantId()` vaut null et l'ancien code levait un NPE.
@@ -308,7 +308,10 @@ public class PlatformProvisioningController {
             // ne pas décaler l'index des champs déjà exploités.
             String ownerEmail,
             String ownerFirstName,
-            String ownerLastName
+            String ownerLastName,
+            // A4 (contrat §3.5) — nature de l'organisation : DENOMINATION,
+            // ASSOCIATION, ORGANIZATION, MEGA_ASSOCIATION ou CHURCH (par defaut).
+            String kind
     ) {
         /** Constructeur de compatibilité (avant A5) : l'owner est alors absent,
          *  ce que le service refuse avec OWNER_REQUIRED (fail-closed). */
@@ -325,7 +328,7 @@ public class PlatformProvisioningController {
                     newResponsableLastName, newResponsableEmail, newResponsablePhone, familyName,
                     chefFamilleId, chefAdjointId, createNewChef, newChefFirstName, newChefLastName,
                     newChefEmail, newChefPhone, newChefSexe, newChefDateNaissance, newChefAdresse,
-                    null, null, null);
+                    null, null, null, null);
         }
     }
 

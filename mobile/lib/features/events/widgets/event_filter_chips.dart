@@ -138,6 +138,9 @@ class EventFilterChips extends StatelessWidget {
         return Colors.green;
       case EventStatus.cancelled:
         return Colors.grey;
+      // V272 — clôture d'archive : couleur dédiée (distincte du gris « annulé »).
+      case EventStatus.archived:
+        return Colors.deepPurple;
       // Valeur inconnue (statut libre côté backend) : on ne pretend pas
       // qu'il s'agit d'un etat connu.
       case EventStatus.unknown:

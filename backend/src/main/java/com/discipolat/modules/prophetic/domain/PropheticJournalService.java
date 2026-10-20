@@ -1,6 +1,7 @@
 package com.discipolat.modules.prophetic.domain;
 
 import com.discipolat.common.domain.EntityNotFoundException;
+import com.discipolat.common.domain.Payloads;
 import com.discipolat.common.infrastructure.propagation.EntityPropagationPublisher;
 import com.discipolat.common.infrastructure.security.SecurityUtils;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class PropheticJournalService {
         entry.setAuthorId(securityUtils.getCurrentUserId());
         PropheticEntry saved = repository.save(entry);
         propagationPublisher.publishCreated("PROPHETIC_ENTRY", saved.getId(),
-                Map.of("type", saved.getType().name(), "title", saved.getTitle()),
+                Payloads.of("type", saved.getType().name(), "title", saved.getTitle()),
                 "Entrée prophétique créée: " + saved.getTitle());
         return saved;
     }
@@ -56,7 +57,7 @@ public class PropheticJournalService {
         existing.setPublic(updated.isPublic());
         PropheticEntry saved = repository.save(existing);
         propagationPublisher.publishUpdated("PROPHETIC_ENTRY", saved.getId(),
-                Map.of(), Map.of("title", saved.getTitle()),
+                Payloads.of(), Payloads.of("title", saved.getTitle()),
                 "Entrée prophétique mise à jour");
         return saved;
     }
@@ -64,7 +65,7 @@ public class PropheticJournalService {
     public void delete(UUID id) {
         PropheticEntry entry = findById(id);
         propagationPublisher.publishDeleted("PROPHETIC_ENTRY", id,
-                Map.of("title", entry.getTitle()),
+                Payloads.of("title", entry.getTitle()),
                 "Entrée prophétique supprimée");
         repository.delete(entry);
     }

@@ -49,6 +49,11 @@ const CATALOG_MIGRATIONS = [
   'V262__parametrisation_cles_ui_intra_pages.sql',
   'V270__parametrisation_cles_ui_residuel_dashboard.sql',
   'V271__visibilite_archives_et_assistants.sql',
+  // V272 : aucune permission nouvelle, mais la matrice s'élargit —
+  // UI_ARCHIVES_ACCESS est accordé à DEPARTMENT_LEADER/FAMILY_LEADER (parité
+  // avec la garde serveur EVENTS_EXECUTE_R6A2). L'omettre ferait mentir la
+  // vérité servie aux tests de parité UI ≡ serveur (archivesParity).
+  'V272__archives_parcours_complet.sql',
 ];
 
 const KEY_RE = /^[A-Z][A-Z0-9_]*$/;

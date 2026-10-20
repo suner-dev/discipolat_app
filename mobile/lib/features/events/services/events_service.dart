@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:discipolat_mobile/data/services/api_service.dart';
 import 'package:discipolat_mobile/data/services/providers.dart';
+import 'package:discipolat_mobile/features/events/models/event_archive_model.dart';
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 
 part 'events_service.g.dart';
@@ -306,6 +307,72 @@ class EventsService {
       return response.data as Map<String, dynamic>;
     } catch (e) {
       throw Exception('Erreur lors du chargement des stats: $e');
+    }
+  }
+
+  // ── V272 — Parcours « Archives » (contracté sur /church-events) ──────────
+  // `/events` et `/church-events` pilotent la MÊME table `event` (deux
+  // JpaRepository<Event, UUID>) : un id d'événement lu ici est archivable
+  // là-bas. Les archives n'existent QUE sous /church-events — le legacy
+  // GET /archives (instantanés complets) reste vivant côté serveur pour
+  // compatibilité, mais le mobile consomme les nouveaux endpoints bornés.
+
+  /// Clôture + archive versionnée. Réponse : l'archive vN complète.
+  Future<EventArchive> archiveEvent(String eventId) async {
+    try {
+      final response = await _api.post('/church-events/$eventId/archive');
+      return EventArchive.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Erreur lors de la clôture d\'archive: $e');
+    }
+  }
+
+  /// Recherche paginée de résumés (sans snapshot) — filtres serveur.
+  Future<EventArchivePage> getArchives({
+    int page = 0,
+    int size = 12,
+    int? year,
+    int? month,
+    String? spaceId,
+    String? eventId,
+  }) async {
+    try {
+      final query = <String, dynamic>{'page': page, 'size': size};
+      if (year != null) query['year'] = year;
+      if (month != null) query['month'] = month;
+      if (spaceId != null) query['spaceId'] = spaceId;
+      if (eventId != null) query['eventId'] = eventId;
+      final response = await _api.get('/church-events/archives/search',
+          queryParameters: query);
+      return EventArchivePage.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Erreur lors du chargement des archives: $e');
+    }
+  }
+
+  /// Détail d'une archive, snapshot immuable inclus.
+  Future<EventArchive> getArchive(String archiveId) async {
+    try {
+      final response = await _api.get('/church-events/archives/$archiveId');
+      return EventArchive.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Erreur lors du chargement de l\'archive: $e');
+    }
+  }
+
+  /// Facettes année/mois pour les filtres (agrégat serveur, borné).
+  Future<List<EventArchiveFacet>> getArchiveFacets() async {
+    try {
+      final response = await _api.get('/church-events/archives/facets');
+      final data = response.data;
+      return data is List
+          ? data
+              .whereType<Map>()
+              .map((e) => EventArchiveFacet.fromJson(e.cast<String, dynamic>()))
+              .toList()
+          : const <EventArchiveFacet>[];
+    } catch (e) {
+      throw Exception('Erreur lors du chargement des filtres d\'archives: $e');
     }
   }
 }

@@ -127,7 +127,14 @@ public class ModuleGateFilter extends OncePerRequestFilter {
         m.put("/api/v1/conversations", "MESSAGES");
         m.put("/api/v1/users", "USERS");
         m.put("/api/v1/audit", "AUDIT");
+        // PARAMÉTRISATION PAR ÉGLISE (Phase 9) — la surface /api/v1/permissions est
+        // retirée (elle répond 410 : voir RetiredPermissionSurfaceController), et
+        // l'éditeur réel vit sous /api/v1/admin/roles. L'entrée est CONSERVÉE pour
+        // ce préfixe, et le garde est déplacé sur le chemin canonique : sans cela,
+        // désactiver le module PERMISSIONS aurait cessé de masquer l'éditeur de
+        // rôles — une réduction silencieuse d'un contrôle serveur.
         m.put("/api/v1/permissions", "PERMISSIONS");
+        m.put("/api/v1/admin/roles", "PERMISSIONS");
         m.put("/api/v1/map", "MAP");
         m.put("/api/v1/evangelism", "EVANGELISM");
         m.put("/api/v1/objectives", "OBJECTIVES");

@@ -17,7 +17,7 @@ import {
  * assignation = transition ENDED (jamais une purge).
  */
 
-interface RoleRef { id: string; label: string; key?: string }
+interface RoleRef { id: string; label: string; key?: string; effectiveForTenant?: boolean }
 
 export default function MemberRolesPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -27,13 +27,25 @@ export default function MemberRolesPage() {
   const assign = useAssignMemberRole(userId ?? null);
   const end = useEndMemberAssignment(userId ?? null);
 
-  // Rôles assignables du tenant — GET /admin/roles (TenantAdminController#listRoles)
-  // renvoie List<Map> : {id, key, label, description, priority, isSystem, permissions}.
+  // Rôles assignables du tenant — GET /admin/roles (TenantAdminController#listRoles,
+  // now backed by RoleManagementService.listRolesForEditor).
   // audit-routes: /admin/roles
+  //
+  // Phase 9 : la projection renvoie les rôles GLOBAUX et la surcouche locale de
+  // l'église. Sans filtre, une clé surchargée (ex. « Trésorier » personnalisé ici)
+  // apparaitrait deux fois dans la liste — deux <option> au même libellé, et le
+  // choix de la ligne globale n'aurait apporté aucun réglage propre à l'église.
+  // `effectiveForTenant !== false` garde la ligne qui décide réellement : la
+  // surcouche quand elle existe, sinon le modèle global.
   const rolesQuery = useQuery<RoleRef[]>({
     queryKey: ['tenant', 'roles'],
     queryFn: async () => (await api.get('/admin/roles')).data,
   });
+
+  const assignableRoles = useMemo(
+    () => (rolesQuery.data ?? []).filter((r) => r.effectiveForTenant !== false),
+    [rolesQuery.data],
+  );
 
   const [roleId, setRoleId] = useState('');
   const [nodeId, setNodeId] = useState('');
@@ -43,8 +55,8 @@ export default function MemberRolesPage() {
     [tree.data],
   );
   const roleLabelById = useMemo(
-    () => new Map((rolesQuery.data ?? []).map((r) => [r.id, r.label])),
-    [rolesQuery.data],
+    () => new Map(assignableRoles.map((r) => [r.id, r.label])),
+    [assignableRoles],
   );
 
   const add = async () => {
@@ -77,7 +89,7 @@ export default function MemberRolesPage() {
           <select value={roleId} onChange={(e) => setRoleId(e.target.value)}
             aria-label={t('orgV3.assign.role')} className="input">
             <option value="">{t('orgV3.assign.rolePh')}</option>
-            {(rolesQuery.data ?? []).map((r) => (
+            {assignableRoles.map((r) => (
               <option key={r.id} value={r.id}>{r.label}</option>
             ))}
           </select>

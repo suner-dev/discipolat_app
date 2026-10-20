@@ -467,8 +467,14 @@ public class UserController {
 
     // ======================== US-57: RGPD HARD DELETE ========================
 
+    /**
+     * Suppression définitive RGPD. Verrou canonique seul : le conjonctif
+     * {@code @perm.has} sur {@code USER_DELETE} a été retiré (même cause que
+     * {@code FamilyController#delete} — le bean perm lisait la table
+     * {@code role_permissions} dans sa forme pré-V135).
+     */
     @DeleteMapping("/{id}/hard-delete")
-    @PreAuthorize("@authz.can('USERS_EXECUTE_HARDDELETE', 'TENANT', null) && @perm.has('USER','DELETE')")
+    @PreAuthorize("@authz.can('USERS_EXECUTE_HARDDELETE', 'TENANT', null)")
     public ResponseEntity<Map<String, String>> hardDelete(@PathVariable UUID id,
                                                           jakarta.servlet.http.HttpServletRequest httpRequest) {
         auditService.log("DELETE", "USER", id, null, null, httpRequest);

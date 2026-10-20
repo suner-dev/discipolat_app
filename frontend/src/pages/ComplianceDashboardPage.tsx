@@ -68,6 +68,11 @@ const DATA_CATEGORIES = [
   { value: 'TRANSACTIONS', label: 'Transactions', icon: '💰' },
   { value: 'GDPR_REQUESTS', label: 'Demandes RGPD', icon: '📋' },
   { value: 'AUDIT_LOGS', label: 'Logs d\'audit', icon: '🔒' },
+  // V272 — les instantanés d'archives entrent dans la rétention opt-in :
+  // `ComplianceManagerService.purgePolicy` branche « EventArchive » (export
+  // avant suppression ; l'anonymisation douce n'a pas de sens sur un
+  // instantané — la porte unique de purge reste la politique active).
+  { value: 'EventArchive', label: 'Archives d\'événements', icon: '🗄️' },
 ];
 
 const CONSENT_TYPES = [
@@ -414,6 +419,7 @@ export default function ComplianceDashboardPage() {
                 { type: 'MESSAGES', days: 365, note: '1 an' },
                 { type: 'TRANSACTIONS', days: 2555, note: '7 ans (fiscal)' },
                 { type: 'AUDIT_LOGS', days: 2555, note: '7 ans (immuable)' },
+                { type: 'EventArchive', days: 1825, note: '5 ans (instantanés)' },
               ].map((item) => (
                 <button
                   key={item.type}

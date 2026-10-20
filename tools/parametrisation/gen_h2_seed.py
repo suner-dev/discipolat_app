@@ -67,6 +67,9 @@ FILES = [
     "V262__parametrisation_cles_ui_intra_pages.sql",
     "V270__parametrisation_cles_ui_residuel_dashboard.sql",
     "V271__visibilite_archives_et_assistants.sql",
+    # V272 : pas de permission nouvelle, mais deux paires de plus dans la
+    # matrice (UI_ARCHIVES_ACCESS → DEPARTMENT_LEADER/FAMILY_LEADER).
+    "V272__archives_parcours_complet.sql",
 ]
 
 # Rôles cités par la matrice sans ligne de création dans V258/V259 : en

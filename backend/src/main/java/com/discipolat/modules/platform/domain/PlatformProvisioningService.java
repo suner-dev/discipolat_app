@@ -60,7 +60,7 @@ public class PlatformProvisioningService {
     }
 
     @Transactional
-    public ProvisioningResult provision(Command command) {
+    public ProvisioningResult provision(Command command, String kind) {
         // Fail-closed : l'owner est valide EN TETE, donc AVANT toute ecriture.
         // Un tenant sans propriétaire ne doit jamais exister.
         validate(command);
@@ -86,7 +86,8 @@ public class PlatformProvisioningService {
                 command.locale(),
                 null,
                 null,
-                null
+                null,
+                kind
         ));
         final UUID tenantId = tenant.id();
         if (!"DISCOVERY".equals(plan)) {

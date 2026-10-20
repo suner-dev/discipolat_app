@@ -85,6 +85,9 @@ class TenantServiceTest {
         assertEquals("nouvelle-eglise", created.slug());
         assertEquals(TenantStatus.ACTIVE, created.status());
         assertEquals("DISCOVERY", created.plan());
+        // A4 (contrat §3.5) — constructeur de compatibilité (sans kind) :
+        // la nature vaut CHURCH, jamais null.
+        assertEquals(TenantKind.CHURCH, created.kind());
         verify(subscriptionRepository).save(any(TenantSubscription.class));
         // A3 (item 10) : tout nouveau tenant recoit son glossaire interne (seed idempotent).
         verify(dictionaryService).seedForTenant(created.id());
@@ -100,6 +103,39 @@ class TenantServiceTest {
         TenantResponse created = tenantService.create(req);
 
         assertEquals("PRO", created.plan());
+    }
+
+    // ===== A4 (contrat §3.5) : nature de l'organisation à la création =====
+
+    @Test
+    void create_withExplicitKind_shouldPersistNormalizedKind() {
+        // « denomination » (minuscules + espaces) se normalise en DENOMINATION :
+        // la nature choisie par le super-admin est celle qui est persistée.
+        CreateTenantRequest req = new CreateTenantRequest(
+                "Dénomination Bethel", "denomination-bethel", "PRO", null, null, null, null, null, null, null,
+                " denomination ");
+        when(tenantRepository.existsBySlug("denomination-bethel")).thenReturn(false);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        TenantResponse created = tenantService.create(req);
+
+        assertEquals(TenantKind.DENOMINATION, created.kind());
+    }
+
+    @Test
+    void create_withUnknownKind_shouldRefuseWithoutWriting() {
+        // Fail-closed, aligné sur SelfServiceChurchService : une valeur
+        // inconnue est refusée (ORG_KIND_INVALID), pas devinée ni plaquée en 500.
+        CreateTenantRequest req = new CreateTenantRequest(
+                "Église Mystère", "eglise-mystere", null, null, null, null, null, null, null, null,
+                "SECTE");
+        when(tenantRepository.existsBySlug("eglise-mystere")).thenReturn(false);
+
+        BusinessRuleException thrown = assertThrows(BusinessRuleException.class,
+                () -> tenantService.create(req));
+
+        assertEquals("ORG_KIND_INVALID", thrown.getCode());
+        verify(tenantRepository, never()).save(any(Tenant.class));
     }
 
     @Test

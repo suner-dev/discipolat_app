@@ -69,7 +69,15 @@ public class ChurchEventService {
         // seconde entité JPA sur cette table ferait échouer Hibernate au
         // démarrage. Le snapshot est donc lu via l'entité vivante, SANS perte : le
         // champ archivé conserve l'instantané complet en JSONB.
-        Event event = getChurchEvent(tenantId, eventId);
+        //
+        // V272 — verrou pessimiste sur la ligne événement : deux clôtures
+        // simultanées d'un MÊME événement sont sérialisées, le calcul
+        // `max(version) + 1` devient sûr. L'index unique
+        // uq_event_archive_event_version (V272) reste le dernier rempart.
+        // Les critères (tenant, non supprimé) sont identiques à la lecture
+        // simple : le verrou n'affaiblit jamais l'isolation.
+        Event event = churchEventRepository.findForUpdate(eventId, tenantId)
+                .orElseThrow(() -> new EntityNotFoundException("Event", eventId));
 
         List<EventSpace> spaces = eventSpaceRepository.findByChurchEventId(eventId);
         List<EventTeam> teams = eventTeamRepository.findByChurchEventId(eventId);
@@ -164,6 +172,10 @@ public class ChurchEventService {
                         .spaceId(spaces.isEmpty() ? null : spaces.get(0).getSpaceId())
                         .version(nextVersion)
                         .snapshotJson(snapshot)
+                        // V272 — dénormalisation pour la liste paginée : le
+                        // compteur devient une colonne indexable, plus besoin de
+                        // désérialiser le snapshot pour rendre une carte.
+                        .attendanceCount(attendance.size())
                         .archivedBy(actorId)
                         .build();
         com.discipolat.modules.events.domain.ChurchEventArchive saved = archiveRepository.save(archive);
@@ -175,10 +187,14 @@ public class ChurchEventService {
         return saved;
     }
 
-    /** Écran « Archives » : consultation par années / mois / espace. */
+    /** Écran « Archives » : consultation par années / mois / espace / événement.
+     *  V272 — le filtre `eventId` (additif) permet à l'écran de lister les
+     *  versions d'un événement pour la navigation de versions ; le filtre
+     *  `spaceId` conserve son repli snapshot (espaces secondaires) — la
+     *  variante paginée {@link #searchArchives} filtre sur la colonne indexée. */
     @Transactional(readOnly = true)
     public List<com.discipolat.modules.events.domain.ChurchEventArchive> getArchives(
-            UUID tenantId, Integer year, Integer month, UUID spaceId) {
+            UUID tenantId, Integer year, Integer month, UUID spaceId, UUID eventId) {
         List<com.discipolat.modules.events.domain.ChurchEventArchive> result;
         if (year != null && month != null) {
             result = archiveRepository.findByTenantIdAndEventYearAndEventMonthOrderByEventStartAtDesc(tenantId, year, month);
@@ -186,6 +202,9 @@ public class ChurchEventService {
             result = archiveRepository.findByTenantIdAndEventYearOrderByEventStartAtDesc(tenantId, year);
         } else {
             result = archiveRepository.findByTenantIdOrderByEventStartAtDesc(tenantId);
+        }
+        if (eventId != null) {
+            result = result.stream().filter(a -> eventId.equals(a.getEventId())).toList();
         }
         if (spaceId != null) {
             result = result.stream()
@@ -196,6 +215,48 @@ public class ChurchEventService {
                     .toList();
         }
         return result;
+    }
+
+    /** Variante historique (sans `eventId`) — conservée pour tout appelant existant. */
+    @Transactional(readOnly = true)
+    public List<com.discipolat.modules.events.domain.ChurchEventArchive> getArchives(
+            UUID tenantId, Integer year, Integer month, UUID spaceId) {
+        return getArchives(tenantId, year, month, spaceId, null);
+    }
+
+    /**
+     * Recherche paginée de l'écran « Archives » (V272) — résumés SANS snapshot.
+     * C'est le chemin servi par le web : coût borné quel que soit l'historique.
+     * L'isolation tenant est portée par la requête elle-même.
+     */
+    @Transactional(readOnly = true)
+    public Page<com.discipolat.modules.events.api.ChurchEventArchiveSummary> searchArchives(
+            UUID tenantId, Integer year, Integer month, UUID spaceId, UUID eventId, Pageable pageable) {
+        return archiveRepository.searchSummaries(tenantId, year, month, spaceId, eventId, pageable);
+    }
+
+    /**
+     * Facettes années/mois de l'écran « Archives » (V272) : les filtres sont
+     * dérivés des données réellement archivées — aucun libellé ni année n'est
+     * codé en dur côté client, aucune liste complète n'est téléchargée.
+     */
+    @Transactional(readOnly = true)
+    public List<com.discipolat.modules.events.api.ChurchEventArchiveFacet> getArchiveFacets(UUID tenantId) {
+        Map<Integer, List<Integer>> monthsByYear = new LinkedHashMap<>();
+        Map<Integer, Long> countByYear = new LinkedHashMap<>();
+        for (Object[] row : archiveRepository.findYearMonthFacets(tenantId)) {
+            Integer year = (Integer) row[0];
+            Integer month = (Integer) row[1];
+            Long count = (Long) row[2];
+            monthsByYear.computeIfAbsent(year, y -> new ArrayList<>()).add(month);
+            countByYear.merge(year, count, Long::sum);
+        }
+        return monthsByYear.entrySet().stream()
+                .sorted(Map.Entry.<Integer, List<Integer>>comparingByKey(Comparator.reverseOrder()))
+                .map(e -> new com.discipolat.modules.events.api.ChurchEventArchiveFacet(
+                        e.getKey(), e.getValue().stream().sorted().toList(),
+                        countByYear.getOrDefault(e.getKey(), 0L)))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -231,7 +292,20 @@ public class ChurchEventService {
         if (updates.getTitre() != null) event.setTitre(updates.getTitre());
         if (updates.getDescription() != null) event.setDescription(updates.getDescription());
         if (updates.getTypeEvenement() != null) event.setTypeEvenement(updates.getTypeEvenement());
-        if (updates.getStatut() != null) event.setStatut(updates.getStatut());
+        // V272 — cohérence d'archivage : ARCHIVED n'est PAS un statut éditable.
+        // Un PUT qui l'écrirait fabriquerait un événement « archivé » sans
+        // instantané dans event_archive (divergence relevée par l'audit : deux
+        // chemins d'archivage, un seul producteur de snapshot). Le seul écritain
+        // légitime de ce statut est la clôture POST /{id}/archive.
+        if (updates.getStatut() != null) {
+            if (Event.STATUT_ARCHIVE.equalsIgnoreCase(updates.getStatut())) {
+                throw new IllegalArgumentException(
+                        "Statut ARCHIVED réservé à la clôture d'archive "
+                                + "(POST /api/v1/church-events/{eventId}/archive) : "
+                                + "un simple PUT ne peut pas créer d'archivage sans instantané.");
+            }
+            event.setStatut(updates.getStatut());
+        }
         if (updates.getDateDebut() != null) event.setDateDebut(updates.getDateDebut());
         if (updates.getDateFin() != null) event.setDateFin(updates.getDateFin());
         if (updates.getTimezone() != null) event.setTimezone(updates.getTimezone());
@@ -273,6 +347,20 @@ public class ChurchEventService {
     @Transactional(readOnly = true)
     public Page<Event> getChurchEvents(UUID tenantId, Pageable pageable) {
         return churchEventRepository.findByTenantIdAndDeletedAtIsNull(tenantId, pageable);
+    }
+
+    /**
+     * V272 — filtre `status` réellement appliqué (le contrôleur l'acceptait
+     * déjà sans le transmettre : paramètre mort relevé par l'audit). Absent ou
+     * vide → comportement historique strictement inchangé.
+     */
+    @Transactional(readOnly = true)
+    public Page<Event> getChurchEvents(UUID tenantId, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) {
+            return getChurchEvents(tenantId, pageable);
+        }
+        return churchEventRepository.findByTenantIdAndStatutAndDeletedAtIsNull(
+                tenantId, status.trim(), pageable);
     }
 
     @Transactional(readOnly = true)

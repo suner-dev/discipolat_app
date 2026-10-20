@@ -14,6 +14,14 @@ public interface PermissionRepository extends TenantAwareRepository<Permission, 
 
     Optional<Permission> findByKey(String key);
 
+    /**
+     * PARAMÉTRISATION PAR ÉGLISE (Phase 9) — résolution en lot des clés soumises
+     * par l'éditeur de rôles : une requête au lieu de N {@code findByKey}, et
+     * surtout la possibilité de distinguer ce qui existe de ce qui n'existe pas
+     * (voir {@code RoleManagementService.resolvePermissionsStrict}).
+     */
+    List<Permission> findByKeyIn(java.util.Collection<String> keys);
+
     List<Permission> findByTenantId(UUID tenantId);
 
     List<Permission> findByTenantIdIsNull(); // System permissions

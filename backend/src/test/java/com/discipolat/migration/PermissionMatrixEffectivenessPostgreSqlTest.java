@@ -50,8 +50,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * « couvertes » qui ne le sont pas — exactement le défaut inverse de celui que
  * ce garde combat. La base répond, elle, sans interprétation.
  * <p>
- * {@code @perm.has('DOMAIN','ACTION')} est hors périmètre : le bean est
- * permissif en l'absence de ligne (voir {@code PermissionGuard}).
+ * Le vieux bean {@code @perm.has('DOMAIN','ACTION')} est <b>de retour</b> : la
+ * consigne projet (« ne pas supprimer, réparer ») a été retenue, et son service
+ * {@code audit.PermissionService} est désormais écrit sur le modèle canonique
+ * {@code roles} / {@code permissions} / {@code role_permissions(role_id,
+ * permission_id)} — plus sur la forme pré-V135 qui levait SQLSTATE 42703. Ses clés
+ * composées sont donc vérifiées ici aussi ({@link #everyPermHasPairIsSeededAndHeld})
+ * : un {@code @perm.has('X','Y')} dont la clé n'est détenue par personne refuse
+ * l'endpoint à tout le monde, sauf ADMIN et PASTEUR.
  * <p>
  * Nécessite Docker : sans lui, la classe est <b>SKIP</b> (jamais un faux PASS),
  * comme {@link FlywayMigrationChainPostgreSqlTest}.
@@ -74,21 +80,49 @@ class PermissionMatrixEffectivenessPostgreSqlTest {
     }
 
     private static List<String> guardKeys() throws IOException {
-        Pattern guard = Pattern.compile("@authz\\.can\\(\\s*'([A-Z][A-Z0-9_]*)'");
+        return scannez("@authz\\.can\\(\\s*'([A-Z][A-Z0-9_]*)'", 1);
+    }
+
+    /**
+     * Les clés composées des gardes {@code @perm.has('DOMAIN','ACTION')} : le bean
+     * {@code PermissionGuard} assemble {@code DOMAIN + '_' + ACTION} puis demande ce
+     * couple à la matrice. Une clé composée absente de {@code permissions} ne peut
+     * être détenue par personne — le garde refuse donc, silencieusement, à tous les
+     * rôles sauf ADMIN et PASTEUR.
+     */
+    private static List<String> permHasKeys() throws IOException {
+        Pattern paire = Pattern.compile(
+                "@perm\\.has(?:Level)?\\(\\s*'([A-Za-z_]+)'\\s*,\\s*'([A-Za-z_]+)'");
+        List<String> cles = new ArrayList<>();
+        for (java.nio.file.Path file : fichiersJava()) {
+            Matcher m = paire.matcher(Files.readString(file, StandardCharsets.UTF_8));
+            while (m.find()) {
+                cles.add(m.group(1).toUpperCase() + "_" + m.group(2).toUpperCase());
+            }
+        }
+        return cles;
+    }
+
+    private static List<String> scannez(String motif, int groupe) throws IOException {
+        Pattern pattern = Pattern.compile(motif);
         List<String> keys = new ArrayList<>();
+        for (java.nio.file.Path file : fichiersJava()) {
+            Matcher m = pattern.matcher(Files.readString(file, StandardCharsets.UTF_8));
+            while (m.find()) {
+                keys.add(m.group(groupe));
+            }
+        }
+        return keys;
+    }
+
+    private static List<java.nio.file.Path> fichiersJava() throws IOException {
         Path root = Path.of("src", "main", "java");
         assertThat(Files.isDirectory(root))
                 .as("cwd inattendu : le test suppose d'être exécuté depuis `backend/`")
                 .isTrue();
         try (Stream<Path> files = Files.walk(root.toAbsolutePath())) {
-            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
-                Matcher m = guard.matcher(Files.readString(file, StandardCharsets.UTF_8));
-                while (m.find()) {
-                    keys.add(m.group(1));
-                }
-            }
+            return files.filter(p -> p.toString().endsWith(".java")).toList();
         }
-        return keys;
     }
 
     private static Set<String> query(String sql) throws SQLException {
@@ -102,6 +136,38 @@ class PermissionMatrixEffectivenessPostgreSqlTest {
             }
         }
         return out;
+    }
+
+    private static String inListe(java.util.Collection<String> cles) {
+        return cles.stream().map(k -> "'" + k + "'").reduce((a, b) -> a + "," + b).orElse("");
+    }
+
+    @Test
+    @DisplayName("chaque clé @perm.has(...) existe et est détenue par un rôle global")
+    void everyPermHasPairIsSeededAndHeld() throws Exception {
+        Set<String> cles = new LinkedHashSet<>(permHasKeys());
+        assertThat(cles)
+                .as("scan @perm.has vide : la surface est revenue, le scan doit la voir")
+                .isNotEmpty();
+
+        Set<String> absentes = query("SELECT k FROM (SELECT unnest(ARRAY[" + inListe(cles)
+                + "]::text[]) AS k) x WHERE NOT EXISTS (SELECT 1 FROM permissions p WHERE p.key = x.k)");
+        assertThat(absentes)
+                .as("clés composées absentes de `permissions` : PermissionGuard répond false "
+                        + "pour tout rôle non ADMIN/PASTEUR — l'endpoint est un 403 silencieux. "
+                        + "Ajouter la clé en migration additive, ou écrire @authz.can avec une "
+                        + "clé déjà couverte.")
+                .isEmpty();
+
+        Set<String> orphelines = query("SELECT DISTINCT p.key FROM permissions p "
+                + "WHERE p.key = ANY (ARRAY[" + inListe(cles) + "]::text[]) "
+                + "AND NOT EXISTS (SELECT 1 FROM role_permissions rp "
+                + "JOIN roles r ON r.id = rp.role_id "
+                + "WHERE rp.permission_id = p.id AND r.tenant_id IS NULL)");
+        assertThat(orphelines)
+                .as("clés composées qu'aucun rôle global ne détient : même diagnostic que "
+                        + "pour @authz.can, la matrice vide ne s'invente pas")
+                .isEmpty();
     }
 
     @Test

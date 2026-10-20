@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Verrou anti-dérive du seed H2 — PARAMÉTRISATION PAR ÉGLISE (Phase 3).
  *
  * <p>Le profil test (H2, Flyway coupé) rejoue la matrice rôle→permission de
- * V258..V262 + V270..V271 via {@code import.sql} (généré par {@code tools/parametrisation/gen_h2_seed.py}).
+ * V258..V262 + V270..V272 via {@code import.sql} (généré par {@code tools/parametrisation/gen_h2_seed.py}).
  * Si une migration modifie la matrice sans régénérer le seed — ou inversement si
  * le seed est édité à la main — les tests d'intégration mentiraient sur les
  * gardes réelles. Ce test compare les paires {@code ('RÔLE','CLÉ')} effectives :
@@ -32,7 +32,7 @@ class TestPermissionMatrixSeedGuardTest {
             "\\(\\s*'([A-Z][A-Z0-9_]*)'\\s*,\\s*'([A-Z][A-Z0-9_]*)'\\s*\\)");
 
     @Test
-    @DisplayName("import.sql (seed H2) porte exactement les paires effectives de V258..V262 + V270..V271")
+    @DisplayName("import.sql (seed H2) porte exactement les paires effectives de V258..V262 + V270..V272")
     void seedMatrixEquivalatesMigrations() throws Exception {
         Set<String> migrationPairs = migrationEffectivePairs();
         String seed = read("import.sql");
@@ -45,15 +45,54 @@ class TestPermissionMatrixSeedGuardTest {
             seedPairs.add(bm.group(1) + "\u0000" + bm.group(2));
         }
         assertThat(seedPairs)
-                .as("le seed H2 doit être strictement équivalent à la matrice V258..V262+V270+V271 "
+                .as("le seed H2 doit être strictement équivalent à la matrice V258..V262+V270..V272 "
                         + "— régénérer via tools/parametrisation/gen_h2_seed.py")
                 .isEqualTo(migrationPairs);
     }
 
-    /** Paires V258+V259 dont le rôle est un rôle GLOBAL créé par ces migrations ou la baseline V135/V154. */
+    /**
+     * Paires V258+… dont le rôle est un rôle GLOBAL créé par ces migrations
+     * ou la baseline V135/V154. Phase 9 (p9g) : extraction déléguée à
+     * {@link PermissionCatalogSource}, la baseline (rôles créés hors des
+     * migrations du manifeste) reste explicite ici parce que V154 et V200
+     * ne sont pas {@code catalog} — ce sont des rôles, pas des permissions.
+     */
     private Set<String> migrationEffectivePairs() throws IOException {
         Set<String> createdRoles = new HashSet<>();
-        // rôles globaux existant en production avant V258 (V135 §12, V154 §6)
+        // Rôles globaux existant en production avant V258 (V135 §12, V154 §6).
+        createdRoles.addAll(Set.of("PLATFORM_SUPER_ADMIN", "TENANT_OWNER", "TENANT_ADMIN",
+                "CHURCH_ADMIN", "CHURCH_LEADER", "DEPARTMENT_ADMIN", "DEPARTMENT_LEADER",
+                "FAMILY_LEADER", "DISCIPLE_MAKER", "MEMBER", "GUEST",
+                "HEALTH_STAFF", "HEALTH_LEAD"));
+        createdRoles.addAll(PermissionCatalogSource.createdRoleKeys());
+        Set<String> perms = PermissionCatalogSource.catalogKeys();
+
+        Set<String> effective = new HashSet<>();
+        for (String[] pair : PermissionCatalogSource.matrixPairs()) {
+            String role = pair[0];
+            String key = pair[1];
+            if (createdRoles.contains(role)) {
+                effective.add(role + "\u0000" + key);
+            }
+        }
+        // Toutes les permissions citées doivent exister dans le catalogue.
+        for (String pair : effective) {
+            assertThat(perms).contains(pair.split("\u0000", 2)[1]);
+        }
+        assertThat(effective).isNotEmpty();
+        return effective;
+    }
+
+    /**
+     * Chargeur historique — itération des 7 fichiers + regex PAIR/roles/perms.
+     * Conservé sans être supprimé : la doctrine « ne rien supprimer » impose
+     * de laisser la trace de l'ancien algorithme, et les helpers
+     * {@link #section(String, String)} / {@code PAIR} restent ici comme
+     * référence de la sémantique visée.
+     */
+    @SuppressWarnings("unused")
+    private Set<String> migrationEffectivePairsLegacy() throws IOException {
+        Set<String> createdRoles = new HashSet<>();
         createdRoles.addAll(Set.of("PLATFORM_SUPER_ADMIN", "TENANT_OWNER", "TENANT_ADMIN",
                 "CHURCH_ADMIN", "CHURCH_LEADER", "DEPARTMENT_ADMIN", "DEPARTMENT_LEADER",
                 "FAMILY_LEADER", "DISCIPLE_MAKER", "MEMBER", "GUEST",

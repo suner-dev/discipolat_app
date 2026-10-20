@@ -995,7 +995,32 @@ class AppLocalizations {
   String get navPrayers => translate('navPrayers');
   String get navGraceActions => translate('navGraceActions');
   String get navEvents => translate('navEvents');
+
+  // ── V272 — parcours « Archives » (mobile) ──
+  String get navArchives => translate('navArchives');
+  String get archivesTitle => translate('archivesTitle');
+  String get archivesSubtitle => translate('archivesSubtitle');
+  String get archivesYearLabel => translate('archivesYearLabel');
+  String get archivesMonthLabel => translate('archivesMonthLabel');
+  String get archivesYearAll => translate('archivesYearAll');
+  String get archivesMonthAll => translate('archivesMonthAll');
+  String get archivesEmpty => translate('archivesEmpty');
+  String get archivesLoadError => translate('archivesLoadError');
+  String get archivesArchivedAt => translate('archivesArchivedAt');
+  String get archivesVersion => translate('archivesVersion');
+  String get archivesVersions => translate('archivesVersions');
+  String get archivesPrevious => translate('archivesPrevious');
+  String get archivesNext => translate('archivesNext');
+  String get archivesAttendance => translate('archivesAttendance');
+  String get archivesSnapshot => translate('archivesSnapshot');
+  String get archivesImmutableNote => translate('archivesImmutableNote');
+  String get archiveAction => translate('archiveAction');
+  String get archiveConfirmTitle => translate('archiveConfirmTitle');
+  String get archiveConfirmText => translate('archiveConfirmText');
+  String get archiveDone => translate('archiveDone');
+  String get archiveErrorPrefix => translate('archiveErrorPrefix');
   String get navEvangelism => translate('navEvangelism');
+  String get navDressCode => translate('navDressCode');
   String get navObjectives => translate('navObjectives');
   String get navVisits => translate('navVisits');
   String get navParallelFollowups => translate('navParallelFollowups');
@@ -1691,6 +1716,32 @@ class AppLocalizations {
     'navReports': 'Rapports',
     'navPrayers': 'Prières',
     'navEvents': 'Événements',
+    'navArchives': 'Archives',
+    'archivesTitle': 'Archives',
+    'archivesSubtitle':
+        'Consultez les instantanés des événements clôturés — par année et par mois.',
+    'archivesYearLabel': 'Année',
+    'archivesMonthLabel': 'Mois',
+    'archivesYearAll': 'Toutes les années',
+    'archivesMonthAll': 'Tous les mois',
+    'archivesEmpty':
+        'Aucune archive pour cette période. Un événement apparaît ici après sa clôture.',
+    'archivesLoadError': 'Impossible de charger les archives.',
+    'archivesArchivedAt': 'Archivé le',
+    'archivesVersion': 'Version',
+    'archivesVersions': 'Autres versions',
+    'archivesPrevious': 'Précédent',
+    'archivesNext': 'Suivant',
+    'archivesAttendance': 'présences',
+    'archivesSnapshot': 'Instantané (sections)',
+    'archivesImmutableNote':
+        'Instantané immuable : une archive se lit, elle ne se modifie pas.',
+    'archiveAction': 'Clôturer et archiver',
+    'archiveConfirmTitle': 'Clôturer et archiver ?',
+    'archiveConfirmText':
+        'L\'événement sera copié dans une version d\'archive immuable. Confirmer la clôture ?',
+    'archiveDone': 'Événement clôturé et archivé',
+    'archiveErrorPrefix': 'Clôture impossible : ',
     'navAlerts': 'Alertes',
     'navMessages': 'Messages',
     'navNotifications': 'Notifications',
@@ -2397,6 +2448,7 @@ class AppLocalizations {
     'navVoiceReports': 'Rapports vocaux',
     'navAiAssistant': 'Assistant IA',
     'navAiPredictions': 'Prédictions IA',
+    'navDressCode': 'Tenues de service',
     'navPropheticJournal': 'Journal Prophétique',
     'navWeeklyChallenges': 'Défis hebdo',
     'navWhatsApp': 'WhatsApp Rappels',
@@ -3302,6 +3354,32 @@ class AppLocalizations {
     'navReports': 'Reports',
     'navPrayers': 'Prayers',
     'navEvents': 'Events',
+    'navArchives': 'Archives',
+    'archivesTitle': 'Archives',
+    'archivesSubtitle':
+        'Browse snapshots of closed events — by year and month.',
+    'archivesYearLabel': 'Year',
+    'archivesMonthLabel': 'Month',
+    'archivesYearAll': 'All years',
+    'archivesMonthAll': 'All months',
+    'archivesEmpty':
+        'No archive for this period. An event appears here once it is closed.',
+    'archivesLoadError': 'Failed to load archives.',
+    'archivesArchivedAt': 'Archived on',
+    'archivesVersion': 'Version',
+    'archivesVersions': 'Other versions',
+    'archivesPrevious': 'Previous',
+    'archivesNext': 'Next',
+    'archivesAttendance': 'attendances',
+    'archivesSnapshot': 'Snapshot (sections)',
+    'archivesImmutableNote':
+        'Immutable snapshot: an archive is read, never edited.',
+    'archiveAction': 'Close and archive',
+    'archiveConfirmTitle': 'Close and archive?',
+    'archiveConfirmText':
+        'The event will be copied into an immutable archive version. Confirm the closure?',
+    'archiveDone': 'Event closed and archived',
+    'archiveErrorPrefix': 'Closure failed: ',
     'navAlerts': 'Alerts',
     'navMessages': 'Messages',
     'navNotifications': 'Notifications',
@@ -4684,6 +4762,7 @@ class AppLocalizations {
     'navVoiceReports': 'Voice reports',
     'navAiAssistant': 'AI Assistant',
     'navAiPredictions': 'AI Predictions',
+    'navDressCode': 'Dress Code',
     'navPropheticJournal': 'Prophetic Journal',
     'navWeeklyChallenges': 'Weekly challenges',
     'navWhatsApp': 'WhatsApp reminders',
@@ -4805,6 +4884,32 @@ class AppLocalizations {
     'navReports': 'Relatórios',
     'navPrayers': 'Orações',
     'navEvents': 'Eventos',
+    'navArchives': 'Arquivos',
+    'archivesTitle': 'Arquivos',
+    'archivesSubtitle':
+        'Consulte os instantâneos dos eventos encerrados — por ano e mês.',
+    'archivesYearLabel': 'Ano',
+    'archivesMonthLabel': 'Mês',
+    'archivesYearAll': 'Todos os anos',
+    'archivesMonthAll': 'Todos os meses',
+    'archivesEmpty':
+        'Nenhum arquivo neste período. Um evento aparece aqui após ser encerrado.',
+    'archivesLoadError': 'Falha ao carregar os arquivos.',
+    'archivesArchivedAt': 'Arquivado em',
+    'archivesVersion': 'Versão',
+    'archivesVersions': 'Outras versões',
+    'archivesPrevious': 'Anterior',
+    'archivesNext': 'Próximo',
+    'archivesAttendance': 'presenças',
+    'archivesSnapshot': 'Instantâneo (seções)',
+    'archivesImmutableNote':
+        'Instantâneo imutável: um arquivo se lê, não se modifica.',
+    'archiveAction': 'Encerrar e arquivar',
+    'archiveConfirmTitle': 'Encerrar e arquivar?',
+    'archiveConfirmText':
+        'O evento será copiado para uma versão de arquivo imutável. Confirmar o encerramento?',
+    'archiveDone': 'Evento encerrado e arquivado',
+    'archiveErrorPrefix': 'Não foi possível encerrar: ',
     'navAlerts': 'Alertas',
     'navMessages': 'Mensagens',
     'navNotifications': 'Notificações',
@@ -6149,6 +6254,7 @@ class AppLocalizations {
     'navVoiceReports': 'Relatórios de voz',
     'navAiAssistant': 'Assistente de IA',
     'navAiPredictions': 'Previsões de IA',
+    'navDressCode': 'Código de Roupas',
     'navPropheticJournal': 'Diário Profético',
     'navWeeklyChallenges': 'Desafios semanais',
     'navWhatsApp': 'Lembretes WhatsApp',
@@ -6357,6 +6463,32 @@ const Map<String, String> _spanish = {
     'navReports': 'Informes',
     'navPrayers': 'Oraciones',
     'navEvents': 'Eventos',
+    'navArchives': 'Archivos',
+    'archivesTitle': 'Archivos',
+    'archivesSubtitle':
+        'Consulta las instantáneas de los eventos cerrados — por año y mes.',
+    'archivesYearLabel': 'Año',
+    'archivesMonthLabel': 'Mes',
+    'archivesYearAll': 'Todos los años',
+    'archivesMonthAll': 'Todos los meses',
+    'archivesEmpty':
+        'Ningún archivo en este período. Un evento aparece aquí tras su cierre.',
+    'archivesLoadError': 'No se pudieron cargar los archivos.',
+    'archivesArchivedAt': 'Archivado el',
+    'archivesVersion': 'Versión',
+    'archivesVersions': 'Otras versiones',
+    'archivesPrevious': 'Anterior',
+    'archivesNext': 'Siguiente',
+    'archivesAttendance': 'asistencias',
+    'archivesSnapshot': 'Instantánea (secciones)',
+    'archivesImmutableNote':
+        'Instantánea inmutable: un archivo se lee, no se modifica.',
+    'archiveAction': 'Cerrar y archivar',
+    'archiveConfirmTitle': '¿Cerrar y archivar?',
+    'archiveConfirmText':
+        'El evento se copiará en una versión de archivo inmutable. ¿Confirmar el cierre?',
+    'archiveDone': 'Evento cerrado y archivado',
+    'archiveErrorPrefix': 'No se pudo cerrar: ',
     'navAlerts': 'Alertas',
     'navMessages': 'Mensajes',
     'navNotifications': 'Notificaciones',
@@ -7729,6 +7861,7 @@ const Map<String, String> _spanish = {
     'navVoiceReports': 'Informes de voz',
     'navAiAssistant': 'Asistente de IA',
     'navAiPredictions': 'Predicciones de IA',
+    'navDressCode': 'Código de Vestimenta',
     'navPropheticJournal': 'Diario Profético',
     'navWeeklyChallenges': 'Desafíos semanales',
     'navWhatsApp': 'Recordatorios WhatsApp',
@@ -7902,6 +8035,32 @@ const Map<String, String> _swahili = {
     'navReports': 'Ripoti',
     'navPrayers': 'Maombi',
     'navEvents': 'Matukio',
+    'navArchives': 'Kumbukumbu',
+    'archivesTitle': 'Kumbukumbu',
+    'archivesSubtitle':
+        'Angalia nakala za matukio yaliyofungwa — kwa mwaka na mwezi.',
+    'archivesYearLabel': 'Mwaka',
+    'archivesMonthLabel': 'Mwezi',
+    'archivesYearAll': 'Miaka yote',
+    'archivesMonthAll': 'Miezi yote',
+    'archivesEmpty':
+        'Hakuna kumbukumbu kwa kipindi hiki. Tukio linaonekana hapa baada ya kufungwa.',
+    'archivesLoadError': 'Imeshindikana kupakia kumbukumbu.',
+    'archivesArchivedAt': 'Ilihifadhiwa tarehe',
+    'archivesVersion': 'Toleo',
+    'archivesVersions': 'Matoleo mengine',
+    'archivesPrevious': 'Iliyotangulia',
+    'archivesNext': 'Ifuatayo',
+    'archivesAttendance': 'mahudhurio',
+    'archivesSnapshot': 'Nakala (sehemu)',
+    'archivesImmutableNote':
+        'Nakala isiyobadilika: kumbukumbu husomwa pekee, haisarehehi.',
+    'archiveAction': 'Funga na uhifadhi',
+    'archiveConfirmTitle': 'Funga na uhifadhi?',
+    'archiveConfirmText':
+        'Tukio litanakiliwa kwenye toleo la kumbukumbu lisilobadilika. Thibitisha kufunga?',
+    'archiveDone': 'Tukio limefungwa na kuhifadhiwa',
+    'archiveErrorPrefix': 'Imeshindikana kufunga: ',
     'navAlerts': 'Arifa',
     'navMessages': 'Ujumbe',
     'navNotifications': 'Taarifa',
@@ -9448,6 +9607,32 @@ const Map<String, String> _arabic = {
     'navReports': 'التقارير',
     'navPrayers': 'الصلوات',
     'navEvents': 'الأحداث',
+    'navArchives': 'الأرشيف',
+    'archivesTitle': 'الأرشيف',
+    'archivesSubtitle':
+        'عرض اللقطات الثابتة للأحداث المغلقة — حسب السنة والشهر.',
+    'archivesYearLabel': 'السنة',
+    'archivesMonthLabel': 'الشهر',
+    'archivesYearAll': 'كل السنوات',
+    'archivesMonthAll': 'كل الأشهر',
+    'archivesEmpty':
+        'لا توجد أرشفة لهذه الفترة. يظهر الحدث هنا بعد إغلاقه.',
+    'archivesLoadError': 'تعذّر تحميل الأرشيف.',
+    'archivesArchivedAt': 'أُرشف في',
+    'archivesVersion': 'الإصدار',
+    'archivesVersions': 'إصدارات أخرى',
+    'archivesPrevious': 'السابق',
+    'archivesNext': 'التالي',
+    'archivesAttendance': 'الحضور',
+    'archivesSnapshot': 'لقطة (أقسام)',
+    'archivesImmutableNote':
+        'لقطة ثابتة: الأرشيف للقراءة فقط ولا يُعدَّل.',
+    'archiveAction': 'إغلاق وأرشفة',
+    'archiveConfirmTitle': 'إغلاق وأرشفة؟',
+    'archiveConfirmText':
+        'سيُنسخ الحدث إلى إصدار أرشيف ثابت. تأكيد الإغلاق؟',
+    'archiveDone': 'تم إغلاق الحدث وأرشفته',
+    'archiveErrorPrefix': 'تعذّر الإغلاق: ',
     'navAlerts': 'التنبيهات',
     'navMessages': 'الرسائل',
     'navNotifications': 'الإشعارات',

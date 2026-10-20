@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.discipolat.modules.sync.domain.SyncBatchServiceTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.721 s -- in com.discipolat.modules.sync.domain.SyncBatchServiceTest

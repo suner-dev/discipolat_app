@@ -1,0 +1,527 @@
+{
+  "groups": [
+    {
+      "name": "app.auth.social",
+      "type": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties"
+    },
+    {
+      "name": "app.auth.social.facebook",
+      "type": "com.discipolat.modules.authentication.config.SocialAuthProperties$Facebook",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "sourceMethod": "getFacebook()"
+    },
+    {
+      "name": "app.auth.social.google",
+      "type": "com.discipolat.modules.authentication.config.SocialAuthProperties$Google",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "sourceMethod": "getGoogle()"
+    },
+    {
+      "name": "app.auth.social.microsoft",
+      "type": "com.discipolat.modules.authentication.config.SocialAuthProperties$Microsoft",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "sourceMethod": "getMicrosoft()"
+    },
+    {
+      "name": "app.ollama",
+      "type": "com.discipolat.common.infrastructure.config.OllamaProperties",
+      "sourceType": "com.discipolat.common.infrastructure.config.OllamaProperties"
+    },
+    {
+      "name": "app.payments.providers",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties"
+    },
+    {
+      "name": "app.payments.providers.bank",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getBank()"
+    },
+    {
+      "name": "app.payments.providers.mpesa",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getMpesa()"
+    },
+    {
+      "name": "app.payments.providers.mtn",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getMtn()"
+    },
+    {
+      "name": "app.payments.providers.orange",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getOrange()"
+    },
+    {
+      "name": "app.payments.providers.paypal",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getPaypal()"
+    },
+    {
+      "name": "app.payments.providers.sepa",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getSepa()"
+    },
+    {
+      "name": "app.payments.providers.stripe",
+      "type": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties",
+      "sourceMethod": "getStripe()"
+    },
+    {
+      "name": "app.push",
+      "type": "com.discipolat.modules.notifications.domain.PushProperties",
+      "sourceType": "com.discipolat.modules.notifications.domain.PushProperties"
+    },
+    {
+      "name": "app.scaling.shards",
+      "type": "com.discipolat.common.scaling.ShardedTenantDataSourceConfiguration$ShardsProperties",
+      "sourceType": "com.discipolat.common.scaling.ShardedTenantDataSourceConfiguration$ShardsProperties"
+    },
+    {
+      "name": "app.speech",
+      "type": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "app.auth.social.allow-account-linking",
+      "type": "java.lang.Boolean",
+      "description": "Permet de rattacher une identité externe à un compte DÉJÀ connecté ({@code POST \/api\/v1\/auth\/social\/link}). <p>Sans ce point d'entrée, un compte créé par mot de passe ne pourrait jamais utiliser « Se connecter avec Google » — et le Super Admin, dont le compte naît d'un bootstrap par variable d'environnement, n'y aurait aucun accès. Le rattachement est soumis à trois conditions cumulatives : session authentifiée, credential re-vérifié côté serveur, et email vérifié identique à celui du compte connecté.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.auth.social.facebook.api-version",
+      "type": "java.lang.String",
+      "description": "Version de l'API Graph utilisée dans les URL d'autorisation.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Facebook",
+      "defaultValue": "v21.0"
+    },
+    {
+      "name": "app.auth.social.facebook.app-id",
+      "type": "java.lang.String",
+      "description": "Identifiant de l'application Meta (App ID), qui joue le rôle de {@code client_id} ET d'audience du {@code id_token}. <p>Unlike Google, il n'y a <b>qu'un seul<\/b> identifiant : la même application Meta sert le web et le mobile, donc une seule audience.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Facebook",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.auth.social.facebook.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Facebook",
+      "defaultValue": false
+    },
+    {
+      "name": "app.auth.social.google.android-client-id",
+      "type": "java.lang.String",
+      "description": "Client ID OAuth de type « Android » (application mobile Flutter).",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Google",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.auth.social.google.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Autorise explicitement le fournisseur même si aucun client-id n'est fourni.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Google",
+      "defaultValue": false
+    },
+    {
+      "name": "app.auth.social.google.ios-client-id",
+      "type": "java.lang.String",
+      "description": "Client ID OAuth de type « iOS » (application mobile Flutter).",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Google",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.auth.social.google.web-client-id",
+      "type": "java.lang.String",
+      "description": "Client ID OAuth de type « Web » (frontend \/ PWA).",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Google",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.auth.social.microsoft.allowed-tenant-ids",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Liste blanche de tenants (claim {@code tid}). Vide = pas de restriction supplémentaire. Utile pour accepter votre tenant ET des organisations partenaires identifiées.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Microsoft"
+    },
+    {
+      "name": "app.auth.social.microsoft.client-id",
+      "type": "java.lang.String",
+      "description": "Client ID de l'enregistrement d'application Entra (portail Azure).",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Microsoft",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.auth.social.microsoft.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Microsoft",
+      "defaultValue": false
+    },
+    {
+      "name": "app.auth.social.microsoft.tenant-id",
+      "type": "java.lang.String",
+      "description": "Tenant attendu. Valeur par défaut {@code common} = l'application accepte n'importe quel tenant Microsoft. <p><b>Conséquence de sécurité à assumer :<\/b> avec {@code common}, une organisation tierce — y compris extérieure à votre plateforme — peut connecter ses utilisateurs. Renseignez l'ID de votre tenant pour restreindre, et\/ou utilisez {@link #allowedTenantIds}.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties$Microsoft",
+      "defaultValue": "common"
+    },
+    {
+      "name": "app.auth.social.require-verified-email",
+      "type": "java.lang.Boolean",
+      "description": "Refuse toute identité dont l'email n'est pas marqué vérifié par le fournisseur. Par défaut {@code true} : sans cela, une adresse non vérifiée pourrait être utilisée pour s'attribuer une invitation. <p>Note Microsoft : Microsoft Entra peut renvoyer {@code email_verified} absent pour certains tenants (comptes personnels). Ce refus est alors explicite et le client reçoit un 403 documenté plutôt qu'un échec muet — c'est un choix de sécurité assumé, pas un bug.",
+      "sourceType": "com.discipolat.modules.authentication.config.SocialAuthProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.ollama.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Bascule générale : n'appeler Ollama que si elle est explicitement activée.",
+      "sourceType": "com.discipolat.common.infrastructure.config.OllamaProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.ollama.model",
+      "type": "java.lang.String",
+      "description": "Modèle Ollama interrogé (ex : llama3, mistral, qwen2.5).",
+      "sourceType": "com.discipolat.common.infrastructure.config.OllamaProperties",
+      "defaultValue": "llama3"
+    },
+    {
+      "name": "app.ollama.timeout",
+      "type": "java.time.Duration",
+      "description": "Timeout d'un appel Ollama. Un nombre seul est interprété en secondes.",
+      "sourceType": "com.discipolat.common.infrastructure.config.OllamaProperties",
+      "defaultValue": "30s"
+    },
+    {
+      "name": "app.ollama.url",
+      "type": "java.lang.String",
+      "description": "URL de base d'Ollama (health : {@code GET \/api\/tags}, chat : {@code POST \/api\/chat}).",
+      "sourceType": "com.discipolat.common.infrastructure.config.OllamaProperties",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.bank.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.bank.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.bank.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.bank.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.bank.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mpesa.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mpesa.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mpesa.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mpesa.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.mpesa.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mtn.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mtn.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mtn.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.mtn.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.mtn.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.orange.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.orange.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.orange.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.orange.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.orange.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.paypal.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.paypal.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.paypal.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.paypal.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.paypal.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.sepa.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.sepa.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.sepa.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.sepa.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.sepa.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.stripe.api-key",
+      "type": "java.lang.String",
+      "description": "identifiant d'application (Stripe api key, PayPal client-id, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.stripe.api-secret",
+      "type": "java.lang.String",
+      "description": "secret partagé (Stripe webhook signing secret, PayPal client-secret, …).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.stripe.base-url",
+      "type": "java.lang.String",
+      "description": "URL de base de l'API fournisseur ; vide = URL officielle par défaut selon le provider.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.payments.providers.stripe.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Flag d'activation — défaut false (fail-closed).",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": false
+    },
+    {
+      "name": "app.payments.providers.stripe.webhook-secret",
+      "type": "java.lang.String",
+      "description": "secret de vérification des webhooks, distinct du secret d'API si le fournisseur les sépare.",
+      "sourceType": "com.discipolat.modules.payments.payout.PayoutProvidersProperties$Provider",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.push.credentials-path",
+      "type": "java.lang.String",
+      "description": "Chemin du fichier JSON de compte de service Firebase. Vide = « non configuré ». Jamais le JSON lui-même.",
+      "sourceType": "com.discipolat.modules.notifications.domain.PushProperties",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.push.dry-run",
+      "type": "java.lang.Boolean",
+      "description": "Simulation : journalise la charge utile sans contacter FCM.",
+      "sourceType": "com.discipolat.modules.notifications.domain.PushProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "app.push.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Bascule générale : autoriser un envoi push réel.",
+      "sourceType": "com.discipolat.modules.notifications.domain.PushProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.scaling.shards.shards",
+      "type": "java.util.List<com.discipolat.common.scaling.ShardedTenantDataSourceConfiguration$ShardsProperties$Shard>",
+      "description": "Shards déclarés : index = identifiant de shard, valeur = libellé de base.",
+      "sourceType": "com.discipolat.common.scaling.ShardedTenantDataSourceConfiguration$ShardsProperties"
+    },
+    {
+      "name": "app.speech.api-key",
+      "type": "java.lang.String",
+      "description": "Clé d'API. Jamais journalisée, jamais exposée, jamais incluse dans un message d'erreur.",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.speech.api-url",
+      "type": "java.lang.String",
+      "description": "URL de base compatible OpenAI (ex : https:\/\/api.openai.com\/v1).",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": ""
+    },
+    {
+      "name": "app.speech.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Bascule générale : autoriser l'appel à un fournisseur STT réel.",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "app.speech.max-file-bytes",
+      "type": "java.lang.Long",
+      "description": "Taille maximale d'un envoi audio, en octets (defaut 25 MiB). <p>Plafonne <b>dure<\/b> : un upload non borne est un DoS. La valeur est exposee publiquement car elle doit etre annoncee au client en cas de refus (413) — elle ne contient aucun secret.",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": 0
+    },
+    {
+      "name": "app.speech.model",
+      "type": "java.lang.String",
+      "description": "Modèle de transcription (ex : whisper-1).",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": "whisper-1"
+    },
+    {
+      "name": "app.speech.timeout",
+      "type": "java.time.Duration",
+      "description": "Timeout d'une transcription. Un nombre seul est interprété en secondes.",
+      "sourceType": "com.discipolat.common.infrastructure.config.SpeechToTextProperties",
+      "defaultValue": "60s"
+    }
+  ],
+  "hints": []
+}
