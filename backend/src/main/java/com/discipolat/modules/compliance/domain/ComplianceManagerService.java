@@ -4,8 +4,7 @@ import com.discipolat.common.infrastructure.security.SecurityUtils;
 import com.discipolat.common.multitenancy.TenantContext;
 import com.discipolat.modules.audit.domain.AuditLog;
 import com.discipolat.modules.audit.domain.AuditLogRepository;
-import com.discipolat.modules.events.domain.ChurchEventArchive;
-import com.discipolat.modules.events.repository.ChurchEventArchiveRepository;
+import com.discipolat.modules.compliance.api.EventArchivePurgePort;
 import com.discipolat.modules.tenants.domain.Tenant;
 import com.discipolat.modules.tenants.domain.TenantRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,9 +44,11 @@ public class ComplianceManagerService {
      * Porte de purge UNIQUE de la table {@code event_archive} : elle ne s'ouvre
      * que si l'église a créé explicitement une politique {@code EventArchive} ;
      * aucune purge n'est active par défaut, et toute suppression est précédée
-     * d'un export (cf. {@code purgePolicy}).
+     * d'un export (cf. {@code purgePolicy}). La décision vit ici, l'exécution
+     * sur les entités events passe par le port publié (R3/ADR-002 : pas de
+     * pénétration des internes du contexte voisin).
      */
-    private final ChurchEventArchiveRepository archiveRepository;
+    private final EventArchivePurgePort archivePort;
 
     /** Adaptateur minimal sur GdprRequestRepository (évite le couplage direct au module gdpr). */
     public interface GdprRequestAdapter {
@@ -63,7 +64,7 @@ public class ComplianceManagerService {
                                     AuditHashLinkRepository hashLinkRepository,
                                     AuditLogRepository auditLogRepository,
                                     TenantRepository tenantRepository,
-                                    ChurchEventArchiveRepository archiveRepository) {
+                                    EventArchivePurgePort archivePort) {
         this.consentRepository = consentRepository;
         this.gdprAdapter = gdprAdapter;
         this.policyRepository = policyRepository;
@@ -71,7 +72,7 @@ public class ComplianceManagerService {
         this.hashLinkRepository = hashLinkRepository;
         this.auditLogRepository = auditLogRepository;
         this.tenantRepository = tenantRepository;
-        this.archiveRepository = archiveRepository;
+        this.archivePort = archivePort;
     }
 
     // ── Politiques de rétention ──────────────────────────────────
@@ -223,31 +224,26 @@ public class ComplianceManagerService {
             // base n'offre aucun DELETE applicatif hors ici). Activée seulement
             // si l'église a créé explicitement la politique ; toute suppression
             // est précédée d'un export consigné (RGPD art. 17-3-e / 5-1-e).
-            List<ChurchEventArchive> expired = archiveRepository.findByTenantId(tenantId).stream()
-                    .filter(a -> a.getArchivedAt() != null
-                            && a.getArchivedAt().toLocalDateTime().isBefore(cutoff))
-                    .toList();
+            List<EventArchivePurgePort.PurgeableArchive> expired =
+                    archivePort.findArchives(tenantId).stream()
+                            .filter(a -> a.archivedAt().toLocalDateTime().isBefore(cutoff))
+                            .toList();
             purged = expired.size();
             if (purged > 0) {
+                List<UUID> ids = expired.stream().map(EventArchivePurgePort.PurgeableArchive::id).toList();
                 if (policy.isHardDelete()) {
                     exportAndRecord(tenantId, null, "EventArchive", purged,
                             Map.of("type", "event_archives",
                                     "count", purged,
-                                    "archiveIds", expired.stream()
-                                            .map(a -> a.getId().toString()).toList()),
+                                    "archiveIds", ids.stream()
+                                            .map(UUID::toString).toList()),
                             DataExportRecord.Motif.AVANT_PURGE);
-                    archiveRepository.deleteAll(expired);
+                    archivePort.hardDelete(ids);
                 } else {
                     // Soft : la trace d'existence (dates, compteur de présences)
                     // reste pour l'intégrité des listes, tout ce qui identifie
                     // ou raconte le service est anonymisé.
-                    expired.forEach(a -> {
-                        a.setEventTitle("Archive anonymisée (rétention)");
-                        a.setSnapshotJson(Map.of("anonymized", true,
-                                "anonymizedAt", LocalDateTime.now().toString()));
-                        a.setArchivedBy(null);
-                    });
-                    archiveRepository.saveAll(expired);
+                    archivePort.anonymize(ids);
                 }
                 policy.setLastPurgeAt(LocalDateTime.now());
                 policyRepository.save(policy);
@@ -285,8 +281,8 @@ public class ComplianceManagerService {
                             .count();
                     // V272 — les archives deviennent comptables de la rétention
                     // affichée au tableau de bord conformité.
-                    case "EventArchive" -> archiveRepository.findByTenantId(tenantId).stream()
-                            .filter(a -> a.getArchivedAt() != null && a.getArchivedAt().toLocalDateTime()
+                    case "EventArchive" -> archivePort.findArchives(tenantId).stream()
+                            .filter(a -> a.archivedAt().toLocalDateTime()
                                     .isBefore(LocalDateTime.now().minusDays(p.getRetentionDays())))
                             .count();
                     default -> 0L;

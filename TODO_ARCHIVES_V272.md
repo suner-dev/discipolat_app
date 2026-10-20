@@ -27,7 +27,7 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours
 - [x] `ChurchEventService.updateChurchEvent` : refuse `ARCHIVED` (400) → renvoie vers POST /archive
 - [x] `EventService.update` (chemin /events) : même garde miroir
 - [x] `ChurchEventController` : `status` enfin appliqué ; `eventId` sur GET /archives ; nouveau `GET /archives/search` ; nouveau `GET /archives/facets` ; audit lecture (`EVENT_ARCHIVES_LISTED` / `EVENT_ARCHIVE_VIEWED`, émis contrôleur car readOnly inhibe le flush)
-- [x] `ComplianceManagerService` : imports + champ ajoutés — param constructeur, branche `EventArchive` dans `purgePolicy` (export avant suppression ; soft = anonymisation), `case "EventArchive"` dans `countPendingPurge`, entrée par défaut d'affichage (5 ans, non active par défaut)
+- [x] `ComplianceManagerService` : param constructeur, branche `EventArchive` dans `purgePolicy` (export avant suppression ; soft = anonymisation), `case "EventArchive"` dans `countPendingPurge`, entrée par défaut d'affichage (5 ans, non active par défaut) — via le port publié `EventArchivePurgePort` (compliance.api) et son impl `EventArchivePurgeAdapter` (events.service) : la porte de purge UNIQUE reste dans compliance sans pénétrer les internes de events (règle R3/ADR-002 validée par `ArchitectureRulesTest`)
 
 ## C. Backend — tests (zéro test dédié existait)
 
