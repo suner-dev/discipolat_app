@@ -82,6 +82,13 @@ public interface TenantMembershipRepository extends JpaRepository<TenantMembersh
     @Query("SELECT COUNT(tm) FROM TenantMembership tm WHERE tm.role.id = :roleId")
     long countByRoleId(@Param("roleId") UUID roleId);
 
+    // PARAMÉTRISATION PAR ÉGLISE (Phase 9) — les trois lectures guidées par la clé
+    // d'un rôle ajoutées ici ont été déposées dans
+    // com.discipolat.modules.tenants.repository.MembershipRoleQueryRepository :
+    // le gel R1 d'ArchUnit est un PLAFOND par compte, et @Query/@Param dans un
+    // paquetage ..domain.. est précisément la catégorie de fuite que la règle
+    // interdit d'accroitre. Voir le javadoc de ce dépôt pour la justification.
+
     long countByTenantId(UUID tenantId);
 
     long countByStatus(MembershipStatus status);

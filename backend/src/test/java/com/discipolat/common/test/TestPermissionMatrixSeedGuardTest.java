@@ -50,10 +50,49 @@ class TestPermissionMatrixSeedGuardTest {
                 .isEqualTo(migrationPairs);
     }
 
-    /** Paires V258+V259 dont le rôle est un rôle GLOBAL créé par ces migrations ou la baseline V135/V154. */
+    /**
+     * Paires V258+… dont le rôle est un rôle GLOBAL créé par ces migrations
+     * ou la baseline V135/V154. Phase 9 (p9g) : extraction déléguée à
+     * {@link PermissionCatalogSource}, la baseline (rôles créés hors des
+     * migrations du manifeste) reste explicite ici parce que V154 et V200
+     * ne sont pas {@code catalog} — ce sont des rôles, pas des permissions.
+     */
     private Set<String> migrationEffectivePairs() throws IOException {
         Set<String> createdRoles = new HashSet<>();
-        // rôles globaux existant en production avant V258 (V135 §12, V154 §6)
+        // Rôles globaux existant en production avant V258 (V135 §12, V154 §6).
+        createdRoles.addAll(Set.of("PLATFORM_SUPER_ADMIN", "TENANT_OWNER", "TENANT_ADMIN",
+                "CHURCH_ADMIN", "CHURCH_LEADER", "DEPARTMENT_ADMIN", "DEPARTMENT_LEADER",
+                "FAMILY_LEADER", "DISCIPLE_MAKER", "MEMBER", "GUEST",
+                "HEALTH_STAFF", "HEALTH_LEAD"));
+        createdRoles.addAll(PermissionCatalogSource.createdRoleKeys());
+        Set<String> perms = PermissionCatalogSource.catalogKeys();
+
+        Set<String> effective = new HashSet<>();
+        for (String[] pair : PermissionCatalogSource.matrixPairs()) {
+            String role = pair[0];
+            String key = pair[1];
+            if (createdRoles.contains(role)) {
+                effective.add(role + "\u0000" + key);
+            }
+        }
+        // Toutes les permissions citées doivent exister dans le catalogue.
+        for (String pair : effective) {
+            assertThat(perms).contains(pair.split("\u0000", 2)[1]);
+        }
+        assertThat(effective).isNotEmpty();
+        return effective;
+    }
+
+    /**
+     * Chargeur historique — itération des 7 fichiers + regex PAIR/roles/perms.
+     * Conservé sans être supprimé : la doctrine « ne rien supprimer » impose
+     * de laisser la trace de l'ancien algorithme, et les helpers
+     * {@link #section(String, String)} / {@code PAIR} restent ici comme
+     * référence de la sémantique visée.
+     */
+    @SuppressWarnings("unused")
+    private Set<String> migrationEffectivePairsLegacy() throws IOException {
+        Set<String> createdRoles = new HashSet<>();
         createdRoles.addAll(Set.of("PLATFORM_SUPER_ADMIN", "TENANT_OWNER", "TENANT_ADMIN",
                 "CHURCH_ADMIN", "CHURCH_LEADER", "DEPARTMENT_ADMIN", "DEPARTMENT_LEADER",
                 "FAMILY_LEADER", "DISCIPLE_MAKER", "MEMBER", "GUEST",

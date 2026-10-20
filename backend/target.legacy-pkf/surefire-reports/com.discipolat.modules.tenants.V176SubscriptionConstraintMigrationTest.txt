@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.discipolat.modules.tenants.V176SubscriptionConstraintMigrationTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.267 s -- in com.discipolat.modules.tenants.V176SubscriptionConstraintMigrationTest

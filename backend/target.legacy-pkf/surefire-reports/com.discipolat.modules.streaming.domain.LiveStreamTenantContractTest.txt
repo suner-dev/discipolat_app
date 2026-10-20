@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.discipolat.modules.streaming.domain.LiveStreamTenantContractTest
+-------------------------------------------------------------------------------
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.233 s -- in com.discipolat.modules.streaming.domain.LiveStreamTenantContractTest

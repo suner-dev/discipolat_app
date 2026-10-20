@@ -866,8 +866,8 @@ export default function UsersPage() {
                 {tText('Rétrograder')} <strong>{selectedUser.firstName} {selectedUser.lastName}</strong> vers un autre rôle :
               </p>
               <select className="input" value={demoteRole} onChange={(e) => setDemoteRole(e.target.value)}>
-                <option value="RESPONSABLE">{tText('Responsable de département')}</option>
-                <option value="FAISEUR">Faiseur de disciples</option>
+                <option value="RESPONSABLE">{dictionaries.label('USER_ROLE', 'RESPONSABLE') || tText('Responsable de département')}</option>
+                <option value="FAISEUR">{dictionaries.label('USER_ROLE', 'FAISEUR') || tText('Faiseur de disciples')}</option>
               </select>
             </div>
             <div className="modal-footer">
@@ -905,7 +905,7 @@ export default function UsersPage() {
                 {(selectedUser.roles && selectedUser.roles.length > 0 ? selectedUser.roles : [selectedUser.role]).map((r) => (
                   <div key={r} className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
                     <div className="flex items-center gap-2">
-                      <span className={`badge ${ROLE_BADGES[r] || 'badge-gray'}`}>{ROLE_FALLBACK[r] || r}</span>
+                      <span className={`badge ${ROLE_BADGES[r] || 'badge-gray'}`}>{dictionaries.label('USER_ROLE', r) || ROLE_FALLBACK[r] || r}</span>
                       {selectedUser.activeRole === r && (
                         <span className="badge badge-info">Actif</span>
                       )}
@@ -951,7 +951,7 @@ export default function UsersPage() {
                         className="px-3 py-1.5 rounded-lg text-xs font-medium border border-primary-500/30 text-primary-600 dark:text-primary-400
                                    hover:bg-primary-500/10 transition-colors disabled:opacity-40"
                       >
-                        + {ROLE_FALLBACK[r] || r}
+                        + {dictionaries.label('USER_ROLE', r) || ROLE_FALLBACK[r] || r}
                       </button>
                     );
                   })}
@@ -1033,7 +1033,7 @@ export default function UsersPage() {
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{tText('Rôle')}</p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {ROLE_FALLBACK[userHistory.role] || userHistory.role || '—'}
+                        {dictionaries.label('USER_ROLE', userHistory.role) || ROLE_FALLBACK[userHistory.role] || userHistory.role || '—'}
                       </p>
                     </div>
                     {userHistory.estChef && (

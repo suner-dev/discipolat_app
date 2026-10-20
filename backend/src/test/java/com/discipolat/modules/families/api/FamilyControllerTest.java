@@ -183,12 +183,33 @@ class FamilyControllerTest {
     // ======================== DELETE ========================
 
     @Test
-    @DisplayName("DELETE /families/{id} sans perm bean → 400")
-    void delete_withoutPermBean_shouldReturn400() throws Exception {
-        // @perm.has('FAMILY','DELETE') SpEL bean indisponible en WebMvcTest → 400
+    @DisplayName("DELETE /families/{id} par un rôle granted → 200 (verrou canonique seul)")
+    void delete_withCanonicalGrant_shouldReturn200() throws Exception {
+        // Depuis le retrait de « && @perm.has('FAMILY','DELETE') » (surface
+        // morte, table pré-V135) : le verrou @authz.can suffit et la
+        // suppression aboutit réellement.
         mockMvc.perform(delete("/api/v1/families/" + FAMILY_ID)
                         .header("Authorization", bearer("ADMIN")))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Family dissolved successfully"));
+
+        verify(familyService).delete(FAMILY_ID);
+    }
+
+    /**
+     * Contrôle négatif : retirer le conjonctif {@code @perm} ne désarme pas la
+     * protection. La matrice par défaut (V258 l.585-586) ne donne
+     * {@code FAMILIES_EXECUTE_DELETE} qu'à ADMIN et PASTEUR ; un FAISEUR doit
+     * donc rester refusé par le verrou canonique {@code @authz.can}.
+     */
+    @Test
+    @DisplayName("DELETE /families/{id} sans grant canonique → 403")
+    void delete_withoutCanonicalGrant_shouldReturn403() throws Exception {
+        mockMvc.perform(delete("/api/v1/families/" + FAMILY_ID)
+                        .header("Authorization", bearer("FAISEUR")))
+                .andExpect(status().isForbidden());
+
+        verify(familyService, never()).delete(any());
     }
 
     // ======================== GET ========================

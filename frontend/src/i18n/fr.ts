@@ -217,6 +217,21 @@ const fr = {
   'admin.keyLbl': "Clé",
   'admin.delete': "Supprimer",
   'admin.rolesCustom': "Rôles personnalisés",
+  // Phase 9 — surcouche locale par église. Ces onze clés existent dans les cinq
+  // autres dictionnaires : fr.ts étant le dictionnaire de REPLI de t(), les y
+  // oublier faisait afficher la clé technique (« admin.roleCustomize ») dans
+  // l'interface française par défaut.
+  'admin.rolesGlobal': "Rôles du catalogue global",
+  'admin.rolesGlobalHint': "Socle commun à toutes les églises. Pour ajuster un rôle ici, personnalisez-le d'abord pour votre église.",
+  'admin.roleCustomize': "Personnaliser pour mon église",
+  'admin.roleLocalized': "Rôle personnalisé pour votre église",
+  'admin.roleRevert': "Réinitialiser",
+  'admin.roleRevertQ': "Rétablir les droits du catalogue global pour « {label} » ? Les membres portant cette personnalisation seront réancrés sur le rôle global.",
+  'admin.roleReverted': "Personnalisation supprimée, droits globaux rétablis",
+  'admin.roleSurcouche': "Personnalisé pour cette église",
+  'admin.roleCustomized': "Personnalisé ici",
+  'admin.roleOverriddenHint': "Supplanté par la personnalisation de votre église.",
+  'admin.roleGlobalOnly': "Rôle global : personnalisez-le pour votre église avant d'éditer ses permissions.",
   'admin.memberRoleLbl': "Rôle dans l'organisation",
   'admin.memberRoleSaved': "Rôle mis à jour",
   'admin.memberRemove': "Retirer de l'organisation",

@@ -233,6 +233,7 @@ import 'features/referrals/ReferralsStatusScreen.dart';
 import 'features/spiritual/SpiritualChallengesDetailScreen.dart';
 import 'presentation/screens/cercle_faiseurs/cercle_faiseurs_screen.dart';
 import 'presentation/screens/dress_code/dress_code_screen.dart';
+import 'presentation/screens/dress_code/dress_code_editor_screen.dart';
 import 'presentation/screens/passport/passport_screen.dart';
 import 'presentation/screens/spiritual_journey/spiritual_journey_screen.dart';
 // Note: SkillMatchingScreen, QuestScreen, GeofencingScreen, MakerTrackingScreen, and FollowUpRequestsScreen
@@ -2872,6 +2873,11 @@ final appRouter = GoRouter(
         path: '/dress-codes',
         name: 'dress-codes',
         builder: (ctx, s) => const DressCodeScreen()),
+    GoRoute(
+        path: '/dress-codes/editor',
+        name: 'dress-code-editor',
+        builder: (ctx, s) => DressCodeEditorScreen(
+            id: s.uri.queryParameters['id'])),
     GoRoute(
         path: '/passport',
         name: 'passport',

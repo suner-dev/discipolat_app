@@ -12,6 +12,7 @@ import com.discipolat.modules.people.repository.RoleAssignmentRepository;
 import com.discipolat.modules.people.repository.SpaceMembershipRepository;
 import com.discipolat.modules.tenants.domain.AuthorizationService;
 import com.discipolat.modules.tenants.domain.Permission;
+import com.discipolat.modules.tenants.domain.PermissionCacheInvalidator;
 import com.discipolat.modules.tenants.domain.Role;
 import com.discipolat.modules.tenants.domain.RoleRepository;
 import com.discipolat.modules.tenants.domain.TenantMembership;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PermissionResolver {
+public class PermissionResolver implements PermissionCacheInvalidator {
 
     private final RoleAssignmentRepository roleAssignmentRepository;
     private final SpaceMembershipRepository spaceMembershipRepository;
@@ -127,7 +128,14 @@ public class PermissionResolver {
      * G4.4 — « rôles vivantes » : recalcule + bump la version du cache ET publie
      * PermissionsChanged (outbox → relay STOMP) pour rafraîchir les clients en <5 s.
      * Appelé après toute nomination/fin de mandat pastoral.
+     *
+     * <p>Implémentation du port publié {@link
+     * PermissionCacheInvalidator} : le contexte {@code tenants} (édition de la
+     * matrice rôles → permissions) déclenche l'invalidation sans connaître
+     * cette classe — le sens d'appel {@code tenants -> families} est interdit
+     * par la règle R6 (couplage réciproque), voir le Javadoc du port.
      */
+    @Override
     @Transactional
     public void bumpPermissions(UUID tenantId, UUID userId, String changeType) {
         refreshPermissionCache(tenantId, userId);

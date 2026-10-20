@@ -1,20 +1,27 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '@/lib/api';
 import {
-  Shield, Plus, Trash2, ArrowUp, ArrowDown, Loader2, X,
+  Shield, Plus, Trash2, ArrowUp, ArrowDown, Loader2, X, Star,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-import { getI18nLocale } from '@/i18n';
 import { tText } from '@/i18n';
-interface UserRole {
+
+/** Champs pertinents de UserResponse côté serveur (record Java). */
+interface UserResponse {
   id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
   role: string;
-  assignedAt: string;
+  roles: string[];
+  activeRole: string | null;
+  estChefDeFamille: boolean;
+  familleGereeId: string | null;
 }
+
+interface FamilySummary { id: string; nom: string; }
 
 const AVAILABLE_ROLES = [
   { key: 'ADMIN', label: 'Administrateur', color: 'from-red-500 to-rose-500' },
@@ -30,32 +37,43 @@ export default function UserRolesPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [showAddRole, setShowAddRole] = useState(false);
+  const [showChefPicker, setShowChefPicker] = useState(false);
 
-  const { data: roles = [], isLoading } = useQuery({
-    queryKey: ['users', id, 'roles'],
+  // --- Contract repaired: GET /users/{id} returns UserResponse (the real endpoint).
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['users', id],
     queryFn: async () => {
-      const res = await api.get(`/users/${id}/roles`);
-      return (res.data.content || res.data || []) as UserRole[];
+      const res = await api.get(`/users/${id}`);
+      return res.data as UserResponse;
     },
     enabled: !!id,
   });
 
-  const { data: activeRole } = useQuery({
-    queryKey: ['users', id, 'active-role'],
+  const roles: string[] = user?.roles ?? [];
+  const activeRole: string | null = user?.activeRole ?? null;
+  const isChef = user?.estChefDeFamille ?? false;
+
+  // Fetch families for chef-promotion picker.
+  const { data: families = [] } = useQuery({
+    queryKey: ['families-for-chef'],
     queryFn: async () => {
-      const res = await api.get(`/users/${id}/active-role`);
-      return res.data as { role: string };
+      const res = await api.get('/families', { params: { size: 100 } });
+      const content = res.data?.content ?? res.data ?? [];
+      return (Array.isArray(content) ? content : []).map((f: any) => ({ id: f.id, nom: f.nom || f.name || f.id })) as FamilySummary[];
     },
-    enabled: !!id,
+    enabled: showChefPicker,
   });
+
+  // --- Mutations on the REAL server contract ---
 
   const addRoleMutation = useMutation({
     mutationFn: async (role: string) => {
-      await api.post(`/users/${id}/roles/${role}`);
+      // POST /users/{id}/roles  body {role}
+      await api.post(`/users/${id}/roles`, { role });
     },
     onSuccess: () => {
       toast.success(tText('Rôle ajouté'));
-      qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
+      qc.invalidateQueries({ queryKey: ['users', id] });
       setShowAddRole(false);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -63,39 +81,54 @@ export default function UserRolesPage() {
 
   const removeRoleMutation = useMutation({
     mutationFn: async (role: string) => {
+      // DELETE /users/{id}/roles/{role}  (correct already)
       await api.delete(`/users/${id}/roles/${role}`);
     },
     onSuccess: () => {
       toast.success(tText('Rôle retiré'));
-      qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
+      qc.invalidateQueries({ queryKey: ['users', id] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const setActiveRoleMutation = useMutation({
+    mutationFn: async (role: string) => {
+      // PATCH /users/{id}/active-role  body {activeRole}
+      await api.patch(`/users/${id}/active-role`, { activeRole: role });
+    },
+    onSuccess: () => {
+      toast.success(tText('Rôle actif changé'));
+      qc.invalidateQueries({ queryKey: ['users', id] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const promoteChefMutation = useMutation({
-    mutationFn: async () => {
-      await api.post(`/users/${id}/promote-chef`);
+    mutationFn: async (familleId: string) => {
+      // PATCH /users/{id}/promote-chef  body {familleId}
+      await api.patch(`/users/${id}/promote-chef`, { familleId });
     },
     onSuccess: () => {
       toast.success(tText('Promu chef de famille'));
-      qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
+      qc.invalidateQueries({ queryKey: ['users', id] });
+      setShowChefPicker(false);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const demoteChefMutation = useMutation({
     mutationFn: async () => {
-      await api.post(`/users/${id}/demote-chef`);
+      // PATCH /users/{id}/demote-chef
+      await api.patch(`/users/${id}/demote-chef`);
     },
     onSuccess: () => {
       toast.success(tText('Rétrogradé de chef de famille'));
-      qc.invalidateQueries({ queryKey: ['users', id, 'roles'] });
+      qc.invalidateQueries({ queryKey: ['users', id] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const isChef = roles.some((r) => r.role === 'CHEF_DE_FAMILLE');
-  const assignedRoles = roles.map((r) => r.role);
+  const assignedRoles = roles;
   const availableToAdd = AVAILABLE_ROLES.filter((r) => !assignedRoles.includes(r.key));
 
   if (isLoading) return <div className="min-h-[40vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>;
@@ -127,7 +160,7 @@ export default function UserRolesPage() {
           <div>
             <p className="text-xs text-gray-400">{tText('Rôle actif')}</p>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              {AVAILABLE_ROLES.find((r) => r.key === activeRole.role)?.label || activeRole.role}
+              {AVAILABLE_ROLES.find((r) => r.key === activeRole)?.label || activeRole}
             </p>
           </div>
         </div>
@@ -156,7 +189,7 @@ export default function UserRolesPage() {
             </button>
           ) : (
             <button
-              onClick={() => promoteChefMutation.mutate()}
+              onClick={() => setShowChefPicker(true)}
               disabled={promoteChefMutation.isPending}
               className="btn-primary btn-sm"
             >
@@ -176,34 +209,47 @@ export default function UserRolesPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {roles.map((userRole) => {
-            const roleInfo = AVAILABLE_ROLES.find((r) => r.key === userRole.role);
+          {roles.map((roleKey) => {
+            const roleInfo = AVAILABLE_ROLES.find((r) => r.key === roleKey);
+            const isActive = roleKey === activeRole;
             return (
-              <div key={userRole.role} className="glass-card px-5 py-3 flex items-center justify-between">
+              <div key={roleKey} className="glass-card px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${roleInfo?.color || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white shadow-sm`}>
                     <Shield className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {roleInfo?.label || userRole.role}
+                      {roleInfo?.label || roleKey}
                     </p>
-                    <p className="text-[10px] text-gray-400">
-                      Assigné le {new Date(userRole.assignedAt).toLocaleDateString(getI18nLocale())}
-                    </p>
+                    {isActive && (
+                      <p className="text-[10px] text-primary-500 font-medium">{tText('Actif')}</p>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (confirm(`Retirer le rôle ${roleInfo?.label || userRole.role} ?`)) {
-                      removeRoleMutation.mutate(userRole.role);
-                    }
-                  }}
-                  className="btn-icon text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  title="Retirer le rôle"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {!isActive && (
+                    <button
+                      onClick={() => setActiveRoleMutation.mutate(roleKey)}
+                      disabled={setActiveRoleMutation.isPending}
+                      className="btn-icon text-primary-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                      title={tText('Définir comme actif')}
+                    >
+                      <Star className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (confirm(`Retirer le rôle ${roleInfo?.label || roleKey} ?`)) {
+                        removeRoleMutation.mutate(roleKey);
+                      }
+                    }}
+                    className="btn-icon text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    title={tText('Retirer le rôle')}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -241,6 +287,38 @@ export default function UserRolesPage() {
             </div>
             <div className="modal-footer">
               <button className="btn-ghost btn-sm" onClick={() => setShowAddRole(false)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chef-picker modal (promote-chef requires familleId) */}
+      {showChefPicker && (
+        <div className="modal-overlay" onClick={() => setShowChefPicker(false)}>
+          <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{tText('Promouvoir chef de famille')}</h3>
+              <button className="btn-icon" onClick={() => setShowChefPicker(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <div className="modal-body space-y-2">
+              <p className="text-xs text-gray-400 mb-2">{tText('Choisissez la famille à diriger :')}</p>
+              {families.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">{tText('Aucune famille disponible.')}</p>
+              ) : (
+                families.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => promoteChefMutation.mutate(f.id)}
+                    disabled={promoteChefMutation.isPending}
+                    className="w-full text-left p-3 rounded-xl border border-gray-200 dark:border-white/10 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all"
+                  >
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{f.nom}</span>
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-ghost btn-sm" onClick={() => setShowChefPicker(false)}>{tText('Annuler')}</button>
             </div>
           </div>
         </div>

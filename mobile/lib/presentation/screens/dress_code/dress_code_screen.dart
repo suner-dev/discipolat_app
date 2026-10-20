@@ -5,14 +5,17 @@ import '../../widgets/app_drawer.dart';
 /// Dress Code Screen — view dress codes for events/services.
 /// Connected to API: /api/v1/dress-codes
 class DressCodeScreen extends StatefulWidget {
-  const DressCodeScreen({super.key});
+  const DressCodeScreen({super.key, this.apiService});
+
+  /// Injection de l'API — permet aux tests widget d'éviter le réseau.
+  final ApiService? apiService;
 
   @override
   State<DressCodeScreen> createState() => _DressCodeScreenState();
 }
 
 class _DressCodeScreenState extends State<DressCodeScreen> {
-  final _apiService = ApiService();
+  late final ApiService _apiService = widget.apiService ?? ApiService();
   List<dynamic> _dressCodes = [];
   bool _isLoading = true;
   String? _error;

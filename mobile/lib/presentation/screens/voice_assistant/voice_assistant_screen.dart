@@ -77,8 +77,8 @@ class _VoiceAssistantScreenState extends State<VoiceAssistantScreen>
   final _sessionId = ValueNotifier<String>(_generateSessionId());
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _sttConfigured = true;
-  bool _ttsConfigured = true;
+  bool _sttConfigured = false;
+  bool _ttsConfigured = false;
   bool _isPlaying = false;
 
   final List<_ChatMessage> _messages = [];

@@ -158,7 +158,11 @@ class _AppDrawerState extends State<AppDrawer> {
       'title': 'Évangélisation',
       'route': '/evangelism'
     },
-    {'icon': Icons.flag_rounded, 'title': 'Objectifs', 'route': '/objectives'},
+    {
+      'icon': Icons.style_rounded,
+      'title': 'Tenues de service',
+      'route': '/dress-codes'
+    },
     {'icon': Icons.map_outlined, 'title': 'Visites', 'route': '/visits'},
     {
       'icon': Icons.swap_horiz_rounded,

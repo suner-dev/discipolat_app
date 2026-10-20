@@ -164,6 +164,39 @@ public class RoleManagementController {
         return ResponseEntity.noContent().build();
     }
 
+    // ==================== SURCOUCHE LOCALE (PARAMÉTRISATION PAR ÉGLISE, Phase 9) ====================
+
+    /**
+     * « Personnaliser ce rôle pour mon église » : instancie (ou retrouve) la ligne
+     * {@code roles} homonyme portée par le tenant courant, avec les droits du
+     * catalogue global. La surcouche ainsi créée est modifiable par {@code PUT
+     * /{id}/permissions} — c'est le seul chemin qui rend la promesse de V258
+     * réellement exercable, les six rôles historiques étant des lignes système.
+     *
+     * <p>Gardé par {@code ROLE_UPDATE} et non {@code ROLE_CREATE} : aucune
+     * organisation ne reçoit ici un rôle <em>nouveau</em> dans son vocabulaire, elle
+     * reprend une clé existante pour l'affiner à sa marge. L'opération est
+     * idempotente et ne change aucun droit à l'instant où elle est faite (la copie
+     * hérite de la matrice globale), y compris pour l'appelant.
+     */
+    @PostMapping("/{id}/local-copy")
+    @PreAuthorize("@authz.can('ROLE_UPDATE', 'TENANT', null)")
+    public ResponseEntity<Role> instantiateLocalRoleCopy(@PathVariable UUID id) {
+        Role local = roleService.instantiateLocalRoleCopy(id, getCurrentTenantId(), getCurrentUserId());
+        return ResponseEntity.ok(local);
+    }
+
+    /**
+     * « Réinitialiser » : supprime la surcouche locale et ré-ancre ses porteurs sur
+     * la ligne globale, donc l'église revient aux droits du catalogue système.
+     * Réponse = la ligne globale retrouvée (le client recharge son éditeur).
+     */
+    @DeleteMapping("/{id}/local-copy")
+    @PreAuthorize("@authz.can('ROLE_UPDATE', 'TENANT', null)")
+    public ResponseEntity<Role> revertLocalRoleCopy(@PathVariable UUID id) {
+        return ResponseEntity.ok(roleService.revertLocalRoleCopy(id, getCurrentUserId()));
+    }
+
     // ==================== VALIDATION ====================
 
     @GetMapping("/{id}/validate")

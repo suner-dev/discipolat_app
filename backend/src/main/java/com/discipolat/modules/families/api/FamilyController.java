@@ -108,8 +108,18 @@ public class FamilyController {
         return ResponseEntity.ok(toResponse(family));
     }
 
+    /**
+     * Verrou canonique : la seule matrice lue par le moteur d'autorisation est
+     * &#64;authz.can(...) (table permissions + surcouche locale par église). Le
+     * conjonctif {@code && @perm.has('FAMILY','DELETE')} a été retiré : le bean
+     * perm interrogeait {@code role_permissions(role, permission)}, forme
+     * pré-V135 abandonnée par V135__create_multi_tenant_core_tables.sql au profit
+     * de {@code role_permissions(role_id, permission_id)} ; il levait donc une
+     * BadSqlGrammarException (500) pour tout rôle non ADMIN/PASTEUR ; il ne
+     * pouvait rien paramétrer pour les autres.
+     */
     @DeleteMapping("/{id}")
-    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_DELETE', 'TENANT', null) && @perm.has('FAMILY','DELETE')")
+    @PreAuthorize("@authz.can('FAMILIES_EXECUTE_DELETE', 'TENANT', null)")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID id) {
         familyService.delete(id);
         return ResponseEntity.ok(Map.of("message", "Family dissolved successfully"));

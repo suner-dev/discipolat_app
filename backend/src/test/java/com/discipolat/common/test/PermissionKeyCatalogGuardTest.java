@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * JSON recopié se désynchronise au premier {@code INSERT} oublié, ce qui est
  * précisément la panne que ce garde doit empêcher.
  * <p>
- * Portée volontairement limitée à {@code @authz.can}. Le bean
- * {@code @perm.has('DOMAIN','ACTION')} est lui <b>permissif</b> en l'absence de
- * ligne dans la matrice (« aucune ligne → accord ») : une faute de frappe y
- * dégrade l'accès ouvert au lieu de le fermer, et n'est donc pas un endpoint
- * mort. C'est documenté ici pour que la distinction soit explicite.
+ * Portée volontairement limitée à la garde canonique {@code @authz.can}. Le
+ * bean « perm » ("@perm.has('DOMAIN','ACTION')") n'est plus concerné : il a été
+ * supprimé en Phase 9 — il lisait {@code role_permissions} dans sa forme
+ * pré-V135, d'où une erreur SQL systématique pour les rôles non ADMIN/PASTEUR.
+ * Il ne reste qu'un seul verrou à garder.
  */
 class PermissionKeyCatalogGuardTest {
 
@@ -73,20 +73,19 @@ class PermissionKeyCatalogGuardTest {
         return Path.of("").toAbsolutePath();
     }
 
-    /** Clés du catalogue `permissions`, tous tuples confondus. */
+    /**
+     * Clés de permission servies, lues depuis la SOURCE UNIQUE des migrations
+     * (Phase 9 — p9g). Avant cette bascule, cette classe maintenait une liste
+     * de 9 migrations et un analyseur échappement-sensible en parallèle de
+     * {@link PermissionCatalogSource}, du {@code TestPermissionMatrixSeedGuardTest}
+     * et du {@code TestPermissionMatrix} — déjà dérivés (9 vs 7 vs 4 fichiers).
+     * Les helpers privés {@link #firstColumnOfTuples(String)},
+     * {@link #firstStringLiteral(String)} et {@link #statementsOf(String, String)}
+     * sont conservés sans être supprimés, pour la référence historique de
+     * l'algorithmique et pour les messages d'erreur qu'ils portaient.
+     */
     private static Set<String> catalogKeys() throws IOException {
-        Set<String> keys = new LinkedHashSet<>();
-        for (String migration : CATALOG_MIGRATIONS) {
-            Path file = moduleRoot().resolve("src/main/resources/db/migration").resolve(migration);
-            assertThat(Files.isRegularFile(file))
-                    .as("migration de catalogue absente : %s (liste du test à mettre à jour)", file)
-                    .isTrue();
-            String sql = Files.readString(file, StandardCharsets.UTF_8);
-            for (String statement : statementsOf(sql, "permissions")) {
-                keys.addAll(firstColumnOfTuples(statement));
-            }
-        }
-        return keys;
+        return PermissionCatalogSource.catalogKeys();
     }
 
 
