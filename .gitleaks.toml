@@ -1,0 +1,28 @@
+# Gitleaks — configuration repo (gitleaks-action@v2 la détecte automatiquement).
+#
+# `useDefault = true` conserve l'intégralité des règles par défaut : on
+# n'AFFAIBLIT pas le scan, on y consigne uniquement des fixtures de test
+# connues, non secrètes, présentes dans l'arbre depuis bien avant la chaîne
+# sécurité (rougeurs aléatoires sinon à chaque retouche de ces fichiers).
+#
+# Périmètre strict : la PAIRE RSA de développement et la clé AES locale
+# déclarées dans `backend/src/test/resources/application-test.yml`. Elles ne
+# signent aucun jeton de production (les clés de prod sont injectées via
+# secrets Render/GitHub, jamais commitées — voir keys/.gitkeep + .gitignore).
+# Toute NOUVELLE clé hors de ces deux fichiers reste bloquante.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "clés RSA/AES de test (fixtures src/test/resources/application-test.yml) — non secrètes, jamais utilisées en production"
+paths = [
+  '''backend/src/test/resources/application-test\.yml$''',
+]
+regexes = [
+  # clé AES de test (encryption.aes-key)
+  '''0d\+/whEBDccfi6JPzoJAOF3yGEwC8apvSzzMmF94IPE=''',
+  # paire RSA de test (jwx.private-key / jwx.public-key), paires base64 PEM
+  '''LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2d0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktrd2dnU2xBZ0VBQW9JQkFRQytaUEhQdVZCRmdndG4K''',
+  '''LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2bVR4ejdsUVJZSUxaNSt6QXJhSA''',
+]
