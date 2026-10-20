@@ -469,7 +469,7 @@ public class UserController {
 
     /**
      * Suppression définitive RGPD. Verrou canonique seul : le conjonctif
-     * {@code && @perm.has('USER','DELETE')} a été retiré (même cause que
+     * {@code @perm.has} sur {@code USER_DELETE} a été retiré (même cause que
      * {@code FamilyController#delete} — le bean perm lisait la table
      * {@code role_permissions} dans sa forme pré-V135).
      */

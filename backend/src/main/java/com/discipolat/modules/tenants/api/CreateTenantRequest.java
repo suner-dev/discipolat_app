@@ -14,5 +14,10 @@ public record CreateTenantRequest(
         String locale,
         String brandingJson,
         String featuresJson,
-        String settingsJson
+        String settingsJson,
+        // SPEC_ORGANISATION_DENOMINATION_V2 (D2) — nature de l'organisation.
+        // Aucune valeur = CHURCH par défaut (comportement existant préservé).
+        // Permet de créer une dénomination, association, organisation ou méga-association
+        // directement à la création du tenant.
+        String kind
 ) {}

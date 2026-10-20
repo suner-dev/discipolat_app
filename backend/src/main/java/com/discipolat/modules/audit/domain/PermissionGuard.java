@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Bean de vérification des permissions utilisable dans les expressions
- * {@code @PreAuthorize("@perm.has('USER','DELETE')")}.
+ * {@code @PreAuthorize("@perm.has('FAMILY','DELETE')")}.
  *
  * Logique :
  * - Les super-utilisateurs (ADMIN, PASTEUR) passent toujours.
@@ -46,7 +46,7 @@ public class PermissionGuard {
 
     /**
      * Vérifie un niveau de permission granulaire (READ, WRITE, DELETE, MANAGE).
-     * Utilisation : @perm.hasLevel('SOULS', 'WRITE')
+     * Utilisation : @perm.hasLevel('FAMILY', 'DELETE')
      */
     public boolean hasLevel(String domain, String action, String level) {
         List<String> roles = securityUtils.getAllUserRoles();

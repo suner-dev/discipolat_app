@@ -46,6 +46,16 @@ export default function PlatformOnboardingFlowPage() {
   const [department, setDepartment] = useState<DepartmentResult | null>(null);
   const [family, setFamily] = useState<FamilyResult | null>(null);
 
+  // === NOUVEAU : Formulaire type organisation ===
+  const [orgKind, setOrgKind] = useState<'CHURCH' | 'DENOMINATION' | 'ASSOCIATION' | 'ORGANIZATION' | 'MEGA_ASSOCIATION'>('CHURCH');
+  const kindOptions = [
+    { key: 'CHURCH', label: 'Église isolée' },
+    { key: 'DENOMINATION', label: 'Dénomination' },
+    { key: 'ASSOCIATION', label: 'Association' },
+    { key: 'ORGANIZATION', label: 'Organisation' },
+    { key: 'MEGA_ASSOCIATION', label: 'Méga-association' },
+  ] as const;
+
   // Formulaires
   // B12 — AUCUNE valeur géo/plan n'est pré-remplie.
   //
@@ -80,6 +90,8 @@ export default function PlatformOnboardingFlowPage() {
     newChefSexe: '', newChefDateNaissance: '', newChefAdresse: '',
     chefFamilleId: '',
   });
+
+  // ... rest stays the same
 
   const { data: plans = [] } = useQuery({
     queryKey: ['platform-plans'],
@@ -179,6 +191,9 @@ export default function PlatformOnboardingFlowPage() {
         // `...tenantForm` envoyait `plan: 'free'`, `country: 'CM'`,
         // `currency: 'XAF'`, `timezone: 'Africa/Douala'` même quand
         // l'administrateur n'avait touché à aucun champ.
+        // A4 (contrat §3.5) — le `kind` est transmis en option ; s'il est absent,
+        // le serveur applique CHURCH par défaut (compatibilité ascendante).
+        ...(orgKind !== 'CHURCH' ? { kind: orgKind } : {}),
         ...(tenantForm.plan ? { plan: tenantForm.plan } : {}),
         ...(tenantForm.country.trim() ? { country: tenantForm.country.trim() } : {}),
         ...(tenantForm.currency.trim() ? { currency: tenantForm.currency.trim().toUpperCase() } : {}),
@@ -329,6 +344,22 @@ export default function PlatformOnboardingFlowPage() {
           <p className="text-sm text-gray-500 mb-5">
             Identité de l'organisation sur la plateforme : nom, plan et localisation.
           </p>
+
+          {/* ── NOUVEAU : Sélection du type organisation ── */}
+          <div className="mb-4">
+            <label className={labelCls}>Type d'organisation *</label>
+            <select
+              className={inputCls}
+              value={orgKind}
+              onChange={(e) => setOrgKind(e.target.value)}>
+              <option value="CHURCH">{tText("Église isolée")}</option>
+              <option value="DENOMINATION">{tText("Dénomination")}</option>
+              <option value="ASSOCIATION">{tText("Association")}</option>
+              <option value="ORGANIZATION">{tText("Organisation")}</option>
+              <option value="MEGA_ASSOCIATION">{tText("Méga-association")}</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className={labelCls}>Nom de l'organisation *</label>

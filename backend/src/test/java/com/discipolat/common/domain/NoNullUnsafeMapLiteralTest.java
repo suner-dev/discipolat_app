@@ -67,7 +67,7 @@ class NoNullUnsafeMapLiteralTest {
      * <p>La règle 1, elle, reste une porte <b>stricte</b> : elle ne détecte que
      * des NPE garanties, sans aucun faux positif possible.
      */
-    private static final int AUDIT_POSITION_BACKLOG_CEILING = 122;
+    private static final int AUDIT_POSITION_BACKLOG_CEILING = 121;
 
     /** Appels qui construisent une charge utile transmise à un service d'audit ou d'évènement. */
     private static final List<String> AUDIT_POSITIONS = List.of(

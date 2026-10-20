@@ -88,6 +88,7 @@ class _SuperAdminProvisioningScreenState
   final _orgName = TextEditingController();
   final _countryController = TextEditingController();
   String? _orgPlan;
+  String? _orgKind;
   String? _currency;
   String? _timezone;
   String _locale = 'fr';
@@ -371,6 +372,7 @@ class _SuperAdminProvisioningScreenState
         'name': _orgName.text.trim(),
         'slug': _slugify(_orgName.text),
         if (_orgPlan != null) 'plan': _orgPlan,
+        if (_orgKind != null && _orgKind != 'CHURCH') 'kind': _orgKind,
         if (country.isNotEmpty) 'country': country,
         if (_currency != null) 'currency': _currency,
         if (_timezone != null) 'timezone': _timezone,
@@ -580,6 +582,13 @@ class _SuperAdminProvisioningScreenState
                 hint: _plansFromApi ? null : 'Liste minimale (API indisponible)',
                 onChanged: (v) => setState(() => _orgPlan = v),
               ),
+              _LabeledDropdown(
+                  label: 'Type organisation',
+                  value: _orgKind,
+                  items: _kindOptions,
+                  onChanged: (v) => setState(() => _orgKind = v),
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _countryController,
@@ -627,6 +636,17 @@ class _SuperAdminProvisioningScreenState
               const SizedBox(height: 8),
               Text('Slug : ${_slugify(_orgName.text)}',
                   style: const TextStyle(fontSize: 12, color: Colors.grey)),
+
+              // ── A4 (contrat §3.5) — nature de l'organisation : CHURCH par défaut.
+              // N'envoyé que si explicitement choisi (≠ CHURCH), sinon serveur applique valeur par défaut.
+              _orgKind = 'CHURCH';
+              final _kindOptions = <_Option>[
+                _Option('CHURCH', 'Église isolée'),
+                _Option('DENOMINATION', 'Dénomination'),
+                _Option('ASSOCIATION', 'Association'),
+                _Option('ORGANIZATION', 'Organisation'),
+                _Option('MEGA_ASSOCIATION', 'Méga-association'),
+              ];
 
               // ── B10 — Owner (pasteur) obligatoire, contrat §3.5 ──
               const SizedBox(height: 20),

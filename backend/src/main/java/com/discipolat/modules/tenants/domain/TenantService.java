@@ -94,10 +94,16 @@ public class TenantService {
             throw new BusinessRuleException(
                     "Un tenant avec ce slug existe déjà : " + slug, "SLUG_TAKEN");
         }
+        String kind = request.kind();
+        if (kind == null || kind.isBlank()) {
+            kind = "CHURCH";
+        }
+
         Tenant tenant = Tenant.builder()
                 .name(request.name())
                 .slug(slug)
                 .status(TenantStatus.ACTIVE)
+                .kind(kind)
                 .plan(request.plan() != null && !request.plan().isBlank()
                         ? request.plan() : DEFAULT_PLAN)
                 .country(request.country())
