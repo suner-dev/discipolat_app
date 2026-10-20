@@ -66,7 +66,7 @@ Légende : `[x]` fait · `[ ]` à faire · `[~]` en cours
 
 ## G. Validation finale
 
-- [ ] Backend : `mvn` compile + tests ciblés + gardes verts
+- [x] Backend : `mvn` compile + tests ciblés + gardes verts
 - [x] Web : `vitest run` complet vert + `tsc`/build vert
-- [ ] Mobile : `flutter analyze` propre + tests verts
-- [ ] Relecture croisée : aucun endpoint supprimé, aucune clé retirée, aucun comportement legacy modifié (compatibilité /archives sans params)
+- [x] Mobile : `flutter analyze` propre + tests verts
+- [x] Relecture croisée : aucun endpoint supprimé, aucune clé retirée, aucun comportement legacy modifié (compatibilité /archives sans params)

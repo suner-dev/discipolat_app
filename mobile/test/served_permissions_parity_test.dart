@@ -51,6 +51,13 @@ const _catalogMigrations = <String>[
   'V261__parametrisation_cles_ui_routes.sql',
   'V262__parametrisation_cles_ui_intra_pages.sql',
   'V270__parametrisation_cles_ui_residuel_dashboard.sql',
+  // V271 : clé `UI_ARCHIVES_ACCESS` (consultation des archives) — consommée
+  // par la route mobile `/archives` depuis le parcours V272.
+  'V271__visibilite_archives_et_assistants.sql',
+  // V272 : aucune permission nouvelle, mais la matrice s'élargit (parité
+  // DEPARTMENT_LEADER/FAMILY_LEADER sur UI_ARCHIVES_ACCESS) — le catalogue
+  // doit connaître ces paires pour que les gardes (A)/(B) restent vraies.
+  'V272__archives_parcours_complet.sql',
 ];
 
 final _keyRe = RegExp(r'^[A-Z][A-Z0-9_]*$');
