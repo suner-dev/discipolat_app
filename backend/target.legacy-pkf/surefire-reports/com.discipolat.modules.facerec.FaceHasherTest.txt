@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.modules.facerec.FaceHasherTest
--------------------------------------------------------------------------------
-Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.492 s -- in com.discipolat.modules.facerec.FaceHasherTest

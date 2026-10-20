@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.modules.events.domain.GeoDistanceTest
--------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.930 s -- in com.discipolat.modules.events.domain.GeoDistanceTest

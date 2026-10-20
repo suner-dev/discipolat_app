@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.common.infrastructure.propagation.EntityChangeBroadcasterTest
--------------------------------------------------------------------------------
-Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.194 s -- in com.discipolat.common.infrastructure.propagation.EntityChangeBroadcasterTest

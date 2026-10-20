@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.modules.payments.payout.PayoutServiceTest
--------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.300 s -- in com.discipolat.modules.payments.payout.PayoutServiceTest

@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.common.infrastructure.config.PerIpRateLimiterIntegrationTest
--------------------------------------------------------------------------------
-Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.182 s -- in com.discipolat.common.infrastructure.config.PerIpRateLimiterIntegrationTest

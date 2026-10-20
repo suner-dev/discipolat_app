@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.discipolat.common.infrastructure.api.GlobalExceptionHandlerUnreadableRequestTest
--------------------------------------------------------------------------------
-Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.147 s -- in com.discipolat.common.infrastructure.api.GlobalExceptionHandlerUnreadableRequestTest

@@ -58,7 +58,10 @@ jobs:
           fetch-depth: 0  # gitleaks scanne chaque commit de l'histoire
       # Les clés JWT de dev sont générées à la volée (openssl) et .gitignorees ;
       # keys/ ne contient que .gitkeep. Tout PEM commité doit donc être lu comme
-      # une vraie violation — il n'y a pas de faux positif à whitelister.
+      # une vraie violation. Seule exception, consignée de bonne foi dans
+      # .gitleaks.toml : les fixtures de test application-test.yml (paire RSA +
+      # clé AES de DÉVELOPPEMENT, jamais servies en production). Toute autre
+      # clé, dans tout autre fichier, reste bloquante.
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:

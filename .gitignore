@@ -111,3 +111,7 @@ audit/*
 # ce qui n'est PAS fait et les raisons, ce qui n'a rien à faire dans un dépôt
 # public. Un TODO vit dans le dépôt (TODO_*.md) ; une passation, non.
 TODO_PASSATION_*.md
+# Copie résiduelle d\u0027un ancien répertoire de build, commitée par erreur le
+# 20/10/2026 par un « commit all changes » : artefacts régénérables, jamais
+# source — dé-traqués ici, ils ne doivent plus revenir dans la base.
+backend/target.legacy-pkf/
