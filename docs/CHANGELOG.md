@@ -1,5 +1,68 @@
 # Changelog
 
+## [Non publié] — Parcours « Archives » complet (V272)
+
+Audit profond du parcours « Archives » et exécution intégrale — fullstack,
+web **et** mobile, sans mocks. Règle du chantier : **additif strict** (aucun
+endpoint supprimé, aucune clé retirée, aucun comportement legacy modifié).
+Spécification : [`TODO_ARCHIVES_V272.md`](TODO_ARCHIVES_V272.md).
+
+### Backend
+
+- **Migration `V272`** : parité UI_ARCHIVES_ACCESS ≡ EVENTS_EXECUTE_R6A2
+  (6 rôles : + DEPARTMENT_LEADER, FAMILY_LEADER), entrée de menu élargie,
+  index unique `(event_id, version)` avec détection de doublons, colonne
+  `attendance_count` (backfill depuis le snapshot puis NOT NULL), décision FK
+  documentée (pas de FK — soft-delete + purge conformité opt-in).
+- **Lecture bornée** : `GET /church-events/archives/search` (PageResponse de
+  résumés SANS `snapshot_json`, taille ≤ 50) et `GET /church-events/archives/facets`
+  (années/mois réellement archivés) ; `eventId` ajouté au legacy `GET /archives`
+  (navigation de versions) ; `status` enfin appliqué sur `GET /church-events`.
+- **Écriture sûre** : verrou pessimiste `findForUpdate` + compteur de présences
+  à la clôture ; `ARCHIVED` refusé par les PUT (`/church-events` et `/events`).
+- **Conformité** : `ComplianceManagerService` branche `EventArchive` (export
+  avant suppression, rétention 5 ans non active par défaut) et le compte dans
+  `countPendingPurge`.
+- **Audit de lecture** : `EVENT_ARCHIVES_LISTED` / `EVENT_ARCHIVE_VIEWED`.
+- **Tests** (suite archives, 28 tests verts) : `ChurchEventArchiveServiceTest`
+  (v1/v2, anti cross-tenant, filtres, refus ARCHIVED…),
+  `ChurchEventArchiveHttpIntegrationTest` (200/403, isolation 2 tenants,
+  clôtures concurrentes → versions uniques), gardes de catalogue/seed +V272.
+
+### Web
+
+- `EventsPage` : bouton « Clôturer et archiver » (garde servie
+  `EVENTS_EXECUTE_ARCHIVEEVENT` + repli legacy, modale de confirmation,
+  invalidation `['events']`/`['church-event-archives']`, toast vN).
+- `ArchivesPage` : recherche paginée serveur + filtres par facettes (fini le
+  téléchargement intégral), détail via `GET /archives/{id}`, navigation de
+  versions, Échap + focus trap, mois via `Intl.DateTimeFormat` (locale active).
+- `routeAccess`/`App.tsx` : `/archives` à 6 rôles (parité 6=6, commentaire
+  « parité exacte » désormais vrai) ; i18n : 18 clés × 6 locales ;
+  tests `ArchivesPage.test.tsx` + `archivesParity.test.ts` (UI ≡ R6A2 via
+  catalogue servi Flyway).
+
+### Mobile (Flutter)
+
+- Modèles sans codegen `event_archive_model.dart` (résumé, facette, archive,
+  page `PageResponse` — décodage tolérant, ids UUID en String).
+- `EventsService` : `archiveEvent`, `getArchives` (paginé), `getArchive`,
+  `getArchiveFacets` (chemins `/church-events` conformes au contrat serveur).
+- `ArchivesScreen` + `ArchiveDetailScreen` : filtres année/mois (facets),
+  pagination Précédent/Suivant, détail + chips de versions.
+- `EventDetailScreen` : action « Clôturer et archiver » (garde
+  `canServed('EVENTS_EXECUTE_ARCHIVEEVENT')`, confirmation, snackbar vN,
+  refresh providers) ; statut `ARCHIVED` enfin décodable (`EventStatus.archived`).
+- Route `/archives` (+ `_routeRoles` 6 rôles, `routePermissions`
+  UI_ARCHIVES_ACCESS), entrées drawer par rôle, 22 clés × 6 locales,
+  `test/event_archive_contract_test.dart` (convention `_FakeApi`).
+
+### Docs
+
+- `docs/API.md` : lignes `/archives/search` et `/archives/facets`, params
+  `eventId`/`status` documentés ; sélecteur de rétention « Archives
+  d'événements » (EventArchive, 5 ans) dans `ComplianceDashboardPage`.
+
 ## [Non publié] — Tarifs & paiements internationalisés (V245–V248)
 
 Le catalogue de prix quitte le modèle « trois colonnes figées » pour un modèle

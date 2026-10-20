@@ -337,20 +337,20 @@ class PermissionCatalogSourceTest {
     }
 
     @Test
-    @DisplayName("matrixPairs couvre les 7 migrations tagguées, pas seulement les 4 historiques")
+    @DisplayName("matrixPairs couvre les migrations tagguées du manifeste, pas seulement les 4 historiques")
     void matriceCouvreToutLeManifeste() {
         // Le fixture `TestPermissionMatrix` lisait 4 fichiers (V258..V261) quand
-        // le seed H2 en joue 7 (V258..V271) — exactement la dérive que le
+        // le seed H2 en joue 8 (V258..V272) — exactement la dérive que le
         // manifeste unique doit faire disparaître. Ce test verrouille
         // l'ordre de grandeur observé : 445 clés de permission servies au total
-        // (toutes les 7 migrations), contre environ 380 sous l'ancien
+        // (toutes les migrations tagguées catalog), contre environ 380 sous l'ancien
         // périmêtre 4 fichiers. Le seuil de 400 est donc volontairement au-dessus
         // de l’ancien plateau et largement sous le plateau actuel — il
         // rougirait si des fichiers taggués matrix étaient silencieusement retirés.
         Map<String, Set<String>> m = PermissionCatalogSource.matrix();
         assertThat(m).as("catalogue de la matrice (clés ayant ≥1 rôle global)").isNotEmpty();
         assertThat(m.size())
-                .as("matrice servie sur les 7 migrations V258..V271 (~450 clés), "
+                .as("matrice servie sur les 8 migrations V258..V272 (~450 clés), "
                         + "pas les 4 anciennes (~380 clés — dérive historique)")
                 .isGreaterThan(400);
     }

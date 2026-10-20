@@ -3638,6 +3638,27 @@ const fr = {
   'quotas.sourceLabel': 'Source : {value}',
   'quotas.megabytes': '{value} Mo',
 
+  // V272 — parcours « Archives » : écran ArchivesPage + bouton de clôture
+  // EventsPage. Source FR ; les 5 autres locales portent les mêmes clés.
+  'archives.title': 'Archives',
+  'archives.subtitle': 'Consultez les instantanés des événements clôturés — par année et par mois.',
+  'archives.yearAll': 'Toutes les années',
+  'archives.month': 'Mois',
+  'archives.monthAll': 'Tous les mois',
+  'archives.loadError': "Impossible de charger les archives.",
+  'archives.empty': 'Aucune archive pour cette période. Un événement apparaît ici après sa clôture.',
+  'archives.archivedAt': 'Archivé le',
+  'archives.version': 'Version',
+  'archives.end': 'Fin',
+  'archives.otherVersions': 'Autres versions de cet événement',
+  'archives.itemsReserved': 'articles réservés',
+  'archives.dressCodes': 'Tenues (dress-codes)',
+  'archives.immutability': 'Instantané immuable : les archives ne sont jamais écrasées, chaque nouvelle clôture crée une version.',
+  'events.archiveAction': 'Clôturer et archiver',
+  'events.archiveReclose': 'Re-clôturer (nouvelle version)',
+  'events.archivedToast': 'Événement clôturé et archivé',
+  'events.archiveConfirmText': "L'événement passera au statut archivé et un instantané complet sera créé dans les Archives. Les clôtures successives créent des versions ; rien n'est écrasé ni supprimé.",
+
 };
 
 export default fr;

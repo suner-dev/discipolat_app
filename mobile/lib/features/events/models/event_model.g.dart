@@ -59,6 +59,7 @@ const _$EventStatusEnumMap = {
   EventStatus.completed: 'TERMINE',
   EventStatus.cancelled: 'ANNULE',
   EventStatus.draft: 'BROUILLON',
+  EventStatus.archived: 'ARCHIVED',
   EventStatus.unknown: 'UNKNOWN',
 };
 

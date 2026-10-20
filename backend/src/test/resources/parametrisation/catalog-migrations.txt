@@ -48,3 +48,7 @@ V261__parametrisation_cles_ui_routes.sql                catalog matrix
 V262__parametrisation_cles_ui_intra_pages.sql           catalog matrix
 V270__parametrisation_cles_ui_residuel_dashboard.sql    catalog matrix
 V271__visibilite_archives_et_assistants.sql             catalog matrix
+# V272 n'insère AUCUNE permission nouvelle : il élargit la matrice
+# UI_ARCHIVES_ACCESS à DEPARTMENT_LEADER/FAMILY_LEADER (parité avec la garde
+# serveur EVENTS_EXECUTE_R6A2) — donc tag `matrix` seul.
+V272__archives_parcours_complet.sql                     matrix

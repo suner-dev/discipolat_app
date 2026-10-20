@@ -22,13 +22,22 @@ import java.util.UUID;
 @RequestMapping("/api/v1/church-events")
 // §G3.3/§G3.4 — les responsables de département/famille programment et pilotent
 // leurs événements (le service garde le scope) ; legacy DEPARTMENT_LEADER/FAMILY_LEADER conservés.
+// V272 — la consultation des archives est journalisée (EVENT_ARCHIVES_LISTED /
+// EVENT_ARCHIVE_VIEWED) : lire un instantané historique est un accès sensible
+// qui doit laisser une trace, à l'écriture (EVENT_ARCHIVED, V206) comme à la
+// lecture. L'audit est émis ICI et non dans le service : les méthodes de
+// lecture sont `@Transactional(readOnly = true)`, ce qui inhiberait le flush
+// Hibernate et ferait perdre l'événement en silence.
 @PreAuthorize("@authz.can('EVENTS_EXECUTE_R6A2', 'TENANT', null)")
 public class ChurchEventController {
 
     private final ChurchEventService churchEventService;
+    private final com.discipolat.modules.audit.service.AuditEventService auditEventService;
 
-    public ChurchEventController(ChurchEventService churchEventService) {
+    public ChurchEventController(ChurchEventService churchEventService,
+                                 com.discipolat.modules.audit.service.AuditEventService auditEventService) {
         this.churchEventService = churchEventService;
+        this.auditEventService = auditEventService;
     }
 
     // ========== CHURCH EVENT CRUD ==========
@@ -42,7 +51,9 @@ public class ChurchEventController {
             @RequestParam(required = false) String status) {
         UUID tenantId = TenantContext.requireTenantId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50), Sort.by("dateDebut"));
-        Page<ChurchEventDto> result = churchEventService.getChurchEvents(tenantId, pageable)
+        // V272 — le paramètre `status` accepté depuis V203 est enfin appliqué ;
+        // absent ou vide → comportement historique inchangé.
+        Page<ChurchEventDto> result = churchEventService.getChurchEvents(tenantId, status, pageable)
                 .map(ChurchEventDto::from);
         return ResponseEntity.ok(PageResponse.of(result.getContent(), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalPages()));
@@ -102,21 +113,70 @@ public class ChurchEventController {
         return ResponseEntity.ok(churchEventService.archiveEvent(tenantId, actorId, eventId));
     }
 
-    /** Écran « Archives » : consultation par années / mois / espace. */
+    /**
+     * Écran « Archives » : consultation par années / mois / espace / événement.
+     * V272 — `eventId` (additif) permet la navigation de versions ; la lecture
+     * est journalisée. Ce point d'entrée legacy charge les instantanés complets
+     * (contrat historique conservé tel quel) ; le web utilise désormais
+     * {@code /archives/search}, borné.
+     */
     @GetMapping("/archives")
     public ResponseEntity<List<com.discipolat.modules.events.domain.ChurchEventArchive>> getArchives(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) UUID spaceId) {
+            @RequestParam(required = false) UUID spaceId,
+            @RequestParam(required = false) UUID eventId) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(churchEventService.getArchives(tenantId, year, month, spaceId));
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        auditEventService.logSimple(tenantId, actorId, "EVENT_ARCHIVES_LISTED",
+                "CHURCH_EVENT_ARCHIVE", null);
+        return ResponseEntity.ok(churchEventService.getArchives(tenantId, year, month, spaceId, eventId));
     }
 
+    /**
+     * Recherche paginée de l'écran « Archives » (V272) : résumés SANS
+     * `snapshot_json`, coût borné. C'est le chemin servi par le web — le
+     * legacy `/archives` est conservé pour compatibilité (mobile, scripts).
+     */
+    @GetMapping("/archives/search")
+    public ResponseEntity<PageResponse<ChurchEventArchiveSummary>> searchArchives(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) UUID spaceId,
+            @RequestParam(required = false) UUID eventId) {
+        UUID tenantId = TenantContext.requireTenantId();
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50),
+                Sort.by(Sort.Order.desc("eventStartAt"), Sort.Order.desc("version")));
+        auditEventService.logSimple(tenantId, actorId, "EVENT_ARCHIVES_LISTED",
+                "CHURCH_EVENT_ARCHIVE", null);
+        return ResponseEntity.ok(PageResponse.from(
+                churchEventService.searchArchives(tenantId, year, month, spaceId, eventId, pageable)));
+    }
+
+    /**
+     * Facettes années/mois réellement archivées (V272) : les filtres de l'écran
+     * sont dérivés des données, jamais codés en dur côté client.
+     */
+    @GetMapping("/archives/facets")
+    public ResponseEntity<List<ChurchEventArchiveFacet>> getArchiveFacets() {
+        UUID tenantId = TenantContext.requireTenantId();
+        return ResponseEntity.ok(churchEventService.getArchiveFacets(tenantId));
+    }
+
+    /** Détail d'une version archivée — journalisé (lecture d'instantané sensible). */
     @GetMapping("/archives/{archiveId}")
     public ResponseEntity<com.discipolat.modules.events.domain.ChurchEventArchive> getArchive(
             @PathVariable UUID archiveId) {
         UUID tenantId = TenantContext.requireTenantId();
-        return ResponseEntity.ok(churchEventService.getArchive(tenantId, archiveId));
+        UUID actorId = SecurityUtils.getCurrentUserId();
+        com.discipolat.modules.events.domain.ChurchEventArchive archive =
+                churchEventService.getArchive(tenantId, archiveId);
+        auditEventService.logSimple(tenantId, actorId, "EVENT_ARCHIVE_VIEWED",
+                "CHURCH_EVENT_ARCHIVE", archive.getId());
+        return ResponseEntity.ok(archive);
     }
 
     // ========== SPACES ==========

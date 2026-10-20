@@ -215,6 +215,7 @@ import 'presentation/screens/streaming/streaming_chat_screen.dart';
 import 'features/events/screens/events_screen.dart';
 import 'features/events/screens/event_detail_screen.dart';
 import 'features/events/screens/event_create_screen.dart';
+import 'features/events/screens/archives_screen.dart';
 import 'features/events/models/event_model.dart';
 import 'features/finances/screens/finances_screen.dart';
 import 'features/health/screens/health_screen.dart';
@@ -618,6 +619,9 @@ const Map<String, List<String>> routePermissions = {
   '/ai-predictions/risks': ['UI_AI_PREDICTIONS_RISKS_ACCESS'],
   '/aid-exchange': ['UI_AID_EXCHANGE_ACCESS'],
   '/alerts': ['ALERTS_EXECUTE'],
+  // V272 — lecture des instantanés clôturés ; même clé que le web
+  // (UI_ARCHIVES_ACCESS, matrice élargie à 6 rôles par la migration V272).
+  '/archives': ['UI_ARCHIVES_ACCESS'],
   '/announcement-schedule': ['UI_ANNOUNCEMENT_SCHEDULE_ACCESS'],
   '/appointments': ['APPOINTMENTS_EXECUTE'],
   '/audit': ['AUDIT_EXECUTE'],
@@ -1160,6 +1164,18 @@ Map<String, List<String>> _routeRoles = {
     'MEMBRE'
   ],
   '/events/create': ['ADMIN', 'PASTEUR', 'RESPONSABLE'],
+  // V272 — parité avec la matrice servie UI_ARCHIVES_ACCESS (6 rôles,
+  // miroir exact du web ROUTE_ROLES['/archives']) : + DEPARTMENT_LEADER,
+  // FAMILY_LEADER. Le littéral n'est que le REPLI : dès que le cache servi
+  // est prêt, la clé UI_ARCHIVES_ACCESS gouverne (Garde, L1737 ci-dessus).
+  '/archives': [
+    'ADMIN',
+    'PASTEUR',
+    'RESPONSABLE',
+    'CHEF_DE_FAMILLE',
+    'DEPARTMENT_LEADER',
+    'FAMILY_LEADER'
+  ],
   '/finances': [
     'ADMIN',
     'PASTEUR',
@@ -2644,6 +2660,13 @@ final appRouter = GoRouter(
         // pré-remplit et bascule en mode édition dès que `event != null`.
         builder: (ctx, s) =>
             EventCreateScreen(event: s.extra is Event ? s.extra as Event : null)),
+    // V272 — parcours « Archives » (lecture des instantanés versionnés des
+    // événements clôturés). Le détail de version navigue en interne
+    // (Navigator.push sur ArchiveDetailScreen) : pas de route gardée de plus.
+    GoRoute(
+        path: '/archives',
+        name: 'archives',
+        builder: (ctx, s) => const ArchivesScreen()),
     GoRoute(
         path: '/finances',
         name: 'finances',

@@ -605,9 +605,11 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
-| `GET` | `/api/v1/church-events` | getEvents | `page` (query), `size` (query), `status` (query) |
+| `GET` | `/api/v1/church-events` | getEvents | `page` (query), `size` (query), `status` (query) — `status` effectif depuis V272 |
 | `POST` | `/api/v1/church-events` | createEvent_1 | — |
-| `GET` | `/api/v1/church-events/archives` | getArchives | `year` (query), `month` (query), `spaceId` (query) |
+| `GET` | `/api/v1/church-events/archives` | getArchives | `year` (query), `month` (query), `spaceId` (query), `eventId` (query, V272) — legacy, instantanés complets |
+| `GET` | `/api/v1/church-events/archives/facets` | getArchiveFacets | — (V272 : années/mois réellement archivés) |
+| `GET` | `/api/v1/church-events/archives/search` | searchArchives | `page` (query), `size` (query ≤50), `year` (query), `month` (query), `spaceId` (query), `eventId` (query) — V272, résumés sans snapshot |
 | `GET` | `/api/v1/church-events/archives/{archiveId}` | getArchive | `archiveId` *(req)* (path) |
 | `GET` | `/api/v1/church-events/calendar` | getCalendar | `from` *(req)* (query), `to` *(req)* (query) |
 | `GET` | `/api/v1/church-events/locations` | getLocations | — |

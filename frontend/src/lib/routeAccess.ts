@@ -437,9 +437,11 @@ export const ROUTE_ROLES: Record<string, AccessRole[]> = {
   '/tasks': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'FAISEUR'],
   '/health': ['ADMIN', 'PASTEUR', 'HEALTH_STAFF', 'HEALTH_LEAD'],
   '/finance-modules': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
-  // V271 — parité exacte avec la matrice servie de UI_ARCHIVES_ACCESS (= les
-  // détenteurs de la garde serveur EVENTS_EXECUTE_R6A2 sur /church-events).
-  '/archives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE'],
+  // V271 — parité avec la matrice servie de UI_ARCHIVES_ACCESS ; V272 élargit
+  // cette matrice à 6 rôles (= les détenteurs de la garde serveur
+  // EVENTS_EXECUTE_R6A2 sur /church-events) : + DEPARTMENT_LEADER, FAMILY_LEADER.
+  // La liste ci-dessous suit : 6 rôles côté UI = 6 rôles côté R6A2, parité exacte.
+  '/archives': ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER'],
 };
 
 function splitSegments(path: string): string[] {

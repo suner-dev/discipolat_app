@@ -801,6 +801,10 @@ export function navForRole(
         items: s.items.filter((i) => !ADMIN_ONLY_HREFS.includes(i.href)),
       })).filter((s) => s.items.length > 0);
     default:
+      // V272 — couverture vérifiée : les rôles legacy sans espace dédié
+      // (DEPARTMENT_LEADER, FAMILY_LEADER, TENANT_*, etc.) retombent sur
+      // FULL_NAV, qui contient déjà l'entrée « Archives » (/archives) —
+      // cohérent avec l'élargissement de UI_ARCHIVES_ACCESS par V272.
       return FULL_NAV;
   }
 }

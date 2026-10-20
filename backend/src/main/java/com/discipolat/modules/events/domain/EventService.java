@@ -262,7 +262,21 @@ public class EventService {
         if (updated.getDateFin() != null) event.setDateFin(updated.getDateFin());
         if (updated.getLimitePlaces() != null) event.setLimitePlaces(updated.getLimitePlaces());
         if (updated.getTypeEvenement() != null) event.setTypeEvenement(updated.getTypeEvenement());
-        if (updated.getStatut() != null) event.setStatut(updated.getStatut());
+        // V272 — cohérence d'archivage (miroir de ChurchEventService) : le
+        // statut ARCHIVED est produit UNIQUEMENT par la clôture
+        // POST /api/v1/church-events/{id}/archive, seul chemin qui crée
+        // l'instantané versionné dans event_archive. Un PUT qui l'écrirait
+        // fabriquerait un « archivé » sans archive — divergence relevée par
+        // l'audit archives.
+        if (updated.getStatut() != null) {
+            if (Event.STATUT_ARCHIVE.equalsIgnoreCase(updated.getStatut())) {
+                throw new IllegalArgumentException(
+                        "Statut ARCHIVED réservé à la clôture d'archive "
+                                + "(POST /api/v1/church-events/{eventId}/archive) : "
+                                + "un simple PUT ne peut pas créer d'archivage sans instantané.");
+            }
+            event.setStatut(updated.getStatut());
+        }
         if (updated.getCompteRendu() != null) event.setCompteRendu(updated.getCompteRendu());
         if (updated.getDepartmentId() != null) event.setDepartmentId(updated.getDepartmentId());
         if (updated.getImageUrl() != null) event.setImageUrl(updated.getImageUrl());

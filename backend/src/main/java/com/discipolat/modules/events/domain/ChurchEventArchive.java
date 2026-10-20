@@ -16,10 +16,13 @@ import java.util.UUID;
  * consultable par années / mois / espace (« 4 mars 2023 — Séminaire… »).
  */
 @Entity
-@Table(name = "event_archive", indexes = {
+@Table(name = "event_archive", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_event_archive_event_version", columnNames = {"event_id", "version"})
+}, indexes = {
     @Index(name = "idx_event_archive_tenant", columnList = "tenant_id"),
     @Index(name = "idx_event_archive_event", columnList = "event_id"),
-    @Index(name = "idx_event_archive_year_month", columnList = "tenant_id, event_year, event_month")
+    @Index(name = "idx_event_archive_year_month", columnList = "tenant_id, event_year, event_month"),
+    @Index(name = "idx_event_archive_attendance", columnList = "tenant_id, attendance_count")
 })
 @Getter
 @Setter
@@ -65,6 +68,23 @@ public class ChurchEventArchive {
     @Column(name = "snapshot_json", nullable = false, columnDefinition = "jsonb")
     @Builder.Default
     private Map<String, Object> snapshotJson = new LinkedHashMap<>();
+
+    /**
+     * Nombre de présences figé au clôturage, dénormalisé depuis
+     * {@code snapshot_json.attendanceCount} (migration V272 §3).
+     *
+     * <p>Pourquoi une colonne : la liste paginée doit afficher le compteur sans
+     * déserialiser le JSONB de chaque ligne — l'audit pertinence (oct. 2026)
+     * relevait que la page « Archives » chargeait l'intégralité des instantanés
+     * juste pour rendre une carte. La colonne est la valeur lue par la liste ;
+     * le snapshot reste la vérité d'instantané et n'est lu que pour le détail.
+     *
+     * <p>Backfillée pour les lignes préexistantes par V272 ; renseignée à
+     * l'écriture par {@code archiveEvent}.
+     */
+    @Column(name = "attendance_count", nullable = false)
+    @Builder.Default
+    private Integer attendanceCount = 0;
 
     @Column(name = "archived_by")
     private UUID archivedBy;

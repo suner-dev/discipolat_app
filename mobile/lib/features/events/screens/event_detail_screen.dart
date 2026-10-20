@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:discipolat_mobile/app.dart';
 import 'package:discipolat_mobile/features/events/models/event_model.dart';
 import 'package:discipolat_mobile/features/events/services/events_service.dart';
+import 'package:discipolat_mobile/l10n/app_localizations.dart';
 import 'package:discipolat_mobile/presentation/widgets/glass_theme.dart';
 import 'package:discipolat_mobile/features/events/widgets/event_chat_overlay.dart';
 
@@ -27,6 +28,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   bool _showChat = false;
   bool _isInitialized = false;
   bool _cancelling = false;
+  bool _archiving = false;
 
   @override
   void initState() {
@@ -93,6 +95,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final canRegister = isUpcoming && !event.isRegistered;
     final canCheckIn = isLive && !event.isCheckedIn;
     final isOrganizer = event.isOrganizedBy(AuthState().userId);
+    // V272 — clôture d'archive : garde « served-first » identique au web
+    // (clé EVENTS_EXECUTE_ARCHIVEEVENT ; repli legacy = détenteurs V258 de la
+    // matrice). Un événement déjà ARCHIVED peut être re-clôturé (vN+1).
+    final canArchive = AuthState().canServed(
+      'EVENTS_EXECUTE_ARCHIVEEVENT',
+      legacy: () => const ['ADMIN', 'PASTEUR', 'RESPONSABLE', 'DEPARTMENT_LEADER']
+          .contains(AuthState().activeRole),
+    );
 
     return Stack(
       children: [
@@ -208,6 +218,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         const PopupMenuItem(value: 'stats', child: Row(children: [Icon(Icons.analytics_rounded), SizedBox(width: 8), Text('Statistiques')])),
                         const PopupMenuItem(value: 'cancel', child: Row(children: [Icon(Icons.cancel_rounded, color: Colors.red), SizedBox(width: 8), Text('Annuler', style: TextStyle(color: Colors.red))])),
                       ],
+                      if (canArchive)
+                        PopupMenuItem(
+                            value: 'archive',
+                            child: Row(children: [
+                              Icon(Icons.archive_rounded, color: AppColors.primary),
+                              const SizedBox(width: 8),
+                              Text(AppLocalizations.of(context).archiveAction),
+                            ])),
                     ],
                   ),
                 ],
@@ -462,6 +480,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       case 'cancel':
         _cancelEvent(event);
         break;
+      case 'archive':
+        _archiveEvent(event);
+        break;
     }
   }
 
@@ -504,6 +525,51 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
       // reellement tentee serait un mensonge.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Annulation impossible : $e')),
+      );
+    }
+  }
+
+  /// V272 — clôture + archive versionnée (POST /church-events/{id}/archive).
+  /// Même discipline que _cancelEvent : garde anti double-tap, confirmation
+  /// explicite, invalidation des providers (l'écran relit l'état serveur).
+  Future<void> _archiveEvent(Event event) async {
+    if (_archiving) return;
+    final l10n = AppLocalizations.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardDark,
+        title: Text(l10n.archiveConfirmTitle),
+        content: Text(l10n.archiveConfirmText),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.cancel)),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.archiveAction)),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    setState(() => _archiving = true);
+    try {
+      final archive =
+          await ref.read(eventsServiceProvider).archiveEvent(event.id);
+      if (!mounted) return;
+      ref.invalidate(_eventProvider(event.id));
+      setState(() => _archiving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                '${l10n.archiveDone} (v${archive.version ?? 1})')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _archiving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.archiveErrorPrefix} $e')),
       );
     }
   }

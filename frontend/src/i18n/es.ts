@@ -3752,6 +3752,26 @@ const es: Record<string, string> = {
   'quotas.megabytes': '{value} MB',
   'settings.lightMode': 'Modo claro',
 
+  // V272 — recorrido « Archivos » (ArchivesPage + botón de cierre EventsPage).
+  'archives.title': 'Archivos',
+  'archives.subtitle': 'Consulte las instantáneas de los eventos cerrados — por año y por mes.',
+  'archives.yearAll': 'Todos los años',
+  'archives.month': 'Mes',
+  'archives.monthAll': 'Todos los meses',
+  'archives.loadError': 'No se pudieron cargar los archivos.',
+  'archives.empty': 'Ningún archivo para este período. Un evento aparece aquí después de su cierre.',
+  'archives.archivedAt': 'Archivado el',
+  'archives.version': 'Versión',
+  'archives.end': 'Fin',
+  'archives.otherVersions': 'Otras versiones de este evento',
+  'archives.itemsReserved': 'artículos reservados',
+  'archives.dressCodes': 'Vestuarios (códigos de vestimenta)',
+  'archives.immutability': 'Instantánea inmutable: los archivos nunca se sobrescriben; cada nuevo cierre crea una versión.',
+  'events.archiveAction': 'Cerrar y archivar',
+  'events.archiveReclose': 'Re-cerrar (nueva versión)',
+  'events.archivedToast': 'Evento cerrado y archivado',
+  'events.archiveConfirmText': 'El evento pasará al estado archivado y se creará una instantánea completa en los Archivos. Los cierres sucesivos crean versiones; nada se sobrescribe ni se elimina.',
+
 };
 
 export default es;

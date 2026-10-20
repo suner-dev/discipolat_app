@@ -3575,6 +3575,26 @@ const en: Record<string, string> = {
   'quotas.megabytes': '{value} MB',
   'settings.lightMode': 'Light mode',
 
+  // V272 — Archives journey (ArchivesPage + EventsPage closure button).
+  'archives.title': 'Archives',
+  'archives.subtitle': 'Browse snapshots of closed events — by year and by month.',
+  'archives.yearAll': 'All years',
+  'archives.month': 'Month',
+  'archives.monthAll': 'All months',
+  'archives.loadError': 'Unable to load the archives.',
+  'archives.empty': 'No archive for this period. An event appears here once it has been closed.',
+  'archives.archivedAt': 'Archived on',
+  'archives.version': 'Version',
+  'archives.end': 'End',
+  'archives.otherVersions': 'Other versions of this event',
+  'archives.itemsReserved': 'items reserved',
+  'archives.dressCodes': 'Outfits (dress codes)',
+  'archives.immutability': 'Immutable snapshot: archives are never overwritten; each new closure creates a version.',
+  'events.archiveAction': 'Close and archive',
+  'events.archiveReclose': 'Re-close (new version)',
+  'events.archivedToast': 'Event closed and archived',
+  'events.archiveConfirmText': 'The event will move to the archived status and a full snapshot will be created in the Archives. Successive closures create versions; nothing is overwritten or deleted.',
+
 };
 
 export default en;

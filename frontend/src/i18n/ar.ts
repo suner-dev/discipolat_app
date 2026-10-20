@@ -3664,6 +3664,25 @@ const ar: Record<string, string> = {
   'quotas.percentLabel': 'النسبة: {value}',
   'quotas.sourceLabel': 'المصدر: {value}',
   'quotas.megabytes': '{value} ميغابايت',
+  // V272 — مسار «الأرشيف» (ArchivesPage + زر الختم في EventsPage).
+  'archives.title': 'الأرشيف',
+  'archives.subtitle': 'اطّلع على اللقطات الكاملة للأحداث المختومة — حسب السنة والشهر.',
+  'archives.yearAll': 'كل السنوات',
+  'archives.month': 'الشهر',
+  'archives.monthAll': 'كل الأشهر',
+  'archives.loadError': 'تعذّر تحميل الأرشيف.',
+  'archives.empty': 'لا توجد نسخة أرشيفية لهذه الفترة. يظهر الحدث هنا بعد ختمه.',
+  'archives.archivedAt': 'خُتم في',
+  'archives.version': 'الإصدار',
+  'archives.end': 'النهاية',
+  'archives.otherVersions': 'إصدارات أخرى لهذا الحدث',
+  'archives.itemsReserved': 'عناصر محجوزة',
+  'archives.dressCodes': 'الأزياء (قواعد اللباس)',
+  'archives.immutability': 'لقطة غير قابلة للتغيير: النسخ المؤرشفة لا تُستبدل أبدًا؛ كل ختم جديد يُنشئ إصدارًا.',
+  'events.archiveAction': 'ختم وأرشفة',
+  'events.archiveReclose': 'إعادة الختم (إصدار جديد)',
+  'events.archivedToast': 'تم ختم الحدث وأرشفته',
+  'events.archiveConfirmText': 'سينتقل الحدث إلى حالة مُؤرشف وستُنشأ لقطة كاملة عنه في الأرشيف. عمليات الختم المتتالية تُنشئ إصدارات؛ لا يُستبدل شيء ولا يُحذف.',
 };
 
 export default ar;

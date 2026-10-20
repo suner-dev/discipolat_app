@@ -3736,6 +3736,26 @@ const sw: Record<string, string> = {
   'quotas.megabytes': '{value} MB',
   'settings.lightMode': 'Mwanga wa mwanga',
 
+  // V272 — safari « Kumbukumbu » (ArchivesPage + kitufe cha kufunga EventsPage).
+  'archives.title': 'Kumbukumbu',
+  'archives.subtitle': 'Tazama picha-ramani za matukio yaliyofungwa — kwa mwaka na kwa mwezi.',
+  'archives.yearAll': 'Miaka yote',
+  'archives.month': 'Mwezi',
+  'archives.monthAll': 'Miezi yote',
+  'archives.loadError': 'Haiwezekani kupakia kumbukumbu.',
+  'archives.empty': 'Hakuna kumbukumbu kwa kipindi hiki. Tukio litaonekana hapa baada ya kufungwa.',
+  'archives.archivedAt': 'Ilifungwa tarehe',
+  'archives.version': 'Toleo',
+  'archives.end': 'Mwisho',
+  'archives.otherVersions': 'Matoleo mengine ya tukio hili',
+  'archives.itemsReserved': 'vifaa vilivyoachwa',
+  'archives.dressCodes': 'Vimwao (kanuni za mavazi)',
+  'archives.immutability': 'Picha-ramani isiyobadilika: kumbukumbu hazifutwi kamwe; kila ufungishaji mpya hutengeneza toleo.',
+  'events.archiveAction': 'Funga na hifadhi',
+  'events.archiveReclose': 'Funga upya (toleo jipya)',
+  'events.archivedToast': 'Tukio limefungwa na kuhifadhiwa',
+  'events.archiveConfirmText': 'Tukio litahamia kwenye hali ya kuhifadhiwa na picha-ramani kamili itaundwa katika Kumbukumbu. Ufungishaji wa mfululizo hutengeneza matoleo; hakuna kinachoandikwa upya wala kufutwa.',
+
 };
 
 export default sw;

@@ -957,8 +957,11 @@ export default function App() {
               <AiAssistantPage />
             </ProtectedRoute>
           } />
+          {/* V272 — 6 rôles = parité exacte avec UI_ARCHIVES_ACCESS servi
+              (élargi à DEPARTMENT_LEADER/FAMILY_LEADER) et la garde serveur
+              EVENTS_EXECUTE_R6A2 sur /church-events. */}
           <Route path="/archives" element={
-            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE']} permissions={['UI_ARCHIVES_ACCESS']}>
+            <ProtectedRoute roles={['ADMIN', 'PASTEUR', 'RESPONSABLE', 'CHEF_DE_FAMILLE', 'DEPARTMENT_LEADER', 'FAMILY_LEADER']} permissions={['UI_ARCHIVES_ACCESS']}>
               <ArchivesPage />
             </ProtectedRoute>
           } />

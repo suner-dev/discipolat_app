@@ -416,6 +416,13 @@ enum EventStatus {
   @JsonValue('BROUILLON')
   draft,
 
+  /// V272 — statut exclusif de la clôture d'archive
+  /// (`ChurchEventService.archiveEvent` passe l'événement à `ARCHIVED`).
+  /// Non éditable (le serveur le refuse, 400), mais lisible : il doit se
+  /// décoder plutôt que retomber sur « inconnu ».
+  @JsonValue('ARCHIVED')
+  archived,
+
   /// Valeur de repli : le backend est un texte libre, donc une valeur
   /// inconnue ne doit JAMAIS faire echouer le chargement de l'ecran.
   @JsonValue('UNKNOWN')
@@ -433,6 +440,8 @@ enum EventStatus {
         return 'Terminé';
       case EventStatus.cancelled:
         return 'Annulé';
+      case EventStatus.archived:
+        return 'Archivé';
       case EventStatus.unknown:
         return 'Statut inconnu';
       case EventType.culte:
@@ -492,6 +501,8 @@ extension EventStatusWire on EventStatus {
     'TERMINE': EventStatus.completed,
     'ANNULE': EventStatus.cancelled,
     'BROUILLON': EventStatus.draft,
+    // V272 — clôture d'archive (vocabulaire serveur `ARCHIVED`).
+    'ARCHIVED': EventStatus.archived,
     // Ancien vocabulaire mobile, accepte en lecture pour ne pas casser des
     // caches ou des enregistrements deja stockes cote client.
     'PUBLISHED': EventStatus.published,
@@ -512,6 +523,7 @@ extension EventStatusWire on EventStatus {
         EventStatus.completed => 'TERMINE',
         EventStatus.cancelled => 'ANNULE',
         EventStatus.draft => 'BROUILLON',
+        EventStatus.archived => 'ARCHIVED',
         EventStatus.unknown => 'UNKNOWN',
       };
 
