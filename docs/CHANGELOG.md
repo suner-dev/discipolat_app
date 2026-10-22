@@ -1,5 +1,87 @@
 # Changelog
 
+## [Non publié] — Parcours pastoral temporel (« le récit d'un membre »)
+
+Axe « suivi pastoral temporel » : passer des nombres aux visages en exposant, en
+**lecture seule** et à partir des **seules tables déjà persistées**, le récit
+chronologique d'un membre — adhésions, transferts tracés, capacités exercées et
+leurs fins, rattachements d'encadrants déclarés et rompus. **Additif strict** :
+aucune migration, aucune nouvelle table, aucun endpoint supprimé, aucun agrégat
+existant réécrit.
+
+### Backend
+
+- **`UserHierarchyService.parcours(tenant, user, viewer)`** : compose le récit à
+  partir de `TenantMembership` (adhésion + `markTransferred`/`isTransferred`),
+  `MemberRoleAssignment` (capacité × nœud, début/fin) et des relations
+  (`MemberRelationService.relationEvents`). Tri chronologique ascendant
+  (`nullsLast`) ; chaque événement = `horodatage` (ISO) / `type`
+  (ADHESION | TRANSFERT | CAPACITE | RATTACHEMENT) / `action` (DEBUT | FIN) /
+  `libelle` / `details`, plus un `resume` (décompte `parType`, `transferts`,
+  `rattachementsRompus`) et l'`ancienneteJours`. Nœuds, rôles et noms lus en
+  batch — **aucun N+1**.
+- **`MemberRelationService.relationEvents`** : timeline brute des rattachements
+  d'un membre **tous statuts confondus** (actifs ET révoqués). `summary` continue
+  de n'exposer que l'actif ; cette lecture est purement additive et n'altère
+  aucune vue existante.
+- **Endpoints** : `GET /api/v1/hierarchy/me/parcours` (`isAuthenticated`) et
+  `GET /api/v1/hierarchy/users/{userId}/parcours`
+  (`@authz.can('RELATIONS_EXECUTE','TENANT',null)` — même garde que la fiche
+  hiérarchie). Isolation multi-tenant stricte : un membre d'une autre église est
+  **invisible (404)**, jamais 403 (pas d'énumération d'identifiants).
+- **Ratchet d'architecture tenu** : `relationEvents` n'introduit pas de
+  `@Transactional` redondante — la classe la porte déjà et `parcours` l'appelle
+  dans sa propre transaction `readOnly` (propagation `REQUIRED`). Le plafond R4
+  (3032) reste respecté ; `ArchitectureRulesTest` vert.
+- **Tests** : `UserHierarchyServiceParcoursTest` (4 verts — ordre chronologique,
+  transfert raconté et non effacé, fin de capacité distinguée d'une capacité
+  active datée, rupture de rattachement, 404 cross-tenant sans rechargement en
+  aval). Non-régression vérifiée sur un rebuild `clean` : `UserHierarchyServiceTest`
+  (11), `MemberRelationServiceTest` (16), `ArchitectureRulesTest` (1) tous verts.
+
+### Frontend
+
+- **`components/relations/ParcoursCard.tsx`** (nouveau, additif) : lit `GET /hierarchy/me/parcours`
+  pour sa propre vue et `GET /hierarchy/users/{id}/parcours` pour un tiers — même réflexe que
+  `MyHierarchyCard` : un membre sans `RELATIONS_EXECUTE` doit pouvoir lire SON récit. Monté dans
+  `ProfilePage` (sous « Ma hiérarchie ») et dans `UserDetailModal` (sous le bloc hiérarchie,
+  auto/tiers tranché par `useAuthOptional`). Dégradation silencieuse : aucun récit, backend sans
+  la brique ou 403 → rien ne s'affiche, jamais un bloc vide ni une erreur trompeuse.
+- **Traduction des codes serveur** : `ADHESION | TRANSFERT | CAPACITE | RATTACHEMENT` et
+  `DEBUT | FIN` rendus via i18n (+ icône et teinte par nature) ; le `libelle` complet reste en
+  infobule. Les signaux faibles (`transferts`, `rattachementsRompus`) ne s'affichent que si le
+  serveur en trouve — le widget n'invente aucune donnée.
+- **i18n** : 11 clés `hierarchy.parcours.*` ajoutées **au pair dans les 6 locales**
+  (fr, en, pt, es, sw, ar) — règle de parité du dépôt.
+- **Tests** : `ParcoursCard.test.tsx` (4 verts) — propre endpoint pour soi, endpoint tiers pour
+  un autre, rien-affiché sur vide/404, événement sans date non cassant. Non-régression
+  `UserDetailModalHierarchy.test.tsx` (8) verte, `tsc -b` propre.
+
+### Mobile
+
+- **`presentation/widgets/parcours_card.dart`** (nouveau, additif) : `MyParcoursCard` charge
+  `GET /hierarchy/me/parcours` via `RelationService.myParcours()`, calqué sur `MyHierarchyCard`
+  (chargement isolé, repli silencieux, échec explicite avec « Réessayer »). Parsing isolé dans
+  `ParcoursParsing`/`ParcoursEvent` : testable sans HTTP, réponse dégradée → liste vide, jamais
+  d'exception.
+- **Montage** : `profile_screen.dart`, sous « Ma hiérarchie » — la section ne prend place que si
+  le serveur a un récit à raconter.
+- **l10n** : 12 clés (`parcoursTitle`, `parcoursSince`, `parcoursType*`, `parcoursAction*`,
+  `parcoursTransferts`, `parcoursRuptures`, `parcoursUnavailable`) dans les 6 cartes de
+  `AppLocalizations` (source de vérité réelle ; `.arb` non consommés) ; placeholders `{date}`/`{n}`
+  vérifiés par test, codes techniques jamais exposés à l'écran.
+- **Tests** : `parcours_card_test.dart` (7 verts) — bon endpoint lu, natures traduites, vide
+  silencieux, panne puis réessai qui récupère, événement sans date, parsing dégradé, parité des
+  6 locales.
+
+### Documentation
+
+- `ORGANIZATION_HIERARCHY.md` : nouvelle §7.3 — contrat du parcours temporel
+  (sources, sémantique des événements, résumé, garde et isolation), **plus le consommateur
+  UI web/mobile** désormais branché sur le contrat.
+- `API.md` régénéré via `scripts/generate-api-docs.sh` (règle du dépôt, pas
+  d'édition manuelle).
+
 ## [Non publié] — Consultation des membres à chaque échelle (hiérarchie ecclésiastique)
 
 Mission : depuis tout membre / responsable / cellule / église / entité, retrouver son

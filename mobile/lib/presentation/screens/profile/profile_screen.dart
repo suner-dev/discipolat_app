@@ -12,6 +12,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/secure_screen.dart';
 import 'my_relations_card.dart';
 import '../../widgets/hierarchy_card.dart';
+import '../../widgets/parcours_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.apiService});
@@ -268,6 +269,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         apiService: widget.apiService,
                         onOpenProfile: (id) => context.push('/users/$id'),
                       ),
+                      const SizedBox(height: 16),
+
+                      // « Mon parcours pastoral » : le récit chronologique déjà
+                      // persisté (GET /hierarchy/me/parcours) — section additive,
+                      // silencieuse quand le serveur n'a rien à raconter.
+                      MyParcoursCard(apiService: widget.apiService),
                       const SizedBox(height: 16),
 
                       // PORT Develop1 (§G5.9) — Portail basse connexion

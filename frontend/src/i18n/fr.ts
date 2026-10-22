@@ -3638,6 +3638,16 @@ const fr = {
   'hierarchy.responsibleOf': 'responsable de',
   'hierarchy.step': 'Étape {n}',
   'hierarchy.loadUserError': 'Impossible de charger cette fiche.',
+  'hierarchy.parcoursTitle': 'Mon parcours pastoral',
+  'hierarchy.parcoursSince': 'Membre depuis le {date}',
+  'hierarchy.parcoursType.ADHESION': 'Adhésion',
+  'hierarchy.parcoursType.TRANSFERT': 'Transfert',
+  'hierarchy.parcoursType.CAPACITE': 'Capacité',
+  'hierarchy.parcoursType.RATTACHEMENT': 'Rattachement',
+  'hierarchy.parcoursActionDebut': 'Début',
+  'hierarchy.parcoursActionFin': 'Fin',
+  'hierarchy.parcoursTransferts': '{n} transfert(s)',
+  'hierarchy.parcoursRuptures': '{n} rattachement(s) rompu(s)',
   // B6 — QuotaUsageCards : le composant était intégralement en français codé en
   // dur, donc illisible en `ar`/`sw`. Une clé par libellé réellement affiché.
   'quotas.title': 'Quotas et usage',

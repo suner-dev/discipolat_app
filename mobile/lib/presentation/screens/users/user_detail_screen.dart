@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/services/api_service.dart';
 import '../../widgets/glass_theme.dart';
 import '../../widgets/hierarchy_card.dart';
+import '../../widgets/parcours_card.dart';
 import '../../widgets/open_url.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../data/services/relation_service.dart';
@@ -353,6 +354,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
             onOpenProfile: (id) => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => UserDetailScreen(userId: id)),
             ),
+          ),
+          const SizedBox(height: 12),
+          // « Le parcours » du membre consulté — récit chronologique en lecture
+          // seule (`/hierarchy/users/{id}/parcours`). Additif : refus de garde
+          // (403) ou absence de récit → rien ne s'affiche ; la brique n'est pas
+          // relue quand la hiérarchie a déjà signalé sa panne (même service).
+          MyParcoursCard(
+            apiService: widget.apiService,
+            userId: widget.userId,
           ),
           const SizedBox(height: 12),
         ],

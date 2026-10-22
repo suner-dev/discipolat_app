@@ -98,6 +98,25 @@ class RelationService {
     return _map(res);
   }
 
+  /// GET /hierarchy/me/parcours — le RÉCIT chronologique du membre (adhésions,
+  /// transferts, capacités, rattachements), composé côté serveur en lecture
+  /// seule à partir des seules tables déjà persistées. Shape :
+  /// `{ userId, nomComplet, depuis, ancienneteJours, totalEvenements,
+  /// evenements[], resume }`. Aucune écriture, aucune nouvelle table.
+  Future<Map<String, dynamic>> myParcours() async {
+    final res = await _api.get('/hierarchy/me/parcours');
+    return _map(res);
+  }
+
+  /// GET /hierarchy/users/{id}/parcours — récit d'UN membre (même garde que la
+  /// fiche hiérarchie, `RELATIONS_EXECUTE`). Un appelant non autorisé reçoit
+  /// 403 : à l'écran, ce refus est un état NORMAL (repli silencieux), pas une
+  /// panne — la fiche d'un tiers ne doit pas afficher « parcours indisponible ».
+  Future<Map<String, dynamic>> parcoursOf(String userId) async {
+    final res = await _api.get('/hierarchy/users/$userId/parcours');
+    return _map(res);
+  }
+
   /// GET /hierarchy/users/{id} — hiérarchie d'UN membre (déclarant/pasteur/
   /// responsable). Consommé par la fiche utilisateur pour isoler une panne de
   /// la brique hiérarchie du reste de la fiche.
