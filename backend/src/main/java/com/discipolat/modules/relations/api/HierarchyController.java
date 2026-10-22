@@ -45,4 +45,25 @@ public class HierarchyController {
         UUID tenantId = TenantContext.getTenantId();
         return ResponseEntity.ok(service.getHierarchy(tenantId, userId, SecurityUtils.getCurrentUserId()));
     }
+
+    /**
+     * Mon parcours pastoral dans le temps — récit chronologique (adhésions,
+     * transferts, capacités, rattachements) composé en lecture seule à partir
+     * des seules données déjà persistées. Additif : n'altère aucune vue existante.
+     */
+    @GetMapping("/me/parcours")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> myParcours() {
+        UUID tenantId = TenantContext.getTenantId();
+        UUID userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(service.parcours(tenantId, userId, userId));
+    }
+
+    /** Parcours d'un membre — même garde que la fiche /users/{userId}/hierarchy. */
+    @GetMapping("/users/{userId}/parcours")
+    @PreAuthorize("@authz.can('RELATIONS_EXECUTE', 'TENANT', null)")
+    public ResponseEntity<Map<String, Object>> parcoursOf(@PathVariable UUID userId) {
+        UUID tenantId = TenantContext.getTenantId();
+        return ResponseEntity.ok(service.parcours(tenantId, userId, SecurityUtils.getCurrentUserId()));
+    }
 }

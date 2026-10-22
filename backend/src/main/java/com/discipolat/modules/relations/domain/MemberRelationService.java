@@ -355,6 +355,58 @@ public class MemberRelationService {
                 MemberRelation.RelationStatus.ACTIVE);
     }
 
+    /**
+     * Événements de rattachement d'un membre, <b>tous statuts confondus</b>
+     * (actifs ET révoqués), pour reconstruire son parcours pastoral dans le
+     * temps. Additif : cette lecture n'altère aucune vue existante
+     * ({@link #summary} ne sert que l'ACTIF). Les noms sont résolus en batch
+     * (un seul {@code findAllById}) et le catalogue des types chargé UNE fois —
+     * aucun N+1.
+     *
+     * <p>Chaque ligne : id, relationType, typeLabel, enversId/enversNom (la
+     * personne déclarée comme autorité), statut, note, declareLe, termineLe.
+     *
+     * <p>Pas d'{@code @Transactional} redondante ici : la classe porte déjà
+     * {@code @Transactional} et cet appel de lecture est uniquement invoqué par
+     * {@code UserHierarchyService.parcours}, lui-même en transaction {@code
+     * readOnly} — la propagation {@code REQUIRED} s'y greffe. Ajouter une
+     * annotation par méthode serait de la dette R4 gratuite (ratchet figé).
+     */
+    public List<Map<String, Object>> relationEvents(UUID tenantId, UUID userId) {
+        List<MemberRelation> all =
+                repository.findByTenantIdAndFromUserIdOrderByCreatedAtDesc(tenantId, userId);
+        if (all.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, String> names = resolveNames(all);
+        // Catalogue complet (actifs et désactivés) résolu UNE fois : un type
+        // révoqué/désactivé doit tout de même afficher son libellé dans le
+        // parcours — le repli sur le code humanisé couvre les types supprimés.
+        Map<String, String> labels = new LinkedHashMap<>();
+        for (RelationType t : typeCatalog(tenantId)) {
+            labels.putIfAbsent(t.code(), t.label());
+        }
+        List<Map<String, Object>> events = new ArrayList<>(all.size());
+        for (MemberRelation r : all) {
+            String label = labels.get(r.getRelationType());
+            if (label == null) {
+                label = r.getRelationType().replace('_', ' ');
+            }
+            Map<String, Object> e = new LinkedHashMap<>();
+            e.put("id", r.getId());
+            e.put("relationType", r.getRelationType());
+            e.put("typeLabel", label);
+            e.put("enversId", r.getToUserId());
+            e.put("enversNom", names.getOrDefault(r.getToUserId(), "—"));
+            e.put("statut", r.getStatut().name());
+            e.put("note", r.getNote());
+            e.put("declareLe", r.getCreatedAt() != null ? r.getCreatedAt().toString() : null);
+            e.put("termineLe", r.getEndedAt() != null ? r.getEndedAt().toString() : null);
+            events.add(e);
+        }
+        return events;
+    }
+
     /** Vue agrégée {sortantes, entrantes} avec noms résolus (fiche, profil). */
     @Transactional(readOnly = true)
     public Map<String, Object> summary(UUID tenantId, UUID userId) {

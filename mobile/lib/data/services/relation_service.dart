@@ -98,6 +98,16 @@ class RelationService {
     return _map(res);
   }
 
+  /// GET /hierarchy/me/parcours — le RÉCIT chronologique du membre (adhésions,
+  /// transferts, capacités, rattachements), composé côté serveur en lecture
+  /// seule à partir des seules tables déjà persistées. Shape :
+  /// `{ userId, nomComplet, depuis, ancienneteJours, totalEvenements,
+  /// evenements[], resume }`. Aucune écriture, aucune nouvelle table.
+  Future<Map<String, dynamic>> myParcours() async {
+    final res = await _api.get('/hierarchy/me/parcours');
+    return _map(res);
+  }
+
   /// GET /hierarchy/users/{id} — hiérarchie d'UN membre (déclarant/pasteur/
   /// responsable). Consommé par la fiche utilisateur pour isoler une panne de
   /// la brique hiérarchie du reste de la fiche.

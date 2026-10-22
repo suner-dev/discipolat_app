@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 
 import { MyRelationsCard } from '@/components/relations/MyRelationsCard';
 import { MyHierarchyCard } from '@/components/relations/MyHierarchyCard';
+import { ParcoursCard } from '@/components/relations/ParcoursCard';
 import { UserDetailModal } from '@/components/users/UserDetailModal';
 
 import { getI18nLocale } from '@/i18n';
@@ -637,6 +638,11 @@ export default function ProfilePage() {
       {/* V231 — « Ma hiérarchie » : mon rattachement organisationnel et mes
           responsables par niveau (endpoint GET /hierarchy/me). */}
       <MyHierarchyCard onOpenUser={setViewedUserId} />
+
+      {/* « Mon parcours pastoral » : le récit chronologique du membre —
+          adhésions, transferts, capacités, rattachements (GET /hierarchy/me/parcours).
+          Additif pur : la carte ne se montre que si le serveur a un récit à raconter. */}
+      <ParcoursCard />
 
       {/* Fiche complète d'un encadrant / membre rattaché — ouverte depuis la
           carte ci-dessus ou depuis n'importe quelle personne cliquable de

@@ -373,6 +373,56 @@ est plus étroite et vérifiée par test : **`direct ⊆ sous-arbre`** et un mem
 qu'une fois par échelle. L'additif BE-3 (`memberCountDirect` dans `metrics` et `toView`) n'a
 modifié aucun shape existant.
 
+### 7.3 Parcours pastoral temporel (« le récit d'un membre »)
+
+`GET /api/v1/hierarchy/me/parcours` (`isAuthenticated`) et
+`GET /api/v1/hierarchy/users/{userId}/parcours`
+(`@authz.can('RELATIONS_EXECUTE','TENANT',null)`, même garde que la fiche hiérarchie)
+exposent, en **lecture seule** et à partir des **seules tables déjà persistées**, le récit
+chronologique d'un membre. **Aucune migration, aucune nouvelle table, aucun agrégat
+existant réécrit** — additif pur (`UserHierarchyService.parcours`).
+
+| Source (déjà persistée) | Événements produits |
+|---|---|
+| `TenantMembership` (`joinedAt`, `markTransferred`/`isTransferred`) | `ADHESION/DEBUT`, `TRANSFERT/FIN` |
+| `MemberRoleAssignment` (capacité × nœud, `assignedAt`/`endedAt`/`status`) | `CAPACITE/DEBUT`, `CAPACITE/FIN` |
+| `MemberRelation` via `MemberRelationService.relationEvents` (**tous statuts**) | `RATTACHEMENT/DEBUT`, `RATTACHEMENT/FIN` |
+
+- **Shape** : `{ userId, nomComplet, depuis, ancienneteJours, totalEvenements, evenements[],
+  resume }`. Chaque événement = `horodatage` (ISO) / `type` (ADHESION | TRANSFERT | CAPACITE
+  | RATTACHEMENT) / `action` (DEBUT | FIN) / `libelle` (phrase lisible) / `details`. Tri
+  chronologique **ascendant**, les événements sans date en fin (`nullsLast`).
+- **`resume`** : `parType` (décompte par nature), `transferts`, `rattachementsRompus` — les
+  signaux faibles du suivi. Un transfert n'**efface** pas l'appartenance : il la **raconte**
+  (ligne `ADHESION` conservée + ligne `TRANSFERT` ajoutée), cohérent avec la traçabilité
+  `TenantMembership` (§ V223).
+- **Garde & isolation** : tenant issu du seul contexte serveur ; un membre d'une autre
+  église est **invisible (404)**, jamais 403. Nœuds, rôles et noms résolus en batch —
+  **aucun N+1**.
+- **Ratchet R4** : `relationEvents` ne porte **pas** de `@Transactional` propre (la classe
+  `MemberRelationService` la porte déjà et `parcours` l'appelle dans sa transaction
+  `readOnly`) — le plafond gelé (3032) reste tenu, `ArchitectureRulesTest` vert.
+- **Test** : `UserHierarchyServiceParcoursTest` (4) — ordre chronologique, transfert
+  raconté, fin de capacité distinguée d'une capacité active datée, rupture de rattachement,
+  et 404 cross-tenant sans rechargement en aval.
+- **Consommateurs UI** (additifs, montés sous les cartes existantes) :
+  - **Web** — `frontend/src/components/relations/ParcoursCard.tsx`, monté dans `ProfilePage`
+    (sous « Ma hiérarchie ») et dans `UserDetailModal` (sous le bloc hiérarchie). Le sujet est
+    tranché par `useAuthOptional` : **soi** → `/hierarchy/me/parcours` (`isAuthenticated`),
+    **un tiers** → `/hierarchy/users/{id}/parcours` (`RELATIONS_EXECUTE`). Un membre sans cette
+    permission lit donc SON propre récit dans sa fiche, et la fiche d'un tiers s'efface
+    simplement si la garde refuse — ni bloc vide, ni message d'erreur trompeur. Les codes
+    (`ADHESION | TRANSFERT | CAPACITE | RATTACHEMENT`, `DEBUT | FIN`) passent par i18n sur les
+    6 locales ; le `libelle` serveur ne sert que d'infobule. Tests : `ParcoursCard.test.tsx` (4).
+  - **Mobile** — `mobile/lib/presentation/widgets/parcours_card.dart` (`MyParcoursCard` +
+    `ParcoursCard`), monté dans `profile_screen.dart` sous « Ma hiérarchie », et
+    `RelationService.myParcours()`. Le mobile ne lit que **son propre** parcours (`/me/...`) :
+    la consultation d'un tiers suppose `RELATIONS_EXECUTE`, service de fiche déjà couvert côté
+    web. Même discipline que `hierarchy_card.dart` : chargement isolé, repli silencieux quand il
+    n'y a rien à raconter, échec explicite avec « Réessayer », parsing défensif
+    (`ParcoursParsing`/`ParcoursEvent`) testable sans HTTP. 12 clés dans les 6 cartes
+    `AppLocalizations`. Tests : `parcours_card_test.dart` (7).
+
 ---
 
 ## 8. Frontend Components

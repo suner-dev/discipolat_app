@@ -1139,6 +1139,31 @@ class AppLocalizations {
   String get hierarchyViaDeclared => translate('hierarchyViaDeclared');
   String get hierarchyUnavailable => translate('hierarchyUnavailable');
 
+  // --- Parcours pastoral temporel (« le récit d'un membre », §7.3) ---
+  // Mêmes intitulés que le web (`hierarchy.parcours.*`) : un membre qui change
+  // d'écran ne doit pas changer de vocabulaire.
+  String get parcoursTitle => translate('parcoursTitle');
+  String get parcoursTypeAdhesion => translate('parcoursTypeAdhesion');
+  String get parcoursTypeTransfert => translate('parcoursTypeTransfert');
+  String get parcoursTypeCapacite => translate('parcoursTypeCapacite');
+  String get parcoursTypeRattachement => translate('parcoursTypeRattachement');
+  String get parcoursActionDebut => translate('parcoursActionDebut');
+  String get parcoursActionFin => translate('parcoursActionFin');
+
+  /// Message d'échec de lecture du récit — distinct de celui de la hiérarchie :
+  /// « parcours indisponible » n'inquiète pas le membre pour son arbre.
+  String get parcoursUnavailable => translate('parcoursUnavailable');
+
+  /// « Membre depuis le … » — la date vient du serveur (ISO), traduite ici.
+  String parcoursSince(String date) =>
+      translate('parcoursSince').replaceAll('{date}', date);
+
+  /// Signaux faibles du récit : transferts subis, rattachements rompus.
+  String parcoursTransferts(int n) =>
+      translate('parcoursTransferts').replaceAll('{n}', '$n');
+  String parcoursRuptures(int n) =>
+      translate('parcoursRuptures').replaceAll('{n}', '$n');
+
   // --- Roster nominatif des membres d'un nœud (fiche nœud, §7) ---
   // Mêmes intitulés que le web (`orgV3.members.*`) : un berger qui change
   // d'écran ne doit pas changer de vocabulaire.
@@ -2546,6 +2571,17 @@ class AppLocalizations {
     'hierarchyNodeTypeDepartment': 'Département',
     'hierarchyNodeTypeGroup': 'Groupe',
     'hierarchyUnavailable': 'Hiérarchie indisponible.',
+    'parcoursTitle': 'Mon parcours pastoral',
+    'parcoursSince': 'Membre depuis le {date}',
+    'parcoursTypeAdhesion': 'Adhésion',
+    'parcoursTypeTransfert': 'Transfert',
+    'parcoursTypeCapacite': 'Capacité',
+    'parcoursTypeRattachement': 'Rattachement',
+    'parcoursActionDebut': 'Début',
+    'parcoursActionFin': 'Fin',
+    'parcoursTransferts': '{n} transfert(s)',
+    'parcoursRuptures': '{n} rattachement(s) rompu(s)',
+    'parcoursUnavailable': 'Parcours indisponible.',
     'profileLowBandHint': 'Recevez tenues, plannings et rappels par WhatsApp',
     'profileLowBandNeedPhone': "Ajoutez d'abord un numéro de téléphone",
     'language': 'Langue',
@@ -4869,6 +4905,17 @@ class AppLocalizations {
     'hierarchyNodeTypeDepartment': 'Department',
     'hierarchyNodeTypeGroup': 'Group',
     'hierarchyUnavailable': 'Hierarchy unavailable.',
+    'parcoursTitle': 'My pastoral journey',
+    'parcoursSince': 'Member since {date}',
+    'parcoursTypeAdhesion': 'Joining',
+    'parcoursTypeTransfert': 'Transfer',
+    'parcoursTypeCapacite': 'Capability',
+    'parcoursTypeRattachement': 'Connection',
+    'parcoursActionDebut': 'Start',
+    'parcoursActionFin': 'End',
+    'parcoursTransferts': '{n} transfer(s)',
+    'parcoursRuptures': '{n} broken connection(s)',
+    'parcoursUnavailable': 'Journey unavailable.',
     'profileLowBandHint': 'Receive dress codes, schedules and reminders on WhatsApp',
     'profileLowBandNeedPhone': 'Add a phone number first',
     'profileRegisteredOn': 'Registered on',
@@ -6370,6 +6417,17 @@ class AppLocalizations {
     'hierarchyNodeTypeDepartment': 'Departamento',
     'hierarchyNodeTypeGroup': 'Grupo',
     'hierarchyUnavailable': 'Hierarquia indisponível.',
+    'parcoursTitle': 'Meu percurso pastoral',
+    'parcoursSince': 'Membro desde {date}',
+    'parcoursTypeAdhesion': 'Adesão',
+    'parcoursTypeTransfert': 'Transferência',
+    'parcoursTypeCapacite': 'Capacidade',
+    'parcoursTypeRattachement': 'Vínculo',
+    'parcoursActionDebut': 'Início',
+    'parcoursActionFin': 'Fim',
+    'parcoursTransferts': '{n} transferência(s)',
+    'parcoursRuptures': '{n} vínculo(s) rompido(s)',
+    'parcoursUnavailable': 'Percurso indisponível.',
     'profileLowBandHint': 'Receba programações e lembretes pelo WhatsApp',
     'profileLowBandNeedPhone': 'Adicione primeiro um número de telefone',
     'profileRegisteredOn': 'Registrado em',
@@ -7986,6 +8044,17 @@ const Map<String, String> _spanish = {
     'hierarchyNodeTypeDepartment': 'Departamento',
     'hierarchyNodeTypeGroup': 'Grupo',
     'hierarchyUnavailable': 'Jerarquía no disponible.',
+    'parcoursTitle': 'Mi recorrido pastoral',
+    'parcoursSince': 'Miembro desde {date}',
+    'parcoursTypeAdhesion': 'Afiliación',
+    'parcoursTypeTransfert': 'Traslado',
+    'parcoursTypeCapacite': 'Capacidad',
+    'parcoursTypeRattachement': 'Vínculo',
+    'parcoursActionDebut': 'Inicio',
+    'parcoursActionFin': 'Fin',
+    'parcoursTransferts': '{n} traslado(s)',
+    'parcoursRuptures': '{n} vínculo(s) roto(s)',
+    'parcoursUnavailable': 'Recorrido no disponible.',
     'profileLowBandHint': 'Reciba programaciones y recordatorios por WhatsApp',
     'profileLowBandNeedPhone': 'Añada primero un número de teléfono',
     'profileRegisteredOn': 'Registrado el',
@@ -9567,6 +9636,17 @@ const Map<String, String> _swahili = {
     'hierarchyNodeTypeDepartment': 'Idara',
     'hierarchyNodeTypeGroup': 'Kikundi',
     'hierarchyUnavailable': 'Muundo haupatikani.',
+    'parcoursTitle': 'Safari yangu ya kirafiki',
+    'parcoursSince': 'Mwanachama tangu {date}',
+    'parcoursTypeAdhesion': 'Kujiunga',
+    'parcoursTypeTransfert': 'Uhamisho',
+    'parcoursTypeCapacite': 'Uwezo',
+    'parcoursTypeRattachement': 'Muungano',
+    'parcoursActionDebut': 'Mwanzo',
+    'parcoursActionFin': 'Mwisho',
+    'parcoursTransferts': 'Uhamisho {n}',
+    'parcoursRuptures': 'Muungano {n} uliokatika',
+    'parcoursUnavailable': 'Safari haipatikani.',
     'profileLowBandHint': 'Pokea ratiba na vikumbusho kupitia WhatsApp',
     'profileLowBandNeedPhone': 'Ongeza nambari ya simu kwanza',
     'profileRegisteredOn': 'Imeandikishwa',
@@ -11148,6 +11228,17 @@ const Map<String, String> _arabic = {
     'hierarchyNodeTypeDepartment': 'قسم',
     'hierarchyNodeTypeGroup': 'مجموعة',
     'hierarchyUnavailable': 'التسلسل الهرمي غير متاح.',
+    'parcoursTitle': 'مسيرتي الرعوية',
+    'parcoursSince': 'عضو منذ {date}',
+    'parcoursTypeAdhesion': 'انضمام',
+    'parcoursTypeTransfert': 'انتقال',
+    'parcoursTypeCapacite': 'تكليف',
+    'parcoursTypeRattachement': 'ارتباط',
+    'parcoursActionDebut': 'بداية',
+    'parcoursActionFin': 'نهاية',
+    'parcoursTransferts': '{n} انتقال',
+    'parcoursRuptures': '{n} ارتباط مقطوع',
+    'parcoursUnavailable': 'المسيرة غير متاحة.',
     'profileLowBandHint': 'استلم المواعيد والتذكيرات عبر واتساب',
     'profileLowBandNeedPhone': 'أضف رقم هاتف أولاً',
     'profileRegisteredOn': 'مسجل في',

@@ -25,6 +25,8 @@ import com.discipolat.modules.users.domain.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -161,6 +163,170 @@ public class UserHierarchyService {
         summary.put("suivi", suivi(ctx, user, tenantId));
         summary.put("resume", resume(branches, relations));
         return summary;
+    }
+
+    // ==================== PARCOURS PASTORAL TEMPOREL ====================
+
+    /**
+     * Le <b>récit</b> d'un membre dans le temps — passer « des nombres aux
+     * visages » et traiter le suivi pastoral comme un <b>flux</b>, pas comme un
+     * tableau figé. Cette vue est une composition en LECTURE SEULE à partir des
+     * seules données déjà persistées : adhésions et transferts tracés
+     * ({@link TenantMembership}), capacités exercées et leurs fins
+     * ({@link MemberRoleAssignment}), rattachements d'encadrants déclarés et
+     * rompus ({@link MemberRelationService#relationEvents}).
+     *
+     * <p><b>Aucune écriture, aucune nouvelle table, aucune réécriture</b> des
+     * agrégats existants — additif pur. Isolation stricte : un compte d'une
+     * autre église est INVISIBLE ({@link #requireTenantUser} → 404), jamais 403.
+     * Volumétrie : nœuds, rôles et noms lus en batch, événements de relation
+     * déjà batchés en amont — aucun N+1.
+     *
+     * <p>Chaque événement : {@code horodatage} (ISO), {@code type}
+     * (ADHESION | TRANSFERT | CAPACITE | RATTACHEMENT), {@code action}
+     * (DEBUT | FIN), {@code libelle} (phrase lisible) et {@code details}.
+     * Tri chronologique ascendant ; les événements sans date vont en fin.
+     */
+    public Map<String, Object> parcours(UUID tenantId, UUID userId, UUID viewerId) {
+        User user = requireTenantUser(tenantId, userId);
+
+        Map<UUID, OrganizationNode> nodesById = new LinkedHashMap<>();
+        for (OrganizationNode n : nodeRepository.findByTenantId(tenantId)) {
+            nodesById.put(n.getId(), n);
+        }
+
+        List<Event> events = new ArrayList<>();
+
+        // 1. Adhésions (appartenance) + transferts tracés (D5 : un transfert
+        //    n'efface pas l'appartenance, il la raconte).
+        for (TenantMembership tm : membershipRepository.findAllByUserIdAndTenantId(userId, tenantId)) {
+            String scopeLabel = membershipScopeLabel(tm, nodesById);
+            events.add(new Event(tm.getJoinedAt(), "ADHESION", "DEBUT",
+                    "Adhésion" + (scopeLabel == null ? "" : " · " + scopeLabel),
+                    detail("noeudId", tm.getScopeId(), "noeud", scopeLabel,
+                            "portee", tm.getScopeType() == null ? null : tm.getScopeType().name(),
+                            "statut", tm.getStatus() == null ? null : tm.getStatus().name())));
+            if (tm.isTransferred()) {
+                events.add(new Event(tm.getTransferredAt(), "TRANSFERT", "FIN",
+                        "Transfert vers une autre organisation"
+                                + (tm.getTransferReason() == null ? "" : " · " + tm.getTransferReason()),
+                        detail("motif", tm.getTransferReason(),
+                                "organisationId", tm.getTransferredToTenantId())));
+            }
+        }
+
+        // 2. Capacités exercées (rôles × nœud) + fins.
+        List<MemberRoleAssignment> assignments =
+                assignmentRepository.findByTenantIdAndUserId(tenantId, userId);
+        Map<UUID, String> roleLabels = new LinkedHashMap<>();
+        Set<UUID> roleIds = new LinkedHashSet<>();
+        for (MemberRoleAssignment a : assignments) {
+            if (a.getRoleId() != null) roleIds.add(a.getRoleId());
+        }
+        if (!roleIds.isEmpty()) {
+            for (Role r : roleRepository.findAllById(roleIds)) {
+                if (r != null) roleLabels.put(r.getId(), r.getLabel());
+            }
+        }
+        for (MemberRoleAssignment a : assignments) {
+            String roleName = roleLabels.get(a.getRoleId());
+            OrganizationNode node = a.getNodeId() == null ? null : nodesById.get(a.getNodeId());
+            Map<String, Object> d = detail("role", roleName, "noeudId", a.getNodeId(),
+                    "noeud", node == null ? null : node.getName(),
+                    "statut", a.getStatus() == null ? null : a.getStatus().name());
+            events.add(new Event(a.getAssignedAt(), "CAPACITE", "DEBUT",
+                    "Capacité" + (roleName == null ? "" : " · " + roleName)
+                            + (node == null ? "" : " · " + node.getName()), d));
+            if (a.getEndedAt() != null && a.getStatus() != MemberRoleAssignment.AssignmentStatus.ACTIVE) {
+                events.add(new Event(a.getEndedAt(), "CAPACITE", "FIN",
+                        "Fin de capacité" + (roleName == null ? "" : " · " + roleName), d));
+            }
+        }
+
+        // 3. Rattachements d'encadrants déclarés + ruptures.
+        for (Map<String, Object> rel : relationService.relationEvents(tenantId, userId)) {
+            String label = (String) rel.get("typeLabel");
+            String envers = (String) rel.get("enversNom");
+            Map<String, Object> d = detail("enversId", rel.get("enversId"), "enversNom", envers,
+                    "typeRelation", rel.get("relationType"), "note", rel.get("note"));
+            Object declareLe = rel.get("declareLe");
+            if (declareLe != null) {
+                events.add(new Event(Instant.parse(declareLe.toString()), "RATTACHEMENT", "DEBUT",
+                        "Encadrant déclaré · " + label + " · " + envers, d));
+            }
+            Object termineLe = rel.get("termineLe");
+            if ("REVOKED".equals(rel.get("statut")) && termineLe != null) {
+                events.add(new Event(Instant.parse(termineLe.toString()), "RATTACHEMENT", "FIN",
+                        "Rattachement retiré · " + label + " · " + envers, d));
+            }
+        }
+
+        events.sort(Comparator.comparing((Event e) -> e.date, Comparator.nullsLast(Comparator.naturalOrder())));
+
+        List<Map<String, Object>> view = new ArrayList<>(events.size());
+        Instant earliest = null;
+        for (Event e : events) {
+            if (e.date != null && (earliest == null || e.date.isBefore(earliest))) earliest = e.date;
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("horodatage", e.date == null ? null : e.date.toString());
+            m.put("type", e.type);
+            m.put("action", e.action);
+            m.put("libelle", e.libelle);
+            m.put("details", e.details);
+            view.add(m);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("userId", user.getId());
+        result.put("nomComplet", fullName(user));
+        result.put("depuis", earliest == null ? null : earliest.toString());
+        result.put("ancienneteJours",
+                earliest == null ? 0L : Duration.between(earliest, Instant.now()).toDays());
+        result.put("totalEvenements", view.size());
+        result.put("evenements", view);
+        result.put("resume", resumeTemporel(events));
+        return result;
+    }
+
+    /** Un événement du parcours (date souvent absente des données brutes → tri nulls-last). */
+    private record Event(Instant date, String type, String action, String libelle, Map<String, Object> details) {
+    }
+
+    private static Map<String, Object> detail(Object... kv) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        for (int i = 0; i + 1 < kv.length; i += 2) {
+            m.put(String.valueOf(kv[i]), kv[i + 1]);
+        }
+        return m;
+    }
+
+    /** Libellé lisible de la portée d'une adhésion (racine « Église », sinon nom du nœud). */
+    private String membershipScopeLabel(TenantMembership tm, Map<UUID, OrganizationNode> nodesById) {
+        if (tm.getScopeType() == MembershipScopeType.TENANT) {
+            return "Église";
+        }
+        if (tm.getScopeId() == null) {
+            return null;
+        }
+        OrganizationNode n = nodesById.get(tm.getScopeId());
+        return n == null ? null : n.getName();
+    }
+
+    /** Décompte par nature d'événement + signaux faibles (transferts, ruptures). */
+    private Map<String, Object> resumeTemporel(List<Event> events) {
+        Map<String, Long> byType = new LinkedHashMap<>();
+        long transfers = 0;
+        long ruptures = 0;
+        for (Event e : events) {
+            byType.merge(e.type, 1L, Long::sum);
+            if ("TRANSFERT".equals(e.type)) transfers++;
+            if ("RATTACHEMENT".equals(e.type) && "FIN".equals(e.action)) ruptures++;
+        }
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("parType", byType);
+        r.put("transferts", transfers);
+        r.put("rattachementsRompus", ruptures);
+        return r;
     }
 
     // ==================== CONTEXTE (chargements groupés) ====================

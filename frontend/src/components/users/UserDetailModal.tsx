@@ -9,7 +9,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useI18n } from '@/i18n';
+import { useAuthOptional } from '@/contexts/AuthContext';
 import { HierarchyTree, useBranchTree, type HierarchyBranch } from '@/components/relations/HierarchyTree';
+import { ParcoursCard } from '@/components/relations/ParcoursCard';
 
 import { tText } from '@/i18n';
 const ROLE_LABELS: Record<string, string> = {
@@ -64,6 +66,11 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
   // perd dans la pile : la seule sortie restant « Fermer »).
   const [visited, setVisited] = useState<string[]>([userId]);
   const viewedId = visited[visited.length - 1];
+  // Le parcours d'un TIERS se lit via /hierarchy/users/{id}/parcours (garde
+  // RELATIONS_EXECUTE) ; le sien propre via /hierarchy/me/parcours — un membre
+  // sans cette permission doit quand même pouvoir lire SON récit dans sa fiche.
+  const auth = useAuthOptional();
+  const isSelfView = viewedId === auth?.user?.id;
   useEffect(() => {
     setVisited([userId]);
     setNote(0);
@@ -609,6 +616,11 @@ export function UserDetailModal({ userId, onClose }: { userId: string; onClose: 
               </div>
             );
           })()}
+
+          {/* « Le parcours » — récit chronologique déjà persisté, en lecture
+              seule (adhésions, transferts, capacités, rattachements). Additif :
+              la carte s'efface si le serveur n'a rien à raconter. */}
+          <ParcoursCard userId={isSelfView ? undefined : viewedId} />
 
           {/* Évaluation */}
           <div className="rounded-2xl bg-gradient-to-br from-amber-50/60 to-orange-50/40 dark:from-amber-900/10 dark:to-orange-900/5 border border-amber-200/40 dark:border-amber-800/30 p-4">
