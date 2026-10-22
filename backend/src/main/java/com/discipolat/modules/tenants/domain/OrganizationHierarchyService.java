@@ -589,19 +589,65 @@ public class OrganizationHierarchyService {
 
     // ==================== PERMISSIONS BY NODE ====================
 
+    /**
+     * Membres dont le périmètre d'accès COUVRE ce nœud.
+     *
+     * <p><b>Correction ciblée (audit hiérarchie ecclésiastique, défaut B2).</b>
+     * L'implémentation comparait dans le mauvais sens : elle testait si le nœud
+     * consulté était descendant de la portée du membre, si bien qu'un membre
+     * rattaché à une cellule remontait dans le roster de chaque parent, et que
+     * les adhésions de portée TENANT inondaient tous les nœuds sans distinction.
+     * Le sens est désormais celui de l'énoncé : une adhésion de portée TENANT
+     * couvre légitimement toute l'organisation (racine comprise) ; une adhésion
+     * de portée nœud ne couvre que CE nœud et ses descendants — pas les
+     * ancêtres. Comparaison par {@code parentId} interposé (mémoire, anti-cycle)
+     * plutôt que 2 {@code findById} par membership (N+1).
+     *
+     * <p>Contrat conservé : signature, type de retour et garde d'appel
+     * inchangés — cet endpoint reste une vue « accès couvrant le nœud », la
+     * liste nominative paginée des membres d'une entité étant servie par
+     * {@link NodeMemberRosterService} (lecture scopée, dédupliquée, filtrable).
+     */
     @Transactional(readOnly = true)
     public List<TenantMembership> getMembersWithAccess(UUID tenantId, UUID nodeId) {
-        // Get all memberships that have scope covering this node
-        List<TenantMembership> allMemberships = membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
-        UUID ancestorPath = nodeId;
+        OrganizationNode node = nodeRepository.findById(nodeId)
+                .filter(n -> n.getTenantId().equals(tenantId))
+                .orElse(null);
+        if (node == null) return List.of();
 
-        return allMemberships.stream()
+        Set<UUID> covered = descendantIdsOf(node, loadTenantNodesById(tenantId));
+        return membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE).stream()
                 .filter(m -> {
                     if (m.getScopeType() == MembershipScopeType.TENANT) return true;
-                    if (m.getScopeId() == null) return false;
-                    return isDescendantOf(ancestorPath, m.getScopeId());
+                    if (m.getScopeType() == MembershipScopeType.OWN || m.getScopeId() == null) return false;
+                    return covered.contains(m.getScopeId());
                 })
                 .toList();
+    }
+
+    /** Nœuds du sous-arbre (racine incluse), dérivés en mémoire par parentId. */
+    private Set<UUID> descendantIdsOf(OrganizationNode root, Map<UUID, OrganizationNode> nodesById) {
+        Set<UUID> out = new java.util.LinkedHashSet<>();
+        out.add(root.getId());
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            for (OrganizationNode n : nodesById.values()) {
+                if (n.getParentId() != null && out.contains(n.getParentId()) && !out.contains(n.getId())) {
+                    out.add(n.getId());
+                    progress = true;
+                }
+            }
+        }
+        return out;
+    }
+
+    private Map<UUID, OrganizationNode> loadTenantNodesById(UUID tenantId) {
+        Map<UUID, OrganizationNode> byId = new HashMap<>();
+        for (OrganizationNode n : nodeRepository.findByTenantId(tenantId)) {
+            byId.put(n.getId(), n);
+        }
+        return byId;
     }
 
     private boolean isDescendantOf(UUID nodeId, UUID ancestorId) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/organization_v3_api.dart';
 import '../../../data/models/organization_v3_models.dart';
 import 'modules_screen.dart' show moduleLabelStatic;
 
@@ -36,6 +37,7 @@ class NodeDetailScreen extends ConsumerStatefulWidget {
 
 class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
   late final ApiService _api;
+  late final OrganizationV3Api _orgApi;
 
   NodeAggregate? _aggregate;
   List<Map<String, dynamic>> _progression = const [];
@@ -45,11 +47,26 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
   bool _loading = true;
   String? _error;
 
+  // Roster des membres (B1) — vue nominative paginée, indépendante du reste.
+  static const int _membersPageSize = 20;
+  final TextEditingController _membersSearchCtrl = TextEditingController();
+  NodeMembersPage? _members;
+  bool _membersLoading = false;
+  String _membersScope = 'SUBTREE';
+  int _membersPage = 0;
+
   @override
   void initState() {
     super.initState();
     _api = widget.apiService ?? ApiService();
+    _orgApi = OrganizationV3Api(_api);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _membersSearchCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -109,6 +126,8 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
         _team = team;
         _loading = false;
       });
+      // Roster nominatif chargé en parallèle (échec isolé, ne bloque pas la fiche).
+      _loadMembers();
     } catch (e) {
       // Lecture seule : en cas d'échec on affiche l'erreur, jamais de cache V3.
       if (mounted) {
@@ -117,6 +136,32 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
           _error = 'Chargement impossible : $e';
         });
       }
+    }
+  }
+
+  /// Charge (ou recharge) le roster des membres : scope DIRECT/SUBTREE, filtre
+  /// libre `q`, pagination serveur. Erreur = section vide + message inline, sans
+  /// faire échouer la fiche complète.
+  Future<void> _loadMembers({String? scope, String? q, int? page}) async {
+    final sc = scope ?? _membersScope;
+    final query = q ?? _membersSearchCtrl.text.trim();
+    final pg = page ?? _membersPage;
+    setState(() {
+      _membersLoading = true;
+      _membersScope = sc;
+      _membersPage = pg;
+    });
+    try {
+      final res = await _orgApi.nodeMembers(widget.nodeId,
+          scope: sc, q: query.isEmpty ? null : query, page: pg, size: _membersPageSize);
+      if (mounted) {
+        setState(() {
+          _members = res;
+          _membersLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _membersLoading = false);
     }
   }
 
@@ -193,6 +238,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
                         _sparkline(),
                       ],
                       _teamSection(),
+                      _membersSection(),
                       const SizedBox(height: 24),
                       const Text('Unités rattachées',
                           style: TextStyle(fontWeight: FontWeight.w600)),
@@ -256,6 +302,92 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
               ),
             );
           }),
+      ],
+    );
+  }
+
+  /// Roster des membres du nœud (B1) — vue NOMINATIVE paginée, alignée sur
+  /// l'annuaire `/users` (tout membre authentifié du tenant). Scope DIRECT
+  /// (rattachés ici) ou SUBTREE (avec sous-structures) ; recherche ; un membre
+  /// multi-chemins n'apparaît qu'une fois (dédup serveur), marqué « via … ».
+  Widget _membersSection() {
+    final page = _members;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            const Text('Membres',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            if (page != null)
+              Text(
+                'Directs ${page.memberCountDirect} • Total ${page.memberCountSousArbre}',
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'DIRECT', label: Text('Ici')),
+            ButtonSegment(value: 'SUBTREE', label: Text('Avec sous-unités')),
+          ],
+          selected: {_membersScope},
+          onSelectionChanged: (s) => _loadMembers(scope: s.first, page: 0),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _membersSearchCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Rechercher un membre',
+            prefixIcon: Icon(Icons.search),
+            isDense: true,
+          ),
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _loadMembers(page: 0),
+        ),
+        const SizedBox(height: 8),
+        if (_membersLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (page == null || page.content.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text('Aucun membre pour cette sélection.',
+                style: TextStyle(color: Colors.grey)),
+          )
+        else
+          ...page.content.map((m) => Card(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: (m.direct ? Colors.indigo : Colors.teal)
+                        .withOpacity(0.15),
+                    child: Icon(Icons.person,
+                        color: m.direct ? Colors.indigo : Colors.teal),
+                  ),
+                  title: Text(m.displayName),
+                  subtitle: Text([
+                    if (m.email != null && m.email!.isNotEmpty) m.email!,
+                    if (!m.direct && m.attachedNodeName != null)
+                      'via ${m.attachedNodeName}',
+                    if (m.roles.isNotEmpty) m.roles.join(', '),
+                  ].join(' • ')),
+                  dense: true,
+                ),
+              )),
+        if (page != null && page.hasNext && !_membersLoading)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => _loadMembers(page: _membersPage + 1),
+              child: const Text('Charger plus'),
+            ),
+          ),
       ],
     );
   }

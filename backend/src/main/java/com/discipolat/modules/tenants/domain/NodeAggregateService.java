@@ -82,6 +82,25 @@ public class NodeAggregateService {
                         : (m.getScopeId() != null && subIds.contains(m.getScopeId()))
         ).map(TenantMembership::getUserId).distinct().count();
 
+        // Roster « membres d'une entité » — compteurs cohérents ajoutés en additif
+        // (audit hiérarchie ecclésiastique, tâche BE-3) : « directs » = portés par
+        // CE nœud lui-même (adhésion de portée nœud, capacité posée ici, ou
+        // responsable ici), dédupliqués ; le compteur existant « memberCount »
+        // reste le total du sous-arbre. Les deux s'exposent dans metrics et dans
+        // la vue lisible — aucun consommateur existant ne voit son shape cassé.
+        java.util.Set<UUID> directIds = new java.util.LinkedHashSet<>();
+        active.stream().filter(m -> m.getScopeType() != MembershipScopeType.TENANT
+                        && m.getScopeType() != MembershipScopeType.OWN
+                        && nodeId.equals(m.getScopeId()))
+                .forEach(m -> directIds.add(m.getUserId()));
+        assignmentRepository.findByTenantIdAndNodeIdAndStatus(tenantId, nodeId,
+                        MemberRoleAssignment.AssignmentStatus.ACTIVE)
+                .forEach(a -> directIds.add(a.getUserId()));
+        nodeRepository.findById(nodeId)
+                .filter(n -> n.getResponsibleId() != null)
+                .ifPresent(n -> directIds.add(n.getResponsibleId()));
+        long memberCountDirect = directIds.size();
+
         // Leaders : porteurs d'une assignation ACTIVE couvrant le sous-arbre.
         long leaderCount = assignmentRepository.findByTenantIdAndStatus(tenantId,
                         MemberRoleAssignment.AssignmentStatus.ACTIVE).stream()
@@ -90,6 +109,7 @@ public class NodeAggregateService {
 
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("nodeCount", sub.size());
+        metrics.put("memberCountDirect", memberCountDirect);
         metrics.put("computedAt", Instant.now().toString());
 
         NodeAggregateSnapshot snap = NodeAggregateSnapshot.builder()
@@ -168,6 +188,10 @@ public class NodeAggregateService {
         m.put("responsibleName", responsibleName);
         m.put("snapshotAt", s.getSnapshotAt());
         m.put("memberCount", s.getMemberCount());
+        // Additif BE-3 : le total sous-arbre et les directs, calculés au snapshot.
+        Object direct = s.getMetricsJson() == null ? null : s.getMetricsJson().get("memberCountDirect");
+        m.put("memberCountDirect", direct == null ? 0L : direct);
+        m.put("memberCountSousArbre", s.getMemberCount());
         m.put("churchCount", s.getChurchCount());
         m.put("leaderCount", s.getLeaderCount());
         m.put("sermonCount", s.getSermonCount());

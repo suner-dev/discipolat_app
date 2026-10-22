@@ -75,6 +75,30 @@ class OrganizationV3Api {
     return _list(res).map(NodeTeamMember.fromJson).toList();
   }
 
+  /// GET /tenant/organization/nodes/{id}/members — roster paginé des membres
+  /// d'une entité, à une profondeur donnée (DIRECT = rattachés ici ; SUBTREE =
+  /// avec les sous-structures). Vue nominative alignée sur l'annuaire `/users`.
+  Future<NodeMembersPage> nodeMembers(
+    String nodeId, {
+    String scope = 'SUBTREE',
+    String? q,
+    int page = 0,
+    int size = 20,
+  }) async {
+    final res = await _api.get(
+      '/tenant/organization/nodes/$nodeId/members',
+      params: <String, dynamic>{
+        'scope': scope,
+        if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+        'page': page,
+        'size': size,
+      },
+    );
+    final data = _payload(res);
+    if (data is Map<String, dynamic>) return NodeMembersPage.fromJson(data);
+    return NodeMembersPage.empty(nodeId);
+  }
+
   /// GET /tenant/roles/{id}/titles (B).
   Future<List<RoleTitle>> roleTitles(String roleId) async {
     final res = await _api.get('/tenant/roles/$roleId/titles');
