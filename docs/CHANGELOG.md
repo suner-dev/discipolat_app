@@ -1,5 +1,102 @@
 # Changelog
 
+## [Non publié] — Consultation des membres à chaque échelle (hiérarchie ecclésiastique)
+
+Mission : depuis tout membre / responsable / cellule / église / entité, retrouver son
+appartenance, monter et descendre dans la hiérarchie, et **consulter les membres à chaque
+échelle** — backend, web **et** mobile. Chantier conduit en **additif strict** : aucun
+endpoint supprimé, aucune clé retirée, aucun comportement legacy réécrit. Audit et plan :
+[`ECLESIASTICAL_HIERARCHY_TODO.md`](ECLESIASTICAL_HIERARCHY_TODO.md).
+
+### Backend
+
+- **Nouveau roster nominatif** : `GET /api/v1/tenant/organization/nodes/{nodeId}/members`
+  (`NodeMemberRosterController` + `NodeMemberRosterService`, service dédié) — portée
+  `scope=DIRECT|SUBTREE`, filtre libre `q` (nom, prénom, email), pagination serveur
+  (`size` borné). Réponse typée en projection (`NodeMemberRow`), **jamais l'entité JPA** :
+  identité, nœud d'attache réel, `direct`, `origine`, `roles[]`, `viaChaine[]` (fil
+  d'Ariane), `depuis`, plus `memberCountDirect` / `memberCountSousArbre`.
+- **Déduplication par `userId` au plus profond** du sous-arbre (règle éprouvée de
+  `NodeAggregateService`) ; les rôles sont agrégés **hors arbitrage** : un membre
+  « Diacre » ici et « Responsable » dans une sous-cellule conserve ses deux rôles.
+- **B2 corrigé** (`OrganizationHierarchyService.getMembersWithAccess`) : la comparaison
+  descendante était inversée (un membre d'une cellule **remontait** dans la liste du
+  parent) et les adhésions de portée `TENANT` inondaient **chaque** nœud ; une adhésion
+  tenant ne compte désormais que **sous la racine**. Projection allégée, N+1 tué
+  (adhésions, capacités et libellés de rôles lus en trois requêtes, une seule fois).
+  L'endpoint historique `/api/v1/org/nodes/{id}/members` est **conservé** (zéro
+  consommateur web/mobile vérifié par grep).
+- **BE-3, compteurs additifs** : `memberCountDirect` dans `metrics` du snapshot et dans
+  `toView` de `/aggregate`, sans casser aucun shape existant. Distinction assumée et
+  documentée : `/aggregate` reste un **instantané persisté**, `/members` un calcul **à la
+  demande** — les deux peuvent diverger légitimement ; l'invariant tenu et testé est
+  `direct ⊆ sous-arbre`, un membre compté une seule fois par échelle.
+- **Garde d'accès (SEC-1)** : `@PreAuthorize("isAuthenticated()")`, stricte parité avec
+  l'annuaire `GET /api/v1/users` déjà consultable par tout membre authentifié du tenant —
+  le roster **scope** une visibilité existante, il n'ouvre rien de plus. Tenant issu du
+  seul contexte serveur, nœud revérifié : **404** cross-tenant, jamais 403 (pas
+  d'énumération d'identifiants).
+- **Tests (33 verts)** : `NodeMemberRosterServiceTest` (17 — direct/sous-arbre, dédup,
+  compteurs insensibles à `q`, repli données manquantes), `NodeMembersSecurityTest`
+  (10 — HTTP/RBAC, 404 cross-tenant, clamp `size`/`page`, `scope` inventé refusé),
+  `OrganizationHierarchyMembersAccessTest` (6 — échoueraient sur l'ancienne sémantique).
+
+### Frontend web
+
+- `useNodeMembers(nodeId, { scope, q, page, size })` (`hooks/useOrganizationV3.ts`) avec
+  `placeholderData: keepPreviousData` — défaut corrigé au passage : sans cela le panneau
+  était remplacé par un spinner à chaque frappe et le champ de recherche disparaissait
+  sous le curseur.
+- `components/organization/NodeRoster.tsx` : **vue partagée** par l'onglet « Membres » de
+  la fiche nœud (`OrganizationNodeDetailPage`) et l'annuaire scopé — les deux échelles ne
+  peuvent pas diverger. Dégradation explicite : une erreur de lecture n'est jamais présentée
+  comme « aucun membre ».
+- `UsersPage` accepte `?nodeId=&scope=` (la requête d'annuaire est désactivée sous
+  `?nodeId=` — `enabled: !scopedNodeId` — pour ne pas relancer 20 comptes hors sujet à
+  chaque page) ; `OrganizationBrowserPage` expose un lien « Voir les membres ».
+- **i18n** : clés `orgV3.members.*` en **parité stricte sur les 6 locales** (fr, en, pt,
+  es, sw, ar), y compris une clé d'onglet qui manquait partout.
+- **Tests (26 verts, `tsc -b` 0)** : `NodeMembersRoster.test.tsx` (18) et
+  `UsersPageScopedRoster.test.tsx` (8 — garde-fou `scope` malveillant, et non-régression
+  « sans paramètre l'annuaire est intact »). La parité i18n est prouvée en rendant le vrai
+  `I18nProvider` dans les six locales, écran interdit toute fuite de clé brute.
+
+### Mobile (Flutter)
+
+- `OrganizationV3Api.nodeMembers(...)` (client réel) + modèle `node_member_roster.dart` :
+  page de roster paginée, parsing défensif (compteurs à 0, listes vides, jamais une
+  exception). Un `origine` absent reste `null` : la valeur n'est plus inventée par défaut.
+- Section « Membres » dans `node_detail_screen.dart` (`_membersSection()`) : portée
+  DIRECT/SUBTREE, recherche, badges « ici » / « via … », « Charger plus », échec isolé qui
+  ne fait pas tomber la fiche.
+- **MO-3 — i18n 6 locales** : 9 clés ajoutées aux six cartes de
+  `lib/l10n/app_localizations.dart` (la source de vérité réelle ; les `.arb` ne sont pas
+  consommés — constat documenté dans `ORGANIZATION_HIERARCHY.md` §9.3) et libellé
+  d'origine `ADHESION_TENANT` ajouté, qui s'affichait jusqu'ici en code technique.
+- **Tests (21 verts, `flutter analyze` 0 erreur sur les fichiers touchés)** :
+  `test/node_member_roster_test.dart` — contrat de parsing (champ absent ≠ crash), table
+  littérale des clés × 6 locales, section rendue en fr/en/ar sur le vrai écran.
+
+### Documentation
+
+- `ORGANIZATION_HIERARCHY.md` : constat **H8 clos** (colonne `path` en `text`, pas
+  `ltree` ; `OrganizationNodeType` réel), nouvelle §7.1 (contrat du roster) et §7.2
+  (agrégat vs roster), §8.4 web, §9.3 mobile, §11.3 tests ; chemins de référence corrigés
+  (`domain/`, pas `service/`).
+- `API.md` régénéré via `scripts/generate-api-docs.sh` (règle du dépôt, pas d'édition
+  manuelle).
+
+### Sécurité
+
+- **Vulnérabilité haute patchée** (`follow-redirects` 1.16.0 → 1.16.1, GHSA-q3jh-wrc6-jgq8
+  et GHSA-8r9p-f939-6h3c — contournement de la suppression des identifiants cross-origin et
+  échappement regex de `sensitiveHeaders`) : dépendance **transitive** d'`axios`, corrigée par
+  bump sémantique compatible (`npm update follow-redirects`), **additif strict** — seule la
+  copie verrouillée change, aucun `package.json` modifié, aucun outil de build touché.
+  `npm audit --omit=dev --audit-level=high` passe de 1 à **0** vulnérabilité ; `npm run build`
+  et les tests roster (26) revérifiés verts. Dette préexistante (déjà sur `main`), corrigée au
+  passage car la gate CI « NPM audit (bloquant high) » la signalait.
+
 ## [Non publié] — Parcours « Archives » complet (V272)
 
 Audit profond du parcours « Archives » et exécution intégrale — fullstack,

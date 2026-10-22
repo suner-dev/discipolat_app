@@ -1,14 +1,17 @@
 # Organization Hierarchy — Discipolat Church OS
 
-**Version**: 1.0  
-**Date**: 2026-09-22  
-**Statut**: Hiérarchie d'organisation : racines, campus, sous-églises, départements — ⚠️ indisponible en base migrée (constat H8, `path` en `ltree`)
+**Version**: 1.1
+**Date**: 2026-10-22
+**Statut**: Hiérarchie d'organisation : racines, campus, sous-églises, départements — operationnelle. Le constat **H8 est clos** : la colonne `path` est en `text` (et non `ltree`, indisponible sur une base migrée), et le roster nominatif des membres d'un nœud est exposé (§7.1).
 
 ---
 
 ## 1. Hierarchy Model
 
-Discipolat uses a **materialized path hierarchy** (ltree-compatible) for organization units:
+Discipolat uses a **materialized path hierarchy** for organization units. The path is a plain
+`text` column (NOT PostgreSQL `ltree` — see « Note H8 » below), and descendants are resolved
+either by `LIKE '<parentPath>%'` (`OrganizationNodeRepository.findDescendants`) or, for the
+roster, by walking `parentId` in memory (cycle-safe, no SQL operator to keep in sync):
 
 ```
 TENANT (Root)
@@ -58,7 +61,7 @@ public class OrganizationNode {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    NodeType type;  // CHURCH, CAMPUS, MINISTRY, DEPARTMENT, SUB_DEPARTMENT, TEAM, CELL, GROUP, FAMILY
+    OrganizationNodeType type;  // ROOT_CHURCH, CAMPUS, SUB_CHURCH, ASSEMBLY, REGION, DISTRICT, DEPARTMENT, GROUP
     
     String description;
     String status;  // ACTIVE, INACTIVE, ARCHIVED
@@ -75,7 +78,10 @@ public class OrganizationNode {
     Map<String, Object> resolvedConfigJson;
     
     // Materialized path for efficient ancestry queries
-    @Column(name = "path", columnDefinition = "ltree")
+    // H8 : `ltree` n'est PAS utilisable sur une base migrée (le type d'extension
+    // n'existe pas partout, et la colonne doit survivre à un dump/restore).
+    // Le path est donc du texte simple, segmenté par des points.
+    @Column(name = "path", nullable = false, columnDefinition = "text")
     String path;  // e.g., "root.church.campus_nord.ministry_jeunesse.dept_louange"
     
     @Column(name = "level")
@@ -305,6 +311,68 @@ public class Space {
 | `GET` | `/api/org/units/tree` | Full hierarchy tree |
 | `POST` | `/api/org/campus` | Create campus (wizard step) |
 
+> Les routes réellement servies en V3 sont sous `/api/v1/tenant/organization/**`
+> (`OrganizationNodeV3Controller`, `OrganizationLevelController`, `NodeMemberRosterController`),
+> et les routes de navigation sous `/api/v1/org/**` (`OrganizationHierarchyService`).
+> `docs/API.md` est **généré** (`scripts/generate-api-docs.sh`) : c'est la liste de référence,
+> ce tableau n'en est que la vue d'ensemble.
+
+### 7.1 Roster des membres d'un nœud (« consulter les membres à chaque échelle »)
+
+```text
+GET /api/v1/tenant/organization/nodes/{nodeId}/members
+      ?scope=DIRECT|SUBTREE   (défaut SUBTREE ; valeur inconnue ⇒ SUBTREE, jamais 500)
+      &q=<nom|prénom|email>   (trimé + insensible à la casse côté serveur ; blanc ⇒ non envoyé)
+      &page=0&size=20         (size borné — clamp serveur)
+→ 200 { nodeId, nodeName, nodeType, scope, content[], page, size,
+        totalElements, totalPages, memberCountDirect, memberCountSousArbre }
+```
+
+`content[]` (projection `NodeMemberRow`, jamais l'entité JPA) : `userId`, `firstName`,
+`lastName`, `email`, `photoUrl`, `statut`, `attachedNodeId`, `attachedNodeName`,
+`attachedNodeType`, `direct` (rattaché au nœud consulté vs à une sous-structure),
+`origine`, `roles[]`, `viaChaine[]` (fil d'Ariane du nœud consulté jusqu'au point
+d'attache), `depuis`.
+
+**Règles de calcul** (`NodeMemberRosterService`, service dédié — l'endpoint historique
+`GET /api/v1/org/nodes/{id}/members` est conservé, non supprimé) :
+
+- **Trois origines**, bornées au périmètre : `ADHESION_NOEUD` (membership ACTIVE dont la
+  `scopeId` est dans le sous-arbre), `ASSIGNATION_V3` (capacité ACTIVE posée sur un nœud du
+  sous-arbre), `RESPONSABLE_NOEUD` (`responsibleId` d'un nœud du sous-arbre).
+- **`ADHESION_TENANT` ne déborde plus** : une adhésion de portée `TENANT` ne rattache à
+  aucune sous-structure — elle compte **uniquement sous la racine**. C'était le défaut B2
+  (un membre « tenant » inondait chaque nœud).
+- **Déduplication par `userId`, au plus profond** (le plus près du terrain) ; à profondeur
+  égale, le plus ancien. Les `roles[]` sont agrégés **hors arbitrage** : un membre
+  « Diacre » ici et « Responsable » dans une sous-cellule affiche ses deux rôles.
+- **Compteurs structurels, pas filtrés** : `memberCountDirect` / `memberCountSousArbre`
+  décrivent l'entité, donc `q` ne les modifie pas (seuls `totalElements` / `totalPages`
+  suivent le filtre). Une recherche de trois lettres ne peut pas faire afficher « 1 » sur
+  une entité de 40 membres.
+- **Toutes les sources en trois lectures** (`loadSources`) : memberships, assignments,
+  libellés de rôles préchargés — le N+1 corrigé par la mission ne revient pas.
+- **Garde** : `@PreAuthorize("isAuthenticated()")`, stricte parité avec `GET /api/v1/users`
+  (l'annuaire est déjà consultable par tout membre authentifié du tenant). Le roster ne
+  fait qu'**appliquer** cette même visibilité à une entité ; il n'ouvre rien de plus.
+  `TenantContext.requireTenantId()` + nœud revérifié dans le tenant → **404** cross-tenant,
+  jamais 403 (pas d'énumération d'identifiants).
+
+### 7.2 `memberCount` de l'agrégat vs compteurs du roster (ne pas les confondre)
+
+| | `GET /nodes/{id}/aggregate` | `GET /nodes/{id}/members` |
+|---|---|---|
+| Nature | **instantané persisté** (`NodeAggregateSnapshot`, série de progression) | calcul **à la demande**, sur l'état courant |
+| `memberCount` / `memberCountSousArbre` | memberships ACTIVE distinct couvrant le sous-arbre | adhésions + capacités + responsables, dédupliqués |
+| `memberCountDirect` | adhésions de portée du nœud, capacités **ici**, et `responsibleId` du nœud | mêmes sources, mais selon l'arbitrage de profondeur du roster |
+| Sens à `q` / pagination | insensible (snapshot) | compteurs insensibles ; `totalElements`/`totalPages` sensibles |
+
+Les deux peuvent donc **légitimement diverger** (instantané contre état courant, périmètre
+des capacités) : ce n'est pas une incohérence à « réaligner » à la sauvage. La règle tenue
+est plus étroite et vérifiée par test : **`direct ⊆ sous-arbre`** et un membre n'est compté
+qu'une fois par échelle. L'additif BE-3 (`memberCountDirect` dans `metrics` et `toView`) n'a
+modifié aucun shape existant.
+
 ---
 
 ## 8. Frontend Components
@@ -342,6 +410,25 @@ public class Space {
 />
 ```
 
+### 8.4 Roster des membres (web)
+
+- `hooks/useOrganizationV3.ts :: useNodeMembers(nodeId, { scope, q, page, size })` —
+  requête react-query `['t', tenantKey, 'org', 'members', nodeId, scope, q, page, size]`,
+  `enabled: !!nodeId`, et **`placeholderData: keepPreviousData`** : changer de page ou
+  taper dans le filtre conserve la lecture précédente (sinon le panneau est remplacé par
+  un spinner à chaque frappe, et le champ de recherche disparaît sous le curseur).
+- `components/organization/NodeRoster.tsx` — vue **partagée** : l'onglet « Membres » de la
+  fiche nœud (`pages/admin/OrganizationNodeDetailPage.tsx`) et l'annuaire scopé
+  (`pages/UsersPage.tsx` derrière `?nodeId=&scope=`) rendent le MÊME composant, donc ne
+  peuvent pas diverger. Compteurs, badge « rattachés ici » vs « via : <nœud> », pagination
+  (« n / total », seulement si plusieurs pages), et **dégradation explicite** : une erreur
+  de lecture affiche un message, elle n'est jamais présentée comme « aucun membre ».
+- `pages/OrganizationBrowserPage.tsx` — lien « Voir les membres » vers
+  `/users?nodeId=…&scope=…` ; `UsersPage` garde l'`enabled: !scopedNodeId` sur sa requête
+  d'annuaire : sous `?nodeId=`, l'annuaire entier n'est pas re-fetché.
+- i18n : clés `orgV3.members.*`, **parité stricte sur les 6 locales** (fr, en, pt, es, sw,
+  ar). Une clé non traduite ne doit JAMAIS fuiter à l'écran sous sa forme brute (test).
+
 ---
 
 ## 9. Mobile (Flutter)
@@ -367,6 +454,28 @@ final visibleMembersProvider = FutureProvider((ref) async {
   return api.getMembers(scope: scope);
 });
 ```
+
+### 9.3 Roster des membres (mobile)
+
+- `data/services/organization_v3_api.dart :: nodeMembers(nodeId, scope, q, page, size)` —
+  client réel (`api_service.dart`), lit `GET /tenant/organization/nodes/{id}/members` ;
+  payload non-Map ⇒ `NodeMembersPage.empty(nodeId)` (jamais un crash d'écran).
+- `data/models/node_member_roster.dart` — **parsing défensif** : champ absent, `null` ou
+  mal typé (liste devenue objet, entier devenu chaîne) ⇒ repli, pas d'exception. Un
+  `origine` absent reste `null` : la chaîne n'est **jamais inventée** (le défaut corrigé
+  était un `?? 'ADHESION_NOEUD'` qui faisait afficher une adhésion là où le serveur
+  n'avait rien dit).
+- `presentation/screens/tenant/node_detail_screen.dart :: _membersSection()` — portée
+  DIRECT/SUBTREE, recherche, badges, « Charger plus », erreur isolée : un échec du roster
+  ne fait pas échouer la fiche complète.
+
+> **Réalité de l'i18n mobile** (vérifié, à ne pas supposer) : la source de vérité est
+> `lib/l10n/app_localizations.dart` — dictionnaires écrits à la main, six cartes
+> (`_french`, `_english`, `_portuguese`, `_spanish`, `_swahili`, `_arabic`), repli sur FR,
+> `translate(key)` + getters, substitution par gabarits `{count}` / `{name}` / `{direct}`.
+> Les fichiers `.arb` de `lib/l10n/` ne sont **pas consommés** (aucun `l10n.yaml`, aucun
+> import `flutter_gen` ; seul `generate: true` reste dans `pubspec.yaml`). Ajouter une clé
+> dans les `.arb` seulement ne produit aucune traduction : il faut les six cartes.
 
 ---
 
@@ -407,11 +516,29 @@ public OrganizationNode createCampus(UUID tenantId, String name, String code, UU
 - `ConfigurationResolverTest` — Config inheritance chain
 - `ScopeHierarchyTest` — Scope coverage rules
 - `OrganizationHierarchyServiceTest` — CRUD + tree operations
+- `NodeMemberRosterServiceTest` (17) — direct/sous-arbre, dédup au plus profond, compteurs
+  insensibles à `q`, `direct ⊆ sous-arbre`, rôles agrégés hors arbitrage, repli données
+  manquantes
+- `OrganizationHierarchyMembersAccessTest` (6) — sens descendant corrigé (défaut B2 :
+  l'ancienne comparaison échouerait ces tests), portée `TENANT` qui ne déborde plus
 
 ### 11.2 Integration Tests
 - `OrganizationHierarchyIntegrationTest` — Full hierarchy lifecycle
 - `ConfigPropagationTest` — Real-time config push < 5s
 - `ScopeAuthorizationTest` — Permission checks at each level
+- `NodeMembersSecurityTest` (10) — RBAC/HTTP : 200 authentifié, 404 cross-tenant (jamais
+  403), clamp `size`/`page`, `scope` inventé ⇒ SUBTREE sans le renvoyer verbatim
+
+### 11.3 Web & mobile
+- `frontend/src/__tests__/NodeMembersRoster.test.tsx` (18) — contrat d'appel du hook,
+  rendu/comportement `NodeRoster`, onglet « Membres » de la fiche nœud, parité i18n des
+  6 locales rendues par le vrai `I18nProvider` (zéro clé brute à l'écran)
+- `frontend/src/__tests__/UsersPageScopedRoster.test.tsx` (8) — annuaire scopé
+  `?nodeId=&scope=`, garde-fous sur un `scope` malveillant, et **non-régression** : sans
+  paramètre, l'annuaire se comporte exactement comme avant
+- `mobile/test/node_member_roster_test.dart` (21) — parsing défensif, `origine` jamais
+  inventé, table littérale des 9 clés × 6 locales, section rendue en fr/en/ar sur le vrai
+  écran
 
 ---
 
@@ -422,5 +549,9 @@ public OrganizationNode createCampus(UUID tenantId, String name, String code, UU
 - `docs/ADMINISTRATION_MODEL.md` — Admin workflows
 - `docs/TENANT_ONBOARDING.md` — Onboarding with hierarchy
 - `backend/src/main/java/com/discipolat/modules/tenants/domain/OrganizationNode.java`
-- `backend/src/main/java/com/discipolat/modules/tenants/service/ConfigurationResolver.java`
-- `backend/src/main/java/com/discipolat/modules/tenants/service/OrganizationHierarchyService.java`
+- `backend/src/main/java/com/discipolat/modules/tenants/domain/NodeMemberRosterService.java`
+- `backend/src/main/java/com/discipolat/modules/tenants/api/NodeMemberRosterController.java`
+- `backend/src/main/java/com/discipolat/modules/tenants/domain/ConfigurationResolver.java`
+- `backend/src/main/java/com/discipolat/modules/tenants/domain/OrganizationHierarchyService.java`
+- `docs/ECLESIASTICAL_HIERARCHY_TODO.md` — audit et plan d'exécution du roster (§1 verdicts,
+  §2 tâches, §5 preuves d'exécution)

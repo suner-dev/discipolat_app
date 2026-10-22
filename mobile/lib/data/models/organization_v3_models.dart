@@ -14,3 +14,4 @@ export 'organization_level.dart';
 export 'role_title.dart';
 export 'member_role_assignment.dart';
 export 'node_aggregate.dart';
+export 'node_member_roster.dart';

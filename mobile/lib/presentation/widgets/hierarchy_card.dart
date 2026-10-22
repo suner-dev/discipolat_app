@@ -465,6 +465,10 @@ String _originLabel(AppLocalizations l10n, String code) {
       return l10n.translate('hierarchyOriginAssignation');
     case 'ADHESION_NOEUD':
       return l10n.translate('hierarchyOriginAdhesion');
+    case 'ADHESION_TENANT':
+      // Adhésion portée à l'entité entière (et non au nœud) : sans cas, le
+      // code technique s'affiche tel quel à l'écran.
+      return l10n.translate('hierarchyOriginAdhesionTenant');
     case 'RESPONSABLE_NOEUD':
       return l10n.translate('hierarchyOriginResponsable');
     default:

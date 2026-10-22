@@ -10,7 +10,7 @@
 // Les libellés de niveaux/rôles viennent de l'API (dynamiques) : on ne les
 // fige jamais en dur côté client (garde-fou i18n V2/F26).
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -127,6 +127,43 @@ export interface NodeTeamMember {
   status: 'ACTIVE' | 'SUSPENDED' | 'ENDED';
 }
 
+/**
+ * Roster « membres d'une entité » — ligne nominative servie par
+ * GET /tenant/organization/nodes/{id}/members. Un membre rattaché par plusieurs
+ * chemins n'apparaît qu'une fois, au point d'attachement le plus proche.
+ */
+export interface NodeMemberRow {
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  photoUrl?: string | null;
+  statut?: string | null;
+  attachedNodeId?: string | null;
+  attachedNodeName?: string | null;
+  attachedNodeType?: string | null;
+  /** true = rattaché au nœud consulté ; false = via une sous-structure. */
+  direct: boolean;
+  origine: 'ASSIGNATION_V3' | 'ADHESION_NOEUD' | 'ADHESION_TENANT' | 'RESPONSABLE_NOEUD';
+  roles?: string[];
+  viaChaine?: Array<{ id: string; nom: string; type: string; responsibleId?: string | null }>;
+  depuis?: string | null;
+}
+
+export interface NodeMembersPage {
+  nodeId: string;
+  nodeName: string;
+  nodeType: string;
+  scope: 'DIRECT' | 'SUBTREE';
+  content: NodeMemberRow[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  memberCountDirect: number;
+  memberCountSousArbre: number;
+}
+
 // ---------- A : niveaux configurables ----------
 
 export function useOrgLevels() {
@@ -231,6 +268,36 @@ export function useNodeTeam(nodeId: string | null) {
   return useQuery<NodeTeamMember[]>({
     queryKey: ['t', tenantKey, 'org', 'team', nodeId],
     queryFn: async () => (await api.get(`/tenant/organization/nodes/${nodeId}/team`)).data,
+    enabled: !!nodeId,
+  });
+}
+
+/**
+ * Roster paginé des membres d'un nœud, à une profondeur donnée (DIRECT ou
+ * SUBTREE). Filtre libre `q` (nom/email), page 0-based, taille bornée serveur.
+ * La requête n'est émise que si `nodeId` est posé (onglet « Membres »).
+ */
+export function useNodeMembers(
+  nodeId: string | null,
+  opts: { scope?: 'DIRECT' | 'SUBTREE'; q?: string; page?: number; size?: number } = {},
+) {
+  const { currentTenant } = useTenant();
+  const tenantKey = currentTenant?.id ?? 'no-tenant';
+  const scope = opts.scope ?? 'SUBTREE';
+  const q = opts.q?.trim() ?? '';
+  const page = opts.page ?? 0;
+  const size = opts.size ?? 20;
+  return useQuery<NodeMembersPage>({
+    queryKey: ['t', tenantKey, 'org', 'members', nodeId, scope, q, page, size],
+    queryFn: async () =>
+      (
+        await api.get(`/tenant/organization/nodes/${nodeId}/members`, {
+          params: { scope, ...(q ? { q } : {}), page, size },
+        })
+      ).data,
+    // Page/filtre changent la clé : sans cela, chaque frappe ou chaque « Suivant »
+    // vidait le panneau (le champ de recherche disparaissait pendant la requête).
+    placeholderData: keepPreviousData,
     enabled: !!nodeId,
   });
 }

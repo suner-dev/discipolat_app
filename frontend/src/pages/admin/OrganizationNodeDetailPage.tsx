@@ -8,25 +8,29 @@ import {
 import { useI18n } from '@/i18n';
 import {
   useNodeAggregate, useNodeChildren, useNodeFeatures, useSetNodeFeatures, useNodeTheme,
-  usePatchNodeTheme, useNodeTeam, useOrgTreeV3, type ChildWithAggregate,
+  usePatchNodeTheme, useNodeTeam, useOrgTreeV3,
+  type ChildWithAggregate,
 } from '@/hooks/useOrganizationV3';
 import ProgressionSparkline from '@/components/organization/ProgressionSparkline';
+import NodeRoster from '@/components/organization/NodeRoster';
 
 /**
  * SPEC_ORGANISATION_MODULABLE_V3 §6.2 — Fiche nœud.
- * Onglets : Identité · Responsable & équipe (assignments, T-W13) · Modules (D,
- * T-W14) · Thème (D, T-W14) · Agrégats/progression (E, T-W11) · Codes de
- * rejointure (lien, V2).
+ * Onglets : Identité · Responsable & équipe (assignments, T-W13) · Membres
+ * (roster paginé, hiérarchie ecclésiastique) · Modules (D, T-W14) · Thème (D,
+ * T-W14) · Agrégats/progression (E, T-W11) · Codes de rejointure (lien, V2).
  *
- * <p>Le drill-down affiche des NOMBRES uniquement (recalcul serveur) : aucun
- * PII nominatif de membre n'est exposé (D7). L'équipe d'un nœud montre les
- * porteurs de rôle déclarés sur CE nœud (admin tenant uniquement). Les modules
- * sont INDÉPENDANTS par défaut : cocher ici n'impacte pas les enfants (V3-D).
+ * <p>Les onglets « Agrégats » et l'arbre affichent des NOMBRES uniquement
+ * (recalcul serveur, D7). L'onglet « Membres » affiche la liste NOMINATIVE des
+ * membres relevant du nœud — visibilité alignée sur l'annuaire {@code /users}
+ * déjà ouvert à tout membre authentifié du tenant ; le serveur scope, déduplique
+ * et borne la pagination. L'équipe d'un nœud montre les porteurs de rôle
+ * déclarés sur CE nœud. Les modules sont INDÉPENDANTS par défaut (V3-D).
  */
 
-type Tab = 'identity' | 'team' | 'modules' | 'theme' | 'aggregate' | 'codes';
+type Tab = 'identity' | 'team' | 'members' | 'modules' | 'theme' | 'aggregate' | 'codes';
 
-const TABS: Tab[] = ['identity', 'team', 'modules', 'theme', 'aggregate', 'codes'];
+const TABS: Tab[] = ['identity', 'team', 'members', 'modules', 'theme', 'aggregate', 'codes'];
 
 export default function OrganizationNodeDetailPage() {
   const { nodeId } = useParams<{ nodeId: string }>();
@@ -63,6 +67,7 @@ export default function OrganizationNodeDetailPage() {
 
       {tab === 'identity' && <IdentityTab nodeId={nodeId ?? null} />}
       {tab === 'team' && <TeamTab nodeId={nodeId ?? null} />}
+      {tab === 'members' && <MembersTab nodeId={nodeId ?? null} />}
       {tab === 'modules' && <ModulesTab nodeId={nodeId ?? null} />}
       {tab === 'theme' && <ThemeTab nodeId={nodeId ?? null} />}
       {tab === 'aggregate' && <AggregateTab nodeId={nodeId ?? null} />}
@@ -128,6 +133,30 @@ function TeamTab({ nodeId }: { nodeId: string | null }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Roster des membres du nœud — délégué à la vue partagée `NodeRoster`, la même
+ * que l'annuaire scopé `/users?nodeId=` (une seule écriture, deux entrées).
+ * Le lien « Ouvrir dans l'annuaire » prolonge la navigation entité → membres.
+ */
+function MembersTab({ nodeId }: { nodeId: string | null }) {
+  const { t } = useI18n();
+  if (!nodeId) return null;
+  return (
+    <div className="space-y-3">
+      <NodeRoster nodeId={nodeId} />
+      <div className="flex justify-end">
+        <Link
+          to={`/users?nodeId=${nodeId}&scope=SUBTREE`}
+          className="btn btn-secondary btn-sm inline-flex items-center gap-1"
+        >
+          <Users className="w-4 h-4" />
+          {t('orgV3.members.openDirectory')}
+        </Link>
+      </div>
     </div>
   );
 }

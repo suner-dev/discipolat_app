@@ -589,27 +589,78 @@ public class OrganizationHierarchyService {
 
     // ==================== PERMISSIONS BY NODE ====================
 
+    /**
+     * Membres qui RELÈVENT de ce nœud : adhésions dont la portée est dans le
+     * sous-arbre (le nœud consulté et ses sous-structures), plus les adhésions
+     * de portée {@code TENANT} qui couvrent toute l'organisation.
+     *
+     * <p><b>Correction ciblée (audit hiérarchie ecclésiastique, défaut B2).</b>
+     * L'implémentation comparait à l'envers : elle retenait une adhésion quand
+     * le <b>nœud consulté</b> était descendant de la portée du membre
+     * ({@code isDescendantOf(nodeId, m.scopeId)} sur les chemins matérialisés).
+     * Fuite descendante : un membre rattaché à une RÉGION apparaissait dans la
+     * liste de CHAQUE cellule placée sous cette région — le roster d'une cellule
+     * était donc inondé par tous les ancêtres — et toute adhésion de portée
+     * {@code TENANT} était retenue partout sans distinction. Le sens est
+     * désormais celui de l'énoncé : on ne retient que les portées POSÉES DANS le
+     * sous-arbre (qui relèvent donc de cette entité). Comparaison par
+     * {@code parentId} interposé (mémoire, anti-cycle) plutôt que 2
+     * {@code findById} par membership (N+1).
+     *
+     * <p>Contrat conservé : signature, type de retour et garde d'appel
+     * inchangés. La liste nominative paginée des membres d'une entité — avec
+     * recherche, déduplication et distinction directs/indirects — est servie par
+     * {@link NodeMemberRosterService} ; cette méthode-ci reste la vue large
+     * « quelles adhésions couvrent/relèvent de ce nœud », sans projection.
+     */
     @Transactional(readOnly = true)
     public List<TenantMembership> getMembersWithAccess(UUID tenantId, UUID nodeId) {
-        // Get all memberships that have scope covering this node
-        List<TenantMembership> allMemberships = membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
-        UUID ancestorPath = nodeId;
+        OrganizationNode node = nodeRepository.findById(nodeId)
+                .filter(n -> n.getTenantId().equals(tenantId))
+                .orElse(null);
+        if (node == null) return List.of();
 
-        return allMemberships.stream()
+        Set<UUID> covered = descendantIdsOf(node, loadTenantNodesById(tenantId));
+        return membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE).stream()
                 .filter(m -> {
                     if (m.getScopeType() == MembershipScopeType.TENANT) return true;
-                    if (m.getScopeId() == null) return false;
-                    return isDescendantOf(ancestorPath, m.getScopeId());
+                    if (m.getScopeType() == MembershipScopeType.OWN || m.getScopeId() == null) return false;
+                    return covered.contains(m.getScopeId());
                 })
                 .toList();
     }
 
-    private boolean isDescendantOf(UUID nodeId, UUID ancestorId) {
-        Optional<OrganizationNode> node = nodeRepository.findById(nodeId);
-        Optional<OrganizationNode> ancestor = nodeRepository.findById(ancestorId);
-        if (node.isEmpty() || ancestor.isEmpty()) return false;
-        return node.get().getPath().startsWith(ancestor.get().getPath());
+    /** Nœuds du sous-arbre (racine incluse), dérivés en mémoire par parentId. */
+    private Set<UUID> descendantIdsOf(OrganizationNode root, Map<UUID, OrganizationNode> nodesById) {
+        Set<UUID> out = new java.util.LinkedHashSet<>();
+        out.add(root.getId());
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            for (OrganizationNode n : nodesById.values()) {
+                if (n.getParentId() != null && out.contains(n.getParentId()) && !out.contains(n.getId())) {
+                    out.add(n.getId());
+                    progress = true;
+                }
+            }
+        }
+        return out;
     }
+
+    private Map<UUID, OrganizationNode> loadTenantNodesById(UUID tenantId) {
+        Map<UUID, OrganizationNode> byId = new HashMap<>();
+        for (OrganizationNode n : nodeRepository.findByTenantId(tenantId)) {
+            byId.put(n.getId(), n);
+        }
+        return byId;
+    }
+
+    // Le comparateur historique {@code isDescendantOf(nodeId, ancestorId)}
+    // (préfixe de {@code path}) a été RETIRÉ ici : c'est lui qui produisait la
+    // fuite descendante du défaut B2, et le laisser disponible invitait à le
+    // rebrancher. La descente d'arbre autoritaire passe par
+    // {@link #descendantIdsOf} — dérivé par {@code parentId}, donc insensible à
+    // un {@code path} mal tenu (constat H8 clos : colonne {@code text}).
 
     // ==================== HELPERS ====================
 

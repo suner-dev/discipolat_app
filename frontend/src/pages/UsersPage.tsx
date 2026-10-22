@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { getErrorMessage } from '@/lib/api';
 import DataTable from '@/components/shared/DataTable';
+import NodeRoster from '@/components/organization/NodeRoster';
 import { useAuth } from '@/contexts/AuthContext';
 import { useServedAccess, useRoleVocabulary } from '@/hooks/useServedAccess';
 import type { User, PageResponse, Family, TransferRequest } from '@/types';
 import type { ColumnDef } from '@/types/table';
-import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Power, PowerOff } from 'lucide-react';
+import { UserCog, Plus, Loader2, X, Sparkles, Shield, Mail, User as UserIcon, ArrowUp, ArrowDown, History, Move, Trash2, BarChart3, Star, ClipboardList, Heart, UserX, UserRound, Search, Filter, KeyRound, Lock, Unlock, ShieldCheck, Power, PowerOff, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCustomFieldForm } from '@/hooks/useCustomFieldForm';
 import CustomFieldRenderer from '@/components/shared/CustomFieldRenderer';
@@ -57,6 +59,13 @@ export default function UsersPage() {
   const canManageRoles = can('USERS_EXECUTE', () => user?.role === 'ADMIN' || user?.role === 'PASTEUR' ||
     user?.activeRole === 'ADMIN' || user?.activeRole === 'PASTEUR');
   const [page, setPage] = useState(0);
+  // FE-3 — annuaire scopé par entité : `/users?nodeId=<nœud>&scope=DIRECT|SUBTREE`.
+  // Le roster du nœud remplace alors la liste globale (même vue que l'onglet
+  // « Membres » de la fiche nœud). Sans param, comportement strictement inchangé.
+  const [searchParams] = useSearchParams();
+  const scopedNodeId = searchParams.get('nodeId');
+  const scopedScope: 'DIRECT' | 'SUBTREE' =
+    searchParams.get('scope') === 'DIRECT' ? 'DIRECT' : 'SUBTREE';
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionModal, setActionModal] = useState<'' | 'detail' | 'promote' | 'demote' | 'roles' | 'transfer' | 'history' | 'hardDelete'>('');
@@ -102,6 +111,10 @@ export default function UsersPage() {
       const res = await api.get(`/users?${params}`);
       return res.data as PageResponse<User>;
     },
+    // Annuaire scopé : sous `?nodeId=`, c'est le roster du nœud qui répond, pas
+    // l'annuaire entier. Laisser partir cette requête serait relancer 20 comptes
+    // hors sujet à chaque page du roster (et un appel de plus au serveur).
+    enabled: !scopedNodeId,
   });
 
   const { data: workload } = useQuery({
@@ -546,6 +559,28 @@ export default function UsersPage() {
       ),
     },
   ];
+
+  if (scopedNodeId) {
+    return (
+      <div className="page-container">
+        <div className="page-header">
+          <div className="animate-fade-in">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="w-5 h-5 text-primary-500" />
+              <h1 className="page-title">Utilisateurs</h1>
+            </div>
+            <p className="page-subtitle">{tText("Membres de l'entité")}</p>
+          </div>
+          <Link to="/users" className="btn-secondary btn-sm animate-scale-in inline-flex items-center gap-1">
+            <X className="w-4 h-4" />
+            {tText("Retour à l'annuaire complet")}
+          </Link>
+        </div>
+        {/* key = nœud : changer d'entité repart d'une vue fraîche (page 0). */}
+        <NodeRoster nodeId={scopedNodeId} initialScope={scopedScope} />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
