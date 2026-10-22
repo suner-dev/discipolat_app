@@ -19,6 +19,7 @@ class _FakeApiService extends ApiService {
 
   String? lastPath;
   bool fail = false;
+  int failStatus = 0;
   Map<String, dynamic> payload = const {};
 
   @override
@@ -26,9 +27,17 @@ class _FakeApiService extends ApiService {
       {Map<String, dynamic>? params,
       Map<String, dynamic>? queryParameters}) async {
     lastPath = path;
-    if (fail && path == '/hierarchy/me/parcours') {
+    if (fail &&
+        (path == '/hierarchy/me/parcours' ||
+            path.startsWith('/hierarchy/users/') && path.endsWith('/parcours'))) {
       throw DioException(
         requestOptions: RequestOptions(path: path),
+        response: failStatus == 0
+            ? null
+            : Response(
+                requestOptions: RequestOptions(path: path),
+                statusCode: failStatus,
+              ),
         error: 'network down',
       );
     }
@@ -157,6 +166,45 @@ void main() {
 
       expect(find.text('Capacité · Début'), findsOneWidget);
       expect(find.text('Membre depuis le'), findsNothing);
+    });
+
+    testWidgets("d'un tiers : endpoint scopé /hierarchy/users/{id}/parcours",
+        (WidgetTester tester) async {
+      api.payload = {
+        'evenements': [
+          {'horodatage': '2020-01-01T00:00:00Z', 'type': 'ADHESION', 'action': 'DEBUT', 'libelle': 'Adhésion'}
+        ],
+        'resume': {},
+      };
+
+      await tester.pumpWidget(wrap(MyParcoursCard(apiService: api, userId: 'u-tiers')));
+      await tester.pumpAndSettle();
+
+      expect(api.lastPath, '/hierarchy/users/u-tiers/parcours');
+      expect(find.text('Adhésion · Début · 01/01/2020'), findsOneWidget);
+    });
+
+    testWidgets('garde refusée (403) sur un tiers : repli silencieux, pas un message de panne',
+        (WidgetTester tester) async {
+      api.fail = true;
+      api.failStatus = 403;
+
+      await tester.pumpWidget(wrap(MyParcoursCard(apiService: api, userId: 'u-tiers')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Parcours indisponible.'), findsNothing);
+      expect(find.text('Mon parcours pastoral'), findsNothing);
+    });
+
+    testWidgets('panne réseau (sans statut) sur un tiers : erreur explicite + réessai',
+        (WidgetTester tester) async {
+      api.fail = true;
+
+      await tester.pumpWidget(wrap(MyParcoursCard(apiService: api, userId: 'u-tiers')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Parcours indisponible.'), findsOneWidget);
+      expect(find.text('Réessayer'), findsOneWidget);
     });
   });
 

@@ -13,6 +13,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'package:dio/dio.dart';
+
 import '../../l10n/app_localizations.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/relation_service.dart';
@@ -71,11 +73,17 @@ class ParcoursParsing {
   }
 }
 
-/// « Mon parcours pastoral » — section du PROFIL.
+/// « Mon parcours pastoral » — section du PROFIL, et récit d'un TIERS dans sa
+/// fiche. Le sujet est traité exactement comme sur le web : `userId == null`
+/// (ou son propre identifiant) → `GET /hierarchy/me/parcours` (`isAuthenticated`),
+/// sinon → `GET /hierarchy/users/{id}/parcours` (`RELATIONS_EXECUTE`) — un membre
+/// sans cette permission lit DONC SON récit, mais la fiche d'un tiers refuse en
+/// silence (403 = état normal, jamais un message de panne).
 class MyParcoursCard extends StatefulWidget {
-  const MyParcoursCard({super.key, this.apiService});
+  const MyParcoursCard({super.key, this.apiService, this.userId});
 
   final ApiService? apiService;
+  final String? userId;
 
   @override
   State<MyParcoursCard> createState() => _MyParcoursCardState();
@@ -87,6 +95,11 @@ class _MyParcoursCardState extends State<MyParcoursCard> {
   Map<String, dynamic> _parcours = const {};
   bool _loading = true;
   bool _error = false;
+
+  /// `userId` absent = ma propre vue : seul `/hierarchy/me/parcours` répond,
+  /// et il est ouvert à tout membre authentifié. Le tiers passe par l'endpoint
+  /// scopé, dont le refus (403) est traité en amont comme un état normal.
+  bool get _isSelf => widget.userId == null || widget.userId!.isEmpty;
 
   @override
   void initState() {
@@ -100,19 +113,29 @@ class _MyParcoursCardState extends State<MyParcoursCard> {
       _error = false;
     });
     try {
-      final p = await _service.myParcours();
+      final p = _isSelf
+          ? await _service.myParcours()
+          : await _service.parcoursOf(widget.userId!);
       if (!mounted) return;
       setState(() {
         _parcours = p;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
+      // Garde serveur (403/404) sur un TIERS : repli silencieux, conforme au
+      // web. Toute autre panne : message explicite + réessai.
+      final denied = _isSelf ? false : _isDenied(e);
       setState(() {
         _loading = false;
-        _error = true;
+        _error = !denied;
       });
     }
+  }
+
+  static bool _isDenied(Object e) {
+    final code = e is DioException ? e.response?.statusCode : null;
+    return code == 403 || code == 404;
   }
 
   @override
