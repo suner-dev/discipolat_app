@@ -3,16 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Network, Users, Church, UserCog, RefreshCw, Loader2, ToggleLeft, ToggleRight,
-  ChevronRight, Palette, IdCard, ShieldCheck, Ticket, Search,
+  ChevronRight, Palette, IdCard, ShieldCheck, Ticket,
 } from 'lucide-react';
 import { useI18n } from '@/i18n';
 import {
   useNodeAggregate, useNodeChildren, useNodeFeatures, useSetNodeFeatures, useNodeTheme,
-  usePatchNodeTheme, useNodeTeam, useNodeMembers, useOrgTreeV3,
-  type ChildWithAggregate, type NodeMemberRow,
+  usePatchNodeTheme, useNodeTeam, useOrgTreeV3,
+  type ChildWithAggregate,
 } from '@/hooks/useOrganizationV3';
 import ProgressionSparkline from '@/components/organization/ProgressionSparkline';
-import { UserDetailModal } from '@/components/users/UserDetailModal';
+import NodeRoster from '@/components/organization/NodeRoster';
 
 /**
  * SPEC_ORGANISATION_MODULABLE_V3 §6.2 — Fiche nœud.
@@ -138,121 +138,25 @@ function TeamTab({ nodeId }: { nodeId: string | null }) {
 }
 
 /**
- * Roster des membres du nœud. Vue DIRECT (rattachés au nœud) ou SUBTREE
- * (inclut les sous-structures) ; recherche nom/email ; pagination serveur. Une
- * ligne = un membre, dédupliqué au point d'attachement le plus proche ; le badge
- * « via … » indique le chemin descendant quand le membre est indirect.
+ * Roster des membres du nœud — délégué à la vue partagée `NodeRoster`, la même
+ * que l'annuaire scopé `/users?nodeId=` (une seule écriture, deux entrées).
+ * Le lien « Ouvrir dans l'annuaire » prolonge la navigation entité → membres.
  */
 function MembersTab({ nodeId }: { nodeId: string | null }) {
   const { t } = useI18n();
-  const [scope, setScope] = useState<'DIRECT' | 'SUBTREE'>('SUBTREE');
-  const [q, setQ] = useState('');
-  const [page, setPage] = useState(0);
-  const [openUserId, setOpenUserId] = useState<string | null>(null);
-  const size = 20;
-  const roster = useNodeMembers(nodeId, { scope, q, page, size });
-
-  const resetPage = (fn: () => void) => { fn(); setPage(0); };
-
-  if (roster.isLoading) return <Loader />;
-  const data = roster.data;
-  const rows: NodeMemberRow[] = data?.content ?? [];
-  const totalPages = data?.totalPages ?? 0;
-
+  if (!nodeId) return null;
   return (
-    <div className="glass-card p-4 space-y-3">
-      <div className="flex items-center gap-2 text-primary-500">
-        <Users className="w-5 h-5" />
-        <span className="text-sm font-medium">{t('orgV3.members.title')}</span>
-        <span className="ml-auto text-xs text-gray-400">
-          {t('orgV3.members.countDirect')}: {data?.memberCountDirect ?? 0} ·{' '}
-          {t('orgV3.members.countSousArbre')}: {data?.memberCountSousArbre ?? 0}
-        </span>
+    <div className="space-y-3">
+      <NodeRoster nodeId={nodeId} />
+      <div className="flex justify-end">
+        <Link
+          to={`/users?nodeId=${nodeId}&scope=SUBTREE`}
+          className="btn btn-secondary btn-sm inline-flex items-center gap-1"
+        >
+          <Users className="w-4 h-4" />
+          {t('orgV3.members.openDirectory')}
+        </Link>
       </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => resetPage(() => setQ(e.target.value))}
-            placeholder={t('orgV3.members.search')}
-            className="input-glass w-full pl-8 text-sm"
-          />
-        </div>
-        <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-          {(['DIRECT', 'SUBTREE'] as const).map((sc) => (
-            <button
-              key={sc}
-              type="button"
-              onClick={() => resetPage(() => setScope(sc))}
-              className={`px-3 py-1.5 text-xs ${
-                scope === sc ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600'
-              }`}
-            >
-              {t(`orgV3.members.scope.${sc}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {rows.length === 0 ? (
-        <p className="text-sm text-gray-400">{t('orgV3.members.empty')}</p>
-      ) : (
-        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-          {rows.map((m) => (
-            <li key={m.userId} className="py-2 flex items-center gap-3 text-sm">
-              <div className="flex-1 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setOpenUserId(m.userId)}
-                  className="truncate hover:text-primary-600 text-gray-800 dark:text-gray-100 text-left"
-                >
-                  {[m.firstName, m.lastName].filter(Boolean).join(' ') || m.userId}
-                </button>
-                <div className="text-[11px] text-gray-400 truncate">{m.email ?? '—'}</div>
-              </div>
-              <div className="text-right shrink-0">
-                {m.roles && m.roles.length > 0 && (
-                  <span className="text-[11px] text-primary-600">{m.roles.join(', ')}</span>
-                )}
-                {!m.direct && m.attachedNodeName && (
-                  <div className="text-[11px] text-gray-400">
-                    {t('orgV3.members.via')}: {m.attachedNodeName}
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm disabled:opacity-40"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            {t('orgV3.members.prev')}
-          </button>
-          <span className="text-xs text-gray-400">{page + 1} / {totalPages}</span>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm disabled:opacity-40"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            {t('orgV3.members.next')}
-          </button>
-        </div>
-      )}
-
-      {/* Fiche membre complète (réutilisée depuis l'annuaire) — navigation
-          membre → détail depuis le roster du nœud. */}
-      {openUserId && <UserDetailModal userId={openUserId} onClose={() => setOpenUserId(null)} />}
     </div>
   );
 }

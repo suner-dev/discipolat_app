@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import api from '@/lib/api';
 import { useTenant } from '@/contexts/TenantContext';
 import OrganizationBrowserPage from '@/pages/OrganizationBrowserPage';
@@ -68,10 +69,15 @@ function stubApi(overrides: { tree?: unknown } = {}) {
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // MemoryRouter : le panneau détail de la page expose un lien « Voir les membres »
+  // (Link react-router) vers l'annuaire scopé ; hors routeur, le composant lève —
+  // en production la page est toujours rendue sous le BrowserRouter de App.tsx.
   return render(
-    <QueryClientProvider client={queryClient}>
-      <OrganizationBrowserPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <OrganizationBrowserPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
 }
 

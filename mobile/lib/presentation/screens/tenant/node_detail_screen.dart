@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/services/api_service.dart';
 import '../../../data/services/organization_v3_api.dart';
 import '../../../data/models/organization_v3_models.dart';
+import '../../../l10n/app_localizations.dart';
 import 'modules_screen.dart' show moduleLabelStatic;
 
 /// T-M11 — Fiche campus/nœud (SPEC_ORGANISATION_MODULABLE_V3 §7.1).
@@ -312,27 +313,32 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
   /// multi-chemins n'apparaît qu'une fois (dédup serveur), marqué « via … ».
   Widget _membersSection() {
     final page = _members;
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
         Row(
           children: [
-            const Text('Membres',
-                style: TextStyle(fontWeight: FontWeight.w600)),
+            Text(l10n.nodeMembersTitle,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
             const Spacer(),
             if (page != null)
               Text(
-                'Directs ${page.memberCountDirect} • Total ${page.memberCountSousArbre}',
+                l10n.nodeMembersCounters(
+                    page.memberCountDirect, page.memberCountSousArbre),
                 style: const TextStyle(fontSize: 11, color: Colors.grey),
               ),
           ],
         ),
         const SizedBox(height: 8),
         SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'DIRECT', label: Text('Ici')),
-            ButtonSegment(value: 'SUBTREE', label: Text('Avec sous-unités')),
+          segments: [
+            ButtonSegment(
+                value: 'DIRECT', label: Text(l10n.nodeMembersScopeDirect)),
+            ButtonSegment(
+                value: 'SUBTREE',
+                label: Text(l10n.nodeMembersScopeSubtree)),
           ],
           selected: {_membersScope},
           onSelectionChanged: (s) => _loadMembers(scope: s.first, page: 0),
@@ -340,9 +346,9 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: _membersSearchCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Rechercher un membre',
-            prefixIcon: Icon(Icons.search),
+          decoration: InputDecoration(
+            labelText: l10n.nodeMembersSearch,
+            prefixIcon: const Icon(Icons.search),
             isDense: true,
           ),
           textInputAction: TextInputAction.search,
@@ -355,10 +361,10 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (page == null || page.content.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('Aucun membre pour cette sélection.',
-                style: TextStyle(color: Colors.grey)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(l10n.nodeMembersEmpty,
+                style: const TextStyle(color: Colors.grey)),
           )
         else
           ...page.content.map((m) => Card(
@@ -374,7 +380,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
                   subtitle: Text([
                     if (m.email != null && m.email!.isNotEmpty) m.email!,
                     if (!m.direct && m.attachedNodeName != null)
-                      'via ${m.attachedNodeName}',
+                      l10n.nodeMembersVia(m.attachedNodeName!),
                     if (m.roles.isNotEmpty) m.roles.join(', '),
                   ].join(' • ')),
                   dense: true,
@@ -385,7 +391,7 @@ class _NodeDetailScreenState extends ConsumerState<NodeDetailScreen> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => _loadMembers(page: _membersPage + 1),
-              child: const Text('Charger plus'),
+              child: Text(l10n.nodeMembersLoadMore),
             ),
           ),
       ],

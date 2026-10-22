@@ -10,6 +10,26 @@
 
 ---
 
+## 0. STATUT FINAL (honnête, 2026-10-22)
+
+**Implémentation : TERMINÉE et revérifiée empiriquement** (BE + FE web + MO + SEC + DOC), en
+**additif strict** — aucun endpoint supprimé, aucune clé retirée, aucun behavior legacy réécrit.
+Manques d'audit **B1/B2/B3/B4 tous traités** : roster paginé typé (`NodeMemberRosterController` /
+`NodeMemberRosterService`), B2 corrigé (`getMembersWithAccess` sens descendant + `ADHESION_TENANT`
+racine-seule + N+1 tué), lien web `?nodeId=&scope=`, écran mobile « Membres ».
+
+**Vérifications rejouées** (détail + preuves horodatées en §5) : roster BE **33/33** ; `vitest`
+**1088/1088** ; `tsc -b` 0 err ; `npm run build` OK ; i18n 0 clé manquante ; `flutter test`
+**745** (roster 21) ; `flutter analyze` 0 erreur ; `docs/API.md` + `docs/openapi.json`
+**réellement régénérés** (endpoint présent en ligne 1813).
+
+**Deux réserves assumées** — (1) la suite backend complète marque **1 échec** qui est **flaky et
+hors périmètre** (`inventory/AssetQrServiceTest`, décodage image ZXing ; passe en isolation) ;
+(2) la **publication** (commit `develop` → PR `main`) n'est **pas** faite : c'est une action de
+mainteneur, laissée ouverte volontairement. Rien dans cet état ne doit être pris pour « déploié ».
+
+---
+
 ## 1. SYNTHÈSE D'AUDIT — verdicts par capacité
 
 | # | Capacité | Verdict | Emplacement réel (vérifié par lecture du code) |
@@ -31,33 +51,33 @@
 ## 2. PLAN D'EXÉCUTION — tâches (dépendances →)
 
 ### Backend
-- [ ] **BE-1** — Nouvel endpoint roster : `GET /api/v1/tenant/organization/nodes/{nodeId}/members?scope=direct|subtree&q=&page=&size=` → page typée `{userId, firstName, lastName, email?, roles[], relationDirecte vs indirecte (viaNodeId/viaNodeName), statut, joinedAt}`. Règles : déduplication par userId (au plus proche du nœud), ordre stable, `size` clampé, `q` filtre nom/email, **tenant du contexte serveur revérifié** (404 cross-tenant), dépend BE prerequisite A2 (descendants) — réutilise `OrganizationNodeRepository.findDescendants` + `TenantMembership` + `MemberRoleAssignment` (pour rattacher aussi les porteurs d'assignment sur un nœud du sous-arbre, sans doublon avec la membership). Critères : scénarios A, B, F, G côté service + HTTP.
-- [ ] **BE-2** — Correction ciblée de `getMembersWithAccess` (B2) : sens descendant correct (membres dont la portée est **dans** le sous-arbre du nœud), projection légère ; **signature/additif préservés** si consommé — sinon dépréciation documentée, jamais de suppression. Critère : test unitaire qui échouerait sur l'ancienne sémantique.
-- [ ] **BE-3** — Compteurs cohérents : exposition `memberCountDirect` + `memberCountSousArbre` sur la fiche nœud (réutilise la logique distinct() de `NodeAggregateService` ; additif dans `toView`/`aggregate`). Critère : directs ⊆ sous-arbre, aucun double comptage.
-- [ ] **BE-4** — Tests : service (direct/subtree/dédup/repli données manquantes), HTTP (RBAC : rôles limités, 404 cross-tenant, clamp pagination), architecture tenant-filter. Scénarios A/B/F/G.
+- [x] **BE-1** — Nouvel endpoint roster : `GET /api/v1/tenant/organization/nodes/{nodeId}/members?scope=direct|subtree&q=&page=&size=` → page typée `{userId, firstName, lastName, email?, roles[], relationDirecte vs indirecte (viaNodeId/viaNodeName), statut, joinedAt}`. Règles : déduplication par userId (au plus proche du nœud), ordre stable, `size` clampé, `q` filtre nom/email, **tenant du contexte serveur revérifié** (404 cross-tenant), dépend BE prerequisite A2 (descendants) — réutilise `OrganizationNodeRepository.findDescendants` + `TenantMembership` + `MemberRoleAssignment` (pour rattacher aussi les porteurs d'assignment sur un nœud du sous-arbre, sans doublon avec la membership). Critères : scénarios A, B, F, G côté service + HTTP.
+- [x] **BE-2** — Correction ciblée de `getMembersWithAccess` (B2) : sens descendant correct (membres dont la portée est **dans** le sous-arbre du nœud), projection légère ; **signature/additif préservés** si consommé — sinon dépréciation documentée, jamais de suppression. Critère : test unitaire qui échouerait sur l'ancienne sémantique.
+- [x] **BE-3** — Compteurs cohérents : exposition `memberCountDirect` + `memberCountSousArbre` sur la fiche nœud (réutilise la logique distinct() de `NodeAggregateService` ; additif dans `toView`/`aggregate`). Critère : directs ⊆ sous-arbre, aucun double comptage.
+- [x] **BE-4** — Tests : service (direct/subtree/dédup/repli données manquantes), HTTP (RBAC : rôles limités, 404 cross-tenant, clamp pagination), architecture tenant-filter. Scénarios A/B/F/G.
 
 ### Frontend web
-- [ ] **FE-1** — `hooks/useOrganizationV3.ts` : ajouter `useNodeMembers(nodeId, {scope,q,page})` sur BE-1. 
-- [ ] **FE-2** — `OrganizationNodeDetailPage` : nouvel onglet **« Membres »** (liste paginée, recherche, badge Direct/Indirect, compteur) — additif aux 6 onglets existants, garde d'affichage alignée sur la permission backend.
-- [ ] **FE-3** — `UsersPage` : filtre URL `?nodeId=&scope=` (annuaire scopé entité) + lien « Voir les membres » depuis le navigateur org (`OrganizationBrowserPage` panneau détail). Fil d'Ariane hiérarchique déjà posé dans `UserDetailModal` (réutilisé, pas re-créé).
-- [ ] **FE-4** — i18n parité stricte 6 locales (fr/en/pt/es/sw/ar) pour les nouvelles clés `orgV3.members.*`.
-- [ ] **FE-5** — Tests vitest : hook + onglet Membres (rendu paginé, scope, repli vide) + UsersPage filtre nodeId. `tsc --noEmit` 0 erreur.
+- [x] **FE-1** — `hooks/useOrganizationV3.ts` : ajouter `useNodeMembers(nodeId, {scope,q,page})` sur BE-1. 
+- [x] **FE-2** — `OrganizationNodeDetailPage` : nouvel onglet **« Membres »** (liste paginée, recherche, badge Direct/Indirect, compteur) — additif aux 6 onglets existants, garde d'affichage alignée sur la permission backend.
+- [x] **FE-3** — `UsersPage` : filtre URL `?nodeId=&scope=` (annuaire scopé entité) + lien « Voir les membres » depuis le navigateur org (`OrganizationBrowserPage` panneau détail). Fil d'Ariane hiérarchique déjà posé dans `UserDetailModal` (réutilisé, pas re-créé).
+- [x] **FE-4** — i18n parité stricte 6 locales (fr/en/pt/es/sw/ar) pour les nouvelles clés `orgV3.members.*`.
+- [x] **FE-5** — Tests vitest : hook + onglet Membres (rendu paginé, scope, repli vide) + UsersPage filtre nodeId. `tsc --noEmit` 0 erreur.
 
 ### Mobile
-- [ ] **MO-1** — `organization_v3_api.dart` : méthode `nodeMembers(nodeId, scope, q, page)` (client réel `api_service.dart`, pas le stub legacy).
-- [ ] **MO-2** — `node_detail_screen.dart` : section **« Membres »** (liste paginée scroll, recherche, badges Direct/Indirect, état d'erreur + repli « information non renseignée »).
-- [ ] **MO-3** — i18n 6 locales + tests `flutter test` (parsing défensif : champ absent ≠ crash) ; `flutter analyze` 0 erreur.
+- [x] **MO-1** — `organization_v3_api.dart` : méthode `nodeMembers(nodeId, scope, q, page)` (client réel `api_service.dart`, pas le stub legacy).
+- [x] **MO-2** — `node_detail_screen.dart` : section **« Membres »** (liste paginée scroll, recherche, badges Direct/Indirect, état d'erreur + repli « information non renseignée »).
+- [x] **MO-3** — i18n 6 locales + tests `flutter test` (parsing défensif : champ absent ≠ crash) ; `flutter analyze` 0 erreur.
 
 ### Base de données
-- [ ] **DB-0** — **Aucune migration nécessaire** (audit concluant : path matérialisé + levelId + memberships + assignments couvrent le modèle). Vérifié : dernière migration V272 ; rien à ajouter. Si un besoin surgissait : additive uniquement (pas de colonne destructrice, pas de réécriture de V231/V232).
+- [x] **DB-0** — **Aucune migration nécessaire** (audit concluant : path matérialisé + levelId + memberships + assignments couvrent le modèle). Vérifié : dernière migration V272 ; rien à ajouter. Si un besoin surgissait : additive uniquement (pas de colonne destructrice, pas de réécriture de V231/V232).
 
 ### Sécurité (transverse)
-- [ ] **SEC-1** — Le roster BE-1 ne divulgue rien hors périmètre : tenant strict (404), garde `@authz` alignée sur la lecture d'annuaire existante (`isAuthenticated()` pour la visibilité minimale, comme `/users` — l'annuaire est déjà ouvert à tout membre authentifié du tenant ; le nouveau endpoint n'ouvre donc **rien de plus** que l'existant), email/PII limité au shape `UserResponse` existant.
-- [ ] **SEC-2** — Rejeu des tests d'isolation (`RelationApiSecurityTest`, `MultiTenantSecurityTests`, `TenantFilterDefArchitectureTest`) + nouveau `NodeMembersSecurityTest`.
+- [x] **SEC-1** — Le roster BE-1 ne divulgue rien hors périmètre : tenant strict (404), garde `@authz` alignée sur la lecture d'annuaire existante (`isAuthenticated()` pour la visibilité minimale, comme `/users` — l'annuaire est déjà ouvert à tout membre authentifié du tenant ; le nouveau endpoint n'ouvre donc **rien de plus** que l'existant), email/PII limité au shape `UserResponse` existant.
+- [x] **SEC-2** — Rejeu des tests d'isolation (`RelationApiSecurityTest`, `MultiTenantSecurityTests`, `TenantFilterDefArchitectureTest`) + nouveau `NodeMembersSecurityTest`.
 
 ### Documentation
-- [ ] **DOC-1** — Mettre à jour `docs/ORGANIZATION_HIERARCHY.md` (constat H8 clos, `path text`, roster endpoint) et `docs/CHANGELOG.md` ; `docs/API.md` **généré** via `scripts/generate-api-docs.sh` (règle du dépôt, pas d'édition manuelle).
-- [ ] **DOC-2** — Cocher ce fichier au fur et à mesure + statut final honnête.
+- [x] **DOC-1** — Mettre à jour `docs/ORGANIZATION_HIERARCHY.md` (constat H8 clos, `path text`, roster endpoint) et `docs/CHANGELOG.md` ; `docs/API.md` **généré** via `scripts/generate-api-docs.sh` (règle du dépôt, pas d'édition manuelle).
+- [x] **DOC-2** — Cocher ce fichier au fur et à mesure + statut final honnête.
 
 ## 3. CE QUI EST CONSERVÉ SANS RÉÉCRITURE (travail existant réutilisé)
 
@@ -80,15 +100,29 @@
 ## 5. CHECKLIST DE LIVRAISON (statut réel)
 
 - [x] Audit 3 couches effectué sur le **code** (pas la doc) — verdicts §1.
-- [ ] BE-1 roster paginé · [ ] BE-2 correction B2 · [ ] BE-3 compteurs directs/indirects · [ ] BE-4 tests
-- [ ] FE-1..5 · [ ] MO-1..3 · [ ] SEC-1..2 · [ ] DOC-1..2
-- [ ] `mvn -o test` (cible + suite) rejoué, résultats réels consignés ici
-- [ ] `tsc --noEmit` + `vitest run` + build web rejoués
-- [ ] `flutter analyze` + `flutter test` rejoués
-- [ ] Publié sur `develop` puis PR `main` (workflow du dépôt — `main` protégée par PR, PR #17-19 en preuve)
-- [ ] Scénarios A→I validés (§6 mission) — evidence par scénario notée ci-dessous
+- [x] BE-1 roster paginé · [x] BE-2 correction B2 · [x] BE-3 compteurs directs/indirects · [x] BE-4 tests
+- [x] FE-1..5 · [x] MO-1..3 · [x] SEC-1..2 · [x] DOC-1..2
+- [x] `mvn -o test` (cible + suite) rejoué, résultats réels consignés ici — suite complette **2455 tests / 1 échec** ; l'unique échec est `inventory.AssetQrServiceTest` (aller-retour de décodage image ZXing, **non lié** à la mission, passe en isolation → flaky sous charge parallèle). Roster BE **33/33 verts**.
+- [x] `tsc -b` (0 erreur) + `vitest run` (123 fichiers / 1088 tests verts) + `npm run build` (succès) + parité i18n (0 clé manquante sur les 6 locales)
+- [x] `flutter analyze` (0 erreur ; uniquement des lints `info` préexistants) + `flutter test` (745 tests verts, dont roster **21**)
+- [ ] Publié sur `develop` puis PR `main` (workflow du dépôt — `main` protégée par PR, PR #17-19 en preuve) — **NON fait** : le travail est dans l'arbre de travail (commits + modifs non commitées + fichiers untracked) ; commit/poussée/PR restent à déclencher par le mainteneur.
+- [x] Scénarios A→I validés au **niveau tests** (BE service+HTTP/SEC, FE hook+composants+i18n, MO parsing+écran+6 locales) — cf. tableau ci-dessous. **Non** rejoués en E2E manuel browser/app.
 
-### Preuves d'exécution (à remplir au fur et à mesure)
-| Vérification | Commande | Résultat réel | Date |
+### Preuves d'exécution (rejouées sur l'arbre de travail courant)
+
+> Machine partagée/saturée → portes sérialisées (jamais `mvn` + `vitest` + `flutter` en
+> parallèle). Chaque chiffre ci-dessous provient d'une exécution **fraîche** de cette session,
+> pas d'un log antérieur ni des affirmations du CHANGELOG.
+
+| Vérification | Commande | Résultat réel | Date (2026-10-22) |
 |---|---|---|---|
-| (vide — mise à jour pendant l'implémentation) | | | |
+| Suite backend complète | `bash scripts/mvn-local.sh test` | **2455 tests, 1 échec** — seul échec = `inventory/AssetQrServiceTest.renderThenDecodeRoundTrip…` ( aller-retour image ZXing, **sans rapport** à la mission) ; `BUILD FAILURE`. Rejoué en isolation (`-Dtest=AssetQrServiceTest`) → **6/6 verts** ⇒ **flaky** sous charge parallèle. | 16:41 → 16:43 |
+| Roster BE (nouveaux + B2) | mêmes surefire-reports | `NodeMemberRosterServiceTest` **17**, `OrganizationHierarchyMembersAccessTest` **6**, `NodeMembersSecurityTest` **10** → **33/33 verts** | 16:41 |
+| Frontend typage | `npx tsc -b` | **0 erreur** (exit 0) | 16:46 |
+| Frontend tests | `npx vitest run` | **123 fichiers / 1088 tests verts** ; périmètre mission : `NodeMembersRoster.test.tsx` **18**, `UsersPageScopedRoster.test.tsx` **8**, `OrganizationBrowserPage.test.tsx` **7** | 16:47 |
+| Parité i18n | `npm run i18n:audit` | **0 clé manquante** sur fr/en/pt/es/sw/ar (les colonnes « en trop / non traduites » sont la dette de baseline préexistante, pas les nouvelles clés `orgV3.members.*`) | 16:46 |
+| Build web | `npm run build` (`tsc -b && vite build`) | **succès** (exit 0) | 16:52 |
+| Mobile analyse | `flutter analyze lib test` | **0 erreur** ; 531 issues = lints `info`/`warning` de baseline ; fichiers touchés → seulement des `info` (ex. `prefer_null_aware_operators`, `withOpacity` déprécié préexistant) | 17:02 |
+| Mobile tests | `flutter test` | **745 tests verts** ; `node_member_roster_test.dart` rejoué seul → **+21 verts** | 17:05 → 17:08 |
+| DOC-1 API générée | boot `spring-boot:run` (profil dev, port 8090, base `:5433`) puis `bash scripts/generate-api-docs.sh http://localhost:8090` | `/api-docs` HTTP 200 ; `docs/API.md` régénéré → **1451 chemins / 1800 opérations** ; ligne 1813 documente `GET /api/v1/tenant/organization/nodes/{nodeId}/members` (`nodeId` path req + `scope`/`q`/`page`/`size` query). `docs/openapi.json` régénéré (git M). | 17:16 → 17:19 |
+| Publication `develop`→PR `main` | — | **NON fait** (volontaire) : commit/poussée/PR sont une action de mainteneur ; laissé ouvert dans la §5. | — |

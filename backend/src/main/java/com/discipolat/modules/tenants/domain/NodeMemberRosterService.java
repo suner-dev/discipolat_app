@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -30,6 +31,9 @@ import java.util.UUID;
  *       un nœud du sous-arbre ;</li>
  *   <li>{@code ADHESION_NOEUD} — {@link TenantMembership} ACTIVE dont la
  *       {@code scopeId} <b>est</b> un nœud du sous-arbre ;</li>
+ *   <li>{@code ADHESION_TENANT} — adhésion ACTIVE de portée {@code TENANT}
+ *       (le membre de l'église sans affectation de secteur) : visible
+ *       <b>seulement</b> sous la racine, jamais sous un nœud intermédiaire ;</li>
  *   <li>{@code RESPONSABLE_NOEUD} — le membre est {@code responsibleId} d'un
  *       nœud du sous-arbre (signal autoritatif du pasteur de campus).</li>
  * </ol>
@@ -38,6 +42,12 @@ import java.util.UUID;
  * de {@code getMembersWithAccess} (le roster d'un campus noyait sous les
  * « membres du tenant »). Ici, une portée TENANT ne rend visible le membre
  * que sous la <b>racine</b>, jamais sous un nœud intermédiaire.
+ *
+ * <h2>Compteurs</h2>
+ * {@code memberCountDirect} / {@code memberCountSousArbre} sont structurels :
+ * ils portent sur l'ensemble dédupliqué des membres vivants rattachés, que le
+ * filtre {@code q} soit présent ou non — ils décrivent l'entité. {@code totalElements}
+ * et {@code totalPages} suivent le filtre et pilotent la pagination.
  *
  * <h2>Déduplication</h2>
  * Un membre rattaché par plusieurs chemins n'apparaît qu'une fois, au point
@@ -108,7 +118,7 @@ public class NodeMemberRosterService {
             String attachedNodeType,
             /** true si le rattachement est sur le nœud consulté lui-même. */
             boolean direct,
-            /** ASSIGNATION_V3 | ADHESION_NOEUD | RESPONSABLE_NOEUD. */
+            /** ASSIGNATION_V3 | ADHESION_NOEUD | ADHESION_TENANT | RESPONSABLE_NOEUD. */
             String origine,
             /** Libellés des rôles/capacités portés sur le sous-arbre consulté. */
             List<String> roles,
@@ -135,28 +145,37 @@ public class NodeMemberRosterService {
     public Map<String, Object> roster(UUID tenantId, UUID nodeId, RosterScope scope,
                                       String q, int page, int size) {
         OrganizationNode node = requireNode(tenantId, nodeId);
-        Map<UUID, OrganizationNode> nodesById = loadTenantNodes(tenantId);
-        Set<UUID> subtreeIds = scope == RosterScope.DIRECT
-                ? Set.of(nodeId)
-                : descendantIds(node, nodesById);
+        RosterData data = buildRoster(tenantId, node);
 
-        Map<UUID, Attachment> best = collectAttachments(tenantId, node, subtreeIds, nodesById);
-
-        // Dédup : un seul point d'attachement par membre (le plus proche du nœud),
-        // arbitré dans collectAttachments — une ligne = un membre, jamais de doublon
-        // quand deux chemins (adhésion + capacité) mènent au même sous-arbre.
-        List<Attachment> rows = new ArrayList<>(best.values());
+        // Le DIRECT énumère les rattachements ICI ; le SUBTREE énumère l'ensemble
+        // dédupliqué du sous-arbre. Les deux cartes sont déjà calculées : les
+        // compteurs affichés ne changent pas selon la portée consultée.
+        Collection<Attachment> selected = (scope == RosterScope.DIRECT ? data.direct : data.subtree)
+                .values();
 
         String needle = q == null ? null : q.trim().toLowerCase();
-        Map<UUID, User> users = loadUsers(rows);
-        List<NodeMemberRow> view = new ArrayList<>();
+        // Compteurs STRUCTURELS : ils décrivent l'entité consultée, pas la
+        // recherche en cours. Les laisser dépendre de `q` ferait afficher « Sous-arbre :
+        // 1 » sur une entité de 40 membres dès que quelqu'un tape trois lettres, et
+        // contredirait l'autre échelle — deux chiffres pour un même périmètre.
+        // Seuls `totalElements`/`totalPages` suivent le filtre.
         long countDirect = 0;
-        for (Attachment a : rows) {
-            User u = users.get(a.userId);
+        long countSousArbre = 0;
+        for (Attachment a : data.direct.values()) {
+            User u = data.users.get(a.userId);
+            if (u != null && !u.isDeleted()) countDirect++;
+        }
+        for (Attachment a : data.subtree.values()) {
+            User u = data.users.get(a.userId);
+            if (u != null && !u.isDeleted()) countSousArbre++;
+        }
+
+        List<NodeMemberRow> view = new ArrayList<>();
+        for (Attachment a : selected) {
+            User u = data.users.get(a.userId);
             if (u == null || u.isDeleted()) continue;
             if (needle != null && !matches(u, needle)) continue;
-            if (a.direct) countDirect++;
-            view.add(toRow(a, u, nodesById, node));
+            view.add(toRow(a, u, data.nodesById, node));
         }
 
         view.sort(Comparator.comparing(NodeMemberRow::lastName, Comparator.nullsLast(String::compareToIgnoreCase))
@@ -179,38 +198,124 @@ public class NodeMemberRosterService {
         result.put("totalElements", view.size());
         result.put("totalPages", (view.size() + clampSize - 1) / clampSize);
         result.put("memberCountDirect", countDirect);
-        result.put("memberCountSousArbre", view.size());
+        result.put("memberCountSousArbre", countSousArbre);
         return result;
     }
 
-    /** Compteurs pour la fiche nœud (additif de l'agrégat, mêmes règles que le roster). */
+    /**
+     * Compteurs pour la fiche nœud (additif de l'agrégat).
+     *
+     * <p>Mandatement : ils sortent du MÊME calcul que le roster ({@link
+     * #buildRoster}) — un compteur et une liste qui se contredisent sur la même
+     * échelle sont exactement le défaut B2 sous une autre forme.
+     */
     public RosterCounters counters(UUID tenantId, UUID nodeId) {
         OrganizationNode node = requireNode(tenantId, nodeId);
+        RosterData data = buildRoster(tenantId, node);
+        long direct = data.direct.values().stream()
+                .map(a -> data.users.get(a.userId))
+                .filter(u -> u != null && !u.isDeleted()).count();
+        long sousArbre = data.subtree.values().stream()
+                .map(a -> data.users.get(a.userId))
+                .filter(u -> u != null && !u.isDeleted()).count();
+        return new RosterCounters(direct, sousArbre);
+    }
+
+    // ==================== SOURCES / CALCUL ====================
+
+    /**
+     * Les trois ensembles dédupliqués d'un nœud, construits en UNE lecture par
+     * source : rattachements ICI ({@code direct}), rattachements du SOUS-ARBRE
+     * ({@code subtree}) et les comptes correspondants ({@code users}).
+     *
+     * <p>{@code direct} et {@code subtree} ne sont PAS reliés par l'arbitrage de
+     * déduplication : un membre qui a une adhésion ICI et une capacité dans une
+     * sous-cellule est bien « direct » (il rattache à ce nœud) ET n'apparaît
+     * qu'une fois dans le sous-arbre (au point le plus profond). C'est la même
+     * définition de « direct » que le compteur existant de {@link
+     * NodeAggregateService} — les deux écrans ne peuvent pas diverger.
+     */
+    private static final class RosterData {
+        final Map<UUID, OrganizationNode> nodesById;
+        final Map<UUID, Attachment> direct;
+        final Map<UUID, Attachment> subtree;
+        final Map<UUID, User> users;
+
+        RosterData(Map<UUID, OrganizationNode> nodesById, Map<UUID, Attachment> direct,
+                   Map<UUID, Attachment> subtree, Map<UUID, User> users) {
+            this.nodesById = nodesById;
+            this.direct = direct;
+            this.subtree = subtree;
+            this.users = users;
+        }
+    }
+
+    /** Sources brutes, lues une seule fois pour les deux portées. */
+    private static final class RosterSources {
+        final List<TenantMembership> memberships;
+        final List<MemberRoleAssignment> assignments;
+        final Map<UUID, String> roleLabels;
+
+        RosterSources(List<TenantMembership> memberships, List<MemberRoleAssignment> assignments,
+                      Map<UUID, String> roleLabels) {
+            this.memberships = memberships;
+            this.assignments = assignments;
+            this.roleLabels = roleLabels;
+        }
+    }
+
+    private RosterData buildRoster(UUID tenantId, OrganizationNode node) {
         Map<UUID, OrganizationNode> nodesById = loadTenantNodes(tenantId);
-        List<Attachment> rows = new ArrayList<>(
-                collectAttachments(tenantId, node, descendantIds(node, nodesById), nodesById).values());
-        Map<UUID, User> users = loadUsers(rows);
-        long alive = rows.stream().filter(a -> {
-            User u = users.get(a.userId);
-            return u != null && !u.isDeleted();
-        }).count();
-        long direct = rows.stream().filter(a -> {
-            User u = users.get(a.userId);
-            return u != null && !u.isDeleted() && a.direct;
-        }).count();
-        return new RosterCounters(direct, alive);
+        RosterSources sources = loadSources(tenantId);
+        // Les DEUX portées sont calculées systématiquement : la liste servie dépend
+        // de la portée demandée, les compteurs décrivent l'entité quelle que soit la
+        // portée consultée. Coût : une passe en mémoire de plus, aucune requête de
+        // plus — les sources sont lues une seule fois.
+        Map<UUID, Attachment> direct = collectAttachments(node, Set.of(node.getId()), nodesById, sources);
+        Map<UUID, Attachment> subtree = collectAttachments(node,
+                descendantIds(node, nodesById), nodesById, sources);
+        // Tout rattachement « ici » est aussi un rattachement du sous-arbre (le même
+        // candidat est présenté aux deux passes) : l'ensemble des comptes à charger
+        // est donc couvert par `subtree`, en une seule requête.
+        return new RosterData(nodesById, direct, subtree, loadUsers(subtree.values()));
+    }
+
+    /**
+     * Adhésions, capacités et libellés de rôles du tenant : TROIS lectures, une
+     * seule fois chaque — quel que soit le nombre de membres, de capacités ou de
+     * nœuds. Les libellés sont préchargés : les relire par affectation
+     * ({@code findById} dans la boucle) reproduirait le N+1 que la mission vient
+     * corriger.
+     */
+    private RosterSources loadSources(UUID tenantId) {
+        List<TenantMembership> memberships =
+                membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE);
+        List<MemberRoleAssignment> assignments = assignmentRepository.findByTenantIdAndStatus(tenantId,
+                MemberRoleAssignment.AssignmentStatus.ACTIVE);
+        Set<UUID> roleIds = new LinkedHashSet<>();
+        for (MemberRoleAssignment a : assignments) {
+            if (a.getRoleId() != null) roleIds.add(a.getRoleId());
+        }
+        Map<UUID, String> labels = new LinkedHashMap<>();
+        if (!roleIds.isEmpty()) {
+            for (Role r : roleRepository.findAllById(roleIds)) {
+                if (r != null) labels.put(r.getId(), r.getLabel());
+            }
+        }
+        return new RosterSources(memberships, assignments, labels);
     }
 
     // ==================== RATTACHEMENTS ====================
 
-    /** Point d'attachement d'un membre à un nœud du sous-arbre consulté. */
+    /** Point d'attachement d'un membre au périmètre consulté. */
     private static final class Attachment {
         final UUID userId;
         final UUID nodeId;
         final boolean direct;
         final String origine;
         final java.time.Instant since;
-        String roleLabel;
+        /** Tous les rôles portés dans le périmètre, même si l'attachement retenu est ailleurs. */
+        final List<String> roles = new ArrayList<>();
 
         Attachment(UUID userId, UUID nodeId, boolean direct, String origine, java.time.Instant since) {
             this.userId = userId;
@@ -222,40 +327,74 @@ public class NodeMemberRosterService {
     }
 
     /**
-     * Les trois origines de rattachement (V231), bornées au sous-arbre. La
-     * profondeur relative au nœud consulté départage deux attachements d'un
+     * Les trois origines de rattachement (V231), bornées au périmètre passé.
+     * La profondeur relative au nœud consulté départage deux attachements d'un
      * même membre : le plus profond (le plus proche du terrain) gagne.
      */
-    private Map<UUID, Attachment> collectAttachments(UUID tenantId, OrganizationNode node,
-                                                     Set<UUID> subtreeIds,
-                                                     Map<UUID, OrganizationNode> nodesById) {
+    private Map<UUID, Attachment> collectAttachments(OrganizationNode node,
+                                                     Set<UUID> scopeIds,
+                                                     Map<UUID, OrganizationNode> nodesById,
+                                                     RosterSources sources) {
         Map<UUID, Attachment> best = new LinkedHashMap<>();
         Map<UUID, Integer> depth = depthByNode(nodesById);
+        // Rôles relevés HORS arbitrage : l'arbitrage de déduplication REMPLACE
+        // l'attachement retenu, donc étiqueter l'attachement au fil de l'eau
+        // perdrait le rôle du niveau précédent (membre « Diacre » ici et
+        // « Responsable » dans une sous-cellule n'en afficherait qu'un).
+        Map<UUID, Set<String>> rolesByUser = new LinkedHashMap<>();
 
         // 1. Adhésions à portée de nœud (le rattachement « appartenance »).
-        for (TenantMembership tm : membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE)) {
-            if (tm.getScopeId() == null || !subtreeIds.contains(tm.getScopeId())) continue;
-            if (tm.getScopeType() == MembershipScopeType.TENANT
-                    || tm.getScopeType() == MembershipScopeType.OWN) continue;
+        //    Une adhésion de portée TENANT ne rattache à AUCUNE sous-structure —
+        //    l'inonder partout était précisément le défaut B2 — mais elle rattache
+        //    bien à l'ÉGLISE ELLE-MÊME : elle compte donc uniquement sous la
+        //    racine. Même règle que le compteur existant de
+        //    {@link NodeAggregateService} (alignement BE-3 : le roster et les
+        //    compteurs ne peuvent pas se contredire sur la même échelle).
+        boolean isRoot = node.getParentId() == null;
+        for (TenantMembership tm : sources.memberships) {
+            if (tm.getScopeType() == MembershipScopeType.TENANT) {
+                if (isRoot && tm.getUserId() != null) {
+                    keep(best, depth, new Attachment(tm.getUserId(), node.getId(), true,
+                            "ADHESION_TENANT", tm.getJoinedAt()));
+                }
+                continue;
+            }
+            if (tm.getScopeType() == MembershipScopeType.OWN) continue;
+            if (tm.getScopeId() == null || !scopeIds.contains(tm.getScopeId())) continue;
             keep(best, depth, new Attachment(tm.getUserId(), tm.getScopeId(),
                     tm.getScopeId().equals(node.getId()), "ADHESION_NOEUD", tm.getJoinedAt()));
         }
 
-        // 2. Capacités V3 posées sur un nœud du sous-arbre (multi-branches).
-        for (MemberRoleAssignment a : assignmentRepository.findByTenantIdAndStatus(tenantId,
-                MemberRoleAssignment.AssignmentStatus.ACTIVE)) {
-            if (a.getNodeId() == null || !subtreeIds.contains(a.getNodeId())) continue;
-            Attachment att = new Attachment(a.getUserId(), a.getNodeId(),
-                    a.getNodeId().equals(node.getId()), "ASSIGNATION_V3", a.getAssignedAt());
-            att.roleLabel = roleLabel(tenantId, a);
-            keep(best, depth, att);
+        // 2. Capacités V3 posées sur un nœud du périmètre (multi-branches). Le
+        //    point d'attachement retenu est le plus profond, MAIS tous les rôles
+        //    du périmètre sont restitués : un membre « Responsable » dans une
+        //    sous-cellule et « Diacre » ici n'est pas un membre à un seul rôle.
+        for (MemberRoleAssignment a : sources.assignments) {
+            if (a.getUserId() == null || a.getNodeId() == null || !scopeIds.contains(a.getNodeId())) {
+                continue;
+            }
+            keep(best, depth, new Attachment(a.getUserId(), a.getNodeId(),
+                    a.getNodeId().equals(node.getId()), "ASSIGNATION_V3", a.getAssignedAt()));
+            String label = sources.roleLabels.get(a.getRoleId());
+            if (label != null) {
+                rolesByUser.computeIfAbsent(a.getUserId(), k -> new LinkedHashSet<>()).add(label);
+            }
         }
 
         // 3. Responsables de nœud — signal autoritatif (pasteur de campus…).
         for (OrganizationNode n : nodesById.values()) {
-            if (n.getResponsibleId() == null || !subtreeIds.contains(n.getId())) continue;
+            if (n.getResponsibleId() == null || !scopeIds.contains(n.getId())) continue;
             keep(best, depth, new Attachment(n.getResponsibleId(), n.getId(),
                     n.getId().equals(node.getId()), "RESPONSABLE_NOEUD", n.getUpdatedAt()));
+        }
+        // Les libellés suivent le membre, une fois l'arbitrage terminé : la ligne
+        // rendue porte TOUS les rôles exercés dans le périmètre consulté, où qu'ait
+        // été retenu le point d'attachement. Un `responsibleId` seul n'est pas une
+        // capacité : il rattache (origine RESPONSABLE_NOEUD) mais n'invente aucun
+        // libellé de rôle.
+        for (Map.Entry<UUID, Set<String>> e : rolesByUser.entrySet()) {
+            Attachment att = best.get(e.getKey());
+            if (att != null) att.roles.addAll(e.getValue());
         }
         return best;
     }
@@ -318,7 +457,7 @@ public class NodeMemberRosterService {
         return out;
     }
 
-    private Map<UUID, User> loadUsers(List<Attachment> rows) {
+    private Map<UUID, User> loadUsers(Collection<Attachment> rows) {
         Set<UUID> ids = new LinkedHashSet<>();
         for (Attachment a : rows) ids.add(a.userId);
         Map<UUID, User> byId = new LinkedHashMap<>();
@@ -358,8 +497,6 @@ public class NodeMemberRosterService {
     private NodeMemberRow toRow(Attachment a, User u, Map<UUID, OrganizationNode> nodesById,
                                 OrganizationNode queried) {
         OrganizationNode attached = nodesById.get(a.nodeId);
-        List<String> roles = new ArrayList<>();
-        if (a.roleLabel != null) roles.add(a.roleLabel);
         return new NodeMemberRow(
                 u.getId(),
                 u.getFirstName(),
@@ -372,7 +509,7 @@ public class NodeMemberRosterService {
                 attached != null ? attached.getType().name() : null,
                 a.direct,
                 a.origine,
-                roles,
+                List.copyOf(a.roles),
                 chainFrom(queried, attached, nodesById),
                 a.since);
     }
@@ -403,13 +540,5 @@ public class NodeMemberRosterService {
             chain.add(m);
         }
         return chain;
-    }
-
-    private String roleLabel(UUID tenantId, MemberRoleAssignment a) {
-        try {
-            return roleRepository.findById(a.getRoleId()).map(Role::getLabel).orElse(null);
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

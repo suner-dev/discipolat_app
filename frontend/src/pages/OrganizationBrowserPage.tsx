@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -533,6 +534,16 @@ export default function OrganizationBrowserPage() {
                     <p className="stat-value !text-xl">{d.children.length}</p>
                   </div>
                 </div>
+
+                {/* Lien navigable entité → annuaire de ses membres (roster
+                    paginé, dédupliqué, scope sous-arbre) — mission hiérarchie. */}
+                <Link
+                  to={`/users?nodeId=${d.node.id}&scope=SUBTREE`}
+                  className="btn btn-secondary btn-sm w-full inline-flex items-center justify-center gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  {t('orgV3.members.link')}
+                </Link>
 
                 {d.children.length > 0 && (
                   <div>

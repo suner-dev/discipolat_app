@@ -3,7 +3,7 @@
 > ⚙️ **Fichier généré — ne pas éditer à la main.**
 > Régénérer : `bash scripts/generate-api-docs.sh [URL]` — chemin d’export vérifié `springdoc.api-docs.path=/api-docs` (application.yml).
 > Instances réelles (render.yaml) : prod `https://discipolat-api.onrender.com`, bêta `https://discipolat-beta-api.onrender.com`.
-> Généré le 2026-10-07 — API `Discipolat API` v`1.0.0` : **1423 chemins, 1764 opérations, 239 tags**.
+> Généré le 2026-10-22 — API `Discipolat API` v`1.0.0` : **1451 chemins, 1800 opérations, 245 tags**.
 
 Interface interactive : `/swagger-ui.html` (même instance).
 Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté par le jeton — voir [MULTI_TENANT_ARCHITECTURE.md](MULTI_TENANT_ARCHITECTURE.md) et [SECURITY.md](SECURITY.md).
@@ -41,7 +41,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [calendar-controller](#calendar-controller) — 7 opérations
 - [cercle-faiseurs-controller](#cercle-faiseurs-controller) — 3 opérations
 - [church-comparison-controller](#church-comparison-controller) — 9 opérations
-- [church-event-controller](#church-event-controller) — 27 opérations
+- [church-event-controller](#church-event-controller) — 29 opérations
 - [communication-controller](#communication-controller) — 6 opérations
 - [community-controller](#community-controller) — 26 opérations
 - [competence-matching-controller](#competence-matching-controller) — 8 opérations
@@ -123,9 +123,11 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [moderation-controller](#moderation-controller) — 5 opérations
 - [module-catalog-controller](#module-catalog-controller) — 13 opérations
 - [module-feature-controller](#module-feature-controller) — 6 opérations
+- [momo-billing-controller](#momo-billing-controller) — 2 opérations
 - [navigation-group-controller](#navigation-group-controller) — 7 opérations
 - [neighborhood-health-controller](#neighborhood-health-controller) — 1 opérations
 - [network-controller](#network-controller) — 22 opérations
+- [node-member-roster-controller](#node-member-roster-controller) — 1 opérations
 - [notification-controller](#notification-controller) — 4 opérations
 - [notification-preference-controller](#notification-preference-controller) — 2 opérations
 - [notification-template-controller](#notification-template-controller) — 6 opérations
@@ -144,6 +146,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [pastorate-controller](#pastorate-controller) — 10 opérations
 - [payment-controller](#payment-controller) — 13 opérations
 - [payment-webhook-controller](#payment-webhook-controller) — 6 opérations
+- [payout-controller](#payout-controller) — 4 opérations
 - [people-controller](#people-controller) — 13 opérations
 - [permission-controller](#permission-controller) — 10 opérations
 - [personal-objective-controller](#personal-objective-controller) — 6 opérations
@@ -154,7 +157,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [platform-provisioning-controller](#platform-provisioning-controller) — 4 opérations
 - [platform-quota-usage-controller](#platform-quota-usage-controller) — 2 opérations
 - [platform-tenant-governance-controller](#platform-tenant-governance-controller) — 11 opérations
-- [prayer-controller](#prayer-controller) — 8 opérations
+- [prayer-controller](#prayer-controller) — 9 opérations
 - [prayer-journal-controller](#prayer-journal-controller) — 7 opérations
 - [prediction-controller](#prediction-controller) — 8 opérations
 - [program-controller](#program-controller) — 6 opérations
@@ -162,11 +165,12 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [public-announcements-controller](#public-announcements-controller) — 1 opérations
 - [public-api-docs-controller](#public-api-docs-controller) — 2 opérations
 - [public-billing-controller](#public-billing-controller) — 1 opérations
-- [public-churches-controller](#public-churches-controller) — 1 opérations
+- [public-churches-controller](#public-churches-controller) — 4 opérations
 - [public-contact-controller](#public-contact-controller) — 1 opérations
 - [public-directory-controller](#public-directory-controller) — 1 opérations
 - [public-join-controller](#public-join-controller) — 2 opérations
 - [public-legal-controller](#public-legal-controller) — 2 opérations
+- [public-pricing-controller](#public-pricing-controller) — 4 opérations
 - [public-saas-plan-controller](#public-saas-plan-controller) — 1 opérations
 - [push-token-controller](#push-token-controller) — 3 opérations
 - [quest-controller](#quest-controller) — 9 opérations
@@ -175,10 +179,11 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [relation-controller](#relation-controller) — 7 opérations
 - [report-export-controller](#report-export-controller) — 5 opérations
 - [resource-scope-controller](#resource-scope-controller) — 2 opérations
+- [retired-permission-surface-controller](#retired-permission-surface-controller) — 5 opérations
 - [reverse-mentoring-controller](#reverse-mentoring-controller) — 12 opérations
 - [reward-certificate-controller](#reward-certificate-controller) — 4 opérations
 - [reward-controller](#reward-controller) — 4 opérations
-- [role-management-controller](#role-management-controller) — 28 opérations
+- [role-management-controller](#role-management-controller) — 30 opérations
 - [sabbath-dashboard-controller](#sabbath-dashboard-controller) — 1 opérations
 - [search-controller](#search-controller) — 3 opérations
 - [sermon-assistant-controller](#sermon-assistant-controller) — 1 opérations
@@ -207,6 +212,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [subscription-controller](#subscription-controller) — 7 opérations
 - [succession-plan-controller](#succession-plan-controller) — 6 opérations
 - [super-admin-controller](#super-admin-controller) — 23 opérations
+- [super-admin-pricing-controller](#super-admin-pricing-controller) — 11 opérations
 - [super-admin-saas-plan-controller](#super-admin-saas-plan-controller) — 8 opérations
 - [survey-controller](#survey-controller) — 6 opérations
 - [sync-controller](#sync-controller) — 3 opérations
@@ -220,7 +226,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 - [tenant-controller](#tenant-controller) — 7 opérations
 - [tenant-feature-controller](#tenant-feature-controller) — 4 opérations
 - [tenant-join-code-controller](#tenant-join-code-controller) — 6 opérations
-- [tenant-join-controller](#tenant-join-controller) — 4 opérations
+- [tenant-join-controller](#tenant-join-controller) — 5 opérations
 - [tenant-organization-controller](#tenant-organization-controller) — 3 opérations
 - [tenant-ownership-controller](#tenant-ownership-controller) — 6 opérations
 - [tenant-settings-controller](#tenant-settings-controller) — 5 opérations
@@ -279,7 +285,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/admin-requests` | list_58 | — |
 | `POST` | `/api/v1/admin-requests` | create_79 | — |
 | `GET` | `/api/v1/admin-requests/by-member/{membreId}` | listByMember_2 | `membreId` *(req)* (path) |
-| `GET` | `/api/v1/admin-requests/stats` | stats_44 | — |
+| `GET` | `/api/v1/admin-requests/stats` | stats_45 | — |
 | `GET` | `/api/v1/admin-requests/{id}` | get_40 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/admin-requests/{id}` | delete_45 | `id` *(req)* (path) |
 | `POST` | `/api/v1/admin-requests/{id}/process` | process | `id` *(req)* (path), `decision` *(req)* (query), `traiteurId` *(req)* (query), `commentaire` (query) |
@@ -378,7 +384,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/announcements` | list_51 | — |
 | `POST` | `/api/announcements` | create_72 | — |
-| `GET` | `/api/announcements/stats` | stats_41 | — |
+| `GET` | `/api/announcements/stats` | stats_42 | — |
 | `GET` | `/api/announcements/{id}` | get_14 | `id` *(req)* (path) |
 | `PUT` | `/api/announcements/{id}` | update_35 | `id` *(req)* (path) |
 | `DELETE` | `/api/announcements/{id}` | delete_27 | `id` *(req)* (path) |
@@ -387,7 +393,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/announcements/{id}/schedule` | schedule | `id` *(req)* (path) |
 | `GET` | `/api/v1/announcements` | list_50 | — |
 | `POST` | `/api/v1/announcements` | create_71 | — |
-| `GET` | `/api/v1/announcements/stats` | stats_42 | — |
+| `GET` | `/api/v1/announcements/stats` | stats_43 | — |
 | `GET` | `/api/v1/announcements/{id}` | get_15 | `id` *(req)* (path) |
 | `PUT` | `/api/v1/announcements/{id}` | update_36 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/announcements/{id}` | delete_28 | `id` *(req)* (path) |
@@ -471,7 +477,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/automations` | createRule | — |
 | `GET` | `/api/v1/automations/actions` | listActions | — |
 | `GET` | `/api/v1/automations/active` | listActive | — |
-| `GET` | `/api/v1/automations/stats` | stats_40 | — |
+| `GET` | `/api/v1/automations/stats` | stats_41 | — |
 | `POST` | `/api/v1/automations/trigger/{event}` | trigger | `event` *(req)* (path) |
 | `GET` | `/api/v1/automations/triggers` | listTriggers | — |
 | `GET` | `/api/v1/automations/{id}` | getRule | `id` *(req)* (path) |
@@ -512,7 +518,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
 | `POST` | `/api/v1/admin/beta/reset` | reset_3 | — |
-| `GET` | `/api/v1/admin/beta/status` | status_8 | — |
+| `GET` | `/api/v1/admin/beta/status` | status_10 | — |
 
 ## bible-reading-controller
 
@@ -530,7 +536,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `PUT` | `/api/v1/bible-reading/plans/{id}` | updatePlan | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/bible-reading/plans/{id}` | deletePlan | `id` *(req)* (path) |
 | `GET` | `/api/v1/bible-reading/plans/{planId}/entries` | listEntries | `planId` *(req)* (path) |
-| `GET` | `/api/v1/bible-reading/stats` | stats_39 | — |
+| `GET` | `/api/v1/bible-reading/stats` | stats_40 | — |
 | `GET` | `/api/v1/bible-reading/today` | today | — |
 
 ## branding-controller
@@ -605,11 +611,11 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
-| `GET` | `/api/v1/church-events` | getEvents | `page` (query), `size` (query), `status` (query) — `status` effectif depuis V272 |
+| `GET` | `/api/v1/church-events` | getEvents | `page` (query), `size` (query), `status` (query) |
 | `POST` | `/api/v1/church-events` | createEvent_1 | — |
-| `GET` | `/api/v1/church-events/archives` | getArchives | `year` (query), `month` (query), `spaceId` (query), `eventId` (query, V272) — legacy, instantanés complets |
-| `GET` | `/api/v1/church-events/archives/facets` | getArchiveFacets | — (V272 : années/mois réellement archivés) |
-| `GET` | `/api/v1/church-events/archives/search` | searchArchives | `page` (query), `size` (query ≤50), `year` (query), `month` (query), `spaceId` (query), `eventId` (query) — V272, résumés sans snapshot |
+| `GET` | `/api/v1/church-events/archives` | getArchives | `year` (query), `month` (query), `spaceId` (query), `eventId` (query) |
+| `GET` | `/api/v1/church-events/archives/facets` | getArchiveFacets | — |
+| `GET` | `/api/v1/church-events/archives/search` | searchArchives | `page` (query), `size` (query), `year` (query), `month` (query), `spaceId` (query), `eventId` (query) |
 | `GET` | `/api/v1/church-events/archives/{archiveId}` | getArchive | `archiveId` *(req)* (path) |
 | `GET` | `/api/v1/church-events/calendar` | getCalendar | `from` *(req)* (query), `to` *(req)* (query) |
 | `GET` | `/api/v1/church-events/locations` | getLocations | — |
@@ -685,7 +691,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/members/competences/match` | match | `minLevel` (query) |
 | `GET` | `/api/v1/members/competences/mine` | myCompetences | — |
 | `GET` | `/api/v1/members/competences/search` | search_3 | `competenceName` *(req)* (query) |
-| `GET` | `/api/v1/members/competences/stats` | stats_22 | — |
+| `GET` | `/api/v1/members/competences/stats` | stats_23 | — |
 | `GET` | `/api/v1/members/competences/user/{userId}` | userCompetences | `userId` *(req)* (path) |
 | `PUT` | `/api/v1/members/competences/{id}` | updateCompetence | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/members/competences/{id}` | deleteCompetence | `id` *(req)* (path) |
@@ -709,7 +715,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/compliance/retention-policies/purge-all` | purgeAll | — |
 | `DELETE` | `/api/v1/compliance/retention-policies/{id}` | deleteRetentionPolicy | `id` *(req)* (path) |
 | `POST` | `/api/v1/compliance/retention-policies/{policyId}/execute` | executeRetentionPolicy | `policyId` *(req)* (path) |
-| `GET` | `/api/v1/compliance/stats` | stats_38 | — |
+| `GET` | `/api/v1/compliance/stats` | stats_39 | — |
 
 ## configuration-controller
 
@@ -745,7 +751,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/currencies` | create_61 | — |
 | `POST` | `/api/currencies/convert` | convert | — |
 | `GET` | `/api/currencies/primary` | getPrimary_1 | — |
-| `GET` | `/api/currencies/stats` | stats_36 | — |
+| `GET` | `/api/currencies/stats` | stats_37 | — |
 | `GET` | `/api/currencies/supported` | getSupported_1 | — |
 | `GET` | `/api/currencies/timezones` | getTimezones_1 | — |
 | `PUT` | `/api/currencies/{id}` | update_29 | `id` *(req)* (path) |
@@ -754,7 +760,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/currencies` | create_60 | — |
 | `POST` | `/api/v1/currencies/convert` | convert_1 | — |
 | `GET` | `/api/v1/currencies/primary` | getPrimary | — |
-| `GET` | `/api/v1/currencies/stats` | stats_37 | — |
+| `GET` | `/api/v1/currencies/stats` | stats_38 | — |
 | `GET` | `/api/v1/currencies/supported` | getSupported | — |
 | `GET` | `/api/v1/currencies/timezones` | getTimezones | — |
 | `PUT` | `/api/v1/currencies/{id}` | update_30 | `id` *(req)* (path) |
@@ -834,7 +840,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `DELETE` | `/api/v1/departments/{id}` | delete_19 | `id` *(req)* (path) |
 | `GET` | `/api/v1/departments/{id}/detail` | detail_2 | `id` *(req)* (path) |
 | `GET` | `/api/v1/departments/{id}/kpi` | kpi | `id` *(req)* (path) |
-| `GET` | `/api/v1/departments/{id}/members` | members | `id` *(req)* (path), `page` (query), `size` (query) |
+| `GET` | `/api/v1/departments/{id}/members` | members_1 | `id` *(req)* (path), `page` (query), `size` (query) |
 | `GET` | `/api/v1/departments/{id}/report` | report_2 | `id` *(req)* (path), `semaine` (query) |
 | `GET` | `/api/v1/departments/{id}/unassigned` | unassigned | `id` *(req)* (path) |
 
@@ -920,8 +926,8 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `DELETE` | `/api/v1/departments/{departmentId}/reports/{reportId}` | deleteMemberReport | `departmentId` *(req)* (path), `reportId` *(req)* (path) |
 | `GET` | `/api/v1/departments/{departmentId}/search` | search_6 | `departmentId` *(req)* (path), `q` (query) |
 | `GET` | `/api/v1/departments/{departmentId}/settings` | settings | `departmentId` *(req)* (path) |
-| `PUT` | `/api/v1/departments/{departmentId}/settings` | updateSettings | `departmentId` *(req)* (path) |
-| `GET` | `/api/v1/departments/{departmentId}/stats` | stats_35 | `departmentId` *(req)* (path), `periode` (query), `debut` (query), `fin` (query) |
+| `PUT` | `/api/v1/departments/{departmentId}/settings` | updateSettings_1 | `departmentId` *(req)* (path) |
+| `GET` | `/api/v1/departments/{departmentId}/stats` | stats_36 | `departmentId` *(req)* (path), `periode` (query), `debut` (query), `fin` (query) |
 | `GET` | `/api/v1/departments/{departmentId}/tasks` | tasks | `departmentId` *(req)* (path), `statut` (query), `teamId` (query) |
 | `POST` | `/api/v1/departments/{departmentId}/tasks` | createTask | `departmentId` *(req)* (path) |
 | `GET` | `/api/v1/departments/{departmentId}/tasks/stats` | taskStats | `departmentId` *(req)* (path) |
@@ -940,7 +946,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/development-plans/auto-generate` | autoGenerate_1 | `membreId` *(req)* (query), `deptId` *(req)* (query) |
 | `GET` | `/api/v1/development-plans/by-department/{deptId}` | listByDepartment | `deptId` *(req)* (path) |
 | `GET` | `/api/v1/development-plans/by-member/{membreId}` | listByMember_1 | `membreId` *(req)* (path) |
-| `GET` | `/api/v1/development-plans/stats/{membreId}` | stats_34 | `membreId` *(req)* (path) |
+| `GET` | `/api/v1/development-plans/stats/{membreId}` | stats_35 | `membreId` *(req)* (path) |
 | `GET` | `/api/v1/development-plans/{id}` | get_12 | `id` *(req)* (path) |
 | `PUT` | `/api/v1/development-plans/{id}` | update_26 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/development-plans/{id}` | delete_18 | `id` *(req)* (path) |
@@ -1006,13 +1012,13 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/discipleship-paths/member/{memberId}` | getForMember | `memberId` *(req)* (path) |
 | `POST` | `/api/discipleship-paths/member/{memberId}` | createForMember | `memberId` *(req)* (path) |
 | `GET` | `/api/discipleship-paths/stage/{stage}` | byStage_1 | `stage` *(req)* (path) |
-| `GET` | `/api/discipleship-paths/stats` | stats_33 | — |
+| `GET` | `/api/discipleship-paths/stats` | stats_34 | — |
 | `POST` | `/api/discipleship-paths/{id}/advance` | advance | `id` *(req)* (path) |
 | `GET` | `/api/v1/discipleship-paths` | list_75 | — |
 | `GET` | `/api/v1/discipleship-paths/member/{memberId}` | getForMember_1 | `memberId` *(req)* (path) |
 | `POST` | `/api/v1/discipleship-paths/member/{memberId}` | createForMember_1 | `memberId` *(req)* (path) |
 | `GET` | `/api/v1/discipleship-paths/stage/{stage}` | byStage | `stage` *(req)* (path) |
-| `GET` | `/api/v1/discipleship-paths/stats` | stats_32 | — |
+| `GET` | `/api/v1/discipleship-paths/stats` | stats_33 | — |
 | `POST` | `/api/v1/discipleship-paths/{id}/advance` | advance_1 | `id` *(req)* (path) |
 
 ## document-controller
@@ -1099,8 +1105,8 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
-| `GET` | `/api/v1/events/entity-changes` | subscribe_2 | `entityTypes` (query) |
-| `GET` | `/api/v1/events/entity-changes/stats` | stats_30 | — |
+| `GET` | `/api/v1/events/entity-changes` | subscribe_3 | `entityTypes` (query) |
+| `GET` | `/api/v1/events/entity-changes/stats` | stats_31 | — |
 
 ## evaluation-controller
 
@@ -1124,7 +1130,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/evangelism/souls/{soulId}` | getOrCreate | `soulId` *(req)* (path) |
 | `PUT` | `/api/v1/evangelism/souls/{soulId}` | updateStage | `soulId` *(req)* (path) |
 | `GET` | `/api/v1/evangelism/souls/{soulId}/history` | history_2 | `soulId` *(req)* (path) |
-| `GET` | `/api/v1/evangelism/stats` | stats_31 | — |
+| `GET` | `/api/v1/evangelism/stats` | stats_32 | — |
 | `PATCH` | `/api/v1/evangelism/{soulId}` | moveStage | `soulId` *(req)* (path) |
 
 ## evangelism-scoring-controller
@@ -1188,7 +1194,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/v1/executive-insights` | list_72 | — |
 | `POST` | `/api/v1/executive-insights/generate` | generate_5 | — |
-| `GET` | `/api/v1/executive-insights/stats` | stats_29 | — |
+| `GET` | `/api/v1/executive-insights/stats` | stats_30 | — |
 | `POST` | `/api/v1/executive-insights/{id}/dismiss` | dismiss | `id` *(req)* (path) |
 | `POST` | `/api/v1/executive-insights/{id}/read` | markRead | `id` *(req)* (path) |
 
@@ -1211,7 +1217,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/face/enroll-batch` | enrollBatch | — |
 | `POST` | `/api/v1/face/identify` | identify | — |
 | `POST` | `/api/v1/face/identify-configurable` | identifyConfigurable | — |
-| `GET` | `/api/v1/face/stats` | stats_28 | — |
+| `GET` | `/api/v1/face/stats` | stats_29 | — |
 | `GET` | `/api/v1/face/templates` | templates_1 | `q` (query) |
 | `DELETE` | `/api/v1/face/templates/{id}` | deactivate_3 | `id` *(req)* (path) |
 
@@ -1291,7 +1297,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
 | `GET` | `/api/v1/admin/feedback` | list_76 | — |
-| `GET` | `/api/v1/admin/feedback/stats` | stats_43 | — |
+| `GET` | `/api/v1/admin/feedback/stats` | stats_44 | — |
 | `PATCH` | `/api/v1/admin/feedback/{id}/status` | updateStatus_12 | `id` *(req)* (path) |
 | `POST` | `/api/v1/feedback` | create_51 | — |
 
@@ -1327,7 +1333,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/finances/reports/by-category` | reportByCategory | — |
 | `GET` | `/api/v1/finances/reports/cash-flow` | reportCashFlow | — |
 | `GET` | `/api/v1/finances/reports/summary` | reportSummary | — |
-| `GET` | `/api/v1/finances/stats` | stats_27 | `annee` (query) |
+| `GET` | `/api/v1/finances/stats` | stats_28 | `annee` (query) |
 | `GET` | `/api/v1/finances/stats/currency` | statsWithCurrency | `annee` (query), `currency` (query) |
 | `GET` | `/api/v1/finances/tontines` | listTontines | — |
 | `POST` | `/api/v1/finances/tontines` | createTontine | — |
@@ -1351,7 +1357,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/follow-up-requests/assigned-to-me` | assignedToMe | — |
 | `GET` | `/api/v1/follow-up-requests/mine` | mine_4 | — |
 | `GET` | `/api/v1/follow-up-requests/pending` | pending_2 | — |
-| `GET` | `/api/v1/follow-up-requests/stats` | stats_26 | — |
+| `GET` | `/api/v1/follow-up-requests/stats` | stats_27 | — |
 | `POST` | `/api/v1/follow-up-requests/{id}/assign` | assign_2 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/follow-up-requests/{id}/status` | updateStatus_9 | `id` *(req)* (path) |
 
@@ -1398,13 +1404,13 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `POST` | `/api/group-messages` | send_3 | — |
 | `GET` | `/api/group-messages/group/{groupId}` | getMessages_1 | `groupId` *(req)* (path) |
-| `GET` | `/api/group-messages/group/{groupId}/stats` | stats_25 | `groupId` *(req)* (path) |
+| `GET` | `/api/group-messages/group/{groupId}/stats` | stats_26 | `groupId` *(req)* (path) |
 | `GET` | `/api/group-messages/search` | search_5 | `groupId` *(req)* (query), `q` *(req)* (query) |
 | `DELETE` | `/api/group-messages/{id}` | delete_48 | `id` *(req)* (path) |
 | `POST` | `/api/group-messages/{id}/reaction` | react_1 | `id` *(req)* (path) |
 | `POST` | `/api/v1/group-messages` | send_2 | — |
 | `GET` | `/api/v1/group-messages/group/{groupId}` | getMessages | `groupId` *(req)* (path) |
-| `GET` | `/api/v1/group-messages/group/{groupId}/stats` | stats_24 | `groupId` *(req)* (path) |
+| `GET` | `/api/v1/group-messages/group/{groupId}/stats` | stats_25 | `groupId` *(req)* (path) |
 | `GET` | `/api/v1/group-messages/search` | search_4 | `groupId` *(req)* (query), `q` *(req)* (query) |
 | `DELETE` | `/api/v1/group-messages/{id}` | delete_49 | `id` *(req)* (path) |
 | `POST` | `/api/v1/group-messages/{id}/reaction` | react | `id` *(req)* (path) |
@@ -1519,7 +1525,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/inventory/alerts` | smartAlerts | — |
 | `GET` | `/api/v1/inventory/qr/resolve` | resolveQr | `content` *(req)* (query) |
 | `POST` | `/api/v1/inventory/qr/scan` | scanQr | — |
-| `GET` | `/api/v1/inventory/stats` | stats_23 | — |
+| `GET` | `/api/v1/inventory/stats` | stats_24 | — |
 | `GET` | `/api/v1/inventory/{id}` | get_11 | `id` *(req)* (path) |
 | `PUT` | `/api/v1/inventory/{id}` | update_21 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/inventory/{id}` | delete_13 | `id` *(req)* (path) |
@@ -1539,7 +1545,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/admin/invitations/validate/{token}` | validateInvitation | `token` *(req)* (path) |
 | `GET` | `/api/v1/admin/invitations/{id}` | getInvitation | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/admin/invitations/{id}` | cancelInvitation | `id` *(req)* (path) |
-| `POST` | `/api/v1/admin/invitations/{id}/resend` | resendInvitation | `id` *(req)* (path) |
+| `POST` | `/api/v1/admin/invitations/{id}/resend` | resendInvitation_1 | `id` *(req)* (path) |
 
 ## kingdom-mapping-controller
 
@@ -1580,7 +1586,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/legacy-migration/maps` | maps | — |
 | `POST` | `/api/v1/legacy-migration/modules/{moduleCode}/dry-run` | dryRun | `moduleCode` *(req)* (path) |
 | `POST` | `/api/v1/legacy-migration/modules/{moduleCode}/migrate` | migrate | `moduleCode` *(req)* (path) |
-| `GET` | `/api/v1/legacy-migration/status` | status_5 | — |
+| `GET` | `/api/v1/legacy-migration/status` | status_7 | — |
 
 ## legal-admin-controller
 
@@ -1693,7 +1699,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/mentoring` | list_68 | `page` (query), `size` (query), `chefId` (query) |
 | `GET` | `/api/v1/mentoring/all` | listAll_7 | `chefId` (query) |
 | `POST` | `/api/v1/mentoring/generate` | generate_3 | — |
-| `GET` | `/api/v1/mentoring/stats` | stats_21 | `chefId` (query) |
+| `GET` | `/api/v1/mentoring/stats` | stats_22 | `chefId` (query) |
 | `GET` | `/api/v1/mentoring/{id}` | get_31 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/mentoring/{id}/archive` | archive_3 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/mentoring/{id}/read` | markAsRead_3 | `id` *(req)* (path) |
@@ -1716,7 +1722,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/moderation` | listAll_2 | — |
 | `POST` | `/api/v1/moderation` | submit_2 | — |
 | `GET` | `/api/v1/moderation/pending` | listPending | — |
-| `GET` | `/api/v1/moderation/stats` | stats_20 | — |
+| `GET` | `/api/v1/moderation/stats` | stats_21 | — |
 | `PUT` | `/api/v1/moderation/{id}/review` | review | `id` *(req)* (path) |
 
 ## module-catalog-controller
@@ -1747,6 +1753,13 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `PUT` | `/api/v1/admin/features/modules/{moduleKey}` | toggleModule_2 | `moduleKey` *(req)* (path) |
 | `GET` | `/api/v1/admin/features/plans` | getPlans | — |
 | `GET` | `/api/v1/admin/features/quotas` | getQuotas | — |
+
+## momo-billing-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `POST` | `/api/v1/billing/momo/subscribe` | subscribe | — |
+| `GET` | `/api/v1/billing/momo/subscription` | currentSubscription_1 | — |
 
 ## navigation-group-controller
 
@@ -1793,6 +1806,12 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/network/resources/{id}/download` | download | `id` *(req)* (path) |
 | `GET` | `/api/v1/network/stats` | getNetworkStats | — |
 
+## node-member-roster-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `GET` | `/api/v1/tenant/organization/nodes/{nodeId}/members` | members | `nodeId` *(req)* (path), `scope` (query), `q` (query), `page` (query), `size` (query) |
+
 ## notification-controller
 
 | Méthode | Chemin | Résumé | Paramètres |
@@ -1837,7 +1856,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/onboarding-wizard` | getSteps | — |
 | `POST` | `/api/v1/onboarding-wizard/initialize` | initialize | — |
 | `GET` | `/api/v1/onboarding-wizard/progress` | progress_3 | — |
-| `GET` | `/api/v1/onboarding-wizard/status` | status_4 | — |
+| `GET` | `/api/v1/onboarding-wizard/status` | status_6 | — |
 | `GET` | `/api/v1/onboarding-wizard/templates/{role}` | roleTemplate | `role` *(req)* (path) |
 | `POST` | `/api/v1/onboarding-wizard/{id}/complete` | complete | `id` *(req)* (path) |
 | `POST` | `/api/v1/onboarding-wizard/{id}/skip` | skip | `id` *(req)* (path) |
@@ -1998,13 +2017,13 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/v1/payments` | recent_2 | — |
 | `GET` | `/api/v1/payments/dashboard` | dashboard_2 | — |
-| `POST` | `/api/v1/payments/initiate` | initiate | — |
+| `POST` | `/api/v1/payments/initiate` | initiate_1 | — |
 | `GET` | `/api/v1/payments/mine` | mine_3 | — |
 | `POST` | `/api/v1/payments/recurring` | createRecurring | — |
 | `GET` | `/api/v1/payments/recurring/mine` | myRecurring | — |
 | `GET` | `/api/v1/payments/recurring/stats` | recurringStats | — |
 | `POST` | `/api/v1/payments/recurring/{id}/cancel` | cancelRecurring | `id` *(req)* (path) |
-| `GET` | `/api/v1/payments/stats` | stats_19 | — |
+| `GET` | `/api/v1/payments/stats` | stats_20 | — |
 | `POST` | `/api/v1/payments/webhook` | webhook | `X-Webhook-Secret` (header) |
 | `GET` | `/api/v1/payments/{id}` | status_3 | `id` *(req)* (path) |
 | `POST` | `/api/v1/payments/{id}/cancel` | cancel_1 | `id` *(req)* (path) |
@@ -2020,6 +2039,15 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/payments/webhooks/mpesa` | mpesaCallback | — |
 | `POST` | `/api/v1/payments/webhooks/mtn/verify` | mtnManualVerify | `X-MTN-Signature` (header) |
 | `POST` | `/api/v1/payments/webhooks/orange` | orangeCallback | `X-Orange-Signature` (header) |
+
+## payout-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `GET` | `/api/v1/payments/payouts/status` | status_5 | — |
+| `POST` | `/api/v1/payments/payouts/{providerKey}` | initiate | `providerKey` *(req)* (path) |
+| `POST` | `/api/v1/payments/payouts/{providerKey}/webhook` | webhook_1 | `providerKey` *(req)* (path) |
+| `GET` | `/api/v1/payments/payouts/{providerKey}/{reference}/status` | status_4 | `providerKey` *(req)* (path), `reference` *(req)* (path) |
 
 ## people-controller
 
@@ -2060,7 +2088,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/v1/personal-objectives` | list_30 | — |
 | `POST` | `/api/v1/personal-objectives` | create_41 | — |
-| `GET` | `/api/v1/personal-objectives/stats` | stats_18 | — |
+| `GET` | `/api/v1/personal-objectives/stats` | stats_19 | — |
 | `GET` | `/api/v1/personal-objectives/{id}` | get_29 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/personal-objectives/{id}/progress` | progress_2 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/personal-objectives/{id}/status` | updateStatus_8 | `id` *(req)* (path) |
@@ -2143,6 +2171,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/prayers` | create_39 | — |
 | `GET` | `/api/v1/prayers/actions-de-grace` | getActionsDeGrace | `familleId` (query) |
 | `GET` | `/api/v1/prayers/by-ame/{ameId}` | findByAmeId | `ameId` *(req)* (path) |
+| `GET` | `/api/v1/prayers/stats` | stats_17 | — |
 | `GET` | `/api/v1/prayers/{id}` | findById_5 | `id` *(req)* (path) |
 | `PUT` | `/api/v1/prayers/{id}` | update_17 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/prayers/{id}` | delete_12 | `id` *(req)* (path) |
@@ -2154,7 +2183,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/v1/prayer-journal` | list_29 | `page` (query), `size` (query), `membreId` (query) |
 | `POST` | `/api/v1/prayer-journal` | create_40 | — |
-| `GET` | `/api/v1/prayer-journal/stats` | stats_17 | — |
+| `GET` | `/api/v1/prayer-journal/stats` | stats_18 | — |
 | `GET` | `/api/v1/prayer-journal/{id}` | get_28 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/prayer-journal/{id}` | delete_39 | `id` *(req)* (path) |
 | `PATCH` | `/api/v1/prayer-journal/{id}/answered` | markAnswered | `id` *(req)* (path) |
@@ -2223,6 +2252,9 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
 | `GET` | `/api/v1/public/churches` | list_62 | `country` (query), `q` (query) |
+| `GET` | `/api/v1/public/churches/exists` | exists | `q` (query) |
+| `GET` | `/api/v1/public/churches/suggest` | suggest | `q` (query) |
+| `GET` | `/api/v1/public/churches/{slug}` | landing | `slug` *(req)* (path) |
 
 ## public-contact-controller
 
@@ -2249,6 +2281,15 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `GET` | `/api/v1/public/legal` | list_60 | — |
 | `GET` | `/api/v1/public/legal/{code}` | get_27 | `code` *(req)* (path), `version` (query), `language` (query) |
+
+## public-pricing-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `GET` | `/api/v1/public/pricing/config` | config | `currency` (query), `region` (query) |
+| `GET` | `/api/v1/public/pricing/currency` | resolvedCurrency | `currency` (query), `region` (query) |
+| `GET` | `/api/v1/public/pricing/plans` | plans | `currency` (query), `cycle` (query), `region` (query) |
+| `GET` | `/api/v1/public/pricing/plans/{key}` | plan | `key` *(req)* (path), `currency` (query), `cycle` (query), `region` (query) |
 
 ## public-saas-plan-controller
 
@@ -2327,6 +2368,16 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/scoping/scopes` | scopes | — |
 | `GET` | `/api/v1/scoping/visible-units` | visibleUnits | `viewerUnitId` (query) |
 
+## retired-permission-surface-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `GET` | `/api/v1/permissions/**` | retired | — |
+| `PUT` | `/api/v1/permissions/**` | retired_2 | — |
+| `POST` | `/api/v1/permissions/**` | retired_1 | — |
+| `PATCH` | `/api/v1/permissions/**` | retired_4 | — |
+| `DELETE` | `/api/v1/permissions/**` | retired_3 | — |
+
 ## reverse-mentoring-controller
 
 | Méthode | Chemin | Résumé | Paramètres |
@@ -2389,6 +2440,8 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/admin/roles/{id}` | getRole | `id` *(req)* (path) |
 | `PUT` | `/api/v1/admin/roles/{id}` | updateRole_1 | `id` *(req)* (path) |
 | `DELETE` | `/api/v1/admin/roles/{id}` | deleteRole_1 | `id` *(req)* (path) |
+| `POST` | `/api/v1/admin/roles/{id}/local-copy` | instantiateLocalRoleCopy | `id` *(req)* (path) |
+| `DELETE` | `/api/v1/admin/roles/{id}/local-copy` | revertLocalRoleCopy | `id` *(req)* (path) |
 | `GET` | `/api/v1/admin/roles/{id}/permissions` | getRolePermissions | `id` *(req)* (path) |
 | `PUT` | `/api/v1/admin/roles/{id}/permissions` | assignPermissions | `id` *(req)* (path) |
 | `POST` | `/api/v1/admin/roles/{id}/permissions` | addPermission | `id` *(req)* (path) |
@@ -2646,7 +2699,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `POST` | `/api/v1/billing/stripe/checkout` | checkout | — |
 | `POST` | `/api/v1/billing/stripe/portal` | portal | — |
-| `GET` | `/api/v1/billing/stripe/status` | status_6 | — |
+| `GET` | `/api/v1/billing/stripe/status` | status_8 | — |
 | `GET` | `/api/v1/billing/stripe/subscription` | currentSubscription | — |
 
 ## stripe-webhook-controller
@@ -2664,7 +2717,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/admin/subscription/current` | getCurrentSubscription | — |
 | `GET` | `/api/v1/admin/subscription/plans` | getAvailablePlans | — |
 | `POST` | `/api/v1/admin/subscription/reactivate` | reactivateSubscription | — |
-| `POST` | `/api/v1/admin/subscription/subscribe` | subscribe | — |
+| `POST` | `/api/v1/admin/subscription/subscribe` | subscribe_1 | — |
 | `GET` | `/api/v1/admin/subscription/usage` | getUsage | — |
 
 ## succession-plan-controller
@@ -2706,6 +2759,22 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `POST` | `/api/v1/platform/admin/tenants/{id}/reactivate` | reactivateTenant | `id` *(req)* (path) |
 | `POST` | `/api/v1/platform/admin/tenants/{id}/suspend` | suspendTenant | `id` *(req)* (path) |
 
+## super-admin-pricing-controller
+
+| Méthode | Chemin | Résumé | Paramètres |
+|---|---|---|---|
+| `GET` | `/api/v1/platform/admin/pricing/currencies` | currencies | — |
+| `GET` | `/api/v1/platform/admin/pricing/plans/{key}/diagnostics` | diagnostics | `key` *(req)* (path) |
+| `GET` | `/api/v1/platform/admin/pricing/plans/{key}/prices` | listPrices | `key` *(req)* (path) |
+| `POST` | `/api/v1/platform/admin/pricing/plans/{key}/prices` | upsertPrice | `key` *(req)* (path) |
+| `POST` | `/api/v1/platform/admin/pricing/plans/{key}/prices/bulk` | bulkPrices | `key` *(req)* (path) |
+| `POST` | `/api/v1/platform/admin/pricing/plans/{key}/prices/stripe-sync` | syncPlan | `key` *(req)* (path) |
+| `PUT` | `/api/v1/platform/admin/pricing/plans/{key}/prices/{priceId}` | updatePrice | `key` *(req)* (path), `priceId` *(req)* (path) |
+| `DELETE` | `/api/v1/platform/admin/pricing/plans/{key}/prices/{priceId}` | deletePrice | `key` *(req)* (path), `priceId` *(req)* (path) |
+| `POST` | `/api/v1/platform/admin/pricing/prices/stripe-sync` | syncAll | — |
+| `GET` | `/api/v1/platform/admin/pricing/settings` | getSettings | — |
+| `PUT` | `/api/v1/platform/admin/pricing/settings` | updateSettings | — |
+
 ## super-admin-saas-plan-controller
 
 | Méthode | Chemin | Résumé | Paramètres |
@@ -2717,7 +2786,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | `GET` | `/api/v1/admin/saas/plans/usage/{tenantId}` | getUsage_1 | `tenantId` *(req)* (path) |
 | `PUT` | `/api/v1/admin/saas/plans/{key}` | updatePlan_1 | `key` *(req)* (path) |
 | `DELETE` | `/api/v1/admin/saas/plans/{key}` | deactivatePlan | `key` *(req)* (path) |
-| `POST` | `/api/v1/admin/saas/plans/{key}/subscribe/{tenantId}` | subscribe_1 | `key` *(req)* (path), `tenantId` *(req)* (path), `billingCycle` (query) |
+| `POST` | `/api/v1/admin/saas/plans/{key}/subscribe/{tenantId}` | subscribe_2 | `key` *(req)* (path), `tenantId` *(req)* (path), `billingCycle` (query) |
 
 ## survey-controller
 
@@ -2873,9 +2942,10 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
 | `POST` | `/api/v1/tenant/join` | join | — |
-| `GET` | `/api/v1/tenant/join-requests` | pendingRequests | — |
+| `GET` | `/api/v1/tenant/join-requests` | pendingRequests | `status` (query) |
 | `POST` | `/api/v1/tenant/join-requests/{id}/approve` | approve_2 | `id` *(req)* (path) |
 | `POST` | `/api/v1/tenant/join-requests/{id}/reject` | reject_2 | `id` *(req)* (path) |
+| `POST` | `/api/v1/tenant/join-requests/{id}/resend-invitation` | resendInvitation | `id` *(req)* (path) |
 
 ## tenant-organization-controller
 
@@ -2900,8 +2970,8 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 
 | Méthode | Chemin | Résumé | Paramètres |
 |---|---|---|---|
-| `GET` | `/api/v1/admin/settings` | getSettings | — |
-| `PUT` | `/api/v1/admin/settings` | updateSettings_1 | — |
+| `GET` | `/api/v1/admin/settings` | getSettings_1 | — |
+| `PUT` | `/api/v1/admin/settings` | updateSettings_2 | — |
 | `POST` | `/api/v1/admin/settings/branding/assets` | uploadBrandingAsset | `assetType` *(req)* (query) |
 | `GET` | `/api/v1/admin/settings/branding/css` | getBrandingCss | — |
 | `GET` | `/api/v1/admin/settings/public-branding` | getPublicBranding | — |
@@ -3010,7 +3080,7 @@ Authentification : JWT Bearer (`POST /api/v1/auth/login`) ; le tenant est porté
 |---|---|---|---|
 | `POST` | `/api/v1/auth/2fa/disable` | disable | — |
 | `POST` | `/api/v1/auth/2fa/enable` | enable | — |
-| `GET` | `/api/v1/auth/2fa/status` | status_7 | — |
+| `GET` | `/api/v1/auth/2fa/status` | status_9 | — |
 | `POST` | `/api/v1/auth/2fa/verify` | verify_2 | — |
 
 ## ui-customization-controller

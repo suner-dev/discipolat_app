@@ -10,7 +10,7 @@
 // Les libellés de niveaux/rôles viennent de l'API (dynamiques) : on ne les
 // fige jamais en dur côté client (garde-fou i18n V2/F26).
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -144,7 +144,7 @@ export interface NodeMemberRow {
   attachedNodeType?: string | null;
   /** true = rattaché au nœud consulté ; false = via une sous-structure. */
   direct: boolean;
-  origine: 'ASSIGNATION_V3' | 'ADHESION_NOEUD' | 'RESPONSABLE_NOEUD';
+  origine: 'ASSIGNATION_V3' | 'ADHESION_NOEUD' | 'ADHESION_TENANT' | 'RESPONSABLE_NOEUD';
   roles?: string[];
   viaChaine?: Array<{ id: string; nom: string; type: string; responsibleId?: string | null }>;
   depuis?: string | null;
@@ -295,6 +295,9 @@ export function useNodeMembers(
           params: { scope, ...(q ? { q } : {}), page, size },
         })
       ).data,
+    // Page/filtre changent la clé : sans cela, chaque frappe ou chaque « Suivant »
+    // vidait le panneau (le champ de recherche disparaissait pendant la requête).
+    placeholderData: keepPreviousData,
     enabled: !!nodeId,
   });
 }

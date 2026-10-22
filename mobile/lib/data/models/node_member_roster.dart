@@ -38,8 +38,11 @@ class NodeMemberRow {
   /// true = rattaché au nœud consulté ; false = via une sous-structure.
   final bool direct;
 
-  /// Origine du rattachement (V231) : ASSIGNATION_V3 | ADHESION_NOEUD | RESPONSABLE_NOEUD.
-  final String origine;
+  /// Origine du rattachement (V231) : ASSIGNATION_V3 | ADHESION_NOEUD |
+  /// ADHESION_TENANT | RESPONSABLE_NOEUD. Une valeur inconnue n'est jamais
+  /// inventée : le parsing défensif garde la chaîne servie telle quelle, et
+  /// l'absence de chaîne se lit `null` (rien n'est supposé « par défaut »).
+  final String? origine;
   final List<String> roles;
   final String? depuis;
 
@@ -64,8 +67,12 @@ class NodeMemberRow {
         attachedNodeName: _str(json['attachedNodeName']),
         attachedNodeType: _str(json['attachedNodeType']),
         direct: json['direct'] == true,
-        origine: _str(json['origine']) ?? 'ADHESION_NOEUD',
-        roles: (json['roles'] as List?)?.map((e) => e.toString()).toList() ?? const [],
+        origine: _str(json['origine']),
+        // Liste défensive : une valeur mal typée (objet, chaîne) vaut une liste
+        // vide, pas un plantage de toute la page.
+        roles: (json['roles'] is List ? json['roles'] as List : const <dynamic>[])
+            .map((e) => e.toString())
+            .toList(),
         depuis: _str(json['depuis']),
       );
 }
@@ -105,17 +112,16 @@ class NodeMembersPage {
         nodeName: json['nodeName'] is String ? json['nodeName'] as String : null,
         nodeType: json['nodeType'] is String ? json['nodeType'] as String : null,
         scope: (json['scope'] ?? 'SUBTREE').toString(),
-        content: (json['content'] as List?)
-                ?.whereType<Map<String, dynamic>>()
-                .map(NodeMemberRow.fromJson)
-                .toList() ??
-            const [],
-        page: (json['page'] as num?)?.toInt() ?? 0,
-        size: (json['size'] as num?)?.toInt() ?? 20,
-        totalElements: (json['totalElements'] as num?)?.toInt() ?? 0,
-        totalPages: (json['totalPages'] as num?)?.toInt() ?? 0,
-        memberCountDirect: (json['memberCountDirect'] as num?)?.toInt() ?? 0,
-        memberCountSousArbre: (json['memberCountSousArbre'] as num?)?.toInt() ?? 0,
+        content: (json['content'] is List ? json['content'] as List : const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(NodeMemberRow.fromJson)
+            .toList(),
+        page: _int(json['page'], 0),
+        size: _int(json['size'], 20),
+        totalElements: _int(json['totalElements'], 0),
+        totalPages: _int(json['totalPages'], 0),
+        memberCountDirect: _int(json['memberCountDirect'], 0),
+        memberCountSousArbre: _int(json['memberCountSousArbre'], 0),
       );
 
   static NodeMembersPage empty(String nodeId) => NodeMembersPage(
@@ -130,3 +136,9 @@ class NodeMembersPage {
         memberCountSousArbre: 0,
       );
 }
+
+/// Entier défensif : le serveur peut servir `int`, `double` (JSON) ou une
+/// chaîne. Un type inattendu ne doit pas faire échouer la lecture de toute la
+/// page — on retombe sur la valeur par défaut, jamais sur une exception.
+int _int(dynamic v, int fallback) =>
+    v is num ? v.toInt() : (v is String ? int.tryParse(v.trim()) ?? fallback : fallback);

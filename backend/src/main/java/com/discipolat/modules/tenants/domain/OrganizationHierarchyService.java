@@ -590,23 +590,28 @@ public class OrganizationHierarchyService {
     // ==================== PERMISSIONS BY NODE ====================
 
     /**
-     * Membres dont le périmètre d'accès COUVRE ce nœud.
+     * Membres qui RELÈVENT de ce nœud : adhésions dont la portée est dans le
+     * sous-arbre (le nœud consulté et ses sous-structures), plus les adhésions
+     * de portée {@code TENANT} qui couvrent toute l'organisation.
      *
      * <p><b>Correction ciblée (audit hiérarchie ecclésiastique, défaut B2).</b>
-     * L'implémentation comparait dans le mauvais sens : elle testait si le nœud
-     * consulté était descendant de la portée du membre, si bien qu'un membre
-     * rattaché à une cellule remontait dans le roster de chaque parent, et que
-     * les adhésions de portée TENANT inondaient tous les nœuds sans distinction.
-     * Le sens est désormais celui de l'énoncé : une adhésion de portée TENANT
-     * couvre légitimement toute l'organisation (racine comprise) ; une adhésion
-     * de portée nœud ne couvre que CE nœud et ses descendants — pas les
-     * ancêtres. Comparaison par {@code parentId} interposé (mémoire, anti-cycle)
-     * plutôt que 2 {@code findById} par membership (N+1).
+     * L'implémentation comparait à l'envers : elle retenait une adhésion quand
+     * le <b>nœud consulté</b> était descendant de la portée du membre
+     * ({@code isDescendantOf(nodeId, m.scopeId)} sur les chemins matérialisés).
+     * Fuite descendante : un membre rattaché à une RÉGION apparaissait dans la
+     * liste de CHAQUE cellule placée sous cette région — le roster d'une cellule
+     * était donc inondé par tous les ancêtres — et toute adhésion de portée
+     * {@code TENANT} était retenue partout sans distinction. Le sens est
+     * désormais celui de l'énoncé : on ne retient que les portées POSÉES DANS le
+     * sous-arbre (qui relèvent donc de cette entité). Comparaison par
+     * {@code parentId} interposé (mémoire, anti-cycle) plutôt que 2
+     * {@code findById} par membership (N+1).
      *
      * <p>Contrat conservé : signature, type de retour et garde d'appel
-     * inchangés — cet endpoint reste une vue « accès couvrant le nœud », la
-     * liste nominative paginée des membres d'une entité étant servie par
-     * {@link NodeMemberRosterService} (lecture scopée, dédupliquée, filtrable).
+     * inchangés. La liste nominative paginée des membres d'une entité — avec
+     * recherche, déduplication et distinction directs/indirects — est servie par
+     * {@link NodeMemberRosterService} ; cette méthode-ci reste la vue large
+     * « quelles adhésions couvrent/relèvent de ce nœud », sans projection.
      */
     @Transactional(readOnly = true)
     public List<TenantMembership> getMembersWithAccess(UUID tenantId, UUID nodeId) {
@@ -650,12 +655,12 @@ public class OrganizationHierarchyService {
         return byId;
     }
 
-    private boolean isDescendantOf(UUID nodeId, UUID ancestorId) {
-        Optional<OrganizationNode> node = nodeRepository.findById(nodeId);
-        Optional<OrganizationNode> ancestor = nodeRepository.findById(ancestorId);
-        if (node.isEmpty() || ancestor.isEmpty()) return false;
-        return node.get().getPath().startsWith(ancestor.get().getPath());
-    }
+    // Le comparateur historique {@code isDescendantOf(nodeId, ancestorId)}
+    // (préfixe de {@code path}) a été RETIRÉ ici : c'est lui qui produisait la
+    // fuite descendante du défaut B2, et le laisser disponible invitait à le
+    // rebrancher. La descente d'arbre autoritaire passe par
+    // {@link #descendantIdsOf} — dérivé par {@code parentId}, donc insensible à
+    // un {@code path} mal tenu (constat H8 clos : colonne {@code text}).
 
     // ==================== HELPERS ====================
 

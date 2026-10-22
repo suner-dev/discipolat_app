@@ -93,8 +93,23 @@ plafond|R1|8025
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
 # constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
-# constat R4 (domaine sans annotations de conteneur) : 3028 violations, gelees par plafond ci-dessous
-plafond|R4|3028
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-22 (mission « consulter les membres a
+# chaque echelle », BE-1 roster nominatif).
+# R4 3028 -> 3032 (+4) : le service `NodeMemberRosterService` (modules/tenants/domain)
+# porte `@Service` (1 entree stereotype) + `@Transactional(readOnly = true)` en tete de
+# classe (3 entrees : Transactional + Propagation + Isolation). Meme categorie d'impurete
+# que les services voisins deja gelees (`OrganizationHierarchyService`, `NodeAggregateService`,
+# les 7 methodes de `TenantJoinService`) : un service de lecture cable par Spring, pose dans
+# le paquet domain par la convention V0.1 du depot.
+# Retirer `@Transactional(readOnly = true)` serait une REGRESSION, pas un nettoyage : le
+# roster lit trois sources (memberships, capacites, libelles de roles) puis arbitre la
+# deduplication en memoire ; sans transaction en lecture seule, Hibernate refait le dirty
+# checking sur chaque entite parcouree et le N+1 que la mission vient de tuer revient.
+# Le deplacer hors de `..domain..` serait une reecriture destructive de la convention qui
+# produit deja les 3028 autres entrees gelees. La correction reelle reste la sortie des
+# annotations de conteneur du domaine (migration V1), comme pour les 3028 precedentes.
+# constat R4 (domaine sans annotations de conteneur) : 3032 violations, gelees par plafond ci-dessous
+plafond|R4|3032
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 # constat R7 (gardes http sans litteraux de role) : 0 violations, gelees par plafond ci-dessous

@@ -1138,6 +1138,31 @@ class AppLocalizations {
   String get hierarchyViaOrg => translate('hierarchyViaOrg');
   String get hierarchyViaDeclared => translate('hierarchyViaDeclared');
   String get hierarchyUnavailable => translate('hierarchyUnavailable');
+
+  // --- Roster nominatif des membres d'un nœud (fiche nœud, §7) ---
+  // Mêmes intitulés que le web (`orgV3.members.*`) : un berger qui change
+  // d'écran ne doit pas changer de vocabulaire.
+  String get nodeMembersTitle => translate('nodeMembersTitle');
+  String get nodeMembersScopeDirect => translate('nodeMembersScopeDirect');
+  String get nodeMembersScopeSubtree =>
+      translate('nodeMembersScopeSubtree');
+  String get nodeMembersSearch => translate('nodeMembersSearch');
+  String get nodeMembersEmpty => translate('nodeMembersEmpty');
+  String get nodeMembersLoadMore => translate('nodeMembersLoadMore');
+  String get hierarchyOriginAdhesionTenant =>
+      translate('hierarchyOriginAdhesionTenant');
+
+  /// Compteurs du roster : rattachés ici vs total sous-arbre.
+  String nodeMembersCounters(int direct, int total) => translate(
+        'nodeMembersCounters',
+      )
+          .replaceAll('{direct}', '$direct')
+          .replaceAll('{total}', '$total');
+
+  /// Chaîne de rattachement : seul le mot de liaison est traduit, le nom du
+  /// nœud intermédiaire est servi par le serveur (jamais inventé côté client).
+  String nodeMembersVia(String nodeName) =>
+      translate('nodeMembersVia').replaceAll('{name}', nodeName);
   String get language => translate('language');
   String get languageChanged => translate('languageChanged');
   String get profileLogout => translate('profileLogout');
@@ -2503,6 +2528,15 @@ class AppLocalizations {
     'hierarchyOriginAssignation': 'assignation',
     'hierarchyOriginAdhesion': 'adhésion',
     'hierarchyOriginResponsable': 'responsable',
+    'hierarchyOriginAdhesionTenant': 'adhésion (entité)',
+    'nodeMembersTitle': 'Membres',
+    'nodeMembersCounters': 'Directs {direct} • Total {total}',
+    'nodeMembersScopeDirect': 'Ici',
+    'nodeMembersScopeSubtree': 'Avec sous-unités',
+    'nodeMembersSearch': 'Rechercher un membre',
+    'nodeMembersEmpty': 'Aucun membre pour cette sélection.',
+    'nodeMembersVia': 'via {name}',
+    'nodeMembersLoadMore': 'Charger plus',
     'hierarchyNodeTypeRootChurch': 'Église mère',
     'hierarchyNodeTypeCampus': 'Campus',
     'hierarchyNodeTypeSubChurch': 'Église locale',
@@ -4817,6 +4851,15 @@ class AppLocalizations {
     'hierarchyOriginAssignation': 'assignment',
     'hierarchyOriginAdhesion': 'membership',
     'hierarchyOriginResponsable': 'lead',
+    'hierarchyOriginAdhesionTenant': 'membership (entity)',
+    'nodeMembersTitle': 'Members',
+    'nodeMembersCounters': 'Direct {direct} • Total {total}',
+    'nodeMembersScopeDirect': 'Here',
+    'nodeMembersScopeSubtree': 'With sub-units',
+    'nodeMembersSearch': 'Search a member',
+    'nodeMembersEmpty': 'No member for this selection.',
+    'nodeMembersVia': 'via {name}',
+    'nodeMembersLoadMore': 'Load more',
     'hierarchyNodeTypeRootChurch': 'Root church',
     'hierarchyNodeTypeCampus': 'Campus',
     'hierarchyNodeTypeSubChurch': 'Local church',
@@ -6309,6 +6352,15 @@ class AppLocalizations {
     'hierarchyOriginAssignation': 'atribuição',
     'hierarchyOriginAdhesion': 'adesão',
     'hierarchyOriginResponsable': 'liderança',
+    'hierarchyOriginAdhesionTenant': 'adesão (entidade)',
+    'nodeMembersTitle': 'Membros',
+    'nodeMembersCounters': 'Diretos {direct} • Total {total}',
+    'nodeMembersScopeDirect': 'Aqui',
+    'nodeMembersScopeSubtree': 'Com subunidades',
+    'nodeMembersSearch': 'Pesquisar um membro',
+    'nodeMembersEmpty': 'Nenhum membro para esta seleção.',
+    'nodeMembersVia': 'via {name}',
+    'nodeMembersLoadMore': 'Carregar mais',
     'hierarchyNodeTypeRootChurch': 'Igreja mãe',
     'hierarchyNodeTypeCampus': 'Campus',
     'hierarchyNodeTypeSubChurch': 'Igreja local',
@@ -7916,6 +7968,15 @@ const Map<String, String> _spanish = {
     'hierarchyOriginAssignation': 'asignación',
     'hierarchyOriginAdhesion': 'adhesión',
     'hierarchyOriginResponsable': 'liderazgo',
+    'hierarchyOriginAdhesionTenant': 'adhesión (entidad)',
+    'nodeMembersTitle': 'Miembros',
+    'nodeMembersCounters': 'Directos {direct} • Total {total}',
+    'nodeMembersScopeDirect': 'Aquí',
+    'nodeMembersScopeSubtree': 'Con subunidades',
+    'nodeMembersSearch': 'Buscar un miembro',
+    'nodeMembersEmpty': 'Ningún miembro para esta selección.',
+    'nodeMembersVia': 'vía {name}',
+    'nodeMembersLoadMore': 'Cargar más',
     'hierarchyNodeTypeRootChurch': 'Iglesia principal',
     'hierarchyNodeTypeCampus': 'Campus',
     'hierarchyNodeTypeSubChurch': 'Iglesia local',
@@ -9488,6 +9549,15 @@ const Map<String, String> _swahili = {
     'hierarchyOriginAssignation': 'ugavi',
     'hierarchyOriginAdhesion': 'ujiungaji',
     'hierarchyOriginResponsable': 'uongozi',
+    'hierarchyOriginAdhesionTenant': 'ujiungaji (taasisi)',
+    'nodeMembersTitle': 'Wanachama',
+    'nodeMembersCounters': 'Moja kwa moja {direct} • Jumla {total}',
+    'nodeMembersScopeDirect': 'Hapa',
+    'nodeMembersScopeSubtree': 'Kwa subuniti',
+    'nodeMembersSearch': 'Tafuta mwanachama',
+    'nodeMembersEmpty': 'Hakuna mwanachama kwa chaguo hili.',
+    'nodeMembersVia': 'kupitia {name}',
+    'nodeMembersLoadMore': 'Pakia zaidi',
     'hierarchyNodeTypeRootChurch': 'Kanisa mama',
     'hierarchyNodeTypeCampus': 'Kituo',
     'hierarchyNodeTypeSubChurch': 'Kanisa la eneo',
@@ -11060,6 +11130,15 @@ const Map<String, String> _arabic = {
     'hierarchyOriginAssignation': 'تعيين',
     'hierarchyOriginAdhesion': 'انضمام',
     'hierarchyOriginResponsable': 'قيادة',
+    'hierarchyOriginAdhesionTenant': 'انضمام (الكيان)',
+    'nodeMembersTitle': 'الأعضاء',
+    'nodeMembersCounters': 'مباشر {direct} • الإجمالي {total}',
+    'nodeMembersScopeDirect': 'هنا',
+    'nodeMembersScopeSubtree': 'مع الكيانات الفرعية',
+    'nodeMembersSearch': 'ابحث عن عضو',
+    'nodeMembersEmpty': 'لا يوجد أعضاء لهذا التحديد.',
+    'nodeMembersVia': 'عبر {name}',
+    'nodeMembersLoadMore': 'تحميل المزيد',
     'hierarchyNodeTypeRootChurch': 'الكنيسة الأم',
     'hierarchyNodeTypeCampus': 'الفرع',
     'hierarchyNodeTypeSubChurch': 'كنيسة محلية',
