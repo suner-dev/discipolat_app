@@ -23,10 +23,14 @@ racine-seule + N+1 tué), lien web `?nodeId=&scope=`, écran mobile « Membres �
 **745** (roster 21) ; `flutter analyze` 0 erreur ; `docs/API.md` + `docs/openapi.json`
 **réellement régénérés** (endpoint présent en ligne 1813).
 
-**Deux réserves assumées** — (1) la suite backend complète marque **1 échec** qui est **flaky et
-hors périmètre** (`inventory/AssetQrServiceTest`, décodage image ZXing ; passe en isolation) ;
-(2) la **publication** (commit `develop` → PR `main`) n'est **pas** faite : c'est une action de
-mainteneur, laissée ouverte volontairement. Rien dans cet état ne doit être pris pour « déploié ».
+**Réserve assumée** — la suite backend complète marque **1 échec** qui est **flaky et
+hors périmètre** (`inventory/AssetQrServiceTest`, décodage image ZXing ; passe 6/6 en isolation
+sous charge sérielle). Rien d'autre : le code n'est pas régressé par la mission.
+
+**Publication : FAITE** — commit `develop` @ `d93eac28` poussé sur `origin/develop`, **PR #21**
+ouverte vers `main` (https://github.com/suner-dev/discipolat_app/pull/21). `main` est protégée :
+la fusion RESTE à déclencher par le mainteneur (review + gates CI) — cet état ne signifie donc
+pas « déployé en production », mais « livré et en attente de merge ».
 
 ---
 
@@ -105,7 +109,7 @@ mainteneur, laissée ouverte volontairement. Rien dans cet état ne doit être p
 - [x] `mvn -o test` (cible + suite) rejoué, résultats réels consignés ici — suite complette **2455 tests / 1 échec** ; l'unique échec est `inventory.AssetQrServiceTest` (aller-retour de décodage image ZXing, **non lié** à la mission, passe en isolation → flaky sous charge parallèle). Roster BE **33/33 verts**.
 - [x] `tsc -b` (0 erreur) + `vitest run` (123 fichiers / 1088 tests verts) + `npm run build` (succès) + parité i18n (0 clé manquante sur les 6 locales)
 - [x] `flutter analyze` (0 erreur ; uniquement des lints `info` préexistants) + `flutter test` (745 tests verts, dont roster **21**)
-- [ ] Publié sur `develop` puis PR `main` (workflow du dépôt — `main` protégée par PR, PR #17-19 en preuve) — **NON fait** : le travail est dans l'arbre de travail (commits + modifs non commitées + fichiers untracked) ; commit/poussée/PR restent à déclencher par le mainteneur.
+- [x] Publié sur `develop` (commit `d93eac28` poussé sur `origin/develop`) puis **PR #21** vers `main` ouverte (https://github.com/suner-dev/discipolat_app/pull/21) — workflow du dépôt respecté (`main` protégée par PR, PR #17-20 en preuve). La **fusion** elle-même reste à déclencher par le mainteneur (review + gates CI).
 - [x] Scénarios A→I validés au **niveau tests** (BE service+HTTP/SEC, FE hook+composants+i18n, MO parsing+écran+6 locales) — cf. tableau ci-dessous. **Non** rejoués en E2E manuel browser/app.
 
 ### Preuves d'exécution (rejouées sur l'arbre de travail courant)
@@ -125,4 +129,4 @@ mainteneur, laissée ouverte volontairement. Rien dans cet état ne doit être p
 | Mobile analyse | `flutter analyze lib test` | **0 erreur** ; 531 issues = lints `info`/`warning` de baseline ; fichiers touchés → seulement des `info` (ex. `prefer_null_aware_operators`, `withOpacity` déprécié préexistant) | 17:02 |
 | Mobile tests | `flutter test` | **745 tests verts** ; `node_member_roster_test.dart` rejoué seul → **+21 verts** | 17:05 → 17:08 |
 | DOC-1 API générée | boot `spring-boot:run` (profil dev, port 8090, base `:5433`) puis `bash scripts/generate-api-docs.sh http://localhost:8090` | `/api-docs` HTTP 200 ; `docs/API.md` régénéré → **1451 chemins / 1800 opérations** ; ligne 1813 documente `GET /api/v1/tenant/organization/nodes/{nodeId}/members` (`nodeId` path req + `scope`/`q`/`page`/`size` query). `docs/openapi.json` régénéré (git M). | 17:16 → 17:19 |
-| Publication `develop`→PR `main` | — | **NON fait** (volontaire) : commit/poussée/PR sont une action de mainteneur ; laissé ouvert dans la §5. | — |
+| Publication `develop`→PR `main` | `git push origin develop` puis `gh pr create --base main --head develop` | **FAIT** : commit `d93eac28` sur `origin/develop` ; **PR #21** ouverte vers `main` (https://github.com/suner-dev/discipolat_app/pull/21). Fusion laissée au mainteneur (`main` protégée). | 2026-10-22 |
