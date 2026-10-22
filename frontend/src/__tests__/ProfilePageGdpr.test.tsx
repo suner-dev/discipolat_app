@@ -47,6 +47,9 @@ const mockUser = {
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: mockUser, updateUser: vi.fn() }),
+  // Le parcours (ParcoursCard) lit sa vue via useAuthOptional ; hors du champ de
+  // ces tests → null, ce qui désactive sa requête (aucun effet sur la fiche).
+  useAuthOptional: () => null,
 }));
 
 vi.mock('@/hooks/useDictionaries', () => ({

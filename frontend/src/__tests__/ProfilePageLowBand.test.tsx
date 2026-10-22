@@ -36,6 +36,9 @@ let authUser: Record<string, unknown> = {};
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: authUser, updateUser: updateUserMock }),
+  // Le parcours (ParcoursCard) lit sa vue via useAuthOptional ; hors du champ de
+  // ces tests → null, ce qui désactive sa requête (aucun effet sur la fiche).
+  useAuthOptional: () => null,
 }));
 
 function renderPage() {
