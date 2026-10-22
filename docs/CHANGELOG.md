@@ -86,6 +86,17 @@ endpoint supprimé, aucune clé retirée, aucun comportement legacy réécrit. A
 - `API.md` régénéré via `scripts/generate-api-docs.sh` (règle du dépôt, pas d'édition
   manuelle).
 
+### Sécurité
+
+- **Vulnérabilité haute patchée** (`follow-redirects` 1.16.0 → 1.16.1, GHSA-q3jh-wrc6-jgq8
+  et GHSA-8r9p-f939-6h3c — contournement de la suppression des identifiants cross-origin et
+  échappement regex de `sensitiveHeaders`) : dépendance **transitive** d'`axios`, corrigée par
+  bump sémantique compatible (`npm update follow-redirects`), **additif strict** — seule la
+  copie verrouillée change, aucun `package.json` modifié, aucun outil de build touché.
+  `npm audit --omit=dev --audit-level=high` passe de 1 à **0** vulnérabilité ; `npm run build`
+  et les tests roster (26) revérifiés verts. Dette préexistante (déjà sur `main`), corrigée au
+  passage car la gate CI « NPM audit (bloquant high) » la signalait.
+
 ## [Non publié] — Parcours « Archives » complet (V272)
 
 Audit profond du parcours « Archives » et exécution intégrale — fullstack,
