@@ -1,6 +1,33 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+/* Migration Tailwind v4 : le thème (couleurs pilotées par variables CSS, keyframes,
+   ombres, darkMode « class », plugin forms) reste déclaré dans tailwind.config.js,
+   chargé en mode legacy via @config — chemin de migration recommandé pour éviter
+   une réécriture CSS-first risquée sur 1000+ lignes. Les primitives de design
+   system (.glass, .btn, .badge…) deviennent des @utility car v4 n'autorise
+   @apply que sur des utilities. */
+@config "../tailwind.config.js";
+
+/* ————————————————————————————————————————————————
+   Primitives du design system — déclarées en @utility.
+   Tailwind v4 n'autorise `@apply` que sur des utilities : les classes
+   réutilisables (.glass, .btn, .badge…) passent donc du @layer components
+   au registre des utilities. Déclarations STRICTEMENT identiques aux
+   anciennes : même rendu, mêmes noms (JSX inchangé).
+   ———————————————————————————————————————————————— */
+@utility glass { @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-glass; }
+@utility glass-strong { @apply bg-white/85 dark:bg-gray-900/85 backdrop-blur-2xl border border-white/25 dark:border-white/[0.08] shadow-glass-lg; }
+@utility glass-card { @apply glass rounded-2xl transition-all duration-300; }
+@utility glow-green { @apply shadow-[0_0_15px_rgba(22,163,74,0.3)] dark:shadow-[0_0_20px_rgba(22,163,74,0.2)]; }
+@utility glow-border { @apply border border-transparent; background-clip: padding-box; }
+@utility btn { @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ease-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden; }
+@utility btn-primary { @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md hover:shadow-primary-500/20 active:shadow-sm; background-color: rgb(var(--color-button)); }
+@utility badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200; }
+@utility stat-trend { @apply inline-flex items-center gap-1 text-xs font-medium mt-2 px-2 py-0.5 rounded-full; }
+@utility glow-dot { @apply w-1.5 h-1.5 rounded-full inline-block; }
+@utility alert { @apply rounded-xl p-4 border backdrop-blur-sm; }
+@utility avatar { @apply relative rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden; }
+@utility spinner { @apply animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700; border-top-color: #16a34a; }
+@utility tab { @apply px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-700/40; }
 
 /* ============================================
    Design System — Futuristic Glassmorphism
@@ -85,17 +112,11 @@
 
 @layer components {
   /* Glass card — primary container */
-  .glass {
-    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-glass;
-  }
+  /* glass → @utility (déclaré en en-tête) */
 
-  .glass-strong {
-    @apply bg-white/85 dark:bg-gray-900/85 backdrop-blur-2xl border border-white/25 dark:border-white/[0.08] shadow-glass-lg;
-  }
+  /* glass-strong → @utility (déclaré en en-tête) */
 
-  .glass-card {
-    @apply glass rounded-2xl transition-all duration-300;
-  }
+  /* glass-card → @utility (déclaré en en-tête) ; ne reste ici que le survol */
 
   .glass-card:hover {
     @apply shadow-glass-lg -translate-y-0.5;
@@ -106,9 +127,7 @@
   }
 
   /* Neon glow effects */
-  .glow-green {
-    @apply shadow-[0_0_15px_rgba(22,163,74,0.3)] dark:shadow-[0_0_20px_rgba(22,163,74,0.2)];
-  }
+  /* glow-green → @utility (déclaré en en-tête) */
 
   .glow-gold {
     @apply shadow-[0_0_15px_rgba(245,158,11,0.3)] dark:shadow-[0_0_20px_rgba(245,158,11,0.2)];
@@ -122,10 +141,7 @@
     @apply shadow-[0_0_15px_rgba(59,130,246,0.3)] dark:shadow-[0_0_20px_rgba(59,130,246,0.2)];
   }
 
-  .glow-border {
-    @apply border border-transparent;
-    background-clip: padding-box;
-  }
+  /* glow-border → @utility (déclaré en en-tête) */
 
   .glow-border-green {
     @apply glow-border;
@@ -155,12 +171,7 @@
   }
 
   /* Buttons */
-  .btn {
-    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium
-           transition-all duration-200 ease-smooth
-           focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
-           overflow-hidden;
-  }
+  /* btn → @utility (déclaré en en-tête) ; ::after/:hover/:active restent ici */
 
   .btn::after {
     content: '';
@@ -176,12 +187,7 @@
     @apply scale-[0.97];
   }
 
-  .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500
-           shadow-sm hover:shadow-md hover:shadow-primary-500/20 active:shadow-sm;
-    /* Couleur pilotée par la marque de l'église (--color-button). */
-    background-color: rgb(var(--color-button));
-  }
+  /* btn-primary → @utility (déclaré en en-tête) ; le survol piloté par la marque reste ici */
 
   .btn-primary:hover {
     background-color: rgb(var(--color-button-hover, 15 128 61));
@@ -258,10 +264,7 @@
   }
 
   /* Status badges — glowing */
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-           transition-all duration-200;
-  }
+  /* badge → @utility (déclaré en en-tête) */
 
   .badge-success {
     @apply badge bg-green-100/80 dark:bg-green-900/30 text-green-800 dark:text-green-300
@@ -346,9 +349,7 @@
            font-mono tracking-tight;
   }
 
-  .stat-trend {
-    @apply inline-flex items-center gap-1 text-xs font-medium mt-2 px-2 py-0.5 rounded-full;
-  }
+  /* stat-trend → @utility (déclaré en en-tête) */
 
   /* Family OS panel (§G4.1) — lignes de liste unifiées */
   .os-list {
@@ -442,9 +443,7 @@
     background: radial-gradient(circle, rgba(22, 163, 74, 0.15), transparent);
   }
 
-  .glow-dot {
-    @apply w-1.5 h-1.5 rounded-full inline-block;
-  }
+  /* glow-dot → @utility (déclaré en en-tête) */
 
   .glow-dot-green {
     @apply glow-dot bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)];
@@ -498,9 +497,7 @@
   }
 
   /* Alert / Toast custom styles */
-  .alert {
-    @apply rounded-xl p-4 border backdrop-blur-sm;
-  }
+  /* alert → @utility (déclaré en en-tête) */
 
   .alert-info {
     @apply alert bg-blue-50/80 dark:bg-blue-900/20 border-blue-200/50 dark:border-blue-700/30 text-blue-800 dark:text-blue-300;
@@ -540,21 +537,14 @@
     @apply flex gap-1 p-1 rounded-xl bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm;
   }
 
-  .tab {
-    @apply px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200
-           text-gray-600 dark:text-gray-400
-           hover:text-gray-900 dark:hover:text-gray-200
-           hover:bg-white/60 dark:hover:bg-gray-700/40;
-  }
+  /* tab → @utility (déclaré en en-tête) */
 
   .tab-active {
     @apply tab bg-white dark:bg-gray-800 text-primary-700 dark:text-primary-400 shadow-sm;
   }
 
   /* Avatar with glow */
-  .avatar {
-    @apply relative rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden;
-  }
+  /* avatar → @utility (déclaré en en-tête) */
 
   .avatar-glow {
     @apply avatar;
@@ -780,10 +770,7 @@ html {
    Spinner
    ============================================ */
 
-.spinner {
-  @apply animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700;
-  border-top-color: #16a34a;
-}
+/* spinner → @utility (déclaré en en-tête) */
 
 .spinner-lg {
   @apply spinner;
