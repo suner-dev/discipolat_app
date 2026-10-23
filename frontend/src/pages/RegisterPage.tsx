@@ -329,7 +329,7 @@ export default function RegisterPage() {
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {isChurchApproval
-            ? tText(`Votre demande de rejoindre ${approvalInfo} a été enregistrée. Un responsable vous contactera après validation.`)
+            ? t('auth.registerApprovalNotice', { church: approvalInfo ?? '' })
             : isChurchActivation
               ? tText(`Compte créé. Vérifiez votre email pour activer votre compte et rejoindre ${churchActivationInfo}.`)
               : joinCode

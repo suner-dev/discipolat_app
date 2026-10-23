@@ -332,6 +332,7 @@ const sw: Record<string, string> = {
   'auth.registerRoleHint': 'Akaunti imeunganishwa na kanisa lako',
   'auth.registerSuccess': 'Akaunti imefunguliwa kwa mafanikio!',
   'auth.registerInstantHint': 'Akaunti yako iko tayari — ingia kuanza.',
+  'auth.registerApprovalNotice': 'Ombi yako ya kujiunga na {church} imerekodiwa. Kiongozi atawasiliana nawe baada ya kuidhinishwa. Ikitidhinishwa, utapokea kiungo cha kuamsha ili kuunda akaunti yako na kuchagua nywila yako — iliyowekwa hapa haitatumika.',
   'auth.loginNow': 'Ingia',
   'auth.haveAccount': 'Una akaunti tayari?',
   'auth.firstName': 'Jina la kwanza',

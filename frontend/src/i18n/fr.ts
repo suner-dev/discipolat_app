@@ -336,6 +336,7 @@ const fr = {
   'auth.registerRoleHint': 'Compte rattaché à votre église',
   'auth.registerSuccess': 'Compte créé avec succès !',
   'auth.registerInstantHint': 'Votre compte est prêt — connectez-vous pour commencer.',
+  'auth.registerApprovalNotice': 'Votre demande de rejoindre {church} a été enregistrée. Un responsable vous contactera après validation. Si elle est approuvée, vous recevrez un lien d’activation pour créer votre compte et choisir votre mot de passe — celui saisi ici ne sera pas utilisé.',
   'auth.loginNow': 'Se connecter',
   'auth.haveAccount': 'Déjà un compte ?',
   'auth.firstName': 'Prénom',

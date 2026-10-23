@@ -332,6 +332,7 @@ const en: Record<string, string> = {
   'auth.registerRoleHint': 'Account linked to your church',
   'auth.registerSuccess': 'Account created successfully!',
   'auth.registerInstantHint': 'Your account is ready — sign in to get started.',
+  'auth.registerApprovalNotice': 'Your request to join {church} has been recorded. A leader will contact you after approval. If it’s approved, you’ll receive an activation link to create your account and choose your password — the one entered here won’t be used.',
   'auth.loginNow': 'Sign in',
   'auth.haveAccount': 'Already have an account?',
   'auth.firstName': 'First name',
