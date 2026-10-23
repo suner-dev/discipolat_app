@@ -870,6 +870,7 @@ const ar: Record<string, string> = {
   'auth.registerRoleHint': 'الحساب مرتبط بكنيستك',
   'auth.registerSuccess': 'تم إنشاء الحساب بنجاح!',
   'auth.registerInstantHint': 'حسابك جاهز — سجّل الدخول للبدء.',
+  'auth.registerApprovalNotice': 'تم تسجيل طلبك للانضمام إلى {church}. سيتواصل معك أحد المسؤولين بعد الموافقة. في حال القبول، ستصلك رسالة تفعيل لإنشاء حسابك واختيار كلمة المرور — كلمة المرور التي أدخلتها هنا لن تُستخدم.',
   'auth.loginNow': 'تسجيل الدخول',
   'auth.haveAccount': 'لديك حساب بالفعل؟',
   'auth.firstName': 'الاسم الأول',

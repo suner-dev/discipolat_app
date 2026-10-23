@@ -332,6 +332,7 @@ const es: Record<string, string> = {
   'auth.registerRoleHint': 'Cuenta vinculada a tu iglesia',
   'auth.registerSuccess': '¡Cuenta creada con éxito!',
   'auth.registerInstantHint': 'Tu cuenta está lista — inicia sesión para empezar.',
+  'auth.registerApprovalNotice': 'Tu solicitud para unirte a {church} se ha registrado. Un responsable te contactará tras la validación. Si se aprueba, recibirás un enlace de activación para crear tu cuenta y elegir tu contraseña: la que has introducido aquí no se usará.',
   'auth.loginNow': 'Iniciar sesión',
   'auth.haveAccount': '¿Ya tienes cuenta?',
   'auth.firstName': 'Nombre',

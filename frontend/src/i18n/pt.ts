@@ -329,6 +329,7 @@ const pt: Record<string, string> = {
   'auth.registerRoleHint': 'Conta vinculada à sua igreja',
   'auth.registerSuccess': 'Conta criada com sucesso!',
   'auth.registerInstantHint': 'Sua conta está pronta — entre para começar.',
+  'auth.registerApprovalNotice': 'Seu pedido para entrar na {church} foi registrado. Um responsável entrará em contato após a validação. Se for aprovado, você receberá um link de ativação para criar sua conta e definir sua senha — a senha digitada aqui não será usada.',
   'auth.loginNow': 'Entrar',
   'auth.haveAccount': 'Já tem uma conta?',
   'auth.firstName': 'Nome',
