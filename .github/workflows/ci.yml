@@ -248,8 +248,13 @@ jobs:
         run: |
           cd frontend
           npm ci --ignore-scripts
-          # --package-lock-only : l'option --ignore-scripts de cyclonedx-npm n'existe plus en v6
-          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
+          # --package-lock-only : l'option --ignore-scripts de cyclonedx-npm n'existe plus en v6.
+          # --ignore-npm-errors : `npm ls --all --long` sort en ELSPROBLEMS sur les dépendances
+          #   runtime FACULTATIVES non installées de @tailwindcss/oxide-wasm32-wasi (@emnapi/*,
+          #   @napi-rs/wasm-runtime, @tybys/wasm-util, tslib). Ces binaires wasm optionnels n'ont
+          #   pas leur place dans un SBOM ; on tolère l'erreur npm pour quand même produire la
+          #   nomenclature depuis le verrou (SBOM backend, lui, reste strict).
+          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --ignore-npm-errors --output-file ../sbom-frontend.json
       - name: Résumé
         run: |
           {

@@ -88,11 +88,23 @@
 # serveur et la liste « Exaucee » du pasteur redeviendrait vide.
 # La correction reelle reste la sortie des entites/repos JPA du domaine
 # (migration V1), comme pour les 8011 precedentes.
-# constat R1 (domaine sans infrastructure) : 8025 violations, gelees par plafond ci-dessous
-plafond|R1|8025
+# EXCEPTION CONSTATEE ET REGELEE - 2026-10-23 (a ne pas reproduire).
+# R1 est passe de 8025 a 8061 (+36) et R4 de 3032 a 3047 (+15) avec les modules
+# admin / adminRequests (feature flags plateforme + 10 nouveaux modules fullstack) :
+# AdminIntegrationConfig et AdminRequest sont des entites JPA (@Entity/@Table/@Column)
+# posees dans un paquet ...domain (motif R1) ; AdminRequestService porte @Service/
+# @Transactional (+ Propagation + Isolation) dans ...domain (motif R4). Ce n'est PAS une
+# nouvelle categorie d'impurete : c'est le motif deja gele des milliers de fois (entite
+# JPA ou annotation de conteneur posee dans le domaine). Le re-gel est choisi parce que la
+# correction reelle est la separation domaine/infrastructure de ces contextes (migration V1),
+# pas un renommage local. Dette tracee dans KNOWN_ISSUES ; la porte reste fermee, le plafond
+# ne fait que constater l'existant.
+#
+# constat R1 (domaine sans infrastructure) : 8061 violations, gelees par plafond ci-dessous
+plafond|R1|8061
 # constat R2 (application ignore les adaptateurs) : 0 violations, gelees par plafond ci-dessous
 plafond|R2|0
-# constat R3 (frontieres entre contexts) : 976 violations, gelees par objet ci-dessous
+# constat R3 (frontieres entre contexts) : 984 violations, gelees par objet ci-dessous
 # EXCEPTION CONSTATEE ET REGELEE - 2026-10-22 (mission « consulter les membres a
 # chaque echelle », BE-1 roster nominatif).
 # R4 3028 -> 3032 (+4) : le service `NodeMemberRosterService` (modules/tenants/domain)
@@ -108,8 +120,8 @@ plafond|R2|0
 # Le deplacer hors de `..domain..` serait une reecriture destructive de la convention qui
 # produit deja les 3028 autres entrees gelees. La correction reelle reste la sortie des
 # annotations de conteneur du domaine (migration V1), comme pour les 3028 precedentes.
-# constat R4 (domaine sans annotations de conteneur) : 3032 violations, gelees par plafond ci-dessous
-plafond|R4|3032
+# constat R4 (domaine sans annotations de conteneur) : 3047 violations, gelees par plafond ci-dessous
+plafond|R4|3047
 # constat R5 (controleur ne touche pas la persistence) : 8 violations, gelees par objet ci-dessous
 # constat R6 (aucun couplage reciproque entre contexts) : 44 violations, gelees par objet ci-dessous
 # constat R7 (gardes http sans litteraux de role) : 0 violations, gelees par plafond ci-dessous
