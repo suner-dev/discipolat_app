@@ -180,9 +180,12 @@ public class PricingCatalogService {
         Map<String, List<SaasPlanPrice>> byPlan = priceRepository
                 .findByBillingCycleAndIsEnabledTrue(cycle).stream()
                 .filter(price -> settings.isCurrencyEnabled(price.getCurrency()))
-                .filter(price -> !price.getRegionCode().equals(SaasPlanPrice.GLOBAL_REGION)
-                        || !settings.isRegionPricingEnabled()
-                        || region == null || region.isBlank())
+                // Les lignes GLOBAL restent candidates même quand la tarification
+                // régionale est active : {@link #pick} préfère le prix régional et ne
+                // retombe sur GLOBAL qu'en l'absence de régional. Sans ce repli, la
+                // moindre combinaison (région, devise) non seedée afficherait « tarif
+                // non communiqué » là où {@link #resolvePrice}, lui, retombe déjà sur
+                // GLOBAL — deux comportements divergents sur la même donnée.
                 .collect(Collectors.groupingBy(SaasPlanPrice::getPlanKey));
 
         List<PublicPlan> publicPlans = new ArrayList<>(plans.size());

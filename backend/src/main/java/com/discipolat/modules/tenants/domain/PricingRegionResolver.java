@@ -110,44 +110,89 @@ public class PricingRegionResolver {
 
     private static Map<String, String> buildCountryMap() {
         Map<String, String> map = new LinkedHashMap<>();
-        // Afrique de l'Ouest — zone CEMAC/UEM, devise XAF/XOF.
-        for (String country : new String[]{"CM", "GA", "TD", "CG", "GQ", "BI"}) map.put(country, "AF");
-        for (String country : new String[]{"CI", "SN", "ML", "BF", "NE", "TG", "BJ", "GW", "GM", "GH", "NG", "LR", "SL"}) {
+        // Afrique centrale & de l'Ouest — zone CEMAC/UEMOA + Guinée/Ghana/Nigeria.
+        // Tarif de référence en Dollars américains (canal Mobile Money + carte).
+        for (String country : new String[]{
+                "CM", "GA", "TD", "CG", "GQ", "CF", "CD", "ST",
+                "CI", "SN", "ML", "BF", "NE", "TG", "BJ", "GW", "GM", "GH", "NG", "LR", "SL", "MR"}) {
             map.put(country, "AF");
         }
-        // Afrique du Nord / Est — devis à 2 décimales, canal carte plus naturel.
-        for (String country : new String[]{"MA", "DZ", "TN", "LY", "EG", "SD", "ZA", "KE", "TZ", "UG", "RW", "ET"}) {
+        // Afrique de l'Est — Corne de l'Afrique + Grands Lacs + océan Indien.
+        for (String country : new String[]{"KE", "TZ", "UG", "RW", "ET", "SO", "DJ", "BI", "SS", "ER", "MU", "SC"}) {
+            map.put(country, "AF_E");
+        }
+        // Afrique australe — SADC.
+        for (String country : new String[]{"ZA", "ZW", "ZM", "MZ", "BW", "SZ", "LS", "MG", "AO", "NA"}) {
+            map.put(country, "AF_S");
+        }
+        // Afrique du Nord — Maghreb + Égypte (devises à 2 décimales, canal carte naturel).
+        for (String country : new String[]{"MA", "DZ", "TN", "LY", "EG", "SD"}) {
             map.put(country, "NA");
         }
-        for (String country : new String[]{"FR", "DE", "ES", "IT", "PT", "NL", "BE", "LU", "AT", "IE", "CH", "DK", "SE", "NO", "FI", "GR", "PL", "CZ", "SK", "HU", "RO", "BG", "HR", "SI", "SK"}) {
+        // Europe — zone euro : facturée en Euros.
+        for (String country : new String[]{
+                "FR", "DE", "ES", "IT", "PT", "NL", "BE", "LU", "AT", "IE", "FI", "GR",
+                "SK", "SI", "HR", "CY", "MT", "EE", "LV", "LT", "SM", "VA", "AD", "MC"}) {
             map.put(country, "EU");
         }
-        map.put("GB", "UK");
-        map.put("US", "US");
-        map.put("CA", "CA");
-        map.put("MX", "LATAM");
-        map.put("BR", "LATAM");
-        map.put("AR", "LATAM");
-        map.put("CO", "LATAM");
-        map.put("CN", "ASIA");
-        map.put("IN", "ASIA");
-        map.put("ID", "ASIA");
-        map.put("PH", "ASIA");
-        map.put("VN", "ASIA");
+        // Europe hors zone euro : facturée en Dollars américains.
+        for (String country : new String[]{
+                "GB", "CH", "SE", "NO", "DK", "PL", "CZ", "HU", "RO", "BG", "IS",
+                "RS", "BA", "MK", "AL", "ME", "XK", "MD", "UA", "BY", "GE", "AM", "AZ", "TR"}) {
+            map.put(country, "EU_D");
+        }
+        // Asie — Dollars américains.
+        for (String country : new String[]{
+                "CN", "IN", "ID", "PH", "VN", "JP", "KR", "SG", "MY", "TH", "MM", "KH", "LA",
+                "NP", "BD", "LK", "PK", "MN", "TW", "HK", "MO", "BN", "TL", "KZ", "UZ",
+                "TM", "TJ", "KG", "QA", "AE", "SA", "KW", "BH", "OM", "JO", "LB", "IQ", "IR", "YE"}) {
+            map.put(country, "ASIA");
+        }
+        // Amérique du Nord — Dollars américains.
+        for (String country : new String[]{"US", "CA", "MX", "GL"}) {
+            map.put(country, "AM_N");
+        }
+        // Amérique du Sud + Amérique centrale & Caraïbes — Dollars américains.
+        for (String country : new String[]{
+                "BR", "AR", "CO", "PE", "CL", "VE", "EC", "UY", "PY", "BO", "GY", "SR",
+                "GT", "HN", "SV", "NI", "CR", "PA", "CU", "DO", "HT", "JM", "TT", "BS",
+                "BB", "BZ", "GTM", "PR", "SV"}) {
+            map.put(country, "AM_S");
+        }
+        // Océanie — Dollars américains.
         map.put("AU", "OC");
         map.put("NZ", "OC");
+        for (String country : new String[]{"FJ", "PG", "SB", "VU", "WS", "TO", "FM", "MH", "PW", "NR", "KI", "TV"}) {
+            map.put(country, "OC");
+        }
+        // Alias historiques conservés pour ne rien casser (en-têtes/query déjà émis).
+        map.put("UK", "EU_D");
         return Map.copyOf(map);
     }
 
-    /** Référentiel des régions tarifaires (clé → clé i18n {@code pricing.region.*}). */
+    /**
+     * Référentiel des régions tarifaires (clé → clé i18n {@code pricing.region.*}).
+     *
+     * <p>Grille monde demandée : Afrique centrale/ouest (AF), australe (AF_S), de
+     * l'est (AF_E) et du Nord (NA) ; Asie (ASIA) ; Amériques Nord (AM_N) et Sud
+     * (AM_S) — toutes en Dollars américains ; Europe zone euro (EU) en Euros et
+     * Europe hors zone euro (EU_D) en Dollars. Les codes legacy (UK, US, CA,
+     * LATAM, OC) restent reconnus pour la rétro-compatibilité.</p>
+     */
     private static final Map<String, String> PRICING_REGIONS = Map.ofEntries(
             Map.entry("AF", "pricing.region.AF"),
+            Map.entry("AF_E", "pricing.region.AF_E"),
+            Map.entry("AF_S", "pricing.region.AF_S"),
             Map.entry("NA", "pricing.region.NA"),
             Map.entry("EU", "pricing.region.EU"),
-            Map.entry("UK", "pricing.region.UK"),
-            Map.entry("US", "pricing.region.US"),
-            Map.entry("CA", "pricing.region.CA"),
-            Map.entry("LATAM", "pricing.region.LATAM"),
+            Map.entry("EU_D", "pricing.region.EU_D"),
             Map.entry("ASIA", "pricing.region.ASIA"),
-            Map.entry("OC", "pricing.region.OC"));
+            Map.entry("AM_N", "pricing.region.AM_N"),
+            Map.entry("AM_S", "pricing.region.AM_S"),
+            Map.entry("OC", "pricing.region.OC"),
+            // Codes legacy toujours résolus (affichés si un appelant les emploie).
+            Map.entry("UK", "pricing.region.EU_D"),
+            Map.entry("US", "pricing.region.AM_N"),
+            Map.entry("CA", "pricing.region.AM_N"),
+            Map.entry("LATAM", "pricing.region.AM_S"));
 }
