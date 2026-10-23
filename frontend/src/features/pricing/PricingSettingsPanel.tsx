@@ -237,7 +237,7 @@ export default function PricingSettingsPanel() {
               }
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
             >
-              {['MTN_MOMO', 'ORANGE_MONEY', 'M_PESA'].map((operator) => (
+              {['MTN_MOMO', 'ORANGE_MONEY', 'M_PESA', 'AIRTEL_MONEY', 'WAVE'].map((operator) => (
                 <option key={operator} value={operator}>
                   {operator}
                 </option>

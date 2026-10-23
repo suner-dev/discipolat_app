@@ -121,7 +121,22 @@ public class PaymentIntent {
         }
     }
 
-    public enum Purpose { DIME, OFFRANDE, PROMESSE, PROJET_SPECIAL, DON_DIASPORA, SAAS_SUBSCRIPTION }
+    public enum Purpose { 
+        DIME, 
+        OFFRANDE, 
+        PROMESSE, 
+        PROJET_SPECIAL, 
+        DON_DIASPORA, 
+        SAAS_SUBSCRIPTION,
+        // Types d'offrandes et de semences
+        OFFRANDE_ORDINAIRE,
+        OFFRANDE_SPECIALE,
+        OFFRANDE_CONSTRUCTION,
+        OFFRANDE_EVANGELISATION,
+        DON_SOLIDARITE,
+        COTISATION,
+        SEED 
+    }
 
     public enum Status { PENDING, CONFIRMED, FAILED, CANCELLED }
 }
