@@ -115,6 +115,10 @@ public class SecurityConfig {
                     // Webhooks opérateurs + Stripe : publics, sécurisés par signature
                     // opérateur (HMAC/super) ou Stripe-Signature (fail-closed côté contrôleur).
                     .requestMatchers(HttpMethod.POST, "/api/v1/payments/webhooks/**").permitAll()
+                    // Notify CinetPay (agrégateur) : public, fail-closed côté contrôleur
+                    // (503 sans clés) et sécurisé par re-validation /validate serveur —
+                    // la décision « payé » ne vient jamais du payload notify.
+                    .requestMatchers(HttpMethod.POST, "/api/v1/payments/cinetpay/notify").permitAll()
                     // Actuator: health public (for load balancer / Render healthcheck), details only when authenticated
                     .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                     .requestMatchers("/actuator/**").hasAnyRole("ADMIN", "PASTEUR");

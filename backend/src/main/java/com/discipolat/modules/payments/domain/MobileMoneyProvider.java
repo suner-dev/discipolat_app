@@ -1,5 +1,7 @@
 package com.discipolat.modules.payments.domain;
 
+import java.util.Set;
+
 /**
  * SPI d’un fournisseur de paiement Mobile Money (MTN MoMo, Orange Money,
  * M-Pesa, …) — Tithe &amp; Offering 2.0.
@@ -20,7 +22,29 @@ public interface MobileMoneyProvider {
     /** Opérateur auquel ce provider est rattaché. */
     PaymentIntent.Operator operator();
 
-    /** Ce provider est-il opérationnel (credentials + URL de base configurés) ? */
+    /**
+     * Operateurs que ce provider sait réellement servir.
+     *
+     * <p>Par defaut un provider ne sert que son {@link #operator()}. Un
+     * <strong>agregateur</strong> (ex. CinetPay) etend cet ensemble pour couvrir
+     * plusieurs operateurs (Orange Money, MTN MoMo, Wave, carte) derriere une
+     * seule integration. Methode <em>additive</em> : les providers existants
+     * (Orange, MTN, M-Pesa) heritent ce comportement sans aucune modification.
+     */
+    default Set<PaymentIntent.Operator> supportedOperators() {
+        return Set.of(operator());
+    }
+
+    /**
+     * Un agregateur prend la priorite sur les APIs operateurs directes quand il
+     * est active (un seul contrat, des frais generalement plus bas) ; les
+     * providers operateurs directs restent le repli. Faux par defaut.
+     */
+    default boolean aggregator() {
+        return false;
+    }
+
+    /** Ce provider est-il operationnel (credentials + URL de base configures) ? */
     boolean isEnabled();
 
     /**
