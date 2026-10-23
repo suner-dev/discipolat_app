@@ -8,6 +8,7 @@ import com.discipolat.modules.tenants.domain.SaasPlanPrice;
 import com.discipolat.modules.tenants.domain.SaasPlanPriceRepository;
 import com.discipolat.modules.tenants.domain.SaasPlanPricingSettings;
 import com.discipolat.modules.tenants.domain.SaasPlanRepository;
+import com.discipolat.modules.tenants.domain.SubscriptionService;
 import com.discipolat.modules.tenants.domain.TenantPlanPolicy;
 import com.discipolat.modules.tenants.domain.TenantSubscription;
 import com.discipolat.modules.tenants.domain.TenantSubscriptionRepository;
@@ -72,6 +73,7 @@ public class MomoSubscriptionService {
     private final PricingCatalogService pricingCatalogService;
     private final PricingSettingsService pricingSettingsService;
     private final SaasPlanRepository saasPlanRepository;
+    private final SubscriptionService subscriptionService;
 
     public MomoSubscriptionService(SaasMomoSubscriptionRepository subscriptionRepository,
                                    SaasPlanPriceRepository priceRepository,
@@ -82,7 +84,8 @@ public class MomoSubscriptionService {
                                    PaymentGatewayService paymentGatewayService,
                                    PricingCatalogService pricingCatalogService,
                                    PricingSettingsService pricingSettingsService,
-                                   SaasPlanRepository saasPlanRepository) {
+                                   SaasPlanRepository saasPlanRepository,
+                                   SubscriptionService subscriptionService) {
         this.subscriptionRepository = subscriptionRepository;
         this.priceRepository = priceRepository;
         this.planRepository = planRepository;
@@ -93,6 +96,7 @@ public class MomoSubscriptionService {
         this.pricingCatalogService = pricingCatalogService;
         this.pricingSettingsService = pricingSettingsService;
         this.saasPlanRepository = saasPlanRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     // ── Souscription initiale ────────────────────────────────────────────────
@@ -584,7 +588,19 @@ public class MomoSubscriptionService {
 
     /** Active l'abonnement SaaS côté tenant après paiement réussi. */
     private void activateTenantSubscription(UUID tenantId, String planKey) {
-        // Réutilise la logique SaaS existante
-        // TODO: Appeler SaasPlanService.subscribe() ou équivalent
+        // Le cycle n'est pas porté en dur par la ligne MoMo : on le relit depuis la
+        // ligne de prix figée à la souscription, pour renouveler au bon rythme. À
+        // défaut (prix introuvable), le mensuel est la convention historique.
+        String cycle = "MONTHLY";
+        SaasMomoSubscription sub = subscriptionRepository.findByTenantId(tenantId).orElse(null);
+        if (sub != null && sub.getPriceId() != null) {
+            cycle = priceRepository.findById(sub.getPriceId())
+                    .map(price -> price.getBillingCycle().name())
+                    .orElse("MONTHLY");
+        }
+        // Souscrit puis ACTIVE immédiatement : le paiement MoMo est passé, il n'y a
+        // pas d'essai. priceSource = MOMO dit d'où vient le prix en comptabilité.
+        subscriptionService.subscribePaid(tenantId, planKey, cycle, null, "MOMO");
+        log.info("[MomoSub] abonnement tenant={} plan={} cycle={} activé après paiement", tenantId, planKey, cycle);
     }
 }

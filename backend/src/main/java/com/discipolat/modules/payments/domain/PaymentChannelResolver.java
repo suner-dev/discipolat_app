@@ -146,7 +146,8 @@ public class PaymentChannelResolver {
     private boolean isCardTechnicallyUsable(String currency, String checkoutCurrency,
                                             String stripePriceId, String stripePriceStatus) {
         if (!stripeProperties.isEnabled()) {
-            return false;
+            // Stripe absent : seule l'agrégation CinetPay peut encaisser une carte.
+            return providerProperties.isCinetpayActive();
         }
         boolean hasPriceId = stripePriceId != null && !stripePriceId.isBlank();
         boolean isManual = "MANUAL".equalsIgnoreCase(stripePriceStatus) || "SYNCED".equalsIgnoreCase(stripePriceStatus);
@@ -157,7 +158,10 @@ public class PaymentChannelResolver {
             // Un identifiant existe mais la synchro est en échec : on ne fait pas confiance.
             return "SYNCED".equalsIgnoreCase(stripePriceStatus);
         }
-        return !isZeroDecimal(effectiveCurrency(currency, checkoutCurrency));
+        // Sans Stripe mais avec l'agrégateur CinetPay branché, la carte (Visa/
+        // Mastercard) passe par CPS : la devise à 0 décimale n'est plus un blocage,
+        // l'agrégateur convertit. Sinon, on exige une devise à 2 décimales.
+        return providerProperties.isCinetpayActive() || !isZeroDecimal(effectiveCurrency(currency, checkoutCurrency));
     }
 
     private boolean isStrongCurrencyConfigured(
@@ -175,7 +179,11 @@ public class PaymentChannelResolver {
      */
     private boolean hasRecurringCapableOperator(
             com.discipolat.modules.tenants.domain.SaasPlanPricingSettings settings) {
-        if (!providerProperties.isEnabled() || momoRegistry.activeCount() == 0) {
+        // Un agrégateur CinetPay branché sert OM, MoMo, Wave et la carte derrière
+        // un seul contrat : il compte comme opérateur mobile disponible, même si
+        // app.mobilemoney.enabled (contrats opérateurs directs) reste coupé.
+        if ((!providerProperties.isEnabled() && !providerProperties.isCinetpayActive())
+                || momoRegistry.activeCount() == 0) {
             return false;
         }
         List<String> chosen = settings.momoOperatorList();
