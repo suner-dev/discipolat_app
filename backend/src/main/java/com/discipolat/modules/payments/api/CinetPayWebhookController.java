@@ -5,6 +5,7 @@ import com.discipolat.modules.payments.domain.MobileMoneyProvider;
 import com.discipolat.modules.payments.domain.PaymentGatewayService;
 import com.discipolat.modules.payments.domain.PaymentIntent;
 import com.discipolat.modules.payments.domain.PaymentProviderProperties;
+import com.discipolat.modules.payments.domain.SubscriptionCheckoutService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -45,13 +46,16 @@ public class CinetPayWebhookController {
     private final PaymentGatewayService gatewayService;
     private final CinetPayProvider cinetPayProvider;
     private final PaymentProviderProperties props;
+    private final SubscriptionCheckoutService subscriptionCheckoutService;
 
     public CinetPayWebhookController(PaymentGatewayService gatewayService,
                                      CinetPayProvider cinetPayProvider,
-                                     PaymentProviderProperties props) {
+                                     PaymentProviderProperties props,
+                                     SubscriptionCheckoutService subscriptionCheckoutService) {
         this.gatewayService = gatewayService;
         this.cinetPayProvider = cinetPayProvider;
         this.props = props;
+        this.subscriptionCheckoutService = subscriptionCheckoutService;
     }
 
     /**
@@ -80,6 +84,18 @@ public class CinetPayWebhookController {
             PaymentIntent intent = gatewayService.handleWebhook(
                     transactionId, verification.paid(), verification.failureReason());
             log.info("[CinetPay] notify transaction_id={} -> {}", transactionId, intent.getStatus());
+
+            // Un paiement d'abonnement confirmé ACTIVE l'abonnement correspondant.
+            // La corrélation provider_reference -> caisse est idempotente : un re-jeu
+            // de notify ne double-activera pas. En cas d'échec, on marque la caisse.
+            if (intent.getPurpose() == PaymentIntent.Purpose.SAAS_SUBSCRIPTION) {
+                if (intent.getStatus() == PaymentIntent.Status.CONFIRMED) {
+                    subscriptionCheckoutService.confirmActivation(transactionId);
+                } else if (intent.getStatus() == PaymentIntent.Status.FAILED) {
+                    subscriptionCheckoutService.markFailed(transactionId, verification.failureReason());
+                }
+            }
+
             Map<String, Object> ack = new LinkedHashMap<>();
             ack.put("status", intent.getStatus().name());
             ack.put("transaction_id", transactionId);
