@@ -61,9 +61,14 @@ spring:
     properties:
       mail:
         smtp:
-          auth: false
+          # Env-configurable pour permettre Gmail (smtp.gmail.com:587) sans toucher au code.
+          # DéFAUTS conservés (false) : le flux local/CI MailHog (localhost:1025, sans auth)
+          # reste strictement identique — aucune régression. Pour Gmail : renseigner
+          # MAIL_SMTP_AUTH=true + MAIL_SMTP_STARTTLS=true + MAIL_HOST=smtp.gmail.com,
+          # MAIL_PORT=587, MAIL_USERNAME=<gmail>, MAIL_PASSWORD=<mot de passe d'application>.
+          auth: ${MAIL_SMTP_AUTH:false}
           starttls:
-            enable: false
+            enable: ${MAIL_SMTP_STARTTLS:false}
           # §G6.4 — jamais de blocage indéfini si le serveur mail est joignable mais lent
           connectiontimeout: 5000
           timeout: 5000
@@ -261,6 +266,20 @@ app:
       passkey: ${MPESA_PASSKEY:}
       webhook-secret: ${MPESA_WEBHOOK_SECRET:}
       notif-url: ${MPESA_NOTIF_URL:}
+    cinetpay:
+      # Agrégateur OM + MTN MoMo + Wave + cartes Visa/MC (un seul contrat).
+      # FAIL-CLOSED : désactivé tant que site-api-key ET site-secret ne sont pas
+      # posés. Une fois activé, il prend la main sur les APIs opérateur directes
+      # pour les canaux qu'il sert (cf. MobileMoneyProviderRegistry).
+      enabled: ${CINETPAY_ENABLED:false}
+      site-api-key: ${CINETPAY_SITE_API_KEY:}
+      site-secret: ${CINETPAY_SITE_SECRET:}
+      base-url: ${CINETPAY_BASE_URL:https://api.cinetpay.com/v2}
+      # Canaux CPS autorisés (à ajuster selon les méthodes activées sur le compte
+      # marchand CinetPay). Une liste large couvre OM + MoMo + Wave + carte.
+      channels: ${CINETPAY_CHANNELS:CIVO-CMS-04,CIVO-CMS-03,CIVO-CMS-02,CIVO-CMS-12,CIVO-PAY-01}
+      return-url: ${CINETPAY_RETURN_URL:http://localhost:5173/giving}
+      notif-url: ${CINETPAY_NOTIF_URL:}
   payments:
     # Secret partagé accepté sur le webhook opérateur (vide => endpoint fermé, 503).
     webhook-secret: ${PAYMENTS_WEBHOOK_SECRET:}

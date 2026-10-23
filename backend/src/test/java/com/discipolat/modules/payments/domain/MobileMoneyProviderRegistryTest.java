@@ -20,6 +20,20 @@ class MobileMoneyProviderRegistryTest {
         MobileMoneyProvider p = mock(MobileMoneyProvider.class);
         when(p.operator()).thenReturn(operator);
         when(p.isEnabled()).thenReturn(enabled);
+        // SPI additive : un provider direct ne sert que son opérateur et n'est pas
+        // aggrégateur. Sans ce stub, Mockito renverrait un Set vide → zéro opérateur
+        // enregistré, ce qui invaliderait tous les cas ci-dessous.
+        when(p.supportedOperators()).thenReturn(java.util.Set.of(operator));
+        when(p.aggregator()).thenReturn(false);
+        return p;
+    }
+
+    private static MobileMoneyProvider mockAggregator(java.util.Set<PaymentIntent.Operator> operators) {
+        MobileMoneyProvider p = mock(MobileMoneyProvider.class);
+        when(p.operator()).thenReturn(operators.iterator().next());
+        when(p.isEnabled()).thenReturn(true);
+        when(p.supportedOperators()).thenReturn(operators);
+        when(p.aggregator()).thenReturn(true);
         return p;
     }
 
@@ -137,5 +151,50 @@ class MobileMoneyProviderRegistryTest {
 
         assertThat(registry.activeCount()).isEqualTo(1);
         assertThat(registry.find(PaymentIntent.Operator.ORANGE_MONEY)).isSameAs(orange);
+    }
+
+    // ==================== Agrégateur (CinetPay) — priorité ===
+
+    @Test
+    @DisplayName("Aggrégateur servant plusieurs opérateurs → enregistré pour chacun")
+    void aggregeurMultiOperateurs_enregistrePourChacun() {
+        MobileMoneyProvider agg = mockAggregator(java.util.Set.of(
+                PaymentIntent.Operator.ORANGE_MONEY,
+                PaymentIntent.Operator.MTN_MOMO,
+                PaymentIntent.Operator.WAVE,
+                PaymentIntent.Operator.CARD));
+
+        MobileMoneyProviderRegistry registry = new MobileMoneyProviderRegistry(List.of(agg));
+
+        assertThat(registry.activeCount()).isEqualTo(4);
+        assertThat(registry.find(PaymentIntent.Operator.ORANGE_MONEY)).isSameAs(agg);
+        assertThat(registry.find(PaymentIntent.Operator.CARD)).isSameAs(agg);
+    }
+
+    @Test
+    @DisplayName("Aggrégateur évince l'API directe, quel que soit l'ordre d'injection")
+    void aggregeurEvinceDirect_quelQueSoitLordre() {
+        MobileMoneyProvider direct = mockProvider(PaymentIntent.Operator.ORANGE_MONEY, true);
+        MobileMoneyProvider agg = mockAggregator(java.util.Set.of(PaymentIntent.Operator.ORANGE_MONEY));
+
+        // direct d'abord, aggrégateur ensuite
+        MobileMoneyProviderRegistry r1 = new MobileMoneyProviderRegistry(List.of(direct, agg));
+        assertThat(r1.find(PaymentIntent.Operator.ORANGE_MONEY)).isSameAs(agg);
+
+        // aggrégateur d'abord, direct ensuite — le direct ne doit PAS déloger l'aggrégateur
+        MobileMoneyProviderRegistry r2 = new MobileMoneyProviderRegistry(List.of(agg, direct));
+        assertThat(r2.find(PaymentIntent.Operator.ORANGE_MONEY)).isSameAs(agg);
+    }
+
+    @Test
+    @DisplayName("Aggrégateur désactivé (pas de clés) → API directe conservée (fail-closed)")
+    void aggregeurDesactive_apiDirecteConservee() {
+        MobileMoneyProvider direct = mockProvider(PaymentIntent.Operator.ORANGE_MONEY, true);
+        MobileMoneyProvider aggOff = mock(MobileMoneyProvider.class);
+        when(aggOff.isEnabled()).thenReturn(false);
+
+        MobileMoneyProviderRegistry registry = new MobileMoneyProviderRegistry(List.of(direct, aggOff));
+
+        assertThat(registry.find(PaymentIntent.Operator.ORANGE_MONEY)).isSameAs(direct);
     }
 }

@@ -85,4 +85,44 @@ public class PaymentProviderProperties {
                 && mpesaConsumerSecret != null && !mpesaConsumerSecret.isBlank()
                 && mpesaShortCode != null && !mpesaShortCode.isBlank();
     }
+
+    // ---- CinetPay (agrégateur OM + MoMo + Wave + carte, un seul contrat) ----
+    // Bascule propre à l'agrégateur : elle n'exige PAS app.mobilemoney.enabled,
+    // pour que CinetPay puisse être activé seul (sans contracter chaque opérateur).
+    @Value("${app.mobilemoney.cinetpay.enabled:false}")
+    private boolean cinetpayEnabled;
+    /** Clef publique CPS (site_api_key) — identifie le compte marchand. */
+    @Value("${app.mobilemoney.cinetpay.site-api-key:}")
+    private String cinetpaySiteApiKey;
+    /** Clef secrète CPS (site_secret) — ne JAMAIS exposer côté client. */
+    @Value("${app.mobilemoney.cinetpay.site-secret:}")
+    private String cinetpaySiteSecret;
+    @Value("${app.mobilemoney.cinetpay.base-url:https://api.cinetpay.com/v2}")
+    private String cinetpayBaseUrl;
+    /** Canaux CPS autorisés par défaut (ex. « MOBILE_MONEY,CARD »). */
+    @Value("${app.mobilemoney.cinetpay.channels:CIVO-CMS-04,CIVO-CMS-03,CIVO-CMS-02,CIVO-CMS-12,CIVO-PAY-01}")
+    private String cinetpayChannels;
+    /** URL de retour CPS après le paiement (face avant). */
+    @Value("${app.mobilemoney.cinetpay.return-url:http://localhost:5173/giving}")
+    private String cinetpayReturnUrl;
+    /** URL du webhook notify côté Discipolat (doit être joignable par CPS). */
+    @Value("${app.mobilemoney.cinetpay.notif-url:}")
+    private String cinetpayNotifUrl;
+
+    /**
+     * L'agrégateur est actif uniquement s'il est explicitement activé ET que les
+     * deux clés (api key + secret) sont présentes. Fail-closed : sans clés, le
+     * provider n'est jamais enregistré et le comportement reste celui d'avant.
+     *
+     * <p>Nommé {@code isCinetpayActive} et non {@code isCinetpayEnabled} : ce
+     * dernier écraserait le getter Lombok généré pour le champ booléen
+     * {@code cinetpayEnabled} (méthode dupliquée → erreur de compilation).
+     */
+    public boolean isCinetpayActive() {
+        return cinetpayEnabled && !isBlank(cinetpaySiteApiKey) && !isBlank(cinetpaySiteSecret);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
 }
