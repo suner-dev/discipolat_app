@@ -362,8 +362,10 @@ sbom:frontend:
   script:
     # --package-lock-only (et non --ignore-scripts, qui n'existe plus dans cyclonedx-npm v6) :
     # le SBOM se construit depuis le verrou, donc sans évaluer un arbre installé.
+    # --ignore-npm-errors : tolère l'ELSPROBLEMS de `npm ls --all` sur les dépendances runtime
+    #   facultatives non installées de @tailwindcss/oxide-wasm32-wasi (wasm optionnel, hors SBOM).
     - cd frontend && npm ci --ignore-scripts
-    - npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --output-file ../sbom-frontend.json
+    - npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --package-lock-only --ignore-npm-errors --output-file ../sbom-frontend.json
     - cd .. && ls -l sbom-frontend.json
     # Mesure du 2026-10-09 (même version épinglée) : 407 composants, CycloneDX 1.6.
   artifacts:

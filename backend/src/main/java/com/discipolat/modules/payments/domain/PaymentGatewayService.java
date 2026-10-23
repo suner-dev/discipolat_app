@@ -335,9 +335,7 @@ public class PaymentGatewayService {
 
     /** Reçu automatique : écriture comptable côté module Finances. */
     private Map<String, Object> createFinanceReceipt(PaymentIntent intent) {
-        FinanceTransaction.TransactionType type = intent.getPurpose() == PaymentIntent.Purpose.DIME
-                ? FinanceTransaction.TransactionType.valueOf("RECETTE")
-                : FinanceTransaction.TransactionType.valueOf("RECETTE");
+        FinanceTransaction.TransactionType type = FinanceTransaction.TransactionType.valueOf("RECETTE");
         String categorie = switch (intent.getPurpose()) {
             case DIME -> "DIME";
             case OFFRANDE -> "OFFRANDE";
@@ -345,6 +343,24 @@ public class PaymentGatewayService {
             case PROJET_SPECIAL -> "PROJET_SPECIAL";
             case DON_DIASPORA -> "DON_DIASPORA";
             case SAAS_SUBSCRIPTION -> "SAAS_SUBSCRIPTION";
+            case OFFRANDE_ORDINAIRE -> "OFFRANDE_ORDINAIRE";
+            case OFFRANDE_SPECIALE -> "OFFRANDE_SPECIALE";
+            case OFFRANDE_CONSTRUCTION -> "OFFRANDE_CONSTRUCTION";
+            case OFFRANDE_EVANGELISATION -> "OFFRANDE_EVANGELISATION";
+            case DON_SOLIDARITE -> "DON_SOLIDARITE";
+            case COTISATION -> "COTISATION";
+            case SEED -> "SEED";
+        };
+        String purposeLabel = switch (intent.getPurpose()) {
+            case DIME -> " — dîme";
+            case OFFRANDE, OFFRANDE_ORDINAIRE, OFFRANDE_SPECIALE, OFFRANDE_CONSTRUCTION, OFFRANDE_EVANGELISATION -> " — offrande";
+            case PROMESSE -> " — promesse";
+            case PROJET_SPECIAL -> " — projet spécial";
+            case DON_DIASPORA -> " — don diaspora";
+            case SAAS_SUBSCRIPTION -> " — abonnement SaaS";
+            case DON_SOLIDARITE -> " — don solidarité";
+            case COTISATION -> " — cotisation";
+            case SEED -> " — semence";
         };
         // Pas de try/catch ici : toute erreur de comptabilisation doit faire
         // échouer le webhook (le paiement reste PENDING, l'opérateur renverra
@@ -352,8 +368,7 @@ public class PaymentGatewayService {
         // marquerait la transaction « rollback-only » sans lever d'erreur.
         return financeService.createTransaction(new FinanceTransactionRequest(
                 type, categorie, intent.getAmount(),
-                "Paiement " + intent.getOperator().getLabel()
-                        + (intent.getPurpose() == PaymentIntent.Purpose.DIME ? " — dîme" : " — offrande")
+                "Paiement " + intent.getOperator().getLabel() + purposeLabel
                         + " [" + intent.getProviderReference() + "]",
                 java.time.LocalDate.now()));
     }
