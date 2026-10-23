@@ -60,8 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_sub_checkout_tenant
     ON saas_subscription_checkouts (tenant_id, status);
 
 COMMENT ON TABLE  saas_subscription_checkouts IS
-    'Passages en caisse d''abonnement SaaS via redirection externe (CinetPay OM/MoMo/Wave/Visa). '
-    || 'Rapproche provider_reference -> abonnement pour activation à la confirmation. amount_minor en unités mineures ISO-4217.';
+    'Passages en caisse d''abonnement SaaS via redirection externe (CinetPay OM/MoMo/Wave/Visa). Rapproche provider_reference vers abonnement pour activation a la confirmation. amount_minor en unites mineures ISO-4217.';
 COMMENT ON COLUMN saas_subscription_checkouts.status IS
     'PENDING (caisse ouverte) | ACTIVE (payé, abonnement activé) | FAILED | CANCELLED.';
 COMMENT ON COLUMN saas_subscription_checkouts.provider_reference IS
