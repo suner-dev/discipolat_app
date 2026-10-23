@@ -199,6 +199,13 @@ public class CinetPayProvider implements MobileMoneyProvider {
             case PROJET_SPECIAL -> "Projet spécial";
             case DON_DIASPORA -> "Don diaspora";
             case SAAS_SUBSCRIPTION -> "Abonnement";
+            case OFFRANDE_ORDINAIRE -> "Offrande ordinaire";
+            case OFFRANDE_SPECIALE -> "Offrande spéciale";
+            case OFFRANDE_CONSTRUCTION -> "Offrande construction";
+            case OFFRANDE_EVANGELISATION -> "Offrande évangélisation";
+            case DON_SOLIDARITE -> "Don solidarité";
+            case COTISATION -> "Cotisation";
+            case SEED -> "Semence";
         };
         return purpose + " — Discipolat [" + intent.getProviderReference() + "]";
     }

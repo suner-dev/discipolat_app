@@ -23,15 +23,21 @@ const OPERATORS = [
   { value: 'ORANGE_MONEY', label: 'Orange Money' },
   { value: 'AIRTEL_MONEY', label: 'Airtel Money' },
   { value: 'WAVE', label: 'Wave' },
-  { value: 'CARD', label: 'Carte bancaire' },
+  { value: 'CARD', label: 'Carte bancaire / Visa/Mastercard' },
   { value: 'CASH', label: 'Espèces' },
 ];
 
 const PURPOSES = [
-  { value: 'DIME', key: 'giving.purpose.dime' },
-  { value: 'OFFRANDE', key: 'giving.purpose.offrande' },
+  { value: 'DIME', key: 'giving.purpose.dime', category: 'dîme' },
+  { value: 'OFFRANDE_ORDINAIRE', key: 'giving.purpose.offrande_ordinaire', category: 'offrande' },
+  { value: 'OFFRANDE_SPECIALE', key: 'giving.purpose.offrande_speciale', category: 'offrande' },
+  { value: 'OFFRANDE_CONSTRUCTION', key: 'giving.purpose.offrande_construction', category: 'offrande' },
+  { value: 'OFFRANDE_EVANGELISATION', key: 'giving.purpose.offrande_evangélisation', category: 'offrande' },
+  { value: 'DON_SOLIDARITE', key: 'giving.purpose.don_solidarité', category: 'don' },
+  { value: 'COTISATION', key: 'giving.purpose.cotisation', category: 'cotisation' },
+  { value: 'SEED', key: 'giving.purpose.semence', category: 'semence' },
   { value: 'PROMESSE', key: 'giving.purpose.promesse' },
-  { value: 'PROJET_SPECIAL', key: 'giving.purpose.projet' },
+  { value: 'PROJET_SPECIAL', key: 'giving.purpose.projet_special' },
   { value: 'DON_DIASPORA', key: 'giving.purpose.diaspora' },
 ];
 
@@ -56,6 +62,11 @@ interface PaymentIntent {
   failureReason?: string | null;
   createdAt?: string;
   confirmedAt?: string;
+}
+
+interface PurposeInfo {
+  category: 'dîme' | 'offrande' | 'don' | 'cotisation' | 'semence' | 'promesse' | 'projet' | 'diaspora';
+  key: string;
 }
 
 interface RecurringDonation {
@@ -86,7 +97,7 @@ export default function GivingPage() {
   const [operator, setOperator] = useState('ORANGE_MONEY');
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
-  const [purpose, setPurpose] = useState('OFFRANDE');
+  const [purpose, setPurpose] = useState<PurposeInfo>({ category: 'offrande', key: 'giving.purpose.offrande' });
   const [pendingRef, setPendingRef] = useState<string | null>(null);
 
   // --- Don récurrent ---
@@ -94,7 +105,7 @@ export default function GivingPage() {
   const [rcOperator, setRcOperator] = useState('ORANGE_MONEY');
   const [rcAmount, setRcAmount] = useState('');
   const [rcPhone, setRcPhone] = useState('');
-  const [rcPurpose, setRcPurpose] = useState('DIME');
+  const [rcPurpose, setRcPurpose] = useState<PurposeInfo>({ category: 'dîme', key: 'giving.purpose.dime' });
   const [rcFrequency, setRcFrequency] = useState('MONTHLY');
 
   // Ref for polling interval to ensure proper cleanup
@@ -157,7 +168,7 @@ export default function GivingPage() {
           operator,
           amount: Number(amount),
           phoneNumber: phone || undefined,
-          purpose,
+          purpose: purpose.category,
           currency: 'XOF',
         })
       ).data,
@@ -165,10 +176,16 @@ export default function GivingPage() {
       toast.success(t('giving.initiated', { ref: intent.providerReference ?? '' }));
       setAmount('');
 
-      // Orange Money retourne une URL de paiement externe
+      // Selon l'opérateur, gérer la redirection
       if (intent.checkoutUrl) {
-        toast.success(intent.instructions ?? 'Redirection vers Orange Money...', { duration: 4000 });
+        // Orange Money et autres providers qui renvoient une URL de paiement
+        const purpose = PURPOSES.find((p) => p.category === intent.purpose);
+        const purposeLabel = purpose ? t(purpose.key) : 'offrande';
+        toast.success(t('giving.initiated.' + intent.purpose, { ref: intent.providerReference ?? '' }) + ' - ' + purposeLabel, { duration: 4000 });
         window.open(intent.checkoutUrl, '_blank');
+      } else {
+        // Mobile Money direct (MTN, M-Pesa, etc.) ou carte - polling du statut
+        toast.success(t('giving.initiated', { ref: intent.providerReference ?? '' }), { duration: 3000 });
       }
 
       // Polling du statut en arrière-plan
@@ -208,7 +225,7 @@ export default function GivingPage() {
           operator: rcOperator,
           amount: Number(rcAmount),
           phoneNumber: rcPhone || undefined,
-          purpose: rcPurpose,
+          purpose: rcPurpose.category,
           frequency: rcFrequency,
           currency: 'XOF',
         })
@@ -271,11 +288,11 @@ export default function GivingPage() {
           </label>
           <select
             className="input w-full"
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
+            value={purpose.category}
+            onChange={(e) => setPurpose({ category: e.target.value as PurposeInfo['category'], key: PURPOSES.find((p) => p.category === e.target.value)?.key ?? 'giving.purpose.offrande' })}
           >
             {PURPOSES.map((p) => (
-              <option key={p.value} value={p.value}>
+              <option key={p.value} value={p.category}>
                 {t(p.key)}
               </option>
             ))}
@@ -372,12 +389,12 @@ export default function GivingPage() {
               </label>
               <select
                 className="input w-full"
-                value={rcPurpose}
-                onChange={(e) => setRcPurpose(e.target.value)}
+                value={rcPurpose.category}
+                onChange={(e) => setRcPurpose({ category: e.target.value as PurposeInfo['category'], key: PURPOSES.find((p) => p.category === e.target.value)?.key ?? 'giving.purpose.dime' })}
               >
                 {PURPOSES.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {t(p.key)}
+                  <option key={p.value} value={p.category}>
+{t(p.key)}
                   </option>
                 ))}
               </select>
@@ -488,6 +505,14 @@ export default function GivingPage() {
                       {t(
                         FREQUENCIES.find((f) => f.value === rd.frequency)?.key ??
                           'giving.recurring.frequency.monthly',
+                      )}
+                      {rd.purpose && PURPOSES.find((p) => p.category === rd.purpose) && (
+                        <span className="text-[10px] ms-2">
+{t(
+                            PURPOSES.find((p) => p.category === rd.purpose)?.key ??
+                                'giving.purpose.dime'
+                        )}
+                        </span>
                       )}
                       {rd.nextDonationDate && (
                         <>

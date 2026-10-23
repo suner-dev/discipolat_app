@@ -45,12 +45,29 @@ interface DashboardData {
   recurringByOperator: { operator: string; label: string; total: number; count: number }[];
 }
 
+// New interface for purpose breakdown with i18n labels
+interface PurposeBreakdownItem {
+  purpose: string;
+  total: number;
+  count: number;
+  labelKey: string;
+  category: 'dîme' | 'offrande' | 'don' | 'cotisation' | 'semence' | 'promesse' | 'projet' | 'diaspora';
+}
+
 const PURPOSE_LABELS: Record<string, string> = {
   DIME: 'giving.purpose.dime',
   OFFRANDE: 'giving.purpose.offrande',
   PROMESSE: 'giving.purpose.promesse',
   PROJET_SPECIAL: 'giving.purpose.projet',
   DON_DIASPORA: 'giving.purpose.diaspora',
+  // Nouveaux types d'offrandes et de semences
+  OFFRANDE_ORDINAIRE: 'giving.purpose.offrande_ordinaire',
+  OFFRANDE_SPECIALE: 'giving.purpose.offrande_speciale',
+  OFFRANDE_CONSTRUCTION: 'giving.purpose.offrande_construction',
+  OFFRANDE_EVANGELISATION: 'giving.purpose.offrande_evangélisation',
+  DON_SOLIDARITE: 'giving.purpose.don_solidarité',
+  COTISATION: 'giving.purpose.cotisation',
+  SEED: 'giving.purpose.semence',
 };
 
 export default function AdminPaymentDashboardPage() {
@@ -202,32 +219,37 @@ export default function AdminPaymentDashboardPage() {
         {/* Purpose Breakdown */}
         <div className="glass-card p-6 animate-slide-up">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-purple-500" /> {t('paymentDashboard.byPurpose')}
-          </h2>
-          {(data.byPurpose ?? []).length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">{t('paymentDashboard.noData')}</p>
-          ) : (
-            <div className="space-y-3">
-              {(data.byPurpose ?? []).map((p) => (
-                <div key={p.purpose}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {t(PURPOSE_LABELS[p.purpose] ?? 'giving.purpose.offrande')}
-                    </span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {fmtCurrency(p.total)} ({p.count})
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
-                      style={{ width: `${(Number(p.total) / maxPurpose) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+              <Target className="w-5 h-5 text-purple-500" /> {t('paymentDashboard.byPurpose')}
+            </h2>
+            {(data.byPurpose ?? []).length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">{t('paymentDashboard.noData')}</p>
+            ) : (
+              <div className="space-y-3">
+                {(data.byPurpose ?? []).map((p) => {
+                  const purposeInfo = PURPOSE_LABELS[p.purpose] ?? 'giving.purpose.offrande';
+                  const purposeLabel = t(purposeInfo);
+                  const max = Math.max(
+                    ...(data.byPurpose ?? []).map((o) => Number(o.total)),
+                  );
+                  return (
+                    <div key={p.purpose}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-700 dark:text-gray-300">{purposeLabel}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {fmtCurrency(p.total)} ({p.count})
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                          style={{ width: `${(Number(p.total) / maxPurpose) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
         </div>
       </div>
 
