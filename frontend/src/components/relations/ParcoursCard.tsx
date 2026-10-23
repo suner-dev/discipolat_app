@@ -27,6 +27,19 @@ interface ParcoursEvent {
   libelle?: string;
 }
 
+/** Résumé agrégé renvoyé par le serveur (compteurs du récit). */
+interface ParcoursResume {
+  transferts?: number;
+  rattachementsRompus?: number;
+}
+
+/** Réponse de `GET /hierarchy/…/parcours` — typée pour éviter tout `any`. */
+interface ParcoursResponse {
+  evenements?: ParcoursEvent[];
+  resume?: ParcoursResume;
+  depuis?: string | null;
+}
+
 /** Icône et teinte par nature d'événement — le serveur renvoie le CODE technique. */
 const TYPE_ICONS: Record<string, { icon: typeof UserPlus; cls: string }> = {
   ADHESION: { icon: UserPlus, cls: 'text-emerald-500' },
@@ -54,18 +67,18 @@ export function ParcoursCard({ userId }: { userId?: string }) {
     queryKey: isSelf ? ['hierarchy', 'parcours', 'me'] : ['users', userId, 'parcours'],
     queryFn: async () =>
       (await api.get(isSelf ? '/hierarchy/me/parcours' : `/hierarchy/users/${userId}/parcours`))
-        .data as any,
+        .data as ParcoursResponse,
     enabled: !isSelf || !!auth?.user?.id,
     retry: 1,
   });
 
-  const events: ParcoursEvent[] = Array.isArray(data?.evenements) ? data.evenements : [];
+  const rawEvents = data?.evenements;
+  const events: ParcoursEvent[] = Array.isArray(rawEvents) ? rawEvents : [];
   if (events.length === 0) return null;
 
-  const resume = data?.resume ?? {};
   const since = formatParcoursDate(data?.depuis);
-  const transferts = Number(resume?.transferts ?? 0);
-  const ruptures = Number(resume?.rattachementsRompus ?? 0);
+  const transferts = Number(data?.resume?.transferts ?? 0);
+  const ruptures = Number(data?.resume?.rattachementsRompus ?? 0);
 
   return (
     <div className="glass-card p-6 mt-6 animate-slide-up">
