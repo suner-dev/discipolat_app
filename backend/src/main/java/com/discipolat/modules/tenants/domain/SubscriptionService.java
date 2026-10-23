@@ -169,6 +169,29 @@ sub.setStatus(SubscriptionStatus.CANCELED);
     }
 
     /**
+     * Abonnement payé : souscrit puis active immédiatement.
+     *
+     * <p>{@link #subscribe} pose un statut TRIAL (acte de gestion / essai). Quand
+     * le client a réellement payé (confirmation d'un passage en caisse OM/MoMo/
+     * Visa), il n'y a pas d'essai : l'abonnement est ACTIVE tout de suite, et la
+     * {@code priceSource} dit honnêtement d'où vient le prix figé (MOMO, CARD…).
+     * La facture est celle figée à la souscription (contrat §2.4), pas un prix
+     * récemment modifié.</p>
+     */
+    public TenantSubscription subscribePaid(UUID tenantId, String planKey, String billingCycle,
+                                            UUID adminId, String priceSource) {
+        TenantSubscription subscription = subscribe(tenantId, planKey, billingCycle, adminId);
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        // Un abonnement payé n'est pas un essai : on ne laisse pas de date de fin
+        // d'essai traîner, elle contredirait le statut ACTIVE.
+        subscription.setTrialEndsAt(null);
+        if (priceSource != null && !priceSource.isBlank()) {
+            subscription.setPriceSource(priceSource.trim().toUpperCase(java.util.Locale.ROOT));
+        }
+        return subscriptionRepository.save(subscription);
+    }
+
+    /**
      * Cancel subscription at period end.
      */
     public void cancelAtPeriodEnd(UUID tenantId, UUID adminId) {

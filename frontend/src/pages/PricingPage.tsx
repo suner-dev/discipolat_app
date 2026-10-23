@@ -50,6 +50,8 @@ export default function PricingPage() {
 
   // Le CTA Stripe n'existe que si la caisse est réellement activée côté serveur.
   const stripeEnabled = config?.stripeEnabled === true;
+  // La région résolue par le serveur (affichage + résolution du prix régional).
+  const region = config?.resolvedRegion;
 
   const subscribeWithStripe = async (planKey: string) => {
     try {
@@ -66,6 +68,42 @@ export default function PricingPage() {
         setCheckoutError(t('pricing.checkoutUnexpected'));
         setCheckoutBusy(null);
       }
+    } catch (err) {
+      setCheckoutError(getErrorMessage(err));
+      setCheckoutBusy(null);
+    }
+  };
+
+  // Caisse unifiée OM / MoMo / Wave / Visa via l'agrégateur (redirection externe).
+  // Mêmes garanties que Stripe : on n'appelle que si le canal est réellement
+  // proposé par le serveur ; sinon le bouton n'est pas rendu.
+  const subscribeUnified = async (planKey: string, channel: 'CARD' | 'MOMO', operator?: string, phone?: string) => {
+    try {
+      setCheckoutBusy(planKey);
+      setCheckoutError(null);
+      const { data } = await api.post<{
+        checkoutUrl?: string | null;
+        providerReference?: string | null;
+        instructions?: string | null;
+      }>('/billing/subscription/checkout', {
+        planKey: planKey.toUpperCase(),
+        billingCycle: cycle,
+        currency,
+        region,
+        channel,
+        operator: channel === 'MOMO' ? operator ?? undefined : undefined,
+        phone: channel === 'MOMO' ? phone || undefined : undefined,
+      });
+      if (data?.checkoutUrl) {
+        // Redirection externe vers la caisse sécurisée (CinetPay CPS).
+        window.open(data.checkoutUrl, '_blank', 'noopener');
+        setCheckoutBusy(null);
+        return;
+      }
+      // Pas d'URL : caisse ouverte côté serveur mais sans redirection immédiate
+      // (fallback). On le dit plutôt que de laisser un bouton qui ne fait rien.
+      setCheckoutError(data?.instructions || t('pricing.checkoutUnexpected'));
+      setCheckoutBusy(null);
     } catch (err) {
       setCheckoutError(getErrorMessage(err));
       setCheckoutBusy(null);
@@ -133,7 +171,9 @@ export default function PricingPage() {
                 stripeEnabled={stripeEnabled}
                 isAuthenticated={isAuthenticated}
                 busy={checkoutBusy}
-                onCheckout={() => void subscribeWithStripe(plan.key)}
+                onStripe={() => void subscribeWithStripe(plan.key)}
+                onUnified={(channel, operator, phone) =>
+                  void subscribeUnified(plan.key, channel, operator, phone)}
               />
             ))}
           </div>
@@ -246,7 +286,8 @@ function PlanCard({
   stripeEnabled,
   isAuthenticated,
   busy,
-  onCheckout,
+  onStripe,
+  onUnified,
 }: {
   plan: PublicPlanView;
   cycle: BillingCycleName;
@@ -254,17 +295,31 @@ function PlanCard({
   stripeEnabled: boolean;
   isAuthenticated: boolean;
   busy: string | null;
-  onCheckout: () => void;
+  onStripe: () => void;
+  onUnified: (channel: 'CARD' | 'MOMO', operator?: string, phone?: string) => void;
 }) {
   const { t } = useI18n();
   const { branding } = useSettings();
   const display = plan.display;
+  // Opérateur MoMo et numéro choisis pour la caisse unifiée — locaux à la carte,
+  // jamais envoyés tant que l'utilisateur ne lance pas le paiement.
+  const [operator, setOperator] = useState('ORANGE_MONEY');
+  const [phone, setPhone] = useState('');
   // Un plan est gratuit parce que son prix est nul — pas parce qu'il s'appelle
   // DISCOVERY. Le nommer « gratuit » parce que la clé a changé, c'est facturer
   // l'inverse de ce qu'on affiche.
   const isFree = display?.available === true && display.amountMinor === 0;
   // Le badge « populaire » reste une convention d'écran, pas une règle métier.
   const popular = plan.key.toUpperCase() === 'STARTUP';
+
+  // Canaux réellement proposés par le serveur pour ce prix (filtrés en amont
+  // par PaymentChannelResolver). On ne rend un bouton que si le canal existe —
+  // un bouton de paiement qui n'ouvre rien est pire qu'une absence de bouton.
+  const channels = display?.channels ?? [];
+  const hasCard = channels.includes('CARD');
+  const hasMomo = channels.includes('MOMO');
+  const canPay =
+    isAuthenticated && !isFree && display?.selectable === true && (hasCard || hasMomo);
 
   // Le prix affiché vient du serveur, déjà résolu pour la devise et la région.
   const priceEntry = useMemo(() => {
@@ -345,21 +400,68 @@ function PlanCard({
         </Link>
 
         {/* Souscription directe : reservee aux visiteurs connectes, aux plans
-            payants, et uniquement si la caisse est reellement active. */}
-        {stripeEnabled && isAuthenticated && !isFree && display?.selectable && (
-          <button
-            type="button"
-            onClick={onCheckout}
-            disabled={busy !== null}
-            className="mt-1 inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
-          >
-            {busy === plan.key ? (
-              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-            ) : (
-              <CreditCard className="mr-2 w-4 h-4" />
+            payants, et uniquement pour les canaux reellement proposes par le
+            serveur. Stripe reste la voie privilegiee pour la carte quand la
+            caisse est active ; sinon (et pour Mobile Money) on passe par la
+            caisse unifiee de l'agregateur, qui redirige vers le CPS. */}
+        {canPay && (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {t('pricing.pay.choose')}
+            </p>
+
+            {hasCard && (
+              <button
+                type="button"
+                onClick={() => (stripeEnabled ? onStripe() : onUnified('CARD'))}
+                disabled={busy !== null}
+                className="inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+              >
+                {busy === plan.key ? (
+                  <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                ) : (
+                  <CreditCard className="mr-2 w-4 h-4" />
+                )}
+                {t('pricing.channel.card')}
+              </button>
             )}
-            {t('pricing.subscribeOnline')}
-          </button>
+
+            {hasMomo && (
+              <div className="space-y-2 rounded-xl border border-gray-200 dark:border-gray-700 p-2">
+                <select
+                  aria-label={t('pricing.channel.momo')}
+                  value={operator}
+                  onChange={(event) => setOperator(event.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <option value="ORANGE_MONEY">{t('pricing.pay.orange')}</option>
+                  <option value="MTN_MOMO">{t('pricing.pay.mtn')}</option>
+                  <option value="WAVE">{t('pricing.pay.wave')}</option>
+                </select>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder={t('pricing.pay.phone')}
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => onUnified('MOMO', operator, phone.trim())}
+                  disabled={busy !== null || phone.trim() === ''}
+                  className="inline-flex w-full items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 disabled:opacity-50 transition-colors"
+                >
+                  {busy === plan.key ? (
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  ) : (
+                    <Zap className="mr-2 w-4 h-4" />
+                  )}
+                  {busy === plan.key ? t('pricing.pay.redirecting') : t('pricing.channel.momo')}
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {!display?.available && (

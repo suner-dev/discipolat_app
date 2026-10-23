@@ -312,6 +312,10 @@ class AppLocalizations {
   String get pricingContactUs => translate('pricingContactUs');
   String pricingMomoPhoneTitle() => translate('pricingMomoPhoneTitle');
   String pricingMomoPhoneLabel() => translate('pricingMomoPhoneLabel');
+  String get pricingChooseChannel => translate('pricingChooseChannel');
+  String get pricingPayCard => translate('pricingPayCard');
+  String get pricingPayMomo => translate('pricingPayMomo');
+  String get pricingPayOperator => translate('pricingPayOperator');
 
   String get recurringNew => translate('recurringNew');
   String get recurringHide => translate('recurringHide');
@@ -2371,6 +2375,10 @@ class AppLocalizations {
     'pricingContactUs': 'Nous contacter',
     'pricingMomoPhoneTitle': 'Numéro Mobile Money',
     'pricingMomoPhoneLabel': 'Entrez votre numéro MTN MoMo',
+    'pricingChooseChannel': 'Moyen de paiement',
+    'pricingPayCard': 'Carte bancaire (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'Opérateur',
     'recurringNew': 'Nouveau don récurrent',
     'recurringHide': 'Masquer',
     'recurringCreate': 'Créer le don récurrent',
@@ -4032,6 +4040,10 @@ class AppLocalizations {
     'pricingContactUs': 'Contact us',
     'pricingMomoPhoneTitle': 'Mobile Money Number',
     'pricingMomoPhoneLabel': 'Enter your MTN MoMo number',
+    'pricingChooseChannel': 'Payment method',
+    'pricingPayCard': 'Card (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'Operator',
     'recurringNew': 'New recurring gift',
     'recurringHide': 'Hide',
     'recurringCreate': 'Create recurring gift',
@@ -6455,6 +6467,10 @@ class AppLocalizations {
     'pricingContactUs': 'Contacte-nos',
     'pricingMomoPhoneTitle': 'Número Mobile Money',
     'pricingMomoPhoneLabel': 'Insira o seu número MTN MoMo',
+    'pricingChooseChannel': 'Método de pagamento',
+    'pricingPayCard': 'Cartão (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'Operadora',
     'recurringNew': 'Nova doação recorrente',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Criar doação recorrente',
@@ -7174,6 +7190,10 @@ const Map<String, String> _spanish = {
     'pricingContactUs': 'Contáctenos',
     'pricingMomoPhoneTitle': 'Número Mobile Money',
     'pricingMomoPhoneLabel': 'Introduzca su número MTN MoMo',
+    'pricingChooseChannel': 'Método de pago',
+    'pricingPayCard': 'Tarjeta (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'Operador',
     'recurringNew': 'Nueva',
     'recurringHide': 'Ocultar',
     'recurringCreate': 'Crear donación recurrente',
@@ -8767,6 +8787,10 @@ const Map<String, String> _swahili = {
     'pricingContactUs': 'Wasiliana nasi',
     'pricingMomoPhoneTitle': 'Nambari ya Mobile Money',
     'pricingMomoPhoneLabel': 'Ingiza nambari yako ya MTN MoMo',
+    'pricingChooseChannel': 'Njia ya malipo',
+    'pricingPayCard': 'Kadi (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'Opereta',
     'recurringNew': 'Mpya',
     'recurringHide': 'Ficha',
     'recurringCreate': 'Unda mchango wa mara kwa mara',
@@ -10359,6 +10383,10 @@ const Map<String, String> _arabic = {
     'pricingContactUs': 'تواصل معنا',
     'pricingMomoPhoneTitle': 'رقم المحفظة المحمولة',
     'pricingMomoPhoneLabel': 'أدخل رقم MTN MoMo الخاص بك',
+    'pricingChooseChannel': 'طريقة الدفع',
+    'pricingPayCard': 'بطاقة (Visa)',
+    'pricingPayMomo': 'Mobile Money',
+    'pricingPayOperator': 'مشغّل الشبكة',
     'recurringNew': 'جديد',
     'recurringHide': 'إخفاء',
     'recurringCreate': 'إنشاء تبرع متكرر',

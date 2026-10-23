@@ -93,39 +93,152 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     _load();
   }
 
+  /// Opérateurs Mobile Money servis par l'agrégateur CinetPay. Noms de marques
+  /// — non traduits, comme sur l'écran des dîmes & offrandes.
+  static const Map<String, String> _momoOperators = {
+    'ORANGE_MONEY': 'Orange Money',
+    'MTN_MOMO': 'MTN MoMo',
+    'WAVE': 'Wave',
+  };
+
   /// Lance le checkout pour un plan donné.
+  ///
+  /// Trois principes, identiques au web :
+  /// 1. On ne propose que les canaux réellement renvoyés par le serveur
+  ///    (`display.channels`) — un bouton qui n'ouvre aucune caisse est pire
+  ///    qu'une absence de bouton.
+  /// 2. Stripe reste la voie privilégiée pour la carte quand la caisse est
+  ///    active ; sinon (et pour Mobile Money) on passe par la caisse unifiée
+  ///    de l'agrégateur, qui renvoie une `checkoutUrl` de redirection externe.
+  /// 3. Rien n'est calculé ici : c'est le serveur qui résout prix, devise et
+  ///    activation à la confirmation du webhook.
   Future<void> _startCheckout(PricingPlan plan) async {
     final config = _config;
     final display = plan.display;
     if (config == null || display == null || !display.available) return;
 
-    // Déterminer le canal par défaut (premier disponible)
     final channels = display.channels;
-    String? selectedChannel;
-    if (channels.contains('CARD')) selectedChannel = 'CARD';
-    else if (channels.contains('STRONG')) selectedChannel = 'STRONG';
-    else if (channels.contains('MOMO')) selectedChannel = 'MOMO';
-    else if (channels.contains('BANK')) selectedChannel = 'BANK';
+    final cardChannel = channels.contains('CARD')
+        ? 'CARD'
+        : (channels.contains('STRONG') ? 'STRONG' : null);
+    final hasMomo = channels.contains('MOMO');
+    if (cardChannel == null && !hasMomo) return;
 
-    if (selectedChannel == null) return;
+    // Choix du canal : on ne le demande que si plusieurs sont réellement
+    // ouverts. Autrement, on va droit au seul canal disponible.
+    String chosen;
+    if (cardChannel != null && hasMomo) {
+      final picked = await _chooseChannel();
+      if (picked == null) return;
+      chosen = picked;
+    } else {
+      chosen = cardChannel ?? 'MOMO';
+    }
 
     setState(() => _busyPlanKey = plan.key);
-
     try {
-      if (selectedChannel == 'MOMO') {
-        await _startMomoCheckout(plan);
+      if (chosen == 'MOMO') {
+        await _startMomoFlow(plan);
+      } else if (config.stripeEnabled) {
+        await _startStripeCheckout(plan, chosen);
       } else {
-        await _startStripeCheckout(plan, selectedChannel);
+        // Carte sans Stripe : caisse unifiée via l'agrégateur.
+        await _startUnifiedCheckout(plan, channel: 'CARD');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Theme.of(context).colorScheme.error),
+          SnackBar(content: Text('$e'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
       if (mounted) setState(() => _busyPlanKey = null);
     }
+  }
+
+  /// Fond de dialogue proposant les canaux ouverts pour ce plan.
+  Future<String?> _chooseChannel() async {
+    final l10n = AppLocalizations.of(context);
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l10n.pricingChooseChannel,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.credit_card),
+              title: Text(l10n.pricingPayCard),
+              onTap: () => Navigator.pop(sheetContext, 'CARD'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.smartphone),
+              title: Text(l10n.pricingPayMomo),
+              onTap: () => Navigator.pop(sheetContext, 'MOMO'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Demande l'opérateur Mobile Money puis le numéro, et lance la caisse
+  /// unifiée (redirection externe vers le CPS de l'agrégateur).
+  Future<void> _startMomoFlow(PricingPlan plan) async {
+    final l10n = AppLocalizations.of(context);
+    final phoneController = TextEditingController();
+    var operator = 'ORANGE_MONEY';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.pricingMomoPhoneTitle()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: operator,
+                decoration: InputDecoration(labelText: l10n.pricingPayOperator),
+                items: _momoOperators.entries
+                    .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    .toList(),
+                onChanged: (v) => setDialogState(() => operator = v ?? operator),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: l10n.pricingMomoPhoneLabel(),
+                  hintText: '+237 6xx xx xx xx',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.confirm),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true) return;
+    final phone = phoneController.text.trim();
+    if (phone.isEmpty) return;
+    await _startUnifiedCheckout(plan, channel: 'MOMO', operator: operator, phone: phone);
   }
 
   /// Lance le checkout Stripe (CARD ou STRONG) et ouvre l'URL dans le navigateur.
@@ -153,54 +266,43 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     }
   }
 
-  /// Initie le paiement Mobile Money (MTN MoMo) pour un abonnement récurrent.
-  Future<void> _startMomoCheckout(PricingPlan plan) async {
-    // Pour Mobile Money, on a besoin du numéro de téléphone de l'utilisateur.
-    // On ouvre un dialogue pour le saisir.
-    final phoneController = TextEditingController();
-    final phone = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context).pricingMomoPhoneTitle()),
-        content: TextField(
-          controller: phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context).pricingMomoPhoneLabel(),
-            hintText: '+237 6xx xx xx xx',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context).cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, phoneController.text.trim()),
-            child: Text(AppLocalizations.of(context).confirm),
-          ),
-        ],
-      ),
-    );
-
-    if (phone == null || phone.isEmpty) return;
-
-    final cycleStr = _cycle == BillingCycleMobile.yearly ? 'yearly' : 'monthly';
+  /// Caisse unifiée OM / MoMo / Wave / Visa via l'agrégateur. Renvoie une
+  /// `checkoutUrl` de redirection externe ; l'activation de l'abonnement se
+  /// fait côté serveur à la confirmation du webhook — le client ne fait que
+  /// ouvrir la caisse puis launcher l'URL.
+  Future<void> _startUnifiedCheckout(
+    PricingPlan plan, {
+    required String channel,
+    String? operator,
+    String? phone,
+  }) async {
+    final cycleStr = _cycle == BillingCycleMobile.yearly ? 'YEARLY' : 'MONTHLY';
+    final region = _config?.resolvedRegion;
     final response = await _api.post(
-      '/billing/momo/subscribe',
+      '/billing/subscription/checkout',
       data: {
         'planKey': plan.key.toUpperCase(),
         'billingCycle': cycleStr,
-        'phone': phone,
+        'currency': _currency,
+        if (region != null && region.isNotEmpty) 'region': region,
+        'channel': channel,
+        if (channel == 'MOMO') 'operator': operator,
+        if (channel == 'MOMO') 'phone': phone,
       },
     );
 
-    if (mounted) {
-      final message = response.data?['message'] as String? ?? 'Demande de paiement envoyée';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.primary),
-      );
+    final data = response.data;
+    final checkoutUrl = data is Map ? data['checkoutUrl'] as String? : null;
+    if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+      final uri = Uri.parse(checkoutUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      throw Exception('Impossible d\'ouvrir la page de paiement');
     }
+    final instructions = data is Map ? data['instructions'] as String? : null;
+    throw Exception(instructions ?? 'Réponse de caisse inattendue');
   }
 
   @override
